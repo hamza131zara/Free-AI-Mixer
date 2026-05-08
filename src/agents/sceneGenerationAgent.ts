@@ -1,6 +1,7 @@
 import {
   geminiSceneGenerationService,
   replicateSceneGenerationService,
+  SceneGenerationServiceError,
   type SceneGenerationService,
 } from "../services/sceneGenerationService";
 import type {
@@ -144,6 +145,25 @@ const isAbortError = (error: unknown): boolean =>
   error instanceof DOMException && error.name === "AbortError";
 
 const serializeError = (error: unknown): unknown => {
+  if (error instanceof SceneGenerationServiceError) {
+    return {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      provider: error.provider,
+      details: error.details,
+    };
+  }
+
+  if (error instanceof SceneGenerationAgentError) {
+    return {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      details: error.details,
+    };
+  }
+
   if (error instanceof Error) {
     return {
       name: error.name,

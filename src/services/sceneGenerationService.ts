@@ -19,6 +19,17 @@ export interface HttpSceneGenerationServiceConfig {
   provider: SceneProvider;
 }
 
+interface SceneGenerationRuntimeConfig {
+  baseUrl?: string;
+  generationPath?: string;
+}
+
+declare global {
+  interface Window {
+    __FREE_AI_MIXER_RUNTIME_CONFIG__?: SceneGenerationRuntimeConfig;
+  }
+}
+
 export class SceneGenerationServiceError extends Error {
   readonly code?: string;
   readonly details?: unknown;
@@ -51,7 +62,14 @@ export class HttpSceneGenerationService implements SceneGenerationService {
     console.log("[Service] Calling API");
 
     if (!this.baseUrl) {
-      return generateMockScene(signal);
+      throw new SceneGenerationServiceError({
+        message: "Scene generation API base URL is not configured.",
+        code: "missing_api_base_url",
+        details: {
+          generationPath: this.generationPath,
+        },
+        provider: this.provider,
+      });
     }
 
     try {
@@ -68,11 +86,27 @@ export class HttpSceneGenerationService implements SceneGenerationService {
       const body = await readJson(response);
 
       if (!response.ok) {
-        return generateMockScene(signal);
+        throw new SceneGenerationServiceError({
+          message: `Scene generation request failed with status ${response.status}.`,
+          code: "http_error",
+          details: {
+            status: response.status,
+            statusText: response.statusText,
+            body,
+          },
+          provider: this.provider,
+        });
       }
 
       if (!isGeneratedScene(body)) {
-        return generateMockScene(signal);
+        throw new SceneGenerationServiceError({
+          message: "Scene generation response payload is invalid.",
+          code: "invalid_response_payload",
+          details: {
+            body,
+          },
+          provider: this.provider,
+        });
       }
 
       return body;
@@ -81,44 +115,19 @@ export class HttpSceneGenerationService implements SceneGenerationService {
         throw error;
       }
 
-      return generateMockScene(signal);
+      if (error instanceof SceneGenerationServiceError) {
+        throw error;
+      }
+
+      throw new SceneGenerationServiceError({
+        message: "Scene generation transport request failed.",
+        code: "transport_exception",
+        details: serializeUnknownError(error),
+        provider: this.provider,
+      });
     }
   }
 }
-
-const generateMockScene = async (signal?: AbortSignal): Promise<GeneratedScene> => {
-  await delay(randomDelay(), signal);
-  console.info("[Mock] Scene generated");
-
-  return {
-    image: createPicsumUrl(),
-    variations: [createPicsumUrl(), createPicsumUrl(), createPicsumUrl()],
-  };
-};
-
-const randomDelay = (): number => 1500 + Math.random() * 1500;
-
-const createPicsumUrl = (): string =>
-  `https://picsum.photos/seed/${Math.random()}/512/512`;
-
-const delay = (duration: number, signal?: AbortSignal): Promise<void> =>
-  new Promise((resolve, reject) => {
-    if (signal?.aborted) {
-      reject(new DOMException("Scene generation was aborted.", "AbortError"));
-      return;
-    }
-
-    const timeoutId = window.setTimeout(resolve, duration);
-
-    signal?.addEventListener(
-      "abort",
-      () => {
-        window.clearTimeout(timeoutId);
-        reject(new DOMException("Scene generation was aborted.", "AbortError"));
-      },
-      { once: true },
-    );
-  });
 
 const normalizeBaseUrl = (baseUrl?: string): string | undefined => {
   const trimmed = baseUrl?.trim();
@@ -127,6 +136,19 @@ const normalizeBaseUrl = (baseUrl?: string): string | undefined => {
 
 const normalizePath = (path: string): string =>
   path.startsWith("/") ? path : `/${path}`;
+
+const resolveRuntimeConfig = (): SceneGenerationRuntimeConfig => {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  return window.__FREE_AI_MIXER_RUNTIME_CONFIG__ ?? {};
+};
+
+const hasRuntimeConfigValue = (
+  config: SceneGenerationRuntimeConfig,
+  key: keyof SceneGenerationRuntimeConfig,
+): boolean => Object.prototype.hasOwnProperty.call(config, key);
 
 const readJson = async (response: Response): Promise<unknown> => {
   const text = await response.text();
@@ -154,9 +176,26 @@ const isGeneratedScene = (value: unknown): value is GeneratedScene => {
   );
 };
 
+const serializeUnknownError = (error: unknown): unknown => {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  return error;
+};
+
+const runtimeConfig = resolveRuntimeConfig();
+
 const serviceConfig = {
-  baseUrl: import.meta.env.VITE_SCENE_API_BASE_URL,
-  generationPath: import.meta.env.VITE_SCENE_GENERATION_PATH,
+  baseUrl: hasRuntimeConfigValue(runtimeConfig, "baseUrl")
+    ? runtimeConfig.baseUrl
+    : import.meta.env.VITE_SCENE_API_BASE_URL,
+  generationPath: hasRuntimeConfigValue(runtimeConfig, "generationPath")
+    ? runtimeConfig.generationPath
+    : import.meta.env.VITE_SCENE_GENERATION_PATH,
 };
 
 export const replicateSceneGenerationService = new HttpSceneGenerationService({

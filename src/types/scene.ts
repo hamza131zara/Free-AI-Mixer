@@ -2,6 +2,7 @@ export type SceneLifecycle = "idle" | "queued" | "generating" | "success" | "err
 
 export type SceneProvider = "replicate" | "gemini";
 
+// This is an internal app lifecycle milestone value, not provider-reported telemetry.
 export type SceneProgress = number;
 
 export interface SceneGenerationDraft {

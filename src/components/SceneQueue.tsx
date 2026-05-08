@@ -2,6 +2,7 @@ import { Play, RotateCcw, Trash2 } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { useSceneStore } from "../store/sceneStore";
 import { selectSceneViewModels } from "../store/sceneSelectors";
+import type { SceneViewModel } from "../store/sceneSelectors";
 
 export function SceneQueue() {
   const scenes = useSceneStore(useShallow(selectSceneViewModels));
@@ -78,10 +79,14 @@ export function SceneQueue() {
               <dd>{scene.provider}</dd>
             </div>
             <div>
-              <dt>Progress</dt>
-              <dd>{scene.progressLabel}</dd>
+              <dt>App Stage</dt>
+              <dd>{getSceneStageLabel(scene)}</dd>
             </div>
           </dl>
+
+          <p className="scene-stage-note">
+            App-reported lifecycle stage, not provider completion telemetry.
+          </p>
 
           {scene.error ? <p className="error-message">{scene.error}</p> : null}
 
@@ -120,3 +125,35 @@ export function SceneQueue() {
     </section>
   );
 }
+
+const getSceneStageLabel = (scene: SceneViewModel): string => {
+  if (scene.lifecycle === "idle") {
+    return "Ready to queue";
+  }
+
+  if (scene.lifecycle === "queued") {
+    return "Queued in app";
+  }
+
+  if (scene.lifecycle === "generating") {
+    return scene.provider === "gemini"
+      ? "Fallback attempt running in app"
+      : "Primary attempt running in app";
+  }
+
+  if (scene.lifecycle === "success") {
+    return scene.provider === "gemini"
+      ? "Completed after fallback attempt"
+      : "Completed after primary attempt";
+  }
+
+  if (scene.provider === "gemini") {
+    return "Failed after fallback attempt";
+  }
+
+  if (scene.provider === "replicate") {
+    return "Failed during primary attempt";
+  }
+
+  return "Failed during app lifecycle";
+};

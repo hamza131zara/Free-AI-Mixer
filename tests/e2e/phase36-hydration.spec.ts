@@ -4,6 +4,10 @@ import {
   createScene,
   persistKey,
 } from "./helpers/persist";
+import {
+  expectSceneLifecycle,
+  mockSuccessfulGeneration,
+} from "./helpers/runtime";
 
 const appTitle = "Free AI Mixer";
 
@@ -42,16 +46,6 @@ const sceneCard = (
   prompt: string,
 ) => page.locator(".scene-card").filter({ hasText: prompt });
 
-const expectStatus = async (
-  page: Parameters<typeof test>[0]["page"],
-  prompt: string,
-  lifecycle: string,
-): Promise<void> => {
-  await expect(sceneCard(page, prompt).locator(".status-pill")).toHaveText(
-    lifecycle,
-  );
-};
-
 test.describe("Phase 3.6 hydration and state stability", () => {
   test("H01 — idle scenes survive refresh", async ({ page }) => {
     const prompt = "Idle seeded scene";
@@ -76,13 +70,15 @@ test.describe("Phase 3.6 hydration and state stability", () => {
     const queueLogs = collectQueueStartLogs(page);
 
     await gotoApp(page);
-    await expectStatus(page, prompt, "idle");
+    await expectSceneLifecycle(page, prompt, "idle");
     await expect(page.locator("textarea")).toHaveValue("Saved draft");
+    await expect(sceneCard(page, prompt)).toContainText("App Stage");
+    await expect(sceneCard(page, prompt)).toContainText("Ready to queue");
 
     await page.reload();
-    await expectStatus(page, prompt, "idle");
-    await expect(sceneCard(page, prompt)).toContainText("Progress");
-    await expect(sceneCard(page, prompt)).toContainText("0%");
+    await expectSceneLifecycle(page, prompt, "idle");
+    await expect(sceneCard(page, prompt)).toContainText("App Stage");
+    await expect(sceneCard(page, prompt)).toContainText("Ready to queue");
     expect(queueLogs).toHaveLength(0);
   });
 
@@ -107,14 +103,15 @@ test.describe("Phase 3.6 hydration and state stability", () => {
     const queueLogs = collectQueueStartLogs(page);
 
     await gotoApp(page);
-    await expectStatus(page, prompt, "idle");
-    await expect(sceneCard(page, prompt)).toContainText("0%");
+    await expectSceneLifecycle(page, prompt, "idle");
+    await expect(sceneCard(page, prompt)).toContainText("Ready to queue");
     await expect(sceneCard(page, prompt)).toContainText("Unassigned");
     expect(queueLogs).toHaveLength(0);
   });
 
   test("H03 — generating scenes reset to idle after refresh", async ({ page }) => {
     const prompt = "Generating seeded scene";
+    await mockSuccessfulGeneration(page);
     await seedStorage(
       page,
       createPersistedStoreValue({
@@ -135,8 +132,8 @@ test.describe("Phase 3.6 hydration and state stability", () => {
     const queueLogs = collectQueueStartLogs(page);
 
     await gotoApp(page);
-    await expectStatus(page, prompt, "idle");
-    await expect(sceneCard(page, prompt)).toContainText("0%");
+    await expectSceneLifecycle(page, prompt, "idle");
+    await expect(sceneCard(page, prompt)).toContainText("Ready to queue");
     await expect(sceneCard(page, prompt)).toContainText("Unassigned");
 
     await sceneCard(page, prompt).getByRole("button", { name: "Generate scene" }).click();
@@ -228,6 +225,7 @@ test.describe("Phase 3.6 hydration and state stability", () => {
 
   test("H06 — retry works after reload", async ({ page }) => {
     const prompt = "Retryable error scene";
+    await mockSuccessfulGeneration(page);
     await seedStorage(
       page,
       createPersistedStoreValue({
@@ -246,7 +244,7 @@ test.describe("Phase 3.6 hydration and state stability", () => {
 
     await gotoApp(page);
     await page.reload();
-    await expectStatus(page, prompt, "error");
+    await expectSceneLifecycle(page, prompt, "error");
 
     await sceneCard(page, prompt).getByRole("button", { name: "Retry scene" }).click();
     await expect(sceneCard(page, prompt).locator(".status-pill")).toHaveText(/queued|generating/);
@@ -257,6 +255,7 @@ test.describe("Phase 3.6 hydration and state stability", () => {
 
   test("H07 — regenerate works after reload", async ({ page }) => {
     const prompt = "Regeneratable success scene";
+    await mockSuccessfulGeneration(page);
     await seedStorage(
       page,
       createPersistedStoreValue({
@@ -278,7 +277,7 @@ test.describe("Phase 3.6 hydration and state stability", () => {
 
     await gotoApp(page);
     await page.reload();
-    await expectStatus(page, prompt, "success");
+    await expectSceneLifecycle(page, prompt, "success");
 
     await sceneCard(page, prompt).getByRole("button", { name: "Generate scene" }).click();
     await expect(sceneCard(page, prompt).locator(".status-pill")).toHaveText(/queued|generating/);
@@ -328,14 +327,17 @@ test.describe("Phase 3.6 hydration and state stability", () => {
     const queueLogs = collectQueueStartLogs(page);
 
     await gotoApp(page);
-    await expectStatus(page, promptOne, "idle");
-    await expectStatus(page, promptTwo, "idle");
+    await expectSceneLifecycle(page, promptOne, "idle");
+    await expectSceneLifecycle(page, promptTwo, "idle");
     await page.waitForTimeout(1500);
     expect(queueLogs).toHaveLength(0);
   });
 
   test("H10 — hydration gate exists", async ({ page }) => {
     await gotoApp(page);
+    await expect(page.locator(".status-stage-note")).toContainText(
+      "app lifecycle milestones, not provider telemetry",
+    );
     await expect(page.getByLabel("Prompt")).toBeEnabled();
     await expect(page.getByLabel("Style")).toBeEnabled();
     await expect(page.getByLabel("Duration")).toBeEnabled();

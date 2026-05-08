@@ -26,6 +26,9 @@ export function SceneStatus() {
           <span>Success {summary.success}</span>
           <span>Error {summary.error}</span>
         </div>
+        <p className="status-stage-note">
+          Scene stages are app lifecycle milestones, not provider telemetry.
+        </p>
         {hydrationError ? <p className="error-message">{hydrationError}</p> : null}
       </div>
       <button

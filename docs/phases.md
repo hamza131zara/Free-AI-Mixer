@@ -104,7 +104,7 @@ Verification sign-off:
 
 Status:
 
-- not started
+- complete
 
 Scope:
 
@@ -112,6 +112,16 @@ Scope:
 - keep transport failures as true failures
 - preserve current lifecycle rules
 - tighten progress semantics so they do not imply fake backend truth
+
+Verified in this phase:
+
+- missing API base URL fails truthfully
+- non-OK HTTP responses fail truthfully
+- invalid response payloads fail truthfully
+- transport exceptions fail truthfully
+- fallback remains centralized in the agent/store flow
+- lifecycle progress is labeled as app stage semantics, not provider telemetry
+- Phase 3.6 hydration verification still passes
 
 #### Phase 3.8 — Long-running Provider Patterns
 
@@ -155,5 +165,5 @@ Status:
 - Phase 3.7 is transport truthfulness and provider realism.
 - Phase 3.8 is long-running provider patterns.
 - Phase 4 is timeline and video.
-- Service-layer mock success remains a Phase 3.7 issue.
+- Provider telemetry beyond app lifecycle stages belongs to Phase 3.8 or later.
 - Phase 3.6 hydration/runtime verification is complete.

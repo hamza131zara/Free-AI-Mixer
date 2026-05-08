@@ -95,6 +95,7 @@ Responsibilities:
 - trigger fallback from Replicate to Gemini
 - enforce queue concurrency
 - prevent duplicate starts inside a queue pass
+- emit app lifecycle stages without implying provider telemetry
 
 ### Service Layer
 
@@ -107,11 +108,6 @@ Responsibilities:
 - make provider HTTP requests
 - normalize response shape to `GeneratedScene`
 - surface transport-level errors
-
-Current architecture debt:
-
-- the service still returns mock scene success for missing base URL, non-OK responses, invalid payloads, and most transport errors
-- this behavior is known misalignment, not desired architecture
 
 ## Lifecycle Contract
 
@@ -180,6 +176,13 @@ Provider abstraction rules:
 - provider differences stay below the store and component layers
 - provider choice is a domain concern, not a UI concern
 - provider response shape must normalize to shared scene types
+
+## Progress Semantics
+
+- UI stage messaging reflects app lifecycle milestones only.
+- The app does not currently expose provider-reported completion percentages.
+- Fallback messaging may indicate when the app moved from the primary attempt to the fallback attempt.
+- Real provider telemetry, polling, and long-running job progress belong to Phase 3.8 or later.
 
 ## Non-Negotiable Constraints
 
