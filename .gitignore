@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+build/
+
+# env files
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+vite-dev-*.log
+
+# Playwright artifacts
+test-results/
+playwright-report/
+blob-report/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+
+# optional local cache
+.cache/

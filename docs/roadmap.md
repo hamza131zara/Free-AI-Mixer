@@ -1,0 +1,103 @@
+# Roadmap
+
+This file is the concise delivery roadmap for Free AI Mixer. Detailed technical truth lives in [PROJECT_BIBLE.md](../PROJECT_BIBLE.md). Canonical phase numbering lives in [docs/phases.md](./phases.md).
+
+## Current Direction
+
+The platform is being built in this order:
+
+1. establish product direction and production intent
+2. preserve UI experimentation history without letting it drive architecture
+3. stabilize the real logic layer
+4. expand into timeline and video systems
+5. expand into agent systems
+6. expand into backend and infrastructure
+7. optimize for production scale and reliability
+
+## Roadmap Sequence
+
+### Phase 1: Vision & Product Direction
+
+- AI scene generation platform
+- multi-provider orchestration
+- real generation lifecycle
+- production-oriented architecture
+
+Status:
+
+- established
+
+### Phase 2: UI Exploration
+
+- antigravity experiments
+- Stitches design iterations
+- scene queue interface
+- generation cards
+- provider visibility
+
+Status:
+
+- historical exploration phase
+
+### Phase 3: Real Logic Layer
+
+- Phase 3.0 UI System
+- Phase 3.1 Zustand Global Store / Scene Lifecycle
+- Phase 3.2 Global Store Stabilization
+- Phase 3.3 Error Normalization / Async Pipeline
+- Phase 3.4 Queue + Providers
+- Phase 3.5 Lifecycle Engine
+- Phase 3.6 Hydration & State Stability
+- Phase 3.7 Transport Truthfulness & Provider Realism
+- Phase 3.8 Long-running Provider Patterns
+
+Status:
+
+- active delivery phase family
+
+### Phase 4: Timeline & Video System
+
+- sequence structures
+- timeline orchestration
+- scene ordering and video-oriented systems
+
+Status:
+
+- not started
+
+### Phase 5: Agent System
+
+- AI director agents
+- scene memory
+- collaborative and workflow agents
+
+Status:
+
+- not started
+
+### Phase 6: Backend & Infrastructure
+
+- durable backend queue
+- infrastructure services
+- cloud execution paths
+
+Status:
+
+- not started
+
+### Phase 7: Production Optimization
+
+- monitoring
+- performance hardening
+- operational polish
+
+Status:
+
+- not started
+
+## Current Priority Order
+
+1. finalize Phase 3.6 hydration browser/runtime sign-off
+2. complete Phase 3.7 transport truthfulness and provider realism
+3. start Phase 3.8 long-running provider patterns only after transport behavior is trustworthy
+4. start Phase 4 only after scene generation state can be trusted operationally
