@@ -63,7 +63,7 @@ Status:
 
 Status:
 
-- started (Phase 4.1 timeline domain types complete; Phase 4.2 timeline store complete; Phase 4.3 timeline UI complete; Phase 4.4 sequencing/reorder complete; Phase 4.5 playback simulation next)
+- started (Phase 4.1 timeline domain types complete; Phase 4.2 timeline store complete; Phase 4.3 timeline UI complete; Phase 4.4 sequencing/reorder complete; Phase 4.5 playback simulation complete; Phase 4.6 video/export orchestration planning complete; export implementation deferred)
 
 ### Phase 5: Agent System
 
@@ -99,4 +99,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. begin Phase 4 only on top of the verified Phase 3 scene-generation foundation
+3. begin backend/export implementation planning (or final Phase 4 sign-off) on top of the verified Phase 3 scene-generation foundation

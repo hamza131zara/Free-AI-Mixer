@@ -50,6 +50,7 @@ Files:
 - `src/components/TimelineTrack.tsx`
 - `src/components/TimelineClipItem.tsx`
 - `src/components/TimelineSceneSource.tsx`
+- `src/components/TimelinePlaybackControls.tsx`
 
 Allowed:
 
@@ -60,6 +61,7 @@ Allowed:
 - render timeline editorial state and dispatch `timelineStore` actions
 - read successful scenes for timeline eligibility and dispatch `sceneId` references only
 - dispatch timeline reorder commands through store actions only (`moveClipUp` / `moveClipDown`)
+- render manual playback preview state and dispatch playback actions through `timelineStore` only
 
 Forbidden:
 
@@ -71,6 +73,7 @@ Forbidden:
 - importing agents/services into timeline UI components
 - mutating scene generation lifecycle from timeline UI components
 - implementing drag/drop orchestration in components (deferred)
+- implementing playback timers/RAF/loops in components
 
 ### Store Layer
 
@@ -104,6 +107,9 @@ Current verified store behavior:
 - timeline clips persist `sceneId` references only; they do not duplicate scene payload/result/provider fields
 - sequencing/reorder logic is store-owned (`moveClipUp` / `moveClipDown`)
 - reorder normalization is store-owned and always recomputes clip `order`, contiguous `startMs`, and `totalDurationMs`
+- playback simulation state is store-owned (`status`, `currentTimeMs`, `activeClipId`)
+- manual playback simulation actions are store-owned (`playTimeline`, `pauseTimeline`, `seekTimeline`, `stepTimeline`, `stopTimeline`)
+- playback clip/progress/control selectors are store-owned and deterministic
 
 ### Agent Layer
 
@@ -282,4 +288,15 @@ Backend boundary rules:
 - Timeline clips reference generated scenes by `sceneId` only.
 - Timeline types do not duplicate scene payload/result/provider data.
 - Playback in this layer is preview/simulation state only.
+- Playback is currently manual preview only: no timers, no `requestAnimationFrame`, no automatic playback loop.
+- No real media rendering behavior exists in this layer.
 - Video export/rendering and backend render queue orchestration remain deferred.
+
+## Future Export Boundaries
+
+- Timeline store owns editorial timeline and manual preview state only.
+- Future export agents should own export orchestration flows.
+- Future export services should own backend/render API communication.
+- Components should only render export-request UI and dispatch actions in later phases.
+- No backend render queue exists in the current implementation.
+- No video file generation exists in the current implementation.

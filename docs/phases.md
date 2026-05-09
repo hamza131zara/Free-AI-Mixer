@@ -226,7 +226,7 @@ Phase 3.8 final sign-off:
 
 Status:
 
-- started (Phase 4.1 through Phase 4.4 complete)
+- started (Phase 4.1 through Phase 4.6 planning complete)
 
 Sub-phases:
 
@@ -234,7 +234,8 @@ Sub-phases:
 - Phase 4.2 timeline store complete
 - Phase 4.3 timeline UI complete
 - Phase 4.4 sequencing/reorder complete
-- Phase 4.5 playback simulation next
+- Phase 4.5 playback simulation complete
+- Phase 4.6 video/export orchestration planning and boundaries complete (implementation deferred)
 
 Verified in Phase 4.4:
 
@@ -243,6 +244,21 @@ Verified in Phase 4.4:
 - reorder normalization is store-owned and recomputes `order`, contiguous `startMs`, and `totalDurationMs`
 - boundary reorder attempts are safe no-ops
 - scene lifecycle and generation orchestration remain unchanged
+
+Verified in Phase 4.5:
+
+- timeline store now exposes manual playback actions (`playTimeline`, `pauseTimeline`, `seekTimeline`, `stepTimeline`, `stopTimeline`)
+- playback selectors now expose active preview clip, progress, and manual control enablement
+- timeline UI now exposes manual preview controls that render store state and dispatch playback actions only
+- playback remains manual simulation only with no timers, no `requestAnimationFrame`, and no automatic playback loop
+- no real media rendering, export behavior, or backend rendering queue behavior is implemented
+
+Verified in Phase 4.6A:
+
+- video/export orchestration boundaries are documented for future phases only
+- Phase 4 timeline foundation is complete through manual preview simulation
+- video/export implementation is not built
+- backend rendering, render queues, workers, webhooks, and media processing remain deferred
 
 ### Phase 5 — Agent System
 
