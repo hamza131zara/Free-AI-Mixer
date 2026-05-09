@@ -127,6 +127,13 @@ test.describe("Phase 4.3 timeline UI", () => {
       .getByRole("button", { name: "Add scene success-source-scene-b to timeline" })
       .click();
 
+    const playback = page.getByTestId("timeline-playback-controls");
+    await expect(playback).toBeVisible();
+    await expect(playback).toContainText("Preview simulation only");
+    await expect(playback).toContainText("Status idle");
+    await expect(playback).toContainText("Time 0ms");
+    await expect(playback).toContainText("Active Clip success-source-scene-a");
+
     const track = page.getByTestId("timeline-track");
     const clipCards = track.locator("article.scene-card");
     await expect(clipCards).toHaveCount(2);
@@ -155,6 +162,26 @@ test.describe("Phase 4.3 timeline UI", () => {
     await clipCards.nth(1).getByRole("button", { name: "Move clip up" }).click();
     await expect(clipCards.nth(0)).toContainText("success-source-scene-a");
     await expect(clipCards.nth(1)).toContainText("success-source-scene-b");
+
+    await playback.getByRole("button", { name: "Play" }).click();
+    await expect(playback).toContainText("Status playing");
+
+    await playback.getByRole("button", { name: "Pause" }).click();
+    await expect(playback).toContainText("Status paused");
+
+    await playback.getByRole("button", { name: "Step forward 1s" }).click();
+    await expect(playback).toContainText("Time 1000ms");
+
+    await playback.getByRole("button", { name: "Step back 1s" }).click();
+    await expect(playback).toContainText("Time 0ms");
+
+    await playback.getByLabel("Seek timeline").fill("3000");
+    await expect(playback).toContainText("Time 3000ms");
+    await expect(playback).toContainText("Active Clip success-source-scene-b");
+
+    await playback.getByRole("button", { name: "Stop" }).click();
+    await expect(playback).toContainText("Status idle");
+    await expect(playback).toContainText("Time 0ms");
 
     await track.getByRole("button", { name: "Remove clip" }).first().click();
     await expect(clipCards).toHaveCount(1);

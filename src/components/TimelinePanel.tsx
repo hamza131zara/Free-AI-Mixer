@@ -7,6 +7,7 @@ import {
   useTimelineStore,
 } from "../store/timelineStore";
 import { TimelineHeader } from "./TimelineHeader";
+import { TimelinePlaybackControls } from "./TimelinePlaybackControls";
 import { TimelineSceneSource } from "./TimelineSceneSource";
 import { TimelineTrack } from "./TimelineTrack";
 
@@ -60,6 +61,7 @@ export function TimelinePanel() {
         onRenameTimeline={renameTimeline}
         onRemoveTimeline={removeTimeline}
       />
+      <TimelinePlaybackControls timelineId={activeTimeline?.id} />
       <TimelineSceneSource activeTimelineId={activeTimeline?.id} />
       <TimelineTrack
         timelineId={activeTimeline?.id}

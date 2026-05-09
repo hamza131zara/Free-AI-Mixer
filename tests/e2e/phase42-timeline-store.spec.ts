@@ -338,6 +338,158 @@ test.describe("Phase 4.2 timeline store", () => {
     expect(selectCanAddSceneToTimeline(state, "")).toBeFalsy();
   });
 
+  test("manual playback actions and selectors simulate preview without timers", async () => {
+    setUpWindowForStores();
+    const { useSceneStore } = (await import("../../src/store/sceneStore")) as SceneStoreModule;
+    const timelineModule = (await import("../../src/store/timelineStore")) as TimelineStoreModule;
+    const {
+      useTimelineStore,
+      selectActivePlaybackClip,
+      selectIsPlaybackInteractive,
+      selectPlaybackProgress,
+      selectPlaybackCanPlay,
+      selectPlaybackCanPause,
+      selectPlaybackCanStep,
+    } = timelineModule;
+
+    useSceneStore.setState({
+      hasHydrated: true,
+      hydrationError: undefined,
+      draft: { prompt: "", style: "", duration: "" },
+      scenes: [
+        createSuccessScene("scene-a"),
+        createSuccessScene("scene-b"),
+        createSuccessScene("scene-c"),
+      ] as never[],
+      isGeneratingAll: false,
+      composerError: undefined,
+    });
+
+    useTimelineStore.setState({
+      hasHydrated: true,
+      hydrationError: undefined,
+      timelines: [],
+      activeTimelineId: undefined,
+      isMutating: false,
+    });
+
+    useTimelineStore.getState().createTimeline("Playback");
+    const timelineId = useTimelineStore.getState().activeTimelineId!;
+    const scenesBefore = JSON.stringify(useSceneStore.getState().scenes);
+
+    useTimelineStore.getState().addSceneClip(timelineId, "scene-a", { durationMs: 1000, label: "A" });
+    useTimelineStore.getState().addSceneClip(timelineId, "scene-b", { durationMs: 2000, label: "B" });
+    useTimelineStore.getState().addSceneClip(timelineId, "scene-c", { durationMs: 500, label: "C" });
+
+    let state = useTimelineStore.getState();
+    expect(selectIsPlaybackInteractive(state)).toBeTruthy();
+    expect(selectPlaybackCanPlay(state)).toBeTruthy();
+    expect(selectPlaybackCanPause(state)).toBeFalsy();
+    expect(selectPlaybackCanStep(state)).toBeTruthy();
+
+    useTimelineStore.getState().seekTimeline(timelineId, -10);
+    state = useTimelineStore.getState();
+    expect(state.timelines[0]!.playback.currentTimeMs).toBe(0);
+    expect(state.timelines[0]!.playback.activeClipId).toBe(state.timelines[0]!.clips[0]!.id);
+    expect(selectActivePlaybackClip(state)?.sceneId).toBe("scene-a");
+    expect(selectPlaybackProgress(state)).toBe(0);
+
+    useTimelineStore.getState().seekTimeline(timelineId, 1200);
+    state = useTimelineStore.getState();
+    expect(state.timelines[0]!.playback.currentTimeMs).toBe(1200);
+    expect(selectActivePlaybackClip(state)?.sceneId).toBe("scene-b");
+
+    useTimelineStore.getState().seekTimeline(timelineId, 10000);
+    state = useTimelineStore.getState();
+    expect(state.timelines[0]!.playback.currentTimeMs).toBe(3500);
+    expect(state.timelines[0]!.playback.status).toBe("ended");
+    expect(selectActivePlaybackClip(state)?.sceneId).toBe("scene-c");
+    expect(selectPlaybackProgress(state)).toBe(1);
+
+    useTimelineStore.getState().stepTimeline(timelineId, -600);
+    state = useTimelineStore.getState();
+    expect(state.timelines[0]!.playback.currentTimeMs).toBe(2900);
+    expect(selectActivePlaybackClip(state)?.sceneId).toBe("scene-b");
+
+    useTimelineStore.getState().stepTimeline(timelineId, -10000);
+    state = useTimelineStore.getState();
+    expect(state.timelines[0]!.playback.currentTimeMs).toBe(0);
+    expect(selectActivePlaybackClip(state)?.sceneId).toBe("scene-a");
+
+    useTimelineStore.getState().playTimeline(timelineId);
+    state = useTimelineStore.getState();
+    expect(state.timelines[0]!.playback.status).toBe("playing");
+    expect(selectPlaybackCanPause(state)).toBeTruthy();
+    expect(selectPlaybackCanPlay(state)).toBeFalsy();
+
+    useTimelineStore.getState().pauseTimeline(timelineId);
+    state = useTimelineStore.getState();
+    expect(state.timelines[0]!.playback.status).toBe("paused");
+    expect(selectPlaybackCanPause(state)).toBeFalsy();
+    expect(selectPlaybackCanPlay(state)).toBeTruthy();
+
+    useTimelineStore.getState().stopTimeline(timelineId);
+    state = useTimelineStore.getState();
+    expect(state.timelines[0]!.playback.status).toBe("idle");
+    expect(state.timelines[0]!.playback.currentTimeMs).toBe(0);
+    expect(state.timelines[0]!.playback.activeClipId).toBe(state.timelines[0]!.clips[0]!.id);
+
+    const scenesAfter = JSON.stringify(useSceneStore.getState().scenes);
+    expect(scenesAfter).toBe(scenesBefore);
+    expect("payload" in (state.timelines[0]!.playback as object)).toBeFalsy();
+    expect("result" in (state.timelines[0]!.playback as object)).toBeFalsy();
+    expect("provider" in (state.timelines[0]!.playback as object)).toBeFalsy();
+  });
+
+  test("playback actions are safe no-ops for missing or empty timelines", async () => {
+    setUpWindowForStores();
+    const timelineModule = (await import("../../src/store/timelineStore")) as TimelineStoreModule;
+    const {
+      useTimelineStore,
+      selectIsPlaybackInteractive,
+      selectPlaybackCanPlay,
+      selectPlaybackCanPause,
+      selectPlaybackCanStep,
+      selectPlaybackProgress,
+      selectActivePlaybackClip,
+    } = timelineModule;
+
+    useTimelineStore.setState({
+      hasHydrated: true,
+      hydrationError: undefined,
+      timelines: [],
+      activeTimelineId: undefined,
+      isMutating: false,
+    });
+
+    useTimelineStore.getState().playTimeline("missing");
+    useTimelineStore.getState().pauseTimeline("missing");
+    useTimelineStore.getState().seekTimeline("missing", 100);
+    useTimelineStore.getState().stepTimeline("missing", 100);
+    useTimelineStore.getState().stopTimeline("missing");
+
+    expect(useTimelineStore.getState().timelines).toHaveLength(0);
+
+    useTimelineStore.getState().createTimeline("Empty Playback");
+    const timelineId = useTimelineStore.getState().activeTimelineId!;
+    const before = JSON.stringify(useTimelineStore.getState().timelines[0]!.playback);
+
+    useTimelineStore.getState().playTimeline(timelineId);
+    useTimelineStore.getState().pauseTimeline(timelineId);
+    useTimelineStore.getState().seekTimeline(timelineId, 100);
+    useTimelineStore.getState().stepTimeline(timelineId, 100);
+    useTimelineStore.getState().stopTimeline(timelineId);
+
+    const state = useTimelineStore.getState();
+    expect(JSON.stringify(state.timelines[0]!.playback)).toBe(before);
+    expect(selectIsPlaybackInteractive(state)).toBeFalsy();
+    expect(selectPlaybackCanPlay(state)).toBeFalsy();
+    expect(selectPlaybackCanPause(state)).toBeFalsy();
+    expect(selectPlaybackCanStep(state)).toBeFalsy();
+    expect(selectPlaybackProgress(state)).toBe(0);
+    expect(selectActivePlaybackClip(state)).toBeUndefined();
+  });
+
   test("moveClipUp and moveClipDown reorder clips, keep selection, and do not mutate scene lifecycle", async () => {
     setUpWindowForStores();
     const { useSceneStore } = (await import("../../src/store/sceneStore")) as SceneStoreModule;

@@ -8,6 +8,7 @@ import type {
   TimelineClipId,
   TimelineId,
   TimelineInsertMode,
+  TimelinePlaybackStatus,
   TimelinePlaybackState,
 } from "../types/timeline";
 
@@ -58,6 +59,11 @@ export interface TimelineStoreState {
   removeClip: (timelineId: TimelineId, clipId: TimelineClipId) => void;
   moveClipUp: (timelineId: TimelineId, clipId: TimelineClipId) => void;
   moveClipDown: (timelineId: TimelineId, clipId: TimelineClipId) => void;
+  playTimeline: (timelineId: TimelineId) => void;
+  pauseTimeline: (timelineId: TimelineId) => void;
+  seekTimeline: (timelineId: TimelineId, timeMs: number) => void;
+  stepTimeline: (timelineId: TimelineId, deltaMs: number) => void;
+  stopTimeline: (timelineId: TimelineId) => void;
   selectClip: (timelineId: TimelineId, clipId?: TimelineClipId) => void;
   setPlaybackState: (
     timelineId: TimelineId,
@@ -393,6 +399,137 @@ export const useTimelineStore = create<TimelineStoreState>()(
             }),
           }));
         },
+        playTimeline: (timelineId) => {
+          if (!canMutateState()) {
+            return;
+          }
+
+          set((state) => ({
+            timelines: state.timelines.map((timeline) => {
+              if (timeline.id !== timelineId || timeline.clips.length === 0) {
+                return timeline;
+              }
+
+              const nextPlayback = resolvePlaybackAtTime(
+                timeline.clips,
+                timeline.totalDurationMs,
+                timeline.playback.currentTimeMs,
+                "playing",
+              );
+
+              return {
+                ...timeline,
+                playback: nextPlayback,
+                updatedAt: new Date().toISOString(),
+              };
+            }),
+          }));
+        },
+        pauseTimeline: (timelineId) => {
+          if (!canMutateState()) {
+            return;
+          }
+
+          set((state) => ({
+            timelines: state.timelines.map((timeline) => {
+              if (
+                timeline.id !== timelineId ||
+                timeline.clips.length === 0 ||
+                timeline.playback.status !== "playing"
+              ) {
+                return timeline;
+              }
+
+              return {
+                ...timeline,
+                playback: {
+                  ...timeline.playback,
+                  status: "paused",
+                },
+                updatedAt: new Date().toISOString(),
+              };
+            }),
+          }));
+        },
+        seekTimeline: (timelineId, timeMs) => {
+          if (!canMutateState()) {
+            return;
+          }
+
+          set((state) => ({
+            timelines: state.timelines.map((timeline) => {
+              if (timeline.id !== timelineId || timeline.clips.length === 0) {
+                return timeline;
+              }
+
+              const nextPlayback = resolvePlaybackAtTime(
+                timeline.clips,
+                timeline.totalDurationMs,
+                timeMs,
+                timeline.playback.status,
+              );
+
+              return {
+                ...timeline,
+                playback: nextPlayback,
+                updatedAt: new Date().toISOString(),
+              };
+            }),
+          }));
+        },
+        stepTimeline: (timelineId, deltaMs) => {
+          if (!canMutateState()) {
+            return;
+          }
+
+          if (!Number.isFinite(deltaMs)) {
+            return;
+          }
+
+          set((state) => ({
+            timelines: state.timelines.map((timeline) => {
+              if (timeline.id !== timelineId || timeline.clips.length === 0) {
+                return timeline;
+              }
+
+              const nextPlayback = resolvePlaybackAtTime(
+                timeline.clips,
+                timeline.totalDurationMs,
+                timeline.playback.currentTimeMs + deltaMs,
+                timeline.playback.status,
+              );
+
+              return {
+                ...timeline,
+                playback: nextPlayback,
+                updatedAt: new Date().toISOString(),
+              };
+            }),
+          }));
+        },
+        stopTimeline: (timelineId) => {
+          if (!canMutateState()) {
+            return;
+          }
+
+          set((state) => ({
+            timelines: state.timelines.map((timeline) => {
+              if (timeline.id !== timelineId || timeline.clips.length === 0) {
+                return timeline;
+              }
+
+              return {
+                ...timeline,
+                playback: {
+                  status: "idle",
+                  currentTimeMs: 0,
+                  activeClipId: timeline.clips[0]?.id,
+                },
+                updatedAt: new Date().toISOString(),
+              };
+            }),
+          }));
+        },
         selectClip: (timelineId, clipId) => {
           if (!canMutateState()) {
             return;
@@ -519,6 +656,63 @@ export const selectActiveTimelinePlayback = (
 export const selectTimelineTotalDurationMs = (
   state: TimelineStoreState,
 ): number => selectActiveTimeline(state)?.totalDurationMs ?? 0;
+
+export const selectActivePlaybackClip = (
+  state: TimelineStoreState,
+): TimelineClip | undefined => {
+  const timeline = selectActiveTimeline(state);
+  if (!timeline || timeline.clips.length === 0) {
+    return undefined;
+  }
+
+  const byId = timeline.clips.find(
+    (clip) => clip.id === timeline.playback.activeClipId,
+  );
+  if (byId) {
+    return byId;
+  }
+
+  return resolveClipForTime(
+    timeline.clips,
+    clampTime(timeline.playback.currentTimeMs, timeline.totalDurationMs),
+    timeline.totalDurationMs,
+  );
+};
+
+export const selectIsPlaybackInteractive = (state: TimelineStoreState): boolean => {
+  const timeline = selectActiveTimeline(state);
+  return !!timeline && timeline.clips.length > 0;
+};
+
+export const selectPlaybackProgress = (state: TimelineStoreState): number => {
+  const timeline = selectActiveTimeline(state);
+  if (!timeline || timeline.totalDurationMs <= 0) {
+    return 0;
+  }
+
+  return clampTime(timeline.playback.currentTimeMs, timeline.totalDurationMs) / timeline.totalDurationMs;
+};
+
+export const selectPlaybackCanPlay = (state: TimelineStoreState): boolean => {
+  const timeline = selectActiveTimeline(state);
+  if (!timeline || timeline.clips.length === 0) {
+    return false;
+  }
+
+  return timeline.playback.status !== "playing";
+};
+
+export const selectPlaybackCanPause = (state: TimelineStoreState): boolean => {
+  const timeline = selectActiveTimeline(state);
+  if (!timeline || timeline.clips.length === 0) {
+    return false;
+  }
+
+  return timeline.playback.status === "playing";
+};
+
+export const selectPlaybackCanStep = (state: TimelineStoreState): boolean =>
+  selectIsPlaybackInteractive(state);
 
 export const selectCanAddSceneToTimeline = (
   _state: TimelineStoreState,
@@ -648,5 +842,52 @@ function normalizeClipLayout(clips: TimelineClip[]): {
   return {
     clips: normalized,
     totalDurationMs: nextStartMs,
+  };
+}
+
+function clampTime(timeMs: number, totalDurationMs: number): number {
+  if (!Number.isFinite(timeMs)) {
+    return 0;
+  }
+
+  return Math.min(Math.max(timeMs, 0), Math.max(totalDurationMs, 0));
+}
+
+function resolveClipForTime(
+  clips: TimelineClip[],
+  timeMs: number,
+  totalDurationMs: number,
+): TimelineClip | undefined {
+  if (clips.length === 0) {
+    return undefined;
+  }
+
+  if (timeMs <= 0) {
+    return clips[0];
+  }
+
+  if (timeMs >= totalDurationMs) {
+    return clips[clips.length - 1];
+  }
+
+  return clips.find(
+    (clip) => timeMs >= clip.startMs && timeMs < clip.startMs + clip.durationMs,
+  );
+}
+
+function resolvePlaybackAtTime(
+  clips: TimelineClip[],
+  totalDurationMs: number,
+  requestedTimeMs: number,
+  previousStatus: TimelinePlaybackStatus,
+): TimelinePlaybackState {
+  const currentTimeMs = clampTime(requestedTimeMs, totalDurationMs);
+  const activeClip = resolveClipForTime(clips, currentTimeMs, totalDurationMs);
+  const atEnd = totalDurationMs > 0 && currentTimeMs >= totalDurationMs;
+
+  return {
+    status: atEnd ? "ended" : previousStatus,
+    currentTimeMs,
+    activeClipId: activeClip?.id,
   };
 }
