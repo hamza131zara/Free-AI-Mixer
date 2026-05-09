@@ -41,7 +41,7 @@ export function TimelineTrack({
   if (clips.length === 0) {
     return (
       <section className="scene-queue scene-queue-empty" data-testid="timeline-track">
-        <p>Timeline is empty. Scene source add-flow is coming in the next phase.</p>
+        <p>Timeline is empty. Add successful scenes from the scene source panel.</p>
         <p className="scene-stage-note">Total duration: {totalDurationMs}ms</p>
       </section>
     );

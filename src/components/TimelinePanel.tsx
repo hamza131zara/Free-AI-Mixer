@@ -47,8 +47,8 @@ export function TimelinePanel() {
           <p className="eyebrow">Timeline</p>
           <h2>Editorial Timeline</h2>
           <p className="scene-stage-note">
-            Timeline shell only. Scene source add-flow and playback controls are
-            deferred.
+            Build an editorial timeline from successful scenes. Manual preview
+            only; no video export yet.
           </p>
         </div>
       </div>
