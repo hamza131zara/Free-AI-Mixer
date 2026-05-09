@@ -17,6 +17,7 @@ This file is the operational architecture reference for Free AI Mixer. It comple
 ```text
 /src
   /agents
+    exportAgent.ts
     sceneGenerationAgent.ts
     scenePollingAgent.ts
     sceneQueueAgent.ts
@@ -117,12 +118,14 @@ Current verified store behavior:
 
 Files:
 
+- `src/agents/exportAgent.ts`
 - `src/agents/sceneGenerationAgent.ts`
 - `src/agents/scenePollingAgent.ts`
 - `src/agents/sceneQueueAgent.ts`
 
 Responsibilities:
 
+- own export orchestration contracts (`startExport`, `resolveExport`, `pollExportUntilTerminal`)
 - normalize scene drafts into payloads
 - choose provider order
 - trigger fallback from Replicate to Gemini
@@ -130,6 +133,18 @@ Responsibilities:
 - enforce queue concurrency
 - prevent duplicate starts inside a queue pass
 - emit app lifecycle stages without implying provider telemetry
+- keep export orchestration out of components and services
+- enforce no post-acceptance fallback for accepted export jobs
+- enforce no duplicate export submission after an accepted job exists
+- keep timeout and transient poll failure handling truthful
+- never fabricate success, progress, artifacts, or cancellation outcomes
+
+Phase 5.3 note:
+
+- export agent scaffolding now exists and orchestrates service submit/poll contract outcomes
+- export store integration is not wired yet
+- export UI/runtime integration is not wired yet
+- backend rendering, render queue, workers, and webhooks remain deferred
 
 ### Service Layer
 

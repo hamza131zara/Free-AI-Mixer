@@ -264,14 +264,15 @@ Verified in Phase 4.6A:
 
 Status:
 
-- in progress (Phase 5.1 complete)
+- in progress (Phase 5.3 complete)
 
 Sub-phases:
 
 - Phase 5.0A backend export architecture audit complete
 - Phase 5.1 export/render job domain types complete (contracts only)
 - Phase 5.2 export service contracts complete
-- Phase 5.3 export agent orchestration scaffold next
+- Phase 5.3 export agent orchestration scaffold complete
+- Phase 5.4 export store integration next
 
 Phase 5.1 note:
 
@@ -286,6 +287,14 @@ Phase 5.2 note:
 - focused service tests exist in `tests/e2e/phase52-export-service.spec.ts`
 - service behavior is contract-only (no orchestration loop, retries, store updates, or UI updates)
 - export runtime wiring, backend rendering, render queue, workers, webhooks, and downloadable output remain deferred
+
+Phase 5.3 note:
+
+- `src/agents/exportAgent.ts` now provides `startExport`, `resolveExport`, and `pollExportUntilTerminal`
+- focused export agent orchestration tests exist in `tests/e2e/phase53-export-agent.spec.ts`
+- accepted-job orchestration has no post-acceptance fallback and no duplicate submit behavior
+- timeout and transient failure handling remain truthful
+- export runtime wiring, store integration, UI integration, backend rendering, render queue, workers, webhooks, and downloadable output remain deferred
 
 ### Phase 6 — Backend & Infrastructure
 

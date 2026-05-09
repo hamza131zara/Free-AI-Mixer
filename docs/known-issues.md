@@ -61,9 +61,10 @@ Current state:
 - export/render job contracts exist in `src/types/exportJob.ts`
 - export submit/poll/artifact service contracts exist in `src/services/exportService.ts`
 - focused export service contract and edge tests exist in `tests/e2e/phase52-export-service.spec.ts`
+- export agent orchestration scaffold exists in `src/agents/exportAgent.ts`
+- focused export agent orchestration tests exist in `tests/e2e/phase53-export-agent.spec.ts`
 - actual video export is not implemented
 - export runtime integration is not implemented
-- export agent orchestration is not implemented
 - export store integration is not implemented
 - export UI is not implemented
 - backend render queue is not implemented
@@ -80,7 +81,7 @@ Why it matters:
 
 Target fix phase:
 
-- Phase 5.3 and later backend/export phases
+- Phase 5.4 and later backend/export phases
 
 ### No Durable Backend Queue
 
