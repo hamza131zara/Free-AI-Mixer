@@ -17,6 +17,7 @@ import type {
 } from "../types/scene";
 import {
   providerJobResumeVersion,
+  type ProviderJobActiveStatus,
   type ProviderJobSubmission,
 } from "../types/providerJob";
 import {
@@ -47,6 +48,7 @@ export interface SceneStoreState {
 
 let activeRunController: AbortController | undefined;
 const activeSceneIds = new Set<string>();
+let hydrationResumeScheduled = false;
 
 type PersistedSceneStoreState = Pick<SceneStoreState, "draft" | "scenes">;
 
@@ -520,11 +522,27 @@ export const useSceneStore = create<SceneStoreState>()(
   ),
 );
 
+useSceneStore.subscribe((state) => {
+  if (
+    state.hasHydrated &&
+    !state.hydrationError &&
+    state.scenes.some(
+      (scene) =>
+        scene.lifecycle === "generating" &&
+        isResumeNeededProviderJob(scene.providerJob) &&
+        !activeSceneIds.has(scene.id),
+    )
+  ) {
+    scheduleHydratedProviderJobResume();
+  }
+});
+
 useSceneStore.persist.onFinishHydration(() => {
   useSceneStore.setState({
     hasHydrated: true,
     hydrationError: undefined,
   });
+  scheduleHydratedProviderJobResume();
 });
 
 if (useSceneStore.persist.hasHydrated()) {
@@ -532,6 +550,7 @@ if (useSceneStore.persist.hasHydrated()) {
     hasHydrated: true,
     hydrationError: undefined,
   });
+  scheduleHydratedProviderJobResume();
 } else if (
   typeof window !== "undefined" &&
   window.localStorage.getItem(sceneStorePersistKey) === null
@@ -540,16 +559,278 @@ if (useSceneStore.persist.hasHydrated()) {
     hasHydrated: true,
     hydrationError: undefined,
   });
+  scheduleHydratedProviderJobResume();
 } else {
   const rehydrateResult = useSceneStore.persist.rehydrate();
   if (rehydrateResult instanceof Promise) {
-    void rehydrateResult.catch((error: unknown) => {
-      useSceneStore.setState({
-        hasHydrated: false,
-        hydrationError: error instanceof Error ? error.message : undefined,
+    void rehydrateResult
+      .then(() => {
+        scheduleHydratedProviderJobResume();
+      })
+      .catch((error: unknown) => {
+        useSceneStore.setState({
+          hasHydrated: false,
+          hydrationError: error instanceof Error ? error.message : undefined,
+        });
       });
-    });
+  } else {
+    scheduleHydratedProviderJobResume();
   }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener(
+    "load",
+    () => {
+      scheduleHydratedProviderJobResume();
+    },
+    { once: true },
+  );
+}
+
+function scheduleHydratedProviderJobResume(): void {
+  if (typeof window === "undefined" || hydrationResumeScheduled) {
+    return;
+  }
+
+  hydrationResumeScheduled = true;
+  window.setTimeout(() => {
+    hydrationResumeScheduled = false;
+    void resumeHydratedProviderJobsFromStore();
+  }, 0);
+}
+
+async function resumeHydratedProviderJobsFromStore(): Promise<void> {
+  const state = useSceneStore.getState();
+  if (!state.hasHydrated || state.hydrationError) {
+    return;
+  }
+
+  const resumableScenes = state.scenes.filter(
+    (scene) =>
+      scene.lifecycle === "generating" &&
+      isResumeNeededProviderJob(scene.providerJob) &&
+      !activeSceneIds.has(scene.id),
+  );
+
+  if (resumableScenes.length === 0) {
+    return;
+  }
+
+  resumableScenes.forEach((scene) => {
+    activeSceneIds.add(scene.id);
+  });
+
+  useSceneStore.setState((currentState) => ({
+    ...currentState,
+    isGeneratingAll: true,
+    scenes: currentState.scenes.map((scene) => {
+      if (!resumableScenes.some((candidate) => candidate.id === scene.id)) {
+        return scene;
+      }
+
+      return {
+        ...scene,
+        provider: scene.providerJob?.provider ?? scene.provider,
+        progress: Math.max(scene.progress, 70),
+        providerJob: scene.providerJob
+          ? {
+              ...scene.providerJob,
+              resumeState: "runtime_active",
+              label: "Resuming provider job",
+            }
+          : undefined,
+      };
+    }),
+  }));
+
+  await Promise.all(
+    resumableScenes.map(async (scene) => {
+      const submission = toPersistedProviderJobSubmission(scene.providerJob);
+      if (!submission) {
+        activeSceneIds.delete(scene.id);
+        setSceneErrorInStore(scene.id, {
+          message: "Persisted provider job metadata could not be resumed safely.",
+          code: "provider_job_resume_unavailable",
+        });
+        return;
+      }
+
+      const controller = new AbortController();
+      activeRunController = controller;
+
+      try {
+        const result = await sceneGenerationAgent.resolveGeneration(
+          submission,
+          controller.signal,
+          {
+            onPollingAttempt: (_provider, attempt) => {
+              patchProviderJobInStore(scene.id, (providerJob) => ({
+                ...providerJob,
+                status: submission.handle.status,
+                remoteStatus:
+                  providerJob.remoteStatus ?? submission.handle.status,
+                lastPolledAt: new Date().toISOString(),
+                pollAttemptCount: Math.max(providerJob.pollAttemptCount, attempt),
+                resumeState: "runtime_active",
+                label: "Polling provider job",
+              }));
+              setSceneProgressInStore(scene.id, 75);
+            },
+            onPollingPending: (_provider, attempt) => {
+              patchProviderJobInStore(scene.id, (providerJob) => ({
+                ...providerJob,
+                status: submission.handle.status,
+                remoteStatus:
+                  providerJob.remoteStatus ?? submission.handle.status,
+                lastPolledAt: new Date().toISOString(),
+                pollAttemptCount: Math.max(providerJob.pollAttemptCount, attempt),
+                resumeState: "runtime_active",
+                label:
+                  attempt <= 1 ? "Waiting for provider" : "Polling provider job",
+              }));
+              setSceneProgressInStore(scene.id, 80);
+            },
+            onPollingTransientFailure: (_provider, attempt) => {
+              patchProviderJobInStore(scene.id, (providerJob) => ({
+                ...providerJob,
+                status: submission.handle.status,
+                remoteStatus:
+                  providerJob.remoteStatus ?? submission.handle.status,
+                lastPolledAt: new Date().toISOString(),
+                pollAttemptCount: Math.max(providerJob.pollAttemptCount, attempt),
+                resumeState: "runtime_active",
+                label: "Waiting for provider",
+              }));
+              setSceneProgressInStore(scene.id, 65);
+            },
+          },
+        );
+
+        setSceneResultInStore(scene.id, result.scene, result.provider);
+      } catch (error) {
+        setSceneErrorInStore(scene.id, error);
+      } finally {
+        activeSceneIds.delete(scene.id);
+
+        if (activeRunController === controller) {
+          activeRunController = undefined;
+        }
+
+        if (activeSceneIds.size === 0) {
+          useSceneStore.setState((currentState) => ({
+            ...currentState,
+            isGeneratingAll: false,
+          }));
+        }
+      }
+    }),
+  );
+}
+
+function patchSceneInStore(
+  sceneId: string,
+  patch: Partial<SceneRecord>,
+): void {
+  useSceneStore.setState((state) => ({
+    ...state,
+    scenes: state.scenes.map((scene) =>
+      scene.id === sceneId ? { ...scene, ...patch } : scene,
+    ),
+  }));
+}
+
+function patchProviderJobInStore(
+  sceneId: string,
+  updater: (providerJob: SceneProviderJobState) => SceneProviderJobState,
+): void {
+  useSceneStore.setState((state) => ({
+    ...state,
+    scenes: state.scenes.map((scene) => {
+      if (scene.id !== sceneId || !scene.providerJob) {
+        return scene;
+      }
+
+      return {
+        ...scene,
+        providerJob: updater(scene.providerJob),
+      };
+    }),
+  }));
+}
+
+function setSceneProgressInStore(sceneId: string, progress: number): void {
+  patchSceneInStore(sceneId, { progress });
+}
+
+function setSceneResultInStore(
+  sceneId: string,
+  result: GeneratedScene,
+  provider: SceneProvider,
+): void {
+  useSceneStore.setState((state) => ({
+    ...state,
+    scenes: state.scenes.map((scene) => {
+      if (scene.id !== sceneId || scene.lifecycle === "success" || scene.lifecycle === "error") {
+        return scene;
+      }
+
+      assertLifecycleTransition(scene.lifecycle, "success");
+
+      return {
+        ...scene,
+        lifecycle: "success",
+        progress: 100,
+        completedAt: new Date().toISOString(),
+        error: undefined,
+        result,
+        provider,
+        providerJob: scene.providerJob
+          ? {
+              ...scene.providerJob,
+              status: "succeeded",
+              label: "Completed after provider job",
+            }
+          : undefined,
+      };
+    }),
+  }));
+}
+
+function setSceneErrorInStore(sceneId: string, error: unknown): void {
+  useSceneStore.setState((state) => ({
+    ...state,
+    scenes: state.scenes.map((scene) => {
+      if (scene.id !== sceneId || scene.lifecycle === "success" || scene.lifecycle === "error") {
+        return scene;
+      }
+
+      assertLifecycleTransition(scene.lifecycle, "error");
+
+      const sceneError = toSceneGenerationError(error);
+
+      return {
+        ...scene,
+        lifecycle: "error",
+        progress: 0,
+        completedAt: new Date().toISOString(),
+        error: sceneError,
+        providerJob: scene.providerJob
+          ? {
+              ...scene.providerJob,
+              status:
+                sceneError.code === "provider_poll_timeout"
+                  ? "timed_out"
+                  : scene.providerJob.status,
+              label:
+                sceneError.code === "provider_poll_timeout"
+                  ? "Timed out while waiting for provider"
+                  : "Failed during provider job",
+            }
+          : undefined,
+      };
+    }),
+  }));
 }
 
 function sanitizeSceneForPersistence(scene: SceneRecord): SceneRecord {
@@ -746,6 +1027,38 @@ function classifyProviderJobForHydration(
       ...providerJob,
       resumeState: "resume_needed",
       label: "Resumable job found",
+    },
+  };
+}
+
+function isResumeNeededProviderJob(
+  providerJob?: SceneProviderJobState,
+): providerJob is SceneProviderJobState {
+  return (
+    providerJob?.resumeState === "resume_needed" ||
+    providerJob?.label === "Resumable job found"
+  );
+}
+
+function toPersistedProviderJobSubmission(
+  providerJob?: SceneProviderJobState,
+): ProviderJobSubmission | undefined {
+  if (!providerJob) {
+    return undefined;
+  }
+
+  return {
+    kind: "submitted",
+    handle: {
+      provider: providerJob.provider,
+      jobId: providerJob.jobId,
+      status: providerJob.status as ProviderJobActiveStatus,
+      metadata: {
+        provider: providerJob.provider,
+        acceptedAt: providerJob.submittedAt,
+        attemptCount: providerJob.pollAttemptCount,
+        remoteStatus: providerJob.remoteStatus,
+      },
     },
   };
 }

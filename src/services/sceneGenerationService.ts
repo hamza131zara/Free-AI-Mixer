@@ -212,13 +212,16 @@ export class HttpSceneGenerationService implements SceneGenerationService {
       const body = await readJson(response);
 
       if (!response.ok) {
+        const isJobNotFound = response.status === 404;
         return {
           kind: "failure",
           failure: createFailureResult(
             handle.provider,
             new SceneGenerationServiceError({
-              message: `Scene generation poll request failed with status ${response.status}.`,
-              code: "http_error",
+              message: isJobNotFound
+                ? "Scene generation provider job was not found."
+                : `Scene generation poll request failed with status ${response.status}.`,
+              code: isJobNotFound ? "provider_job_not_found" : "http_error",
               details: {
                 status: response.status,
                 statusText: response.statusText,

@@ -5,7 +5,13 @@ import {
   persistKey,
   type PersistedSceneProviderJobState,
 } from "./helpers/persist";
-import { expectSceneLifecycle } from "./helpers/runtime";
+import {
+  expectSceneLifecycle,
+  readPersistedScenes,
+  sceneApiUrl,
+  scenePollApiUrlPrefix,
+  setRuntimeConfig,
+} from "./helpers/runtime";
 
 const appTitle = "Free AI Mixer";
 
@@ -54,16 +60,25 @@ const createProviderJob = (
 });
 
 test.describe("Phase 3.8D1 persisted provider job hydration classification", () => {
-  test("valid persisted provider job is classified as resume-needed", async ({
+  test("valid persisted provider job auto-resumes polling without submitting a new job", async ({
     page,
   }) => {
     const prompt = "Resume seeded scene";
     const queueLogs: string[] = [];
+    let submitCount = 0;
+    let pollCount = 0;
     page.on("console", (message) => {
       const text = message.text();
       if (text.includes("[Queue] Starting job:")) {
         queueLogs.push(text);
       }
+    });
+
+    await setRuntimeConfig(page, {
+      baseUrl: "http://127.0.0.1:4173",
+      generationPath: "/scenes/generate",
+      pollPath: "/scenes/jobs",
+      pollDelayMs: 50,
     });
 
     await seedStorage(
@@ -84,11 +99,258 @@ test.describe("Phase 3.8D1 persisted provider job hydration classification", () 
       }),
     );
 
+    await page.route(sceneApiUrl, async (route) => {
+      submitCount += 1;
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: "submit should not be called during resume",
+        }),
+      });
+    });
+
+    await page.route(`${scenePollApiUrlPrefix}/job-resume`, async (route) => {
+      pollCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          jobId: "job-resume",
+          status: "processing",
+          metadata: {
+            pollAfterMs: 50,
+            remoteStatus: "processing",
+          },
+        }),
+      });
+    });
+
     await gotoApp(page);
     await expectSceneLifecycle(page, prompt, "generating");
-    await expect(sceneCard(page, prompt)).toContainText("Resumable job found");
-    await page.waitForTimeout(500);
+    await expect
+      .poll(() => pollCount, { timeout: 2_000 })
+      .toBeGreaterThan(0);
+    await expect(sceneCard(page, prompt)).toContainText(
+      /Waiting for provider|Polling provider job/,
+    );
+    await expect(sceneCard(page, prompt)).not.toContainText("Resumable job found");
     expect(queueLogs).toHaveLength(0);
+    expect(submitCount).toBe(0);
+  });
+
+  test("first poll success after reload applies success once", async ({ page }) => {
+    const prompt = "Resume success scene";
+    let submitCount = 0;
+    let pollCount = 0;
+
+    await setRuntimeConfig(page, {
+      baseUrl: "http://127.0.0.1:4173",
+      generationPath: "/scenes/generate",
+      pollPath: "/scenes/jobs",
+      pollDelayMs: 1,
+    });
+
+    await seedStorage(
+      page,
+      createPersistedStoreValue({
+        scenes: [
+          createScene({
+            id: "resume-scene",
+            lifecycle: "generating",
+            payload: { prompt, style: "cinematic", duration: 8 },
+            progress: 80,
+            provider: "replicate",
+            providerJob: createProviderJob({
+              requestFingerprint: JSON.stringify({
+                provider: "replicate",
+                prompt,
+                style: "cinematic",
+                duration: 8,
+              }),
+            }),
+            queuedAt: "2026-05-08T00:00:00.000Z",
+            startedAt: "2026-05-08T00:00:01.000Z",
+          }),
+        ],
+      }),
+    );
+
+    await page.route(sceneApiUrl, async (route) => {
+      submitCount += 1;
+      await route.fulfill({ status: 500, body: "submit should not be called" });
+    });
+
+    await page.route(`${scenePollApiUrlPrefix}/job-resume`, async (route) => {
+      pollCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          image: "https://example.com/resume-success.png",
+          variations: ["https://example.com/resume-success-variation.png"],
+        }),
+      });
+    });
+
+    await gotoApp(page);
+    await expectSceneLifecycle(page, prompt, "success");
+    await expect(sceneCard(page, prompt).locator(".scene-image")).toHaveAttribute(
+      "src",
+      "https://example.com/resume-success.png",
+    );
+    expect(submitCount).toBe(0);
+    expect(pollCount).toBe(1);
+
+    const scenes = (await readPersistedScenes(page)) as Array<{
+      lifecycle: string;
+      result?: { image?: string };
+    }>;
+    expect(scenes[0]?.lifecycle).toBe("success");
+    expect(scenes[0]?.result?.image).toBe("https://example.com/resume-success.png");
+  });
+
+  test("first poll failure after reload applies error once", async ({ page }) => {
+    const prompt = "Resume failure scene";
+    let submitCount = 0;
+    let pollCount = 0;
+
+    await setRuntimeConfig(page, {
+      baseUrl: "http://127.0.0.1:4173",
+      generationPath: "/scenes/generate",
+      pollPath: "/scenes/jobs",
+      pollDelayMs: 1,
+    });
+
+    await seedStorage(
+      page,
+      createPersistedStoreValue({
+        scenes: [
+          createScene({
+            id: "resume-scene",
+            lifecycle: "generating",
+            payload: { prompt, style: "cinematic", duration: 8 },
+            progress: 80,
+            provider: "replicate",
+            providerJob: createProviderJob({
+              requestFingerprint: JSON.stringify({
+                provider: "replicate",
+                prompt,
+                style: "cinematic",
+                duration: 8,
+              }),
+            }),
+            queuedAt: "2026-05-08T00:00:00.000Z",
+            startedAt: "2026-05-08T00:00:01.000Z",
+          }),
+        ],
+      }),
+    );
+
+    await page.route(sceneApiUrl, async (route) => {
+      submitCount += 1;
+      await route.fulfill({ status: 500, body: "submit should not be called" });
+    });
+
+    await page.route(`${scenePollApiUrlPrefix}/job-resume`, async (route) => {
+      pollCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          jobId: "job-resume",
+          status: "failed",
+          error: {
+            message: "Provider failed after reload.",
+            code: "provider_failed",
+          },
+        }),
+      });
+    });
+
+    await gotoApp(page);
+    await expectSceneLifecycle(page, prompt, "error");
+    await expect(sceneCard(page, prompt)).toContainText(
+      "Provider failed after reload.",
+    );
+    expect(submitCount).toBe(0);
+    expect(pollCount).toBe(1);
+
+    const scenes = (await readPersistedScenes(page)) as Array<{
+      lifecycle: string;
+      error?: { code?: string };
+    }>;
+    expect(scenes[0]?.lifecycle).toBe("error");
+    expect(scenes[0]?.error?.code).toBe("provider_failed");
+  });
+
+  test("poll 404 after reload becomes provider_job_not_found", async ({ page }) => {
+    const prompt = "Resume not found scene";
+    let submitCount = 0;
+    let pollCount = 0;
+
+    await setRuntimeConfig(page, {
+      baseUrl: "http://127.0.0.1:4173",
+      generationPath: "/scenes/generate",
+      pollPath: "/scenes/jobs",
+      pollDelayMs: 1,
+    });
+
+    await seedStorage(
+      page,
+      createPersistedStoreValue({
+        scenes: [
+          createScene({
+            id: "resume-scene",
+            lifecycle: "generating",
+            payload: { prompt, style: "cinematic", duration: 8 },
+            progress: 80,
+            provider: "replicate",
+            providerJob: createProviderJob({
+              requestFingerprint: JSON.stringify({
+                provider: "replicate",
+                prompt,
+                style: "cinematic",
+                duration: 8,
+              }),
+            }),
+            queuedAt: "2026-05-08T00:00:00.000Z",
+            startedAt: "2026-05-08T00:00:01.000Z",
+          }),
+        ],
+      }),
+    );
+
+    await page.route(sceneApiUrl, async (route) => {
+      submitCount += 1;
+      await route.fulfill({ status: 500, body: "submit should not be called" });
+    });
+
+    await page.route(`${scenePollApiUrlPrefix}/job-resume`, async (route) => {
+      pollCount += 1;
+      await route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({
+          message: "job not found",
+        }),
+      });
+    });
+
+    await gotoApp(page);
+    await expectSceneLifecycle(page, prompt, "error");
+    await expect(sceneCard(page, prompt)).toContainText(
+      "Scene generation provider job was not found.",
+    );
+    expect(submitCount).toBe(0);
+    expect(pollCount).toBe(1);
+
+    const scenes = (await readPersistedScenes(page)) as Array<{
+      lifecycle: string;
+      error?: { code?: string };
+    }>;
+    expect(scenes[0]?.lifecycle).toBe("error");
+    expect(scenes[0]?.error?.code).toBe("provider_job_not_found");
   });
 
   test("expired provider job becomes stale error on hydration", async ({ page }) => {

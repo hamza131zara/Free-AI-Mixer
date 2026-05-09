@@ -93,6 +93,13 @@ Phase 3.8D1 update:
 - hydration can distinguish resume-needed, expired, and resume-unavailable provider jobs
 - automatic resume polling still does not exist and remains deferred to Phase 3.8D2
 
+Phase 3.8D2 update:
+
+- valid persisted provider jobs now auto-resume polling after hydration
+- resume polling reuses the existing provider job id and does not submit a duplicate provider job
+- provider job not found after reload now becomes an explicit scene error
+- backend durability, cross-tab ownership, and server-side queue recovery still do not exist
+
 Target fix phase:
 
 - Phase 3.8
