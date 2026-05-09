@@ -17,6 +17,23 @@ export interface GeneratedScene {
 export interface SceneGenerationError {
   message: string;
   code?: string;
+  details?: unknown;
+}
+
+export interface PersistedSceneProviderJobState {
+  provider: SceneProvider;
+  sceneId: string;
+  jobId: string;
+  status: string;
+  remoteStatus?: string;
+  submittedAt: string;
+  lastPolledAt?: string;
+  pollAttemptCount: number;
+  timeoutAt: string;
+  requestFingerprint: string;
+  resumeVersion: number;
+  resumeState?: string;
+  label?: string;
 }
 
 export interface PersistedSceneRecord {
@@ -29,6 +46,7 @@ export interface PersistedSceneRecord {
   };
   progress: number;
   provider?: SceneProvider;
+  providerJob?: PersistedSceneProviderJobState;
   result?: GeneratedScene;
   selectedVariation?: string;
   error?: SceneGenerationError;

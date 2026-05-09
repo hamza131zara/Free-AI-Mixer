@@ -137,7 +137,8 @@ Sub-phases:
 - Phase 3.8C1 service submit/poll contracts and polling scaffold complete
 - Phase 3.8C2 queue/store polling integration complete
 - Phase 3.8C3 runtime hardening and UI status refinement complete
-- Phase 3.8D persistence and resumable runtime design not started
+- Phase 3.8D persistence and resumable runtime design active
+- Phase 3.8D1 persisted provider job metadata and hydration classification complete
 - Phase 3.8E durable backend queue not started
 
 Scope:
@@ -180,6 +181,15 @@ Verified in Phase 3.8C3:
 - terminal success and terminal failure callbacks apply once per scene
 - UI now labels long-running provider job states without implying provider percentage telemetry
 - hydration reset behavior remains unchanged and refresh-safe resume remains deferred
+
+Verified in Phase 3.8D1:
+
+- durable provider job metadata now persists on scenes without persisting timers, controllers, or queue workers
+- hydration classifies valid in-flight provider jobs as resume-needed without starting polling yet
+- expired provider jobs become explicit stale errors during hydration
+- corrupt provider job metadata fails safely during hydration
+- non-resumable queued/generating scenes still follow the existing safe reset behavior
+- automatic resume polling remains deferred to Phase 3.8D2
 
 ### Phase 4 — Timeline & Video System
 

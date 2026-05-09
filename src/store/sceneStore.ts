@@ -15,7 +15,10 @@ import type {
   SceneProvider,
   SceneRecord,
 } from "../types/scene";
-import type { ProviderJobSubmission } from "../types/providerJob";
+import {
+  providerJobResumeVersion,
+  type ProviderJobSubmission,
+} from "../types/providerJob";
 import {
   assertLifecycleTransition,
   isGeneratingScene,
@@ -54,6 +57,7 @@ const defaultDraft: SceneGenerationDraft = {
 };
 
 const sceneStorePersistKey = "free-ai-mixer-scenes";
+const defaultProviderJobTimeoutMs = 30_000;
 
 export const useSceneStore = create<SceneStoreState>()(
   persist(
@@ -207,14 +211,29 @@ export const useSceneStore = create<SceneStoreState>()(
       };
 
       const toProviderJobState = (
+        scene: SceneRecord,
         submission: ProviderJobSubmission,
         label: string,
-        attemptCount?: number,
+        pollAttemptCount = 0,
       ): SceneProviderJobState => ({
+        provider: submission.handle.provider,
+        sceneId: scene.id,
         jobId: submission.handle.jobId,
         status: submission.handle.status,
+        remoteStatus:
+          submission.handle.metadata?.remoteStatus ?? submission.handle.status,
+        submittedAt: scene.startedAt ?? new Date().toISOString(),
+        lastPolledAt:
+          pollAttemptCount > 0 ? new Date().toISOString() : undefined,
+        pollAttemptCount,
+        timeoutAt: createProviderJobTimeoutAt(scene.startedAt),
+        requestFingerprint: createSceneRequestFingerprint(
+          scene.payload,
+          submission.handle.provider,
+        ),
+        resumeVersion: providerJobResumeVersion,
+        resumeState: "runtime_active",
         label,
-        attemptCount,
       });
 
       const runQueuedJobs = async (
@@ -257,15 +276,26 @@ export const useSceneStore = create<SceneStoreState>()(
               onProviderChange: setSceneProvider,
               onProviderFallback: setSceneProvider,
               onJobAccepted: (sceneId, submission) => {
+                const scene = get().scenes.find((item) => item.id === sceneId);
+                if (!scene) {
+                  return;
+                }
+
                 setSceneProviderJob(
                   sceneId,
-                  toProviderJobState(submission, "Job accepted"),
+                  toProviderJobState(scene, submission, "Job accepted"),
                 );
               },
               onJobPolling: (sceneId, submission, attempt) => {
+                const scene = get().scenes.find((item) => item.id === sceneId);
+                if (!scene) {
+                  return;
+                }
+
                 setSceneProviderJob(
                   sceneId,
                   toProviderJobState(
+                    scene,
                     submission,
                     "Polling provider job",
                     attempt,
@@ -273,9 +303,15 @@ export const useSceneStore = create<SceneStoreState>()(
                 );
               },
               onJobPending: (sceneId, submission, attempt) => {
+                const scene = get().scenes.find((item) => item.id === sceneId);
+                if (!scene) {
+                  return;
+                }
+
                 setSceneProviderJob(
                   sceneId,
                   toProviderJobState(
+                    scene,
                     submission,
                     attempt <= 1
                       ? "Waiting for provider"
@@ -285,9 +321,15 @@ export const useSceneStore = create<SceneStoreState>()(
                 );
               },
               onJobTransientFailure: (sceneId, submission, attempt) => {
+                const scene = get().scenes.find((item) => item.id === sceneId);
+                if (!scene) {
+                  return;
+                }
+
                 setSceneProviderJob(
                   sceneId,
                   toProviderJobState(
+                    scene,
                     submission,
                     "Waiting for provider",
                     attempt,
@@ -467,7 +509,7 @@ export const useSceneStore = create<SceneStoreState>()(
         return {
           ...currentState,
           draft: persisted.draft ?? currentState.draft,
-          scenes: persisted.scenes?.map(sanitizeSceneForPersistence) ?? [],
+          scenes: persisted.scenes?.map(classifyHydratedScene) ?? [],
           hasHydrated: false,
           hydrationError: undefined,
           isGeneratingAll: false,
@@ -519,8 +561,24 @@ function sanitizeSceneForPersistence(scene: SceneRecord): SceneRecord {
   if (!isGeneratingScene(scene)) {
     return {
       ...scene,
+      providerJob: scene.providerJob
+        ? sanitizeProviderJobForPersistence(scene)
+        : undefined,
       selectedVariation: sanitizedSelectedVariation,
     };
+  }
+
+  if (scene.lifecycle === "generating") {
+    const sanitizedProviderJob = sanitizeProviderJobForPersistence(scene);
+    if (sanitizedProviderJob) {
+      return {
+        ...scene,
+        provider: sanitizedProviderJob.provider,
+        providerJob: sanitizedProviderJob,
+        error: undefined,
+        selectedVariation: sanitizedSelectedVariation,
+      };
+    }
   }
 
   return {
@@ -535,6 +593,205 @@ function sanitizeSceneForPersistence(scene: SceneRecord): SceneRecord {
     startedAt: undefined,
     completedAt: undefined,
   };
+}
+
+function sanitizeProviderJobForPersistence(
+  scene: SceneRecord,
+): SceneProviderJobState | undefined {
+  const providerJob = scene.providerJob;
+  if (!providerJob) {
+    return undefined;
+  }
+
+  return {
+    provider: providerJob.provider,
+    sceneId: providerJob.sceneId,
+    jobId: providerJob.jobId,
+    status: providerJob.status,
+    remoteStatus: providerJob.remoteStatus,
+    submittedAt: providerJob.submittedAt,
+    lastPolledAt: providerJob.lastPolledAt,
+    pollAttemptCount: providerJob.pollAttemptCount,
+    timeoutAt: providerJob.timeoutAt,
+    requestFingerprint: providerJob.requestFingerprint,
+    resumeVersion: providerJob.resumeVersion,
+  };
+}
+
+function classifyHydratedScene(scene: SceneRecord): SceneRecord {
+  const sanitizedSelectedVariation =
+    scene.result?.variations.includes(scene.selectedVariation ?? "") === true
+      ? scene.selectedVariation
+      : undefined;
+
+  if (!isGeneratingScene(scene)) {
+    return {
+      ...scene,
+      selectedVariation: sanitizedSelectedVariation,
+    };
+  }
+
+  if (scene.lifecycle === "queued") {
+    return {
+      ...scene,
+      lifecycle: "idle",
+      progress: 0,
+      provider: undefined,
+      providerJob: undefined,
+      error: undefined,
+      selectedVariation: sanitizedSelectedVariation,
+      queuedAt: undefined,
+      startedAt: undefined,
+      completedAt: undefined,
+    };
+  }
+
+  if (!scene.providerJob) {
+    return {
+      ...scene,
+      lifecycle: "idle",
+      progress: 0,
+      provider: undefined,
+      providerJob: undefined,
+      error: undefined,
+      selectedVariation: sanitizedSelectedVariation,
+      queuedAt: undefined,
+      startedAt: undefined,
+      completedAt: undefined,
+    };
+  }
+
+  const providerJobClassification = classifyProviderJobForHydration(scene);
+  if (providerJobClassification.kind === "resume_needed") {
+    return {
+      ...scene,
+      provider: providerJobClassification.providerJob.provider,
+      providerJob: providerJobClassification.providerJob,
+      error: undefined,
+      selectedVariation: sanitizedSelectedVariation,
+    };
+  }
+
+  return {
+    ...scene,
+    lifecycle: "error",
+    progress: 0,
+    provider: providerJobClassification.provider,
+    providerJob: providerJobClassification.providerJob,
+    error: providerJobClassification.error,
+    selectedVariation: sanitizedSelectedVariation,
+    completedAt: scene.completedAt ?? new Date().toISOString(),
+  };
+}
+
+function classifyProviderJobForHydration(
+  scene: SceneRecord,
+):
+  | {
+      kind: "resume_needed";
+      providerJob: SceneProviderJobState;
+    }
+  | {
+      kind: "error";
+      provider?: SceneProvider;
+      providerJob?: SceneProviderJobState;
+      error: SceneGenerationError;
+    } {
+  const providerJob = scene.providerJob;
+  if (!providerJob) {
+    return {
+      kind: "error",
+      error: {
+        message: "Persisted provider job metadata is missing.",
+        code: "provider_job_resume_unavailable",
+      },
+    };
+  }
+
+  if (!isValidPersistedProviderJob(scene, providerJob)) {
+    return {
+      kind: "error",
+      provider: scene.provider,
+      providerJob: {
+        ...providerJob,
+        resumeState: "resume_unavailable",
+        label: "Resume unavailable",
+      },
+      error: {
+        message: "Persisted provider job metadata could not be resumed safely.",
+        code: "provider_job_resume_unavailable",
+      },
+    };
+  }
+
+  if (Date.parse(providerJob.timeoutAt) <= Date.now()) {
+    return {
+      kind: "error",
+      provider: providerJob.provider,
+      providerJob: {
+        ...providerJob,
+        resumeState: "expired",
+        label: "Provider job expired",
+      },
+      error: {
+        message: "Provider job expired before resume could start.",
+        code: "provider_job_expired",
+      },
+    };
+  }
+
+  return {
+    kind: "resume_needed",
+    providerJob: {
+      ...providerJob,
+      resumeState: "resume_needed",
+      label: "Resumable job found",
+    },
+  };
+}
+
+function isValidPersistedProviderJob(
+  scene: SceneRecord,
+  providerJob: SceneProviderJobState,
+): boolean {
+  return (
+    (providerJob.provider === "replicate" || providerJob.provider === "gemini") &&
+    providerJob.sceneId === scene.id &&
+    typeof providerJob.jobId === "string" &&
+    providerJob.jobId.length > 0 &&
+    typeof providerJob.status === "string" &&
+    providerJob.status.length > 0 &&
+    typeof providerJob.submittedAt === "string" &&
+    Number.isFinite(Date.parse(providerJob.submittedAt)) &&
+    typeof providerJob.timeoutAt === "string" &&
+    Number.isFinite(Date.parse(providerJob.timeoutAt)) &&
+    typeof providerJob.requestFingerprint === "string" &&
+    providerJob.requestFingerprint ===
+      createSceneRequestFingerprint(scene.payload, providerJob.provider) &&
+    providerJob.resumeVersion === providerJobResumeVersion &&
+    Number.isInteger(providerJob.pollAttemptCount) &&
+    providerJob.pollAttemptCount >= 0
+  );
+}
+
+function createProviderJobTimeoutAt(startedAt?: string): string {
+  const startedAtMs = Number.isFinite(Date.parse(startedAt ?? ""))
+    ? Date.parse(startedAt ?? "")
+    : Date.now();
+
+  return new Date(startedAtMs + defaultProviderJobTimeoutMs).toISOString();
+}
+
+function createSceneRequestFingerprint(
+  payload: SceneRecord["payload"],
+  provider: SceneProvider,
+): string {
+  return JSON.stringify({
+    provider,
+    prompt: payload.prompt,
+    style: payload.style ?? "",
+    duration: payload.duration ?? null,
+  });
 }
 
 function toSceneGenerationError(error: unknown): SceneGenerationError {

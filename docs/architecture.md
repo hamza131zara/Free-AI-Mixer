@@ -132,6 +132,12 @@ Phase 3.8C3 note:
 - components render provider job wording from store state only; they do not own polling
 - persistence and refresh-safe resume remain deferred to later Phase 3.8D/E work
 
+Phase 3.8D1 note:
+
+- store persistence now supports durable provider job metadata for accepted long-running jobs
+- hydration classifies persisted provider jobs into safe reset, resume-needed, expired, or resume-unavailable outcomes
+- Phase 3.8D1 does not start polling after hydration; automatic resume remains deferred to Phase 3.8D2
+
 ## Lifecycle Contract
 
 Canonical lifecycle:
@@ -163,6 +169,7 @@ Durable state:
 - `result`
 - valid `selectedVariation`
 - terminal scene state
+- persisted provider job metadata needed for future resume classification
 
 Transient state:
 
@@ -170,6 +177,9 @@ Transient state:
 - active queue execution
 - active provider assignment for in-flight scenes
 - active queue timestamps for in-flight scenes
+- `AbortController` instances
+- polling timers and delays
+- in-memory duplicate-submit locks
 - pre-hydration interaction state
 
 Hydration rules:
@@ -177,7 +187,8 @@ Hydration rules:
 - the app starts with `hasHydrated = false`
 - interaction is blocked until persist restore completes
 - hydration failure sets `hydrationError`
-- no scene is treated as safely resumable after refresh
+- valid persisted provider jobs may now be classified as resume-needed
+- automatic resume polling is still deferred to Phase 3.8D2
 
 ## Selector Rules
 

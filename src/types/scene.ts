@@ -28,11 +28,26 @@ export interface SceneGenerationError {
   details?: unknown;
 }
 
+export type SceneProviderJobResumeState =
+  | "runtime_active"
+  | "resume_needed"
+  | "resume_unavailable"
+  | "expired";
+
 export interface SceneProviderJobState {
+  provider: SceneProvider;
+  sceneId: string;
   jobId: string;
   status: string;
-  label: string;
-  attemptCount?: number;
+  remoteStatus?: string;
+  submittedAt: string;
+  lastPolledAt?: string;
+  pollAttemptCount: number;
+  timeoutAt: string;
+  requestFingerprint: string;
+  resumeVersion: number;
+  resumeState?: SceneProviderJobResumeState;
+  label?: string;
 }
 
 export interface SceneRecord {

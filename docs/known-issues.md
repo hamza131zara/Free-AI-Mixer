@@ -87,6 +87,12 @@ Phase 3.8C3 update:
 - queue concurrency and terminal callback behavior are covered by dedicated hardening tests
 - refresh-safe resume still does not exist
 
+Phase 3.8D1 update:
+
+- durable provider job metadata now persists for hydration classification
+- hydration can distinguish resume-needed, expired, and resume-unavailable provider jobs
+- automatic resume polling still does not exist and remains deferred to Phase 3.8D2
+
 Target fix phase:
 
 - Phase 3.8

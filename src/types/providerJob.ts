@@ -33,6 +33,8 @@ export interface ProviderJobMetadata {
   details?: unknown;
 }
 
+export const providerJobResumeVersion = 1;
+
 export interface ProviderJobHandle {
   provider: SceneProvider;
   jobId: ProviderJobId;
