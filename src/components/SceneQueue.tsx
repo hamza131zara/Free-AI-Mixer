@@ -86,7 +86,7 @@ export function SceneQueue() {
             </div>
             <div>
               <dt>App Stage</dt>
-              <dd>{getSceneStageLabel(scene)}</dd>
+              <dd>{getSceneStageLabel(scene, sceneRecord)}</dd>
             </div>
             <div>
               <dt>Provider Job</dt>
@@ -137,7 +137,10 @@ export function SceneQueue() {
   );
 }
 
-const getSceneStageLabel = (scene: SceneViewModel): string => {
+const getSceneStageLabel = (
+  scene: SceneViewModel,
+  sceneRecord?: SceneRecord,
+): string => {
   if (scene.lifecycle === "idle") {
     return "Ready to queue";
   }
@@ -147,15 +150,33 @@ const getSceneStageLabel = (scene: SceneViewModel): string => {
   }
 
   if (scene.lifecycle === "generating") {
+    if (sceneRecord?.providerJob?.resumeState === "resume_needed") {
+      return "Resumable provider job found";
+    }
+
+    if (sceneRecord?.providerJob?.resumeState === "resume_in_progress") {
+      return "Resuming provider job in app";
+    }
+
     return scene.provider === "gemini"
       ? "Fallback attempt running in app"
       : "Primary attempt running in app";
   }
 
   if (scene.lifecycle === "success") {
+    if (
+      sceneRecord?.providerJob?.label === "Provider job completed after reload"
+    ) {
+      return "Completed after provider job reload";
+    }
+
     return scene.provider === "gemini"
       ? "Completed after fallback attempt"
       : "Completed after primary attempt";
+  }
+
+  if (sceneRecord?.providerJob?.label === "Provider job failed after reload") {
+    return "Failed after provider job reload";
   }
 
   if (scene.provider === "gemini") {

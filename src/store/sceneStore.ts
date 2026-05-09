@@ -181,7 +181,7 @@ export const useSceneStore = create<SceneStoreState>()(
             ? {
                 ...scene.providerJob,
                 status: "succeeded",
-                label: "Completed after provider job",
+                label: getProviderJobSuccessLabel(scene.providerJob),
               }
             : undefined,
         });
@@ -203,10 +203,7 @@ export const useSceneStore = create<SceneStoreState>()(
                   sceneError.code === "provider_poll_timeout"
                     ? "timed_out"
                     : scene.providerJob.status,
-                label:
-                  sceneError.code === "provider_poll_timeout"
-                    ? "Timed out while waiting for provider"
-                    : "Failed during provider job",
+                label: getProviderJobErrorLabel(scene.providerJob, sceneError),
               }
             : undefined,
         });
@@ -636,7 +633,7 @@ async function resumeHydratedProviderJobsFromStore(): Promise<void> {
         providerJob: scene.providerJob
           ? {
               ...scene.providerJob,
-              resumeState: "runtime_active",
+              resumeState: "resume_in_progress",
               label: "Resuming provider job",
             }
           : undefined,
@@ -672,7 +669,7 @@ async function resumeHydratedProviderJobsFromStore(): Promise<void> {
                   providerJob.remoteStatus ?? submission.handle.status,
                 lastPolledAt: new Date().toISOString(),
                 pollAttemptCount: Math.max(providerJob.pollAttemptCount, attempt),
-                resumeState: "runtime_active",
+                resumeState: "resume_in_progress",
                 label: "Polling provider job",
               }));
               setSceneProgressInStore(scene.id, 75);
@@ -685,7 +682,7 @@ async function resumeHydratedProviderJobsFromStore(): Promise<void> {
                   providerJob.remoteStatus ?? submission.handle.status,
                 lastPolledAt: new Date().toISOString(),
                 pollAttemptCount: Math.max(providerJob.pollAttemptCount, attempt),
-                resumeState: "runtime_active",
+                resumeState: "resume_in_progress",
                 label:
                   attempt <= 1 ? "Waiting for provider" : "Polling provider job",
               }));
@@ -699,7 +696,7 @@ async function resumeHydratedProviderJobsFromStore(): Promise<void> {
                   providerJob.remoteStatus ?? submission.handle.status,
                 lastPolledAt: new Date().toISOString(),
                 pollAttemptCount: Math.max(providerJob.pollAttemptCount, attempt),
-                resumeState: "runtime_active",
+                resumeState: "resume_in_progress",
                 label: "Waiting for provider",
               }));
               setSceneProgressInStore(scene.id, 65);
@@ -789,7 +786,7 @@ function setSceneResultInStore(
           ? {
               ...scene.providerJob,
               status: "succeeded",
-              label: "Completed after provider job",
+              label: getProviderJobSuccessLabel(scene.providerJob),
             }
           : undefined,
       };
@@ -822,10 +819,7 @@ function setSceneErrorInStore(sceneId: string, error: unknown): void {
                 sceneError.code === "provider_poll_timeout"
                   ? "timed_out"
                   : scene.providerJob.status,
-              label:
-                sceneError.code === "provider_poll_timeout"
-                  ? "Timed out while waiting for provider"
-                  : "Failed during provider job",
+              label: getProviderJobErrorLabel(scene.providerJob, sceneError),
             }
           : undefined,
       };
@@ -989,18 +983,22 @@ function classifyProviderJobForHydration(
     };
   }
 
-  if (!isValidPersistedProviderJob(scene, providerJob)) {
+  const persistedProviderJobError = getPersistedProviderJobValidationError(
+    scene,
+    providerJob,
+  );
+  if (persistedProviderJobError) {
     return {
       kind: "error",
       provider: scene.provider,
       providerJob: {
         ...providerJob,
         resumeState: "resume_unavailable",
-        label: "Resume unavailable",
+        label: persistedProviderJobError.label,
       },
       error: {
-        message: "Persisted provider job metadata could not be resumed safely.",
-        code: "provider_job_resume_unavailable",
+        message: persistedProviderJobError.message,
+        code: persistedProviderJobError.code,
       },
     };
   }
@@ -1063,28 +1061,68 @@ function toPersistedProviderJobSubmission(
   };
 }
 
-function isValidPersistedProviderJob(
+function getPersistedProviderJobValidationError(
   scene: SceneRecord,
   providerJob: SceneProviderJobState,
-): boolean {
-  return (
-    (providerJob.provider === "replicate" || providerJob.provider === "gemini") &&
-    providerJob.sceneId === scene.id &&
-    typeof providerJob.jobId === "string" &&
-    providerJob.jobId.length > 0 &&
-    typeof providerJob.status === "string" &&
-    providerJob.status.length > 0 &&
-    typeof providerJob.submittedAt === "string" &&
-    Number.isFinite(Date.parse(providerJob.submittedAt)) &&
-    typeof providerJob.timeoutAt === "string" &&
-    Number.isFinite(Date.parse(providerJob.timeoutAt)) &&
-    typeof providerJob.requestFingerprint === "string" &&
-    providerJob.requestFingerprint ===
-      createSceneRequestFingerprint(scene.payload, providerJob.provider) &&
-    providerJob.resumeVersion === providerJobResumeVersion &&
-    Number.isInteger(providerJob.pollAttemptCount) &&
-    providerJob.pollAttemptCount >= 0
-  );
+):
+  | {
+      code: string;
+      message: string;
+      label: string;
+    }
+  | undefined {
+  if (
+    providerJob.provider !== "replicate" &&
+    providerJob.provider !== "gemini"
+  ) {
+    return {
+      code: "provider_job_resume_unavailable",
+      message: "Persisted provider job metadata could not be resumed safely.",
+      label: "Resume unavailable",
+    };
+  }
+
+  if (
+    providerJob.sceneId !== scene.id ||
+    typeof providerJob.jobId !== "string" ||
+    providerJob.jobId.length === 0 ||
+    typeof providerJob.status !== "string" ||
+    providerJob.status.length === 0 ||
+    typeof providerJob.submittedAt !== "string" ||
+    !Number.isFinite(Date.parse(providerJob.submittedAt)) ||
+    typeof providerJob.timeoutAt !== "string" ||
+    !Number.isFinite(Date.parse(providerJob.timeoutAt)) ||
+    providerJob.resumeVersion !== providerJobResumeVersion ||
+    !Number.isInteger(providerJob.pollAttemptCount) ||
+    providerJob.pollAttemptCount < 0
+  ) {
+    return {
+      code: "provider_job_resume_unavailable",
+      message: "Persisted provider job metadata could not be resumed safely.",
+      label: "Resume unavailable",
+    };
+  }
+
+  if (typeof providerJob.requestFingerprint !== "string") {
+    return {
+      code: "provider_job_resume_unavailable",
+      message: "Persisted provider job metadata could not be resumed safely.",
+      label: "Resume unavailable",
+    };
+  }
+
+  if (
+    providerJob.requestFingerprint !==
+    createSceneRequestFingerprint(scene.payload, providerJob.provider)
+  ) {
+    return {
+      code: "provider_job_fingerprint_mismatch",
+      message: "Persisted provider job does not match the current scene payload.",
+      label: "Resume unavailable",
+    };
+  }
+
+  return undefined;
 }
 
 function createProviderJobTimeoutAt(startedAt?: string): string {
@@ -1164,4 +1202,42 @@ function normalizeAgentErrorDetails(
   }
 
   return error.details;
+}
+
+function getProviderJobSuccessLabel(providerJob: SceneProviderJobState): string {
+  if (providerJob.resumeState === "resume_in_progress") {
+    return "Provider job completed after reload";
+  }
+
+  return "Completed after provider job";
+}
+
+function getProviderJobErrorLabel(
+  providerJob: SceneProviderJobState,
+  sceneError: SceneGenerationError,
+): string {
+  if (sceneError.code === "provider_poll_timeout") {
+    return "Timed out while waiting for provider";
+  }
+
+  if (sceneError.code === "provider_job_not_found") {
+    return "Provider job not found";
+  }
+
+  if (sceneError.code === "provider_job_expired") {
+    return "Provider job expired";
+  }
+
+  if (
+    sceneError.code === "provider_job_resume_unavailable" ||
+    sceneError.code === "provider_job_fingerprint_mismatch"
+  ) {
+    return "Resume unavailable";
+  }
+
+  if (providerJob.resumeState === "resume_in_progress") {
+    return "Provider job failed after reload";
+  }
+
+  return "Failed during provider job";
 }

@@ -100,6 +100,13 @@ Phase 3.8D2 update:
 - provider job not found after reload now becomes an explicit scene error
 - backend durability, cross-tab ownership, and server-side queue recovery still do not exist
 
+Phase 3.8D3 update:
+
+- browser-local resume now hardens retry-after-resume-failure and regenerate-after-resume-success flows
+- fingerprint mismatches now fail safely and require explicit user action instead of auto-resume
+- resumed success and failure states now surface explicit after-reload labels in the UI
+- backend durability, multi-device coordination, and remote cancellation still do not exist
+
 Target fix phase:
 
 - Phase 3.8

@@ -199,6 +199,9 @@ test.describe("Phase 3.8D1 persisted provider job hydration classification", () 
       "src",
       "https://example.com/resume-success.png",
     );
+    await expect(sceneCard(page, prompt)).toContainText(
+      "Provider job completed after reload",
+    );
     expect(submitCount).toBe(0);
     expect(pollCount).toBe(1);
 
@@ -273,6 +276,9 @@ test.describe("Phase 3.8D1 persisted provider job hydration classification", () 
     await expect(sceneCard(page, prompt)).toContainText(
       "Provider failed after reload.",
     );
+    await expect(sceneCard(page, prompt)).toContainText(
+      "Provider job failed after reload",
+    );
     expect(submitCount).toBe(0);
     expect(pollCount).toBe(1);
 
@@ -342,6 +348,10 @@ test.describe("Phase 3.8D1 persisted provider job hydration classification", () 
     await expect(sceneCard(page, prompt)).toContainText(
       "Scene generation provider job was not found.",
     );
+    await expect(sceneCard(page, prompt)).toContainText("Provider job not found");
+    await expect(
+      sceneCard(page, prompt).getByRole("button", { name: "Retry scene" }),
+    ).toBeEnabled();
     expect(submitCount).toBe(0);
     expect(pollCount).toBe(1);
 
@@ -388,6 +398,9 @@ test.describe("Phase 3.8D1 persisted provider job hydration classification", () 
       "Provider job expired before resume could start.",
     );
     await expect(sceneCard(page, prompt)).toContainText("Provider job expired");
+    await expect(
+      sceneCard(page, prompt).getByRole("button", { name: "Retry scene" }),
+    ).toBeEnabled();
   });
 
   test("corrupt provider job metadata fails safely", async ({ page }) => {
@@ -404,7 +417,7 @@ test.describe("Phase 3.8D1 persisted provider job hydration classification", () 
             progress: 80,
             provider: "replicate",
             providerJob: createProviderJob({
-              requestFingerprint: "mismatch",
+              jobId: "",
             }),
             queuedAt: "2026-05-08T00:00:00.000Z",
             startedAt: "2026-05-08T00:00:01.000Z",
@@ -419,6 +432,71 @@ test.describe("Phase 3.8D1 persisted provider job hydration classification", () 
       "Persisted provider job metadata could not be resumed safely.",
     );
     await expect(sceneCard(page, prompt)).toContainText("Resume unavailable");
+    await expect(
+      sceneCard(page, prompt).getByRole("button", { name: "Retry scene" }),
+    ).toBeEnabled();
+  });
+
+  test("fingerprint mismatch does not auto-resume and requires user action", async ({
+    page,
+  }) => {
+    const prompt = "Fingerprint mismatch scene";
+    let submitCount = 0;
+    let pollCount = 0;
+
+    await setRuntimeConfig(page, {
+      baseUrl: "http://127.0.0.1:4173",
+      generationPath: "/scenes/generate",
+      pollPath: "/scenes/jobs",
+      pollDelayMs: 1,
+    });
+
+    await seedStorage(
+      page,
+      createPersistedStoreValue({
+        scenes: [
+          createScene({
+            id: "resume-scene",
+            lifecycle: "generating",
+            payload: { prompt, style: "cinematic", duration: 8 },
+            progress: 80,
+            provider: "replicate",
+            providerJob: createProviderJob({
+              requestFingerprint: JSON.stringify({
+                provider: "replicate",
+                prompt: "Different prompt",
+                style: "cinematic",
+                duration: 8,
+              }),
+            }),
+            queuedAt: "2026-05-08T00:00:00.000Z",
+            startedAt: "2026-05-08T00:00:01.000Z",
+          }),
+        ],
+      }),
+    );
+
+    await page.route(sceneApiUrl, async (route) => {
+      submitCount += 1;
+      await route.fulfill({ status: 500, body: "submit should not be called" });
+    });
+
+    await page.route(`${scenePollApiUrlPrefix}/job-resume`, async (route) => {
+      pollCount += 1;
+      await route.fulfill({ status: 500, body: "poll should not be called" });
+    });
+
+    await gotoApp(page);
+    await expectSceneLifecycle(page, prompt, "error");
+    await expect(sceneCard(page, prompt)).toContainText(
+      "Persisted provider job does not match the current scene payload.",
+    );
+    await expect(sceneCard(page, prompt)).toContainText("Resume unavailable");
+    await expect(
+      sceneCard(page, prompt).getByRole("button", { name: "Retry scene" }),
+    ).toBeEnabled();
+    expect(submitCount).toBe(0);
+    expect(pollCount).toBe(0);
   });
 
   test("terminal success and error scenes never resume", async ({ page }) => {

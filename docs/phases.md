@@ -140,6 +140,7 @@ Sub-phases:
 - Phase 3.8D persistence and resumable runtime design active
 - Phase 3.8D1 persisted provider job metadata and hydration classification complete
 - Phase 3.8D2 automatic resume polling for valid persisted provider jobs complete
+- Phase 3.8D3 resume hardening and UX finalization complete
 - Phase 3.8E durable backend queue not started
 
 Scope:
@@ -200,6 +201,15 @@ Verified in Phase 3.8D2:
 - provider job not found after reload becomes an explicit scene error
 - expired and corrupt persisted provider jobs still fail safely during hydration
 - backend durability and resumable ownership beyond the browser remain deferred
+
+Verified in Phase 3.8D3:
+
+- retry after resumed failure clears old provider job ownership before submitting exactly one new provider job
+- regenerate after resumed success clears old provider job ownership before submitting exactly one new provider job
+- fingerprint mismatches fail safely and do not auto-resume or auto-submit
+- resumed success, failure, not-found, expired, and resume-unavailable states now surface explicit render-only UI labels
+- resume polling starts once per valid hydrated scene and terminal outcomes still apply once
+- browser-local resume is now hardened, while backend durability and multi-device coordination remain deferred
 
 ### Phase 4 — Timeline & Video System
 

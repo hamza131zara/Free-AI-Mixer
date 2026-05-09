@@ -30,6 +30,7 @@ export interface SceneGenerationError {
 
 export type SceneProviderJobResumeState =
   | "runtime_active"
+  | "resume_in_progress"
   | "resume_needed"
   | "resume_unavailable"
   | "expired";

@@ -138,6 +138,13 @@ Phase 3.8D1 note:
 - hydration classifies persisted provider jobs into safe reset, resume-needed, expired, or resume-unavailable outcomes
 - Phase 3.8D1 does not start polling after hydration; automatic resume remains deferred to Phase 3.8D2
 
+Phase 3.8D3 note:
+
+- valid persisted provider jobs now auto-resume polling after hydration through the store/agent/service flow
+- retry after resumed failure and regenerate after resumed success both clear old provider job ownership before new submission
+- fingerprint mismatches now fail safely instead of auto-resuming or auto-submitting
+- resumed terminal outcomes expose explicit after-reload labels in the UI without moving orchestration into components
+
 ## Lifecycle Contract
 
 Canonical lifecycle:
@@ -188,7 +195,8 @@ Hydration rules:
 - interaction is blocked until persist restore completes
 - hydration failure sets `hydrationError`
 - valid persisted provider jobs may now be classified as resume-needed
-- automatic resume polling is still deferred to Phase 3.8D2
+- valid persisted provider jobs now auto-resume polling after hydration
+- expired, corrupt, not-found, and fingerprint-mismatch jobs terminate safely and require explicit user action
 
 ## Selector Rules
 
@@ -217,7 +225,8 @@ Long-running provider contract rules:
 - provider job IDs, pending states, and poll result shapes may now be modeled in the domain layer
 - Phase 3.8C now owns submit/poll orchestration and accepted-job runtime handling
 - queue/store runtime may expose long-running provider job wording while keeping lifecycle unchanged
-- persistence and resumable hydration work belong to later Phase 3.8D/E work
+- browser-local resumable hydration now exists for valid persisted provider jobs
+- backend durability, cross-tab coordination, and remote cancellation still belong to later Phase 3.8E and backend phases
 
 ## Progress Semantics
 
