@@ -120,21 +120,22 @@ Target fix phase:
 
 - long-running provider telemetry is not implemented; the UI currently reports app lifecycle stages only
 
-### Timeline Phase 4.1 Boundaries
+### Timeline Phase 4.3 Boundaries
 
 Current state:
 
 - timeline domain types exist in `src/types/timeline.ts`
 - timeline store exists in `src/store/timelineStore.ts` with actions, selectors, and local persistence
-- timeline UI/editor is not implemented yet
+- timeline UI shell and scene-source add-flow are implemented
+- focused timeline UI coverage exists in `tests/e2e/phase43-timeline-ui.spec.ts`
 - playback runtime/timers are not implemented yet
 - video export/backend rendering are not implemented yet
 - backend render queue is not implemented yet
 
 Why it matters:
 
-- Phase 4.2 establishes timeline store infrastructure only; editor UI and runtime playback/export remain deferred
+- Phase 4.3 establishes baseline timeline UI only; sequencing/reorder and runtime playback/export remain deferred
 
 Target fix phase:
 
-- Phase 4.3 and later timeline/video phases
+- Phase 4.4 and later timeline/video phases

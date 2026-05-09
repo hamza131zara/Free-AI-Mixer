@@ -13,6 +13,13 @@ import type {
 
 const timelineStorePersistKey = "free-ai-mixer-timelines";
 const defaultClipDurationMs = 3_000;
+const emptyTimelineClips: TimelineClip[] = [];
+const emptyTimelineSelection: Timeline["selection"] = {};
+const emptyTimelinePlayback: TimelinePlaybackState = {
+  status: "idle",
+  currentTimeMs: 0,
+  activeClipId: undefined,
+};
 
 export interface AddSceneClipOptions {
   insertMode?: TimelineInsertMode;
@@ -419,7 +426,7 @@ export const selectActiveTimelineClips = (
 ): TimelineClip[] => {
   const timeline = selectActiveTimeline(state);
   if (!timeline) {
-    return [];
+    return emptyTimelineClips;
   }
 
   return [...timeline.clips].sort((left, right) => left.order - right.order);
@@ -427,12 +434,13 @@ export const selectActiveTimelineClips = (
 
 export const selectActiveTimelineSelection = (
   state: TimelineStoreState,
-): Timeline["selection"] => selectActiveTimeline(state)?.selection ?? {};
+): Timeline["selection"] =>
+  selectActiveTimeline(state)?.selection ?? emptyTimelineSelection;
 
 export const selectActiveTimelinePlayback = (
   state: TimelineStoreState,
 ): TimelinePlaybackState =>
-  selectActiveTimeline(state)?.playback ?? defaultPlaybackState();
+  selectActiveTimeline(state)?.playback ?? emptyTimelinePlayback;
 
 export const selectTimelineTotalDurationMs = (
   state: TimelineStoreState,

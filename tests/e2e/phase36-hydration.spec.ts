@@ -293,7 +293,11 @@ test.describe("Phase 3.6 hydration and state stability", () => {
     await expect(page.getByRole("heading", { name: appTitle })).toBeVisible();
     await expect(page.getByRole("button", { name: "Add Scene" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "Generate All" })).toBeDisabled();
-    await expect(page.locator(".scene-queue-empty")).toContainText("No scenes queued yet.");
+    await expect(
+      page
+        .locator("section.scene-queue.scene-queue-empty")
+        .filter({ hasText: "No scenes queued yet." }),
+    ).toHaveCount(1);
   });
 
   test("H09 — no duplicate queue jobs start after refresh", async ({ page }) => {

@@ -63,7 +63,7 @@ Status:
 
 Status:
 
-- started (Phase 4.1 timeline domain types complete; Phase 4.2 timeline store complete; Phase 4.3 timeline UI next)
+- started (Phase 4.1 timeline domain types complete; Phase 4.2 timeline store complete; Phase 4.3 timeline UI complete; Phase 4.4 sequencing/reorder next)
 
 ### Phase 5: Agent System
 

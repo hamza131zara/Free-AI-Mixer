@@ -1,6 +1,7 @@
 import { SceneComposer } from "./components/SceneComposer";
 import { SceneQueue } from "./components/SceneQueue";
 import { SceneStatus } from "./components/SceneStatus";
+import { TimelinePanel } from "./components/TimelinePanel";
 
 export function App() {
   return (
@@ -18,6 +19,7 @@ export function App() {
           <SceneQueue />
         </div>
       </section>
+      <TimelinePanel />
     </main>
   );
 }

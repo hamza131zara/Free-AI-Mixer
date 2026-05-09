@@ -45,6 +45,11 @@ Files:
 
 - `src/App.tsx`
 - `src/components/*`
+- `src/components/TimelinePanel.tsx`
+- `src/components/TimelineHeader.tsx`
+- `src/components/TimelineTrack.tsx`
+- `src/components/TimelineClipItem.tsx`
+- `src/components/TimelineSceneSource.tsx`
 
 Allowed:
 
@@ -52,6 +57,8 @@ Allowed:
 - collect user input
 - dispatch store actions
 - show lifecycle and error state
+- render timeline editorial state and dispatch `timelineStore` actions
+- read successful scenes for timeline eligibility and dispatch `sceneId` references only
 
 Forbidden:
 
@@ -60,6 +67,8 @@ Forbidden:
 - queue scheduling
 - lifecycle transition logic
 - local orchestration with `useEffect` or `useState`
+- importing agents/services into timeline UI components
+- mutating scene generation lifecycle from timeline UI components
 
 ### Store Layer
 

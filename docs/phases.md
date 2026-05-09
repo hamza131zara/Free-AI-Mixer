@@ -226,13 +226,14 @@ Phase 3.8 final sign-off:
 
 Status:
 
-- started (Phase 4.1 complete: timeline domain types only)
+- started (Phase 4.1, Phase 4.2, and Phase 4.3 complete)
 
 Sub-phases:
 
 - Phase 4.1 timeline domain types complete
 - Phase 4.2 timeline store complete
-- Phase 4.3 timeline UI next
+- Phase 4.3 timeline UI complete
+- Phase 4.4 sequencing/reorder next
 
 ### Phase 5 — Agent System
 
