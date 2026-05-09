@@ -54,6 +54,28 @@ Target fix phase:
 
 ## Platform Gaps
 
+### Export Runtime Still Deferred
+
+Current state:
+
+- export/render job contracts exist in `src/types/exportJob.ts`
+- actual video export is not implemented
+- backend render queue is not implemented
+- server workers are not implemented
+- webhook completion is not implemented
+- remote render cancellation is not implemented
+- downloadable video output is not implemented
+- real media-accurate playback is not implemented
+
+Why it matters:
+
+- Phase 5.1 adds type contracts only, not runtime export capability
+- frontend must remain truthful and must not fake completion/progress/artifacts/cancellation
+
+Target fix phase:
+
+- Phase 5.2 and later backend/export phases
+
 ### No Durable Backend Queue
 
 Current state:

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   createPersistedStoreValue,
   createScene,
@@ -6,12 +6,14 @@ import {
 } from "./helpers/persist";
 import { readPersistedScenes, sceneApiUrl } from "./helpers/runtime";
 
-const seedStorage = async (
-  page: Parameters<typeof test>[0]["page"],
-  value: string,
-): Promise<void> => {
+type SeedStoragePayload = {
+  key: string;
+  persistedValue: string;
+};
+
+const seedStorage = async (page: Page, value: string): Promise<void> => {
   await page.addInitScript(
-    ({ key, persistedValue }) => {
+    ({ key, persistedValue }: SeedStoragePayload) => {
       window.localStorage.setItem(key, persistedValue);
     },
     { key: persistKey, persistedValue: value },
@@ -27,20 +29,29 @@ test.describe("Phase 4.3 timeline UI", () => {
     const requestFailures: string[] = [];
     let generationRequestCount = 0;
     const queueLogs: string[] = [];
+
     page.on("console", (message) => {
       const text = message.text();
+
       if (message.type() === "error") {
         consoleErrors.push(text);
       }
+
       if (text.includes("[Queue] Starting job:")) {
         queueLogs.push(text);
       }
     });
+
     page.on("pageerror", (error) => {
       pageErrors.push(error.message);
     });
+
     page.on("requestfailed", (request) => {
-      requestFailures.push(`${request.method()} ${request.url()} :: ${request.failure()?.errorText ?? "unknown"}`);
+      requestFailures.push(
+        `${request.method()} ${request.url()} :: ${
+          request.failure()?.errorText ?? "unknown"
+        }`,
+      );
     });
 
     await page.route(sceneApiUrl, async (route) => {
@@ -55,7 +66,11 @@ test.describe("Phase 4.3 timeline UI", () => {
           createScene({
             id: "success-source-scene-a",
             lifecycle: "success",
-            payload: { prompt: "Successful source scene A", style: "cinematic", duration: 8 },
+            payload: {
+              prompt: "Successful source scene A",
+              style: "cinematic",
+              duration: 8,
+            },
             progress: 100,
             result: {
               image: "https://example.com/success-source-a.png",
@@ -65,7 +80,11 @@ test.describe("Phase 4.3 timeline UI", () => {
           createScene({
             id: "success-source-scene-b",
             lifecycle: "success",
-            payload: { prompt: "Successful source scene B", style: "cinematic", duration: 8 },
+            payload: {
+              prompt: "Successful source scene B",
+              style: "cinematic",
+              duration: 8,
+            },
             progress: 100,
             result: {
               image: "https://example.com/success-source-b.png",
@@ -75,15 +94,26 @@ test.describe("Phase 4.3 timeline UI", () => {
           createScene({
             id: "idle-source-scene",
             lifecycle: "idle",
-            payload: { prompt: "Idle source scene", style: "surreal", duration: 6 },
+            payload: {
+              prompt: "Idle source scene",
+              style: "surreal",
+              duration: 6,
+            },
             progress: 0,
           }),
           createScene({
             id: "error-source-scene",
             lifecycle: "error",
-            payload: { prompt: "Error source scene", style: "product", duration: 5 },
+            payload: {
+              prompt: "Error source scene",
+              style: "product",
+              duration: 5,
+            },
             progress: 0,
-            error: { message: "Seeded error", code: "seeded_error" },
+            error: {
+              message: "Seeded error",
+              code: "seeded_error",
+            },
           }),
         ],
       }),
@@ -91,11 +121,16 @@ test.describe("Phase 4.3 timeline UI", () => {
 
     await page.goto("/");
     await page.waitForLoadState("domcontentloaded");
-    const timelineHeading = page.getByText("Editorial Timeline");
+
+    const timelineHeading = page.getByRole("heading", {
+      name: "Editorial Timeline",
+    });
+
     if (!(await timelineHeading.isVisible())) {
       const title = await page.title();
       const url = page.url();
       const bodyText = (await page.locator("body").innerText()).slice(0, 500);
+
       throw new Error(
         [
           "Timeline UI did not render.",
@@ -108,6 +143,7 @@ test.describe("Phase 4.3 timeline UI", () => {
         ].join("\n"),
       );
     }
+
     await expect(page.getByText("No timeline created yet.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Create Timeline" })).toBeVisible();
 
@@ -121,10 +157,15 @@ test.describe("Phase 4.3 timeline UI", () => {
     await expect(source).not.toContainText("Error source scene");
 
     await source
-      .getByRole("button", { name: "Add scene success-source-scene-a to timeline" })
+      .getByRole("button", {
+        name: "Add scene success-source-scene-a to timeline",
+      })
       .click();
+
     await source
-      .getByRole("button", { name: "Add scene success-source-scene-b to timeline" })
+      .getByRole("button", {
+        name: "Add scene success-source-scene-b to timeline",
+      })
       .click();
 
     const playback = page.getByTestId("timeline-playback-controls");
@@ -136,6 +177,7 @@ test.describe("Phase 4.3 timeline UI", () => {
 
     const track = page.getByTestId("timeline-track");
     const clipCards = track.locator("article.scene-card");
+
     await expect(clipCards).toHaveCount(2);
     await expect(clipCards.nth(0)).toContainText("success-source-scene-a");
     await expect(clipCards.nth(1)).toContainText("success-source-scene-b");
@@ -145,12 +187,15 @@ test.describe("Phase 4.3 timeline UI", () => {
     await expect(
       clipCards.nth(0).getByRole("button", { name: "Move clip up" }),
     ).toBeDisabled();
+
     await expect(
       clipCards.nth(0).getByRole("button", { name: "Move clip down" }),
     ).toBeEnabled();
+
     await expect(
       clipCards.nth(1).getByRole("button", { name: "Move clip up" }),
     ).toBeEnabled();
+
     await expect(
       clipCards.nth(1).getByRole("button", { name: "Move clip down" }),
     ).toBeDisabled();
@@ -190,22 +235,28 @@ test.describe("Phase 4.3 timeline UI", () => {
       id: string;
       lifecycle: string;
     }>;
+
     expect(scenes.find((scene) => scene.id === "success-source-scene-a")?.lifecycle).toBe(
       "success",
     );
+
     expect(scenes.find((scene) => scene.id === "success-source-scene-b")?.lifecycle).toBe(
       "success",
     );
+
     expect(scenes.find((scene) => scene.id === "idle-source-scene")?.lifecycle).toBe(
       "idle",
     );
+
     expect(scenes.find((scene) => scene.id === "error-source-scene")?.lifecycle).toBe(
       "error",
     );
+
     expect(generationRequestCount).toBe(0);
     expect(queueLogs).toHaveLength(0);
 
-    await expect(page.locator("text=video export")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /export/i })).toHaveCount(0);
     await expect(page.locator("text=backend rendering")).toHaveCount(0);
+    await expect(page.locator("text=Download video")).toHaveCount(0);
   });
 });

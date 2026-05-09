@@ -264,7 +264,20 @@ Verified in Phase 4.6A:
 
 Status:
 
-- not started
+- in progress (Phase 5.1 complete)
+
+Sub-phases:
+
+- Phase 5.0A backend export architecture audit complete
+- Phase 5.1 export/render job domain types complete (contracts only)
+- Phase 5.2 service submit/poll contracts next
+
+Phase 5.1 note:
+
+- `src/types/exportJob.ts` defines export/render job contracts only
+- export runtime behavior is not implemented
+- backend rendering, render queue, workers, and webhooks remain deferred
+- downloadable video output is not implemented
 
 ### Phase 6 — Backend & Infrastructure
 

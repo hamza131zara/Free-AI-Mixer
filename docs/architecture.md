@@ -35,6 +35,7 @@ This file is the operational architecture reference for Free AI Mixer. It comple
     scene.ts
     providerJob.ts
     timeline.ts
+    exportJob.ts
 ```
 
 ## Layer Responsibilities
@@ -295,8 +296,13 @@ Backend boundary rules:
 ## Future Export Boundaries
 
 - Timeline store owns editorial timeline and manual preview state only.
+- `src/types/exportJob.ts` mirrors the Phase 3 provider-job contract pattern for future export/render jobs.
+- Export job types are contracts only.
 - Future export agents should own export orchestration flows.
 - Future export services should own backend/render API communication.
 - Components should only render export-request UI and dispatch actions in later phases.
+- No export runtime implementation exists yet.
 - No backend render queue exists in the current implementation.
+- No downloadable video output exists in the current implementation.
 - No video file generation exists in the current implementation.
+- Frontend must not fake export completion, progress, artifacts, or cancellation behavior.
