@@ -29,6 +29,7 @@ This file is the operational architecture reference for Free AI Mixer. It comple
     sceneGenerationService.ts
     exportService.ts
   /store
+    exportStore.ts
     sceneLifecycle.ts
     sceneSelectors.ts
     sceneStore.ts
@@ -82,6 +83,7 @@ Forbidden:
 
 Files:
 
+- `src/store/exportStore.ts`
 - `src/store/sceneStore.ts`
 - `src/store/timelineStore.ts`
 - `src/store/sceneLifecycle.ts`
@@ -107,6 +109,14 @@ Current verified store behavior:
 - timeline orchestration state is isolated in `timelineStore` and does not change scene generation lifecycle
 - timeline store may read `sceneStore` only to verify success-scene eligibility for clip insertion
 - timeline store does not trigger scene generation and does not import agents/services
+- export orchestration state is isolated in `exportStore` and does not change scene/timeline lifecycle
+- export store may validate timeline export eligibility but does not mutate timeline/scene lifecycle
+- export store calls `exportAgent` (not `exportService` directly) for submit orchestration
+- export store implements duplicate-submit guards while export jobs are in-flight
+- export store persists durable export job metadata and hydration classification outcomes
+- export store hydration currently classifies resumable jobs only; it does not auto-resume polling
+- export store does not persist timers, controllers, or in-memory lock maps
+- export store does not fabricate completion, progress, artifacts, or cancellation outcomes
 - timeline clips persist `sceneId` references only; they do not duplicate scene payload/result/provider fields
 - sequencing/reorder logic is store-owned (`moveClipUp` / `moveClipDown`)
 - reorder normalization is store-owned and always recomputes clip `order`, contiguous `startMs`, and `totalDurationMs`

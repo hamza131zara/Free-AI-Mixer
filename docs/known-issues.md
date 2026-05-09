@@ -63,16 +63,18 @@ Current state:
 - focused export service contract and edge tests exist in `tests/e2e/phase52-export-service.spec.ts`
 - export agent orchestration scaffold exists in `src/agents/exportAgent.ts`
 - focused export agent orchestration tests exist in `tests/e2e/phase53-export-agent.spec.ts`
+- export store integration exists in `src/store/exportStore.ts`
+- focused export store tests exist in `tests/e2e/phase54-export-store.spec.ts`
 - actual video export is not implemented
 - export runtime integration is not implemented
-- export store integration is not implemented
 - export UI is not implemented
+- auto-resume polling is not implemented for export jobs
 - backend render queue is not implemented
 - server workers are not implemented
 - webhook completion is not implemented
 - remote render cancellation is not implemented
 - downloadable video output is not implemented
-- real media-accurate playback is not implemented
+- real video rendering is not implemented
 
 Why it matters:
 
@@ -81,7 +83,7 @@ Why it matters:
 
 Target fix phase:
 
-- Phase 5.4 and later backend/export phases
+- Phase 5.5 and later backend/export phases
 
 ### No Durable Backend Queue
 
