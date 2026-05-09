@@ -28,12 +28,20 @@ export interface SceneGenerationError {
   details?: unknown;
 }
 
+export interface SceneProviderJobState {
+  jobId: string;
+  status: string;
+  label: string;
+  attemptCount?: number;
+}
+
 export interface SceneRecord {
   id: string;
   lifecycle: SceneLifecycle;
   payload: SceneGenerationPayload;
   progress: SceneProgress;
   provider?: SceneProvider;
+  providerJob?: SceneProviderJobState;
   result?: GeneratedScene;
   selectedVariation?: string;
   error?: SceneGenerationError;

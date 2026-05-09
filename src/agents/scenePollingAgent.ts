@@ -46,14 +46,14 @@ export interface ScenePollingAgent {
 }
 
 export class DefaultScenePollingAgent implements ScenePollingAgent {
-  private readonly timeoutMs: number;
-  private readonly maxTransientFailures: number;
-  private readonly pollDelayMs: number;
+  private readonly defaultTimeoutMs: number;
+  private readonly defaultMaxTransientFailures: number;
+  private readonly defaultPollDelayMs: number;
 
   constructor(options: ScenePollingAgentOptions = {}) {
-    this.timeoutMs = options.timeoutMs ?? 30_000;
-    this.maxTransientFailures = options.maxTransientFailures ?? 2;
-    this.pollDelayMs = options.pollDelayMs ?? 250;
+    this.defaultTimeoutMs = options.timeoutMs ?? 30_000;
+    this.defaultMaxTransientFailures = options.maxTransientFailures ?? 2;
+    this.defaultPollDelayMs = options.pollDelayMs ?? 250;
   }
 
   async pollUntilTerminal(
@@ -62,6 +62,7 @@ export class DefaultScenePollingAgent implements ScenePollingAgent {
     signal?: AbortSignal,
     events?: ScenePollingAgentEvents,
   ): Promise<ScenePollingAgentResult> {
+    const options = this.resolveOptions();
     const startedAt = Date.now();
     let currentHandle = handle;
     let attempt = 0;
@@ -70,7 +71,7 @@ export class DefaultScenePollingAgent implements ScenePollingAgent {
     while (true) {
       throwIfAborted(signal);
 
-      if (Date.now() - startedAt > this.timeoutMs) {
+      if (Date.now() - startedAt > options.timeoutMs) {
         return {
           kind: "failure",
           failure: {
@@ -81,12 +82,12 @@ export class DefaultScenePollingAgent implements ScenePollingAgent {
               message: "Scene generation polling timed out.",
               code: "provider_poll_timeout",
               details: {
-                timeoutMs: this.timeoutMs,
+                timeoutMs: options.timeoutMs,
               },
             },
             metadata: {
               provider: currentHandle.provider,
-              pollAfterMs: this.pollDelayMs,
+              pollAfterMs: options.pollDelayMs,
               attemptCount: attempt,
             },
           },
@@ -105,19 +106,43 @@ export class DefaultScenePollingAgent implements ScenePollingAgent {
       if (result.kind === "pending") {
         currentHandle = result.handle;
         events?.onPollPending?.(currentHandle, attempt);
-        await waitForDelay(currentHandle.metadata?.pollAfterMs ?? this.pollDelayMs, signal);
+        await waitForDelay(
+          currentHandle.metadata?.pollAfterMs ?? options.pollDelayMs,
+          signal,
+        );
         continue;
       }
 
-      if (isTransientPollFailure(result, currentHandle) && transientFailures < this.maxTransientFailures) {
+      if (
+        isTransientPollFailure(result, currentHandle) &&
+        transientFailures < options.maxTransientFailures
+      ) {
         transientFailures += 1;
         events?.onTransientFailure?.(currentHandle, attempt, result.failure);
-        await waitForDelay(currentHandle.metadata?.pollAfterMs ?? this.pollDelayMs, signal);
+        await waitForDelay(
+          currentHandle.metadata?.pollAfterMs ?? options.pollDelayMs,
+          signal,
+        );
         continue;
       }
 
       return result;
     }
+  }
+
+  private resolveOptions(): Required<ScenePollingAgentOptions> {
+    const runtimeConfig =
+      typeof window === "undefined"
+        ? undefined
+        : window.__FREE_AI_MIXER_RUNTIME_CONFIG__;
+
+    return {
+      timeoutMs: runtimeConfig?.pollTimeoutMs ?? this.defaultTimeoutMs,
+      maxTransientFailures:
+        runtimeConfig?.maxTransientPollFailures ??
+        this.defaultMaxTransientFailures,
+      pollDelayMs: runtimeConfig?.pollDelayMs ?? this.defaultPollDelayMs,
+    };
   }
 }
 

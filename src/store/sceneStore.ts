@@ -11,9 +11,11 @@ import type {
   SceneGenerationDraft,
   SceneGenerationError,
   SceneLifecycle,
+  SceneProviderJobState,
   SceneProvider,
   SceneRecord,
 } from "../types/scene";
+import type { ProviderJobSubmission } from "../types/providerJob";
 import {
   assertLifecycleTransition,
   isGeneratingScene,
@@ -41,6 +43,7 @@ export interface SceneStoreState {
 }
 
 let activeRunController: AbortController | undefined;
+const activeSceneIds = new Set<string>();
 
 type PersistedSceneStoreState = Pick<SceneStoreState, "draft" | "scenes">;
 
@@ -93,6 +96,7 @@ export const useSceneStore = create<SceneStoreState>()(
               lifecyclePatch.startedAt = undefined;
               lifecyclePatch.completedAt = undefined;
               lifecyclePatch.provider = undefined;
+              lifecyclePatch.providerJob = undefined;
               lifecyclePatch.result = undefined;
               lifecyclePatch.selectedVariation = undefined;
               lifecyclePatch.error = undefined;
@@ -129,6 +133,13 @@ export const useSceneStore = create<SceneStoreState>()(
         patchScene(sceneId, { provider });
       };
 
+      const setSceneProviderJob = (
+        sceneId: string,
+        providerJob?: SceneProviderJobState,
+      ): void => {
+        patchScene(sceneId, { providerJob });
+      };
+
       const setSceneProgress = (sceneId: string, progress: number): void => {
         patchScene(sceneId, { progress });
       };
@@ -152,17 +163,59 @@ export const useSceneStore = create<SceneStoreState>()(
         result: GeneratedScene,
         provider: SceneProvider,
       ): void => {
+        const scene = get().scenes.find((item) => item.id === sceneId);
+        if (!scene || scene.lifecycle === "success" || scene.lifecycle === "error") {
+          return;
+        }
+
         transitionScene(sceneId, "success", {
           result,
           provider,
+          providerJob: scene.providerJob
+            ? {
+                ...scene.providerJob,
+                status: "succeeded",
+                label: "Completed after provider job",
+              }
+            : undefined,
         });
       };
 
       const setSceneError = (sceneId: string, error: unknown): void => {
+        const scene = get().scenes.find((item) => item.id === sceneId);
+        if (!scene || scene.lifecycle === "success" || scene.lifecycle === "error") {
+          return;
+        }
+
+        const sceneError = toSceneGenerationError(error);
         transitionScene(sceneId, "error", {
-          error: toSceneGenerationError(error),
+          error: sceneError,
+          providerJob: scene.providerJob
+            ? {
+                ...scene.providerJob,
+                status:
+                  sceneError.code === "provider_poll_timeout"
+                    ? "timed_out"
+                    : scene.providerJob.status,
+                label:
+                  sceneError.code === "provider_poll_timeout"
+                    ? "Timed out while waiting for provider"
+                    : "Failed during provider job",
+              }
+            : undefined,
         });
       };
+
+      const toProviderJobState = (
+        submission: ProviderJobSubmission,
+        label: string,
+        attemptCount?: number,
+      ): SceneProviderJobState => ({
+        jobId: submission.handle.jobId,
+        status: submission.handle.status,
+        label,
+        attemptCount,
+      });
 
       const runQueuedJobs = async (
         jobs: { id: string; payload: SceneRecord["payload"] }[],
@@ -175,8 +228,17 @@ export const useSceneStore = create<SceneStoreState>()(
           (job, index, collection) =>
             collection.findIndex((item) => item.id === job.id) === index,
         );
+        const runnableJobs = uniqueJobs.filter((job) => !activeSceneIds.has(job.id));
 
-        uniqueJobs.forEach((job) => {
+        if (runnableJobs.length === 0) {
+          return;
+        }
+
+        runnableJobs.forEach((job) => {
+          activeSceneIds.add(job.id);
+        });
+
+        runnableJobs.forEach((job) => {
           console.log("[Store] Generating scene:", job.id);
         });
 
@@ -186,7 +248,7 @@ export const useSceneStore = create<SceneStoreState>()(
 
         try {
           await sceneQueueAgent.generateAll(
-            uniqueJobs,
+            runnableJobs,
             {
               onQueued: queueScene,
               onGenerating: (sceneId) =>
@@ -194,12 +256,54 @@ export const useSceneStore = create<SceneStoreState>()(
               onProgress: setSceneProgress,
               onProviderChange: setSceneProvider,
               onProviderFallback: setSceneProvider,
+              onJobAccepted: (sceneId, submission) => {
+                setSceneProviderJob(
+                  sceneId,
+                  toProviderJobState(submission, "Job accepted"),
+                );
+              },
+              onJobPolling: (sceneId, submission, attempt) => {
+                setSceneProviderJob(
+                  sceneId,
+                  toProviderJobState(
+                    submission,
+                    "Polling provider job",
+                    attempt,
+                  ),
+                );
+              },
+              onJobPending: (sceneId, submission, attempt) => {
+                setSceneProviderJob(
+                  sceneId,
+                  toProviderJobState(
+                    submission,
+                    attempt <= 1
+                      ? "Waiting for provider"
+                      : "Polling provider job",
+                    attempt,
+                  ),
+                );
+              },
+              onJobTransientFailure: (sceneId, submission, attempt) => {
+                setSceneProviderJob(
+                  sceneId,
+                  toProviderJobState(
+                    submission,
+                    "Waiting for provider",
+                    attempt,
+                  ),
+                );
+              },
               onSuccess: setSceneResult,
               onError: setSceneError,
             },
             controller.signal,
           );
         } finally {
+          runnableJobs.forEach((job) => {
+            activeSceneIds.delete(job.id);
+          });
+
           if (activeRunController === controller) {
             activeRunController = undefined;
             set({ isGeneratingAll: false });
@@ -424,6 +528,7 @@ function sanitizeSceneForPersistence(scene: SceneRecord): SceneRecord {
     lifecycle: "idle",
     progress: 0,
     provider: undefined,
+    providerJob: undefined,
     error: undefined,
     selectedVariation: sanitizedSelectedVariation,
     queuedAt: undefined,

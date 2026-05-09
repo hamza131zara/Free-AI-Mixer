@@ -42,6 +42,9 @@ interface SceneGenerationRuntimeConfig {
   baseUrl?: string;
   generationPath?: string;
   pollPath?: string;
+  pollTimeoutMs?: number;
+  maxTransientPollFailures?: number;
+  pollDelayMs?: number;
 }
 
 declare global {

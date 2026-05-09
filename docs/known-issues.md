@@ -80,6 +80,13 @@ Phase 3.8C2 update:
 - immediate success and terminal poll outcomes flow through the existing lifecycle contract
 - refresh-safe resume still does not exist
 
+Phase 3.8C3 update:
+
+- runtime hardening now blocks duplicate accepted-job submissions for the same scene
+- long-running provider jobs surface explicit accepted, waiting, polling, timeout, and completion wording in the UI
+- queue concurrency and terminal callback behavior are covered by dedicated hardening tests
+- refresh-safe resume still does not exist
+
 Target fix phase:
 
 - Phase 3.8

@@ -125,6 +125,13 @@ Phase 3.8C1 note:
 - the existing `generateScene` request/response path remains active for the current runtime
 - polling agent scaffolding exists, but queue/store runtime integration remains deferred to Phase 3.8C2
 
+Phase 3.8C3 note:
+
+- queue/store runtime now hardens accepted provider job handling with duplicate-submission guards
+- polling timeouts and bounded transient poll failures resolve into explicit runtime outcomes
+- components render provider job wording from store state only; they do not own polling
+- persistence and refresh-safe resume remain deferred to later Phase 3.8D/E work
+
 ## Lifecycle Contract
 
 Canonical lifecycle:
@@ -197,8 +204,8 @@ Long-running provider contract rules:
 
 - Phase 3.8B introduces provider job contract types only
 - provider job IDs, pending states, and poll result shapes may now be modeled in the domain layer
-- these contracts do not yet change the service, agent, queue, or store runtime behavior
-- polling orchestration belongs to Phase 3.8C
+- Phase 3.8C now owns submit/poll orchestration and accepted-job runtime handling
+- queue/store runtime may expose long-running provider job wording while keeping lifecycle unchanged
 - persistence and resumable hydration work belong to later Phase 3.8D/E work
 
 ## Progress Semantics

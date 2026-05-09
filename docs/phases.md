@@ -136,7 +136,7 @@ Sub-phases:
 - Phase 3.8C polling orchestration active
 - Phase 3.8C1 service submit/poll contracts and polling scaffold complete
 - Phase 3.8C2 queue/store polling integration complete
-- Phase 3.8C3 runtime hardening and UI status refinement not started
+- Phase 3.8C3 runtime hardening and UI status refinement complete
 - Phase 3.8D persistence and resumable runtime design not started
 - Phase 3.8E durable backend queue not started
 
@@ -168,6 +168,17 @@ Verified in Phase 3.8C2:
 - queue/store runtime handles accepted provider jobs that poll to terminal success
 - queue/store runtime handles accepted provider jobs that poll to terminal failure
 - lifecycle remains `idle -> queued -> generating -> success | error`
+- hydration reset behavior remains unchanged and refresh-safe resume remains deferred
+
+Verified in Phase 3.8C3:
+
+- duplicate generate attempts do not submit duplicate accepted jobs
+- accepted jobs remain in `generating` while polling and do not fallback after acceptance
+- bounded transient poll failures retry within budget
+- polling timeout becomes an explicit scene error
+- queue concurrency remains bounded while accepted jobs are polling
+- terminal success and terminal failure callbacks apply once per scene
+- UI now labels long-running provider job states without implying provider percentage telemetry
 - hydration reset behavior remains unchanged and refresh-safe resume remains deferred
 
 ### Phase 4 — Timeline & Video System

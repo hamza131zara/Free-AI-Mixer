@@ -3,13 +3,16 @@ import { useShallow } from "zustand/react/shallow";
 import { useSceneStore } from "../store/sceneStore";
 import { selectSceneViewModels } from "../store/sceneSelectors";
 import type { SceneViewModel } from "../store/sceneSelectors";
+import type { SceneRecord } from "../types/scene";
 
 export function SceneQueue() {
   const scenes = useSceneStore(useShallow(selectSceneViewModels));
+  const sceneRecords = useSceneStore((state) => state.scenes);
   const generateScene = useSceneStore((state) => state.generateScene);
   const retryScene = useSceneStore((state) => state.retryScene);
   const selectVariation = useSceneStore((state) => state.selectVariation);
   const removeScene = useSceneStore((state) => state.removeScene);
+  const sceneRecordById = new Map(sceneRecords.map((scene) => [scene.id, scene]));
 
   if (scenes.length === 0) {
     return (
@@ -21,7 +24,10 @@ export function SceneQueue() {
 
   return (
     <section className="scene-queue">
-      {scenes.map((scene) => (
+      {scenes.map((scene) => {
+        const sceneRecord = sceneRecordById.get(scene.id);
+
+        return (
         <article className="scene-card" key={scene.id}>
           <div className="scene-card-header">
             <span className={`status-pill status-${scene.lifecycle}`}>
@@ -82,6 +88,10 @@ export function SceneQueue() {
               <dt>App Stage</dt>
               <dd>{getSceneStageLabel(scene)}</dd>
             </div>
+            <div>
+              <dt>Provider Job</dt>
+              <dd>{getProviderJobLabel(sceneRecord)}</dd>
+            </div>
           </dl>
 
           <p className="scene-stage-note">
@@ -121,7 +131,8 @@ export function SceneQueue() {
             </div>
           ) : null}
         </article>
-      ))}
+        );
+      })}
     </section>
   );
 }
@@ -156,4 +167,16 @@ const getSceneStageLabel = (scene: SceneViewModel): string => {
   }
 
   return "Failed during app lifecycle";
+};
+
+const getProviderJobLabel = (scene?: SceneRecord): string => {
+  if (scene?.providerJob?.label) {
+    return scene.providerJob.label;
+  }
+
+  if (scene?.lifecycle === "generating" && scene.provider) {
+    return "Working in one request";
+  }
+
+  return "Not used";
 };

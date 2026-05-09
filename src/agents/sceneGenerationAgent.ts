@@ -30,11 +30,20 @@ export interface SceneGenerationResult {
 export interface SceneGenerationAgentEvents {
   onProviderStart?: (provider: SceneProvider) => void;
   onProviderFallback?: (provider: SceneProvider, error: unknown) => void;
-  onPollingAttempt?: (provider: SceneProvider, attempt: number) => void;
-  onPollingPending?: (provider: SceneProvider, attempt: number) => void;
+  onPollingAttempt?: (
+    provider: SceneProvider,
+    attempt: number,
+    submission: ProviderJobSubmission,
+  ) => void;
+  onPollingPending?: (
+    provider: SceneProvider,
+    attempt: number,
+    submission: ProviderJobSubmission,
+  ) => void;
   onPollingTransientFailure?: (
     provider: SceneProvider,
     attempt: number,
+    submission: ProviderJobSubmission,
     error: unknown,
   ) => void;
 }
@@ -152,11 +161,12 @@ export class DefaultSceneGenerationAgent implements SceneGenerationAgent {
     }
 
     const service = this.getServiceForProvider(outcome.handle.provider);
+    const submission = outcome;
     const pollingResult = await this.pollingAgent.pollUntilTerminal(
       service,
       outcome.handle,
       signal,
-      toPollingEvents(events),
+      toPollingEvents(events, submission),
     );
 
     if (pollingResult.kind === "failure") {
@@ -386,21 +396,29 @@ const toSceneGenerationResult = (
 
 const toPollingEvents = (
   events?: SceneGenerationAgentEvents,
+  submission?: ProviderJobSubmission,
 ): ScenePollingAgentEvents | undefined =>
   events
     ? {
         onPollAttempt: (handle, attempt) => {
-          events.onPollingAttempt?.(handle.provider, attempt);
+          if (submission) {
+            events.onPollingAttempt?.(handle.provider, attempt, submission);
+          }
         },
         onPollPending: (handle, attempt) => {
-          events.onPollingPending?.(handle.provider, attempt);
+          if (submission) {
+            events.onPollingPending?.(handle.provider, attempt, submission);
+          }
         },
         onTransientFailure: (handle, attempt, failure) => {
-          events.onPollingTransientFailure?.(
-            handle.provider,
-            attempt,
-            failure.error,
-          );
+          if (submission) {
+            events.onPollingTransientFailure?.(
+              handle.provider,
+              attempt,
+              submission,
+              failure.error,
+            );
+          }
         },
       }
     : undefined;

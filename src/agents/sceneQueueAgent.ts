@@ -4,6 +4,10 @@ import {
   type SceneGenerationAgent,
 } from "./sceneGenerationAgent";
 import type {
+  ProviderJobFailure,
+  ProviderJobSubmission,
+} from "../types/providerJob";
+import type {
   GeneratedScene,
   SceneGenerationPayload,
   SceneProvider,
@@ -23,6 +27,26 @@ export interface SceneQueueAgentEvents {
     sceneId: string,
     provider: SceneProvider,
     error: unknown,
+  ) => void;
+  onJobAccepted?: (
+    sceneId: string,
+    submission: ProviderJobSubmission,
+  ) => void;
+  onJobPolling?: (
+    sceneId: string,
+    submission: ProviderJobSubmission,
+    attempt: number,
+  ) => void;
+  onJobPending?: (
+    sceneId: string,
+    submission: ProviderJobSubmission,
+    attempt: number,
+  ) => void;
+  onJobTransientFailure?: (
+    sceneId: string,
+    submission: ProviderJobSubmission,
+    attempt: number,
+    failure: ProviderJobFailure["error"],
   ) => void;
   onSuccess: (
     sceneId: string,
@@ -99,6 +123,28 @@ export class DefaultSceneQueueAgent {
     events: SceneQueueAgentEvents,
     signal?: AbortSignal,
   ): Promise<void> {
+    let finalized = false;
+    const finalizeSuccess = (
+      scene: GeneratedScene,
+      provider: SceneProvider,
+    ): void => {
+      if (finalized) {
+        return;
+      }
+
+      finalized = true;
+      events.onProgress(job.id, 90);
+      events.onSuccess(job.id, scene, provider);
+    };
+    const finalizeError = (error: unknown): void => {
+      if (finalized) {
+        return;
+      }
+
+      finalized = true;
+      events.onError(job.id, error);
+    };
+
     try {
       console.log("[Queue] Starting job:", job.id);
       events.onGenerating(job.id);
@@ -113,13 +159,30 @@ export class DefaultSceneQueueAgent {
           events.onProviderFallback(job.id, provider, error);
           events.onProgress(job.id, 40);
         },
-        onPollingAttempt: () => {
+        onPollingAttempt: (_, attempt, submission) => {
+          events.onJobPolling?.(job.id, submission, attempt);
           events.onProgress(job.id, 75);
         },
-        onPollingPending: () => {
+        onPollingPending: (_, attempt, submission) => {
+          events.onJobPending?.(job.id, submission, attempt);
           events.onProgress(job.id, 80);
         },
-        onPollingTransientFailure: () => {
+        onPollingTransientFailure: (_, attempt, submission, error) => {
+          events.onJobTransientFailure?.(job.id, submission, attempt, {
+            message:
+              error instanceof Error ? error.message : "Transient poll failure.",
+            code:
+              typeof error === "object" &&
+              error !== null &&
+              "code" in error &&
+              typeof (error as { code?: unknown }).code === "string"
+                ? (error as { code: string }).code
+                : undefined,
+            details:
+              typeof error === "object" && error !== null
+                ? error
+                : undefined,
+          });
           events.onProgress(job.id, 65);
         },
       };
@@ -132,6 +195,7 @@ export class DefaultSceneQueueAgent {
 
       if (outcome.kind === "submitted") {
         events.onProviderChange(job.id, outcome.handle.provider);
+        events.onJobAccepted?.(job.id, outcome);
         events.onProgress(job.id, 70);
       }
 
@@ -141,10 +205,9 @@ export class DefaultSceneQueueAgent {
         agentEvents,
       );
 
-      events.onProgress(job.id, 90);
-      events.onSuccess(job.id, result.scene, result.provider);
+      finalizeSuccess(result.scene, result.provider);
     } catch (error) {
-      events.onError(job.id, error);
+      finalizeError(error);
     }
   }
 }

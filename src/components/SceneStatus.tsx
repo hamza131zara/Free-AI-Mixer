@@ -9,6 +9,9 @@ import {
 
 export function SceneStatus() {
   const summary = useSceneStore(useShallow(selectQueueSummary));
+  const hasProviderJobs = useSceneStore((state) =>
+    state.scenes.some((scene) => scene.providerJob !== undefined),
+  );
   const hydrationError = useSceneStore(selectHydrationError);
   const canClearTerminalScenes = useSceneStore(selectCanClearTerminalScenes);
   const clearTerminalScenes = useSceneStore((state) => state.clearTerminalScenes);
@@ -29,6 +32,12 @@ export function SceneStatus() {
         <p className="status-stage-note">
           Scene stages are app lifecycle milestones, not provider telemetry.
         </p>
+        {hasProviderJobs ? (
+          <p className="status-stage-note">
+            Long-running provider jobs stay in generating while the app waits for
+            terminal provider updates.
+          </p>
+        ) : null}
         {hydrationError ? <p className="error-message">{hydrationError}</p> : null}
       </div>
       <button
