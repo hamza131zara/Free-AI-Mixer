@@ -133,7 +133,10 @@ Sub-phases:
 
 - Phase 3.8A audit complete
 - Phase 3.8B provider job contracts complete
-- Phase 3.8C polling orchestration not started
+- Phase 3.8C polling orchestration active
+- Phase 3.8C1 service submit/poll contracts and polling scaffold complete
+- Phase 3.8C2 queue/store polling integration not started
+- Phase 3.8C3 runtime hardening and UI status refinement not started
 - Phase 3.8D persistence and resumable runtime design not started
 - Phase 3.8E durable backend queue not started
 
@@ -150,6 +153,14 @@ Verified in Phase 3.8B:
 - runtime behavior remains on the current single-request completion path
 - polling remains deferred to Phase 3.8C
 - persistence and refresh-safe resume remain deferred to later Phase 3.8D/E work
+
+Verified in Phase 3.8C1:
+
+- services expose submit/poll job contracts alongside the existing request/response path
+- immediate success and accepted job branching exist below the queue/store layers
+- polling agent scaffolding exists with timeout, abort, and transient failure policy structure
+- queue/store runtime polling integration remains deferred to Phase 3.8C2
+- persistence and refresh-safe resume remain deferred to Phase 3.8D/E work
 
 ### Phase 4 — Timeline & Video System
 

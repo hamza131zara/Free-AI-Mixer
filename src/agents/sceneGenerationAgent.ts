@@ -10,6 +10,12 @@ import type {
   SceneGenerationPayload,
   SceneProvider,
 } from "../types/scene";
+import type {
+  ProviderGenerationOutcome,
+  ProviderJobFailure,
+  ProviderJobSubmission,
+  ProviderJobTerminalResult,
+} from "../types/providerJob";
 
 export interface SceneGenerationResult {
   provider: SceneProvider;
@@ -23,6 +29,11 @@ export interface SceneGenerationAgentEvents {
 
 export interface SceneGenerationAgent {
   createPayload(draft: SceneGenerationDraft): SceneGenerationPayload;
+  startGeneration(
+    payload: SceneGenerationPayload,
+    signal?: AbortSignal,
+    events?: SceneGenerationAgentEvents,
+  ): Promise<ProviderGenerationOutcome>;
   generateScene(
     payload: SceneGenerationPayload,
     signal?: AbortSignal,
@@ -65,13 +76,53 @@ export class DefaultSceneGenerationAgent implements SceneGenerationAgent {
     };
   }
 
+  async startGeneration(
+    payload: SceneGenerationPayload,
+    signal?: AbortSignal,
+    events?: SceneGenerationAgentEvents,
+  ): Promise<ProviderGenerationOutcome> {
+    const primaryOutcome = await this.submitWithProvider(
+      this.primaryService,
+      payload,
+      signal,
+      events,
+    );
+
+    if (primaryOutcome.kind !== "failure") {
+      return primaryOutcome;
+    }
+
+    events?.onProviderFallback?.(
+      this.fallbackService.provider,
+      primaryOutcome.error,
+    );
+
+    const fallbackOutcome = await this.submitWithProvider(
+      this.fallbackService,
+      payload,
+      signal,
+      events,
+    );
+
+    if (fallbackOutcome.kind !== "failure") {
+      return fallbackOutcome;
+    }
+
+    return this.createFallbackFailure(primaryOutcome, fallbackOutcome);
+  }
+
   async generateScene(
     payload: SceneGenerationPayload,
     signal?: AbortSignal,
     events?: SceneGenerationAgentEvents,
   ): Promise<SceneGenerationResult> {
     try {
-      return await this.generateWithProvider(this.primaryService, payload, signal, events);
+      return await this.generateWithProvider(
+        this.primaryService,
+        payload,
+        signal,
+        events,
+      );
     } catch (primaryError) {
       if (isAbortError(primaryError)) {
         throw primaryError;
@@ -103,6 +154,17 @@ export class DefaultSceneGenerationAgent implements SceneGenerationAgent {
     }
   }
 
+  private async submitWithProvider(
+    service: SceneGenerationService,
+    payload: SceneGenerationPayload,
+    signal?: AbortSignal,
+    events?: SceneGenerationAgentEvents,
+  ): Promise<ProviderGenerationOutcome> {
+    console.log("[Agent] Submitting provider job:", service.provider);
+    events?.onProviderStart?.(service.provider);
+    return service.submitGenerationJob(payload, signal);
+  }
+
   private async generateWithProvider(
     service: SceneGenerationService,
     payload: SceneGenerationPayload,
@@ -115,6 +177,32 @@ export class DefaultSceneGenerationAgent implements SceneGenerationAgent {
     return {
       provider: service.provider,
       scene,
+    };
+  }
+
+  private createFallbackFailure(
+    primary: ProviderJobFailure,
+    fallback: ProviderJobFailure,
+  ): ProviderJobFailure {
+    return {
+      kind: "failure",
+      provider: fallback.provider,
+      jobId: fallback.jobId,
+      error: {
+        message: "Both scene generation providers failed.",
+        code: "provider_fallback_failed",
+        details: {
+          primary: serializeProviderFailure(primary),
+          fallback: serializeProviderFailure(fallback),
+        },
+      },
+      metadata: {
+        provider: fallback.provider,
+        details: {
+          primary: primary.metadata?.details,
+          fallback: fallback.metadata?.details,
+        },
+      },
     };
   }
 }
@@ -143,6 +231,18 @@ const toOptionalDuration = (value: string): number | undefined => {
 
 const isAbortError = (error: unknown): boolean =>
   error instanceof DOMException && error.name === "AbortError";
+
+const serializeProviderFailure = (
+  failure: ProviderJobFailure,
+): {
+  provider: SceneProvider;
+  jobId?: string;
+  error: ProviderJobFailure["error"];
+} => ({
+  provider: failure.provider,
+  jobId: failure.jobId,
+  error: failure.error,
+});
 
 const serializeError = (error: unknown): unknown => {
   if (error instanceof SceneGenerationServiceError) {
@@ -178,3 +278,8 @@ export const sceneGenerationAgent = new DefaultSceneGenerationAgent(
   replicateSceneGenerationService,
   geminiSceneGenerationService,
 );
+
+export type SceneGenerationStartResult =
+  | ProviderJobTerminalResult
+  | ProviderJobSubmission
+  | ProviderJobFailure;

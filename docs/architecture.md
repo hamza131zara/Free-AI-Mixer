@@ -18,6 +18,7 @@ This file is the operational architecture reference for Free AI Mixer. It comple
 /src
   /agents
     sceneGenerationAgent.ts
+    scenePollingAgent.ts
     sceneQueueAgent.ts
   /components
     SceneComposer.tsx
@@ -87,6 +88,7 @@ Current verified store behavior:
 Files:
 
 - `src/agents/sceneGenerationAgent.ts`
+- `src/agents/scenePollingAgent.ts`
 - `src/agents/sceneQueueAgent.ts`
 
 Responsibilities:
@@ -94,6 +96,7 @@ Responsibilities:
 - normalize scene drafts into payloads
 - choose provider order
 - trigger fallback from Replicate to Gemini
+- define long-running provider polling behavior below the store/component layers
 - enforce queue concurrency
 - prevent duplicate starts inside a queue pass
 - emit app lifecycle stages without implying provider telemetry
@@ -115,6 +118,12 @@ Phase 3.8B note:
 - `src/types/providerJob.ts` defines future long-running provider job contracts only
 - runtime service behavior remains request/response until Phase 3.8C
 - polling is not implemented in this phase
+
+Phase 3.8C1 note:
+
+- services now expose submit/poll contracts for long-running provider jobs
+- the existing `generateScene` request/response path remains active for the current runtime
+- polling agent scaffolding exists, but queue/store runtime integration remains deferred to Phase 3.8C2
 
 ## Lifecycle Contract
 

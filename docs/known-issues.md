@@ -67,6 +67,13 @@ Phase 3.8B update:
 - polling/orchestration changes are deferred to Phase 3.8C
 - persistence/resume changes are deferred to later Phase 3.8D/E work
 
+Phase 3.8C1 update:
+
+- submit/poll service contracts now exist
+- polling agent scaffolding now exists
+- queue/store runtime still does not orchestrate long-running polling
+- refresh-safe resume still does not exist
+
 Target fix phase:
 
 - Phase 3.8

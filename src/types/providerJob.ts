@@ -16,6 +16,11 @@ export type ProviderJobStatus =
   | "failed"
   | "canceled";
 
+export type ProviderJobActiveStatus = Extract<
+  ProviderJobStatus,
+  "submitted" | "pending" | "polling" | "processing"
+>;
+
 export interface ProviderJobMetadata {
   provider: SceneProvider;
   createdAt?: string;
@@ -31,10 +36,7 @@ export interface ProviderJobMetadata {
 export interface ProviderJobHandle {
   provider: SceneProvider;
   jobId: ProviderJobId;
-  status: Extract<
-    ProviderJobStatus,
-    "submitted" | "pending" | "polling" | "processing"
-  >;
+  status: ProviderJobActiveStatus;
   metadata?: ProviderJobMetadata;
 }
 
