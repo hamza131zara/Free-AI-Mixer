@@ -4,6 +4,11 @@ import {
   SceneGenerationServiceError,
   type SceneGenerationService,
 } from "../services/sceneGenerationService";
+import {
+  scenePollingAgent,
+  type ScenePollingAgent,
+  type ScenePollingAgentEvents,
+} from "./scenePollingAgent";
 import type {
   GeneratedScene,
   SceneGenerationDraft,
@@ -25,6 +30,13 @@ export interface SceneGenerationResult {
 export interface SceneGenerationAgentEvents {
   onProviderStart?: (provider: SceneProvider) => void;
   onProviderFallback?: (provider: SceneProvider, error: unknown) => void;
+  onPollingAttempt?: (provider: SceneProvider, attempt: number) => void;
+  onPollingPending?: (provider: SceneProvider, attempt: number) => void;
+  onPollingTransientFailure?: (
+    provider: SceneProvider,
+    attempt: number,
+    error: unknown,
+  ) => void;
 }
 
 export interface SceneGenerationAgent {
@@ -34,6 +46,11 @@ export interface SceneGenerationAgent {
     signal?: AbortSignal,
     events?: SceneGenerationAgentEvents,
   ): Promise<ProviderGenerationOutcome>;
+  resolveGeneration(
+    outcome: ProviderGenerationOutcome,
+    signal?: AbortSignal,
+    events?: SceneGenerationAgentEvents,
+  ): Promise<SceneGenerationResult>;
   generateScene(
     payload: SceneGenerationPayload,
     signal?: AbortSignal,
@@ -57,6 +74,7 @@ export class DefaultSceneGenerationAgent implements SceneGenerationAgent {
   constructor(
     private readonly primaryService: SceneGenerationService,
     private readonly fallbackService: SceneGenerationService,
+    private readonly pollingAgent: ScenePollingAgent,
   ) {}
 
   createPayload(draft: SceneGenerationDraft): SceneGenerationPayload {
@@ -112,6 +130,77 @@ export class DefaultSceneGenerationAgent implements SceneGenerationAgent {
   }
 
   async generateScene(
+    payload: SceneGenerationPayload,
+    signal?: AbortSignal,
+    events?: SceneGenerationAgentEvents,
+  ): Promise<SceneGenerationResult> {
+    const outcome = await this.startGeneration(payload, signal, events);
+    return this.resolveGeneration(outcome, signal, events);
+  }
+
+  async resolveGeneration(
+    outcome: ProviderGenerationOutcome,
+    signal?: AbortSignal,
+    events?: SceneGenerationAgentEvents,
+  ): Promise<SceneGenerationResult> {
+    if (outcome.kind === "success") {
+      return toSceneGenerationResult(outcome);
+    }
+
+    if (outcome.kind === "failure") {
+      throw this.toProviderFailureError(outcome);
+    }
+
+    const service = this.getServiceForProvider(outcome.handle.provider);
+    const pollingResult = await this.pollingAgent.pollUntilTerminal(
+      service,
+      outcome.handle,
+      signal,
+      toPollingEvents(events),
+    );
+
+    if (pollingResult.kind === "failure") {
+      throw this.toProviderFailureError(pollingResult.failure);
+    }
+
+    return toSceneGenerationResult(pollingResult.result);
+  }
+
+  private getServiceForProvider(provider: SceneProvider): SceneGenerationService {
+    if (this.primaryService.provider === provider) {
+      return this.primaryService;
+    }
+
+    if (this.fallbackService.provider === provider) {
+      return this.fallbackService;
+    }
+
+    throw new SceneGenerationAgentError(
+      `No scene generation service is registered for provider "${provider}".`,
+      "unknown_provider",
+    );
+  }
+
+  private toProviderFailureError(failure: ProviderJobFailure): SceneGenerationAgentError {
+    const fallbackDetails =
+      failure.error.details ??
+      (typeof failure.metadata?.details === "object" &&
+      failure.metadata.details !== null
+        ? failure.metadata.details
+        : undefined);
+
+    return new SceneGenerationAgentError(
+      failure.error.message,
+      failure.error.code,
+      fallbackDetails ?? {
+        provider: failure.provider,
+        jobId: failure.jobId,
+        metadata: failure.metadata,
+      },
+    );
+  }
+
+  private async generateWithLegacyFallback(
     payload: SceneGenerationPayload,
     signal?: AbortSignal,
     events?: SceneGenerationAgentEvents,
@@ -184,6 +273,11 @@ export class DefaultSceneGenerationAgent implements SceneGenerationAgent {
     primary: ProviderJobFailure,
     fallback: ProviderJobFailure,
   ): ProviderJobFailure {
+    const fallbackDetails = {
+      primary: serializeProviderFailure(primary),
+      fallback: serializeProviderFailure(fallback),
+    };
+
     return {
       kind: "failure",
       provider: fallback.provider,
@@ -191,17 +285,11 @@ export class DefaultSceneGenerationAgent implements SceneGenerationAgent {
       error: {
         message: "Both scene generation providers failed.",
         code: "provider_fallback_failed",
-        details: {
-          primary: serializeProviderFailure(primary),
-          fallback: serializeProviderFailure(fallback),
-        },
+        details: fallbackDetails,
       },
       metadata: {
         provider: fallback.provider,
-        details: {
-          primary: primary.metadata?.details,
-          fallback: fallback.metadata?.details,
-        },
+        details: fallbackDetails,
       },
     };
   }
@@ -237,11 +325,15 @@ const serializeProviderFailure = (
 ): {
   provider: SceneProvider;
   jobId?: string;
-  error: ProviderJobFailure["error"];
+  message: string;
+  code?: string;
+  details?: unknown;
 } => ({
   provider: failure.provider,
   jobId: failure.jobId,
-  error: failure.error,
+  message: failure.error.message,
+  code: failure.error.code,
+  details: failure.error.details,
 });
 
 const serializeError = (error: unknown): unknown => {
@@ -277,9 +369,38 @@ const serializeError = (error: unknown): unknown => {
 export const sceneGenerationAgent = new DefaultSceneGenerationAgent(
   replicateSceneGenerationService,
   geminiSceneGenerationService,
+  scenePollingAgent,
 );
 
 export type SceneGenerationStartResult =
   | ProviderJobTerminalResult
   | ProviderJobSubmission
   | ProviderJobFailure;
+
+const toSceneGenerationResult = (
+  result: ProviderJobTerminalResult,
+): SceneGenerationResult => ({
+  provider: result.provider,
+  scene: result.scene,
+});
+
+const toPollingEvents = (
+  events?: SceneGenerationAgentEvents,
+): ScenePollingAgentEvents | undefined =>
+  events
+    ? {
+        onPollAttempt: (handle, attempt) => {
+          events.onPollingAttempt?.(handle.provider, attempt);
+        },
+        onPollPending: (handle, attempt) => {
+          events.onPollingPending?.(handle.provider, attempt);
+        },
+        onTransientFailure: (handle, attempt, failure) => {
+          events.onPollingTransientFailure?.(
+            handle.provider,
+            attempt,
+            failure.error,
+          );
+        },
+      }
+    : undefined;

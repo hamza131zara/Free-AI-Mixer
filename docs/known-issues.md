@@ -74,6 +74,12 @@ Phase 3.8C1 update:
 - queue/store runtime still does not orchestrate long-running polling
 - refresh-safe resume still does not exist
 
+Phase 3.8C2 update:
+
+- queue/store runtime now orchestrates accepted provider jobs through polling
+- immediate success and terminal poll outcomes flow through the existing lifecycle contract
+- refresh-safe resume still does not exist
+
 Target fix phase:
 
 - Phase 3.8

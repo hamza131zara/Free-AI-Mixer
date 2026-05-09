@@ -4,14 +4,17 @@ import { createPersistedStoreValue, createScene, persistKey } from "./persist";
 
 const runtimeBaseUrl = "http://127.0.0.1:4173";
 const runtimeGenerationPath = "/scenes/generate";
+const runtimePollPath = "/scenes/jobs";
 
 export const sceneApiUrl = `${runtimeBaseUrl}${runtimeGenerationPath}`;
+export const scenePollApiUrlPrefix = `${runtimeBaseUrl}${runtimePollPath}`;
 
 export const setRuntimeConfig = async (
   page: Page,
   config?: {
     baseUrl?: string;
     generationPath?: string;
+    pollPath?: string;
   },
 ): Promise<void> => {
   await page.addInitScript((runtimeConfig) => {
@@ -54,6 +57,7 @@ export const mockSuccessfulGeneration = async (
   await setRuntimeConfig(page, {
     baseUrl: runtimeBaseUrl,
     generationPath: runtimeGenerationPath,
+    pollPath: runtimePollPath,
   });
 
   await page.route(sceneApiUrl, async (route) => {

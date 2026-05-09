@@ -455,7 +455,7 @@ function toSceneGenerationError(error: unknown): SceneGenerationError {
     return {
       message: error.message,
       code: error.code,
-      details: error.details,
+      details: normalizeAgentErrorDetails(error),
     };
   }
 
@@ -471,4 +471,22 @@ function toSceneGenerationError(error: unknown): SceneGenerationError {
     code: "unknown_error",
     details: error,
   };
+}
+
+function normalizeAgentErrorDetails(
+  error: SceneGenerationAgentError,
+): unknown {
+  if (
+    error.code === "provider_fallback_failed" &&
+    typeof error.details === "object" &&
+    error.details !== null &&
+    "cause" in error.details
+  ) {
+    const cause = (error.details as { cause?: unknown }).cause;
+    if (typeof cause === "object" && cause !== null) {
+      return cause;
+    }
+  }
+
+  return error.details;
 }

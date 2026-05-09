@@ -1,5 +1,6 @@
 import {
   sceneGenerationAgent,
+  type SceneGenerationAgentEvents,
   type SceneGenerationAgent,
 } from "./sceneGenerationAgent";
 import type {
@@ -103,19 +104,41 @@ export class DefaultSceneQueueAgent {
       events.onGenerating(job.id);
       events.onProgress(job.id, 20);
 
-      const result = await this.generationAgent.generateScene(
+      const agentEvents: SceneGenerationAgentEvents = {
+        onProviderStart: (provider) => {
+          events.onProviderChange(job.id, provider);
+          events.onProgress(job.id, 60);
+        },
+        onProviderFallback: (provider, error) => {
+          events.onProviderFallback(job.id, provider, error);
+          events.onProgress(job.id, 40);
+        },
+        onPollingAttempt: () => {
+          events.onProgress(job.id, 75);
+        },
+        onPollingPending: () => {
+          events.onProgress(job.id, 80);
+        },
+        onPollingTransientFailure: () => {
+          events.onProgress(job.id, 65);
+        },
+      };
+
+      const outcome = await this.generationAgent.startGeneration(
         job.payload,
         signal,
-        {
-          onProviderStart: (provider) => {
-            events.onProviderChange(job.id, provider);
-            events.onProgress(job.id, 60);
-          },
-          onProviderFallback: (provider, error) => {
-            events.onProviderFallback(job.id, provider, error);
-            events.onProgress(job.id, 40);
-          },
-        },
+        agentEvents,
+      );
+
+      if (outcome.kind === "submitted") {
+        events.onProviderChange(job.id, outcome.handle.provider);
+        events.onProgress(job.id, 70);
+      }
+
+      const result = await this.generationAgent.resolveGeneration(
+        outcome,
+        signal,
+        agentEvents,
       );
 
       events.onProgress(job.id, 90);
