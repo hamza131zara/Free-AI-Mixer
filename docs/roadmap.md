@@ -63,7 +63,7 @@ Status:
 
 Status:
 
-- not started
+- started (Phase 4.1 timeline domain types complete; store/UI/playback/export not started)
 
 ### Phase 5: Agent System
 

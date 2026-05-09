@@ -119,3 +119,21 @@ Target fix phase:
 ## Verification Gaps
 
 - long-running provider telemetry is not implemented; the UI currently reports app lifecycle stages only
+
+### Timeline Phase 4.1 Boundaries
+
+Current state:
+
+- timeline domain types exist in `src/types/timeline.ts`
+- timeline store is not implemented yet
+- timeline UI/editor is not implemented yet
+- playback runtime/timers are not implemented yet
+- video export/backend rendering are not implemented yet
+
+Why it matters:
+
+- Phase 4.1 is type/domain scaffolding only and must not be interpreted as completed timeline runtime
+
+Target fix phase:
+
+- Phase 4.2 and later timeline/video phases

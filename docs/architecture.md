@@ -33,6 +33,7 @@ This file is the operational architecture reference for Free AI Mixer. It comple
   /types
     scene.ts
     providerJob.ts
+    timeline.ts
 ```
 
 ## Layer Responsibilities
@@ -255,3 +256,11 @@ Backend boundary rules:
 - Do not add fake progress systems.
 - Do not introduce timeline or video domain work into the current scene-generation flow.
 - Do not convert temporary workaround behavior into documented architecture.
+
+## Timeline Domain Layer
+
+- `src/types/timeline.ts` defines timeline editorial metadata only.
+- Timeline clips reference generated scenes by `sceneId` only.
+- Timeline types do not duplicate scene payload/result/provider data.
+- Playback in this layer is preview/simulation state only.
+- Video export/rendering and backend render queue orchestration remain deferred.
