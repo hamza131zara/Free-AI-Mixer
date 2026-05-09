@@ -31,6 +31,7 @@ This file is the operational architecture reference for Free AI Mixer. It comple
     sceneStore.ts
   /types
     scene.ts
+    providerJob.ts
 ```
 
 ## Layer Responsibilities
@@ -109,6 +110,12 @@ Responsibilities:
 - normalize response shape to `GeneratedScene`
 - surface transport-level errors
 
+Phase 3.8B note:
+
+- `src/types/providerJob.ts` defines future long-running provider job contracts only
+- runtime service behavior remains request/response until Phase 3.8C
+- polling is not implemented in this phase
+
 ## Lifecycle Contract
 
 Canonical lifecycle:
@@ -176,6 +183,14 @@ Provider abstraction rules:
 - provider differences stay below the store and component layers
 - provider choice is a domain concern, not a UI concern
 - provider response shape must normalize to shared scene types
+
+Long-running provider contract rules:
+
+- Phase 3.8B introduces provider job contract types only
+- provider job IDs, pending states, and poll result shapes may now be modeled in the domain layer
+- these contracts do not yet change the service, agent, queue, or store runtime behavior
+- polling orchestration belongs to Phase 3.8C
+- persistence and resumable hydration work belong to later Phase 3.8D/E work
 
 ## Progress Semantics
 

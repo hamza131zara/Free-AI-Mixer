@@ -60,6 +60,13 @@ Current state:
 - generation assumes request/response completion in one call
 - there is no provider job ID, polling loop, or resumable execution model
 
+Phase 3.8B update:
+
+- provider job contract types now exist in `src/types/providerJob.ts`
+- runtime generation still assumes single-request completion
+- polling/orchestration changes are deferred to Phase 3.8C
+- persistence/resume changes are deferred to later Phase 3.8D/E work
+
 Target fix phase:
 
 - Phase 3.8

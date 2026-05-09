@@ -127,13 +127,29 @@ Verified in this phase:
 
 Status:
 
-- not started
+- active
+
+Sub-phases:
+
+- Phase 3.8A audit complete
+- Phase 3.8B provider job contracts complete
+- Phase 3.8C polling orchestration not started
+- Phase 3.8D persistence and resumable runtime design not started
+- Phase 3.8E durable backend queue not started
 
 Scope:
 
 - polling-capable services
 - durable provider job identity
 - resumable orchestration contracts
+
+Verified in Phase 3.8B:
+
+- provider job contract types exist for job identity, status, submission, poll results, terminal success, and provider failure
+- a future-safe provider generation outcome union exists for immediate success, submitted jobs, and provider failure
+- runtime behavior remains on the current single-request completion path
+- polling remains deferred to Phase 3.8C
+- persistence and refresh-safe resume remain deferred to later Phase 3.8D/E work
 
 ### Phase 4 — Timeline & Video System
 
@@ -167,3 +183,4 @@ Status:
 - Phase 4 is timeline and video.
 - Provider telemetry beyond app lifecycle stages belongs to Phase 3.8 or later.
 - Phase 3.6 hydration/runtime verification is complete.
+- Phase 3.8B defines contracts only; it does not change runtime orchestration.
