@@ -231,7 +231,8 @@ Status:
 Sub-phases:
 
 - Phase 4.1 timeline domain types complete
-- Phase 4.2 timeline store next
+- Phase 4.2 timeline store complete
+- Phase 4.3 timeline UI next
 
 ### Phase 5 — Agent System
 

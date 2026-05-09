@@ -125,15 +125,16 @@ Target fix phase:
 Current state:
 
 - timeline domain types exist in `src/types/timeline.ts`
-- timeline store is not implemented yet
+- timeline store exists in `src/store/timelineStore.ts` with actions, selectors, and local persistence
 - timeline UI/editor is not implemented yet
 - playback runtime/timers are not implemented yet
 - video export/backend rendering are not implemented yet
+- backend render queue is not implemented yet
 
 Why it matters:
 
-- Phase 4.1 is type/domain scaffolding only and must not be interpreted as completed timeline runtime
+- Phase 4.2 establishes timeline store infrastructure only; editor UI and runtime playback/export remain deferred
 
 Target fix phase:
 
-- Phase 4.2 and later timeline/video phases
+- Phase 4.3 and later timeline/video phases

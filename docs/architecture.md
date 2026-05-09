@@ -30,6 +30,7 @@ This file is the operational architecture reference for Free AI Mixer. It comple
     sceneLifecycle.ts
     sceneSelectors.ts
     sceneStore.ts
+    timelineStore.ts
   /types
     scene.ts
     providerJob.ts
@@ -65,6 +66,7 @@ Forbidden:
 Files:
 
 - `src/store/sceneStore.ts`
+- `src/store/timelineStore.ts`
 - `src/store/sceneLifecycle.ts`
 - `src/store/sceneSelectors.ts`
 
@@ -85,6 +87,10 @@ Current verified store behavior:
 - persisted `generating` scenes with valid provider job metadata may resume browser-local polling after hydration
 - `selectedVariation` persists only if still valid against `result.variations`
 - `isGeneratingAll` is transient runtime state and does not persist
+- timeline orchestration state is isolated in `timelineStore` and does not change scene generation lifecycle
+- timeline store may read `sceneStore` only to verify success-scene eligibility for clip insertion
+- timeline store does not trigger scene generation and does not import agents/services
+- timeline clips persist `sceneId` references only; they do not duplicate scene payload/result/provider fields
 
 ### Agent Layer
 
