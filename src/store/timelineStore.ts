@@ -56,6 +56,8 @@ export interface TimelineStoreState {
     patch: UpdateClipPatch,
   ) => void;
   removeClip: (timelineId: TimelineId, clipId: TimelineClipId) => void;
+  moveClipUp: (timelineId: TimelineId, clipId: TimelineClipId) => void;
+  moveClipDown: (timelineId: TimelineId, clipId: TimelineClipId) => void;
   selectClip: (timelineId: TimelineId, clipId?: TimelineClipId) => void;
   setPlaybackState: (
     timelineId: TimelineId,
@@ -314,6 +316,78 @@ export const useTimelineStore = create<TimelineStoreState>()(
                         activeClipId: undefined,
                       }
                     : timeline.playback,
+                updatedAt: new Date().toISOString(),
+              };
+            }),
+          }));
+        },
+        moveClipUp: (timelineId, clipId) => {
+          if (!canMutateState()) {
+            return;
+          }
+
+          set((state) => ({
+            timelines: state.timelines.map((timeline) => {
+              if (timeline.id !== timelineId || timeline.clips.length < 2) {
+                return timeline;
+              }
+
+              const clipIndex = timeline.clips.findIndex((clip) => clip.id === clipId);
+              if (clipIndex <= 0) {
+                return timeline;
+              }
+
+              const nextClips = [...timeline.clips];
+              const previousClip = nextClips[clipIndex - 1];
+              const currentClip = nextClips[clipIndex];
+              if (!previousClip || !currentClip) {
+                return timeline;
+              }
+
+              nextClips[clipIndex - 1] = currentClip;
+              nextClips[clipIndex] = previousClip;
+
+              const normalized = normalizeClipLayout(nextClips);
+              return {
+                ...timeline,
+                clips: normalized.clips,
+                totalDurationMs: normalized.totalDurationMs,
+                updatedAt: new Date().toISOString(),
+              };
+            }),
+          }));
+        },
+        moveClipDown: (timelineId, clipId) => {
+          if (!canMutateState()) {
+            return;
+          }
+
+          set((state) => ({
+            timelines: state.timelines.map((timeline) => {
+              if (timeline.id !== timelineId || timeline.clips.length < 2) {
+                return timeline;
+              }
+
+              const clipIndex = timeline.clips.findIndex((clip) => clip.id === clipId);
+              if (clipIndex < 0 || clipIndex >= timeline.clips.length - 1) {
+                return timeline;
+              }
+
+              const nextClips = [...timeline.clips];
+              const currentClip = nextClips[clipIndex];
+              const nextClip = nextClips[clipIndex + 1];
+              if (!currentClip || !nextClip) {
+                return timeline;
+              }
+
+              nextClips[clipIndex] = nextClip;
+              nextClips[clipIndex + 1] = currentClip;
+
+              const normalized = normalizeClipLayout(nextClips);
+              return {
+                ...timeline,
+                clips: normalized.clips,
+                totalDurationMs: normalized.totalDurationMs,
                 updatedAt: new Date().toISOString(),
               };
             }),

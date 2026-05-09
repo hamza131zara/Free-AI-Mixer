@@ -337,4 +337,123 @@ test.describe("Phase 4.2 timeline store", () => {
     expect(selectCanAddSceneToTimeline(state, "missing-scene")).toBeFalsy();
     expect(selectCanAddSceneToTimeline(state, "")).toBeFalsy();
   });
+
+  test("moveClipUp and moveClipDown reorder clips, keep selection, and do not mutate scene lifecycle", async () => {
+    setUpWindowForStores();
+    const { useSceneStore } = (await import("../../src/store/sceneStore")) as SceneStoreModule;
+    const { useTimelineStore } = (await import("../../src/store/timelineStore")) as TimelineStoreModule;
+
+    useSceneStore.setState({
+      hasHydrated: true,
+      hydrationError: undefined,
+      draft: { prompt: "", style: "", duration: "" },
+      scenes: [
+        createSuccessScene("scene-a"),
+        createSuccessScene("scene-b"),
+        createSuccessScene("scene-c"),
+      ] as never[],
+      isGeneratingAll: false,
+      composerError: undefined,
+    });
+
+    useTimelineStore.setState({
+      hasHydrated: true,
+      hydrationError: undefined,
+      timelines: [],
+      activeTimelineId: undefined,
+      isMutating: false,
+    });
+
+    useTimelineStore.getState().createTimeline("Reorder");
+    const timelineId = useTimelineStore.getState().activeTimelineId!;
+    const sceneBefore = JSON.stringify(useSceneStore.getState().scenes);
+
+    useTimelineStore.getState().addSceneClip(timelineId, "scene-a", { durationMs: 1000, label: "A" });
+    useTimelineStore.getState().addSceneClip(timelineId, "scene-b", { durationMs: 1500, label: "B" });
+    useTimelineStore.getState().addSceneClip(timelineId, "scene-c", { durationMs: 500, label: "C" });
+
+    let timeline = useTimelineStore.getState().timelines[0]!;
+    const clipA = timeline.clips[0]!;
+    const clipB = timeline.clips[1]!;
+    const clipC = timeline.clips[2]!;
+    useTimelineStore.getState().selectClip(timelineId, clipB.id);
+
+    useTimelineStore.getState().moveClipUp(timelineId, clipB.id);
+    timeline = useTimelineStore.getState().timelines[0]!;
+    expect(timeline.clips.map((clip) => clip.id)).toEqual([clipB.id, clipA.id, clipC.id]);
+    expect(timeline.clips.map((clip) => clip.sceneId)).toEqual(["scene-b", "scene-a", "scene-c"]);
+    expect(timeline.clips.map((clip) => clip.label)).toEqual(["B", "A", "C"]);
+    expect(timeline.clips.map((clip) => clip.durationMs)).toEqual([1500, 1000, 500]);
+    expect(timeline.clips.map((clip) => clip.order)).toEqual([0, 1, 2]);
+    expect(timeline.clips.map((clip) => clip.startMs)).toEqual([0, 1500, 2500]);
+    expect(timeline.totalDurationMs).toBe(3000);
+    expect(timeline.selection.clipId).toBe(clipB.id);
+    expect("payload" in (timeline.clips[0] as object)).toBeFalsy();
+    expect("result" in (timeline.clips[0] as object)).toBeFalsy();
+    expect("provider" in (timeline.clips[0] as object)).toBeFalsy();
+
+    useTimelineStore.getState().moveClipDown(timelineId, clipB.id);
+    timeline = useTimelineStore.getState().timelines[0]!;
+    expect(timeline.clips.map((clip) => clip.id)).toEqual([clipA.id, clipB.id, clipC.id]);
+    expect(timeline.clips.map((clip) => clip.order)).toEqual([0, 1, 2]);
+    expect(timeline.clips.map((clip) => clip.startMs)).toEqual([0, 1000, 2500]);
+    expect(timeline.totalDurationMs).toBe(3000);
+    expect(timeline.selection.clipId).toBe(clipB.id);
+
+    const sceneAfter = JSON.stringify(useSceneStore.getState().scenes);
+    expect(sceneAfter).toBe(sceneBefore);
+  });
+
+  test("reorder boundary and invalid move operations are safe no-ops", async () => {
+    setUpWindowForStores();
+    const { useSceneStore } = (await import("../../src/store/sceneStore")) as SceneStoreModule;
+    const { useTimelineStore } = (await import("../../src/store/timelineStore")) as TimelineStoreModule;
+
+    useSceneStore.setState({
+      hasHydrated: true,
+      hydrationError: undefined,
+      draft: { prompt: "", style: "", duration: "" },
+      scenes: [createSuccessScene("scene-a"), createSuccessScene("scene-b")] as never[],
+      isGeneratingAll: false,
+      composerError: undefined,
+    });
+
+    useTimelineStore.setState({
+      hasHydrated: true,
+      hydrationError: undefined,
+      timelines: [],
+      activeTimelineId: undefined,
+      isMutating: false,
+    });
+
+    useTimelineStore.getState().createTimeline("Noop checks");
+    const timelineId = useTimelineStore.getState().activeTimelineId!;
+    useTimelineStore.getState().addSceneClip(timelineId, "scene-a", { durationMs: 1000 });
+    useTimelineStore.getState().addSceneClip(timelineId, "scene-b", { durationMs: 1000 });
+
+    let timeline = useTimelineStore.getState().timelines[0]!;
+    const firstClipId = timeline.clips[0]!.id;
+    const lastClipId = timeline.clips[1]!.id;
+    const baselineOrder = timeline.clips.map((clip) => clip.id);
+    const baselineStart = timeline.clips.map((clip) => clip.startMs);
+    const baselineDuration = timeline.totalDurationMs;
+
+    useTimelineStore.getState().moveClipUp(timelineId, firstClipId);
+    useTimelineStore.getState().moveClipDown(timelineId, lastClipId);
+    useTimelineStore.getState().moveClipUp(timelineId, "missing-clip");
+    useTimelineStore.getState().moveClipDown("missing-timeline", firstClipId);
+
+    timeline = useTimelineStore.getState().timelines[0]!;
+    expect(timeline.clips.map((clip) => clip.id)).toEqual(baselineOrder);
+    expect(timeline.clips.map((clip) => clip.startMs)).toEqual(baselineStart);
+    expect(timeline.totalDurationMs).toBe(baselineDuration);
+
+    useTimelineStore.getState().removeClip(timelineId, lastClipId);
+    const singleClipBaseline = JSON.stringify(useTimelineStore.getState().timelines[0]!.clips);
+    useTimelineStore.getState().moveClipUp(timelineId, firstClipId);
+    useTimelineStore.getState().moveClipDown(timelineId, firstClipId);
+    expect(JSON.stringify(useTimelineStore.getState().timelines[0]!.clips)).toBe(
+      singleClipBaseline,
+    );
+  });
 });

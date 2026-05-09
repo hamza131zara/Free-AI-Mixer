@@ -4,7 +4,11 @@ interface TimelineClipItemProps {
   timelineId: TimelineId;
   clip: TimelineClip;
   isSelected: boolean;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
   onSelect: (timelineId: TimelineId, clipId?: string) => void;
+  onMoveUp: (timelineId: TimelineId, clipId: string) => void;
+  onMoveDown: (timelineId: TimelineId, clipId: string) => void;
   onRemove: (timelineId: TimelineId, clipId: string) => void;
 }
 
@@ -12,7 +16,11 @@ export function TimelineClipItem({
   timelineId,
   clip,
   isSelected,
+  canMoveUp,
+  canMoveDown,
   onSelect,
+  onMoveUp,
+  onMoveDown,
   onRemove,
 }: TimelineClipItemProps) {
   return (
@@ -30,6 +38,26 @@ export function TimelineClipItem({
             title="Select clip"
           >
             Select
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={() => onMoveUp(timelineId, clip.id)}
+            disabled={!canMoveUp}
+            aria-label="Move clip up"
+            title="Move clip up"
+          >
+            Up
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={() => onMoveDown(timelineId, clip.id)}
+            disabled={!canMoveDown}
+            aria-label="Move clip down"
+            title="Move clip down"
+          >
+            Down
           </button>
           <button
             type="button"
@@ -63,4 +91,3 @@ export function TimelineClipItem({
     </article>
   );
 }
-

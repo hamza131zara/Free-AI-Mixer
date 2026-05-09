@@ -59,6 +59,7 @@ Allowed:
 - show lifecycle and error state
 - render timeline editorial state and dispatch `timelineStore` actions
 - read successful scenes for timeline eligibility and dispatch `sceneId` references only
+- dispatch timeline reorder commands through store actions only (`moveClipUp` / `moveClipDown`)
 
 Forbidden:
 
@@ -69,6 +70,7 @@ Forbidden:
 - local orchestration with `useEffect` or `useState`
 - importing agents/services into timeline UI components
 - mutating scene generation lifecycle from timeline UI components
+- implementing drag/drop orchestration in components (deferred)
 
 ### Store Layer
 
@@ -100,6 +102,8 @@ Current verified store behavior:
 - timeline store may read `sceneStore` only to verify success-scene eligibility for clip insertion
 - timeline store does not trigger scene generation and does not import agents/services
 - timeline clips persist `sceneId` references only; they do not duplicate scene payload/result/provider fields
+- sequencing/reorder logic is store-owned (`moveClipUp` / `moveClipDown`)
+- reorder normalization is store-owned and always recomputes clip `order`, contiguous `startMs`, and `totalDurationMs`
 
 ### Agent Layer
 

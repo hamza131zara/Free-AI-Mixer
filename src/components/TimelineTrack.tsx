@@ -1,4 +1,5 @@
 import { TimelineClipItem } from "./TimelineClipItem";
+import { useTimelineStore } from "../store/timelineStore";
 import type { TimelineId } from "../types/timeline";
 
 interface TimelineTrackProps {
@@ -26,6 +27,9 @@ export function TimelineTrack({
   onSelectClip,
   onRemoveClip,
 }: TimelineTrackProps) {
+  const moveClipUp = useTimelineStore((state) => state.moveClipUp);
+  const moveClipDown = useTimelineStore((state) => state.moveClipDown);
+
   if (!timelineId) {
     return (
       <section className="scene-queue scene-queue-empty" data-testid="timeline-track">
@@ -46,13 +50,17 @@ export function TimelineTrack({
   return (
     <section className="scene-queue" data-testid="timeline-track">
       <p className="scene-stage-note">Total duration: {totalDurationMs}ms</p>
-      {clips.map((clip) => (
+      {clips.map((clip, index) => (
         <TimelineClipItem
           key={clip.id}
           timelineId={timelineId}
           clip={clip}
           isSelected={selectedClipId === clip.id}
+          canMoveUp={index > 0}
+          canMoveDown={index < clips.length - 1}
           onSelect={onSelectClip}
+          onMoveUp={moveClipUp}
+          onMoveDown={moveClipDown}
           onRemove={onRemoveClip}
         />
       ))}

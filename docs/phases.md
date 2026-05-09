@@ -226,14 +226,23 @@ Phase 3.8 final sign-off:
 
 Status:
 
-- started (Phase 4.1, Phase 4.2, and Phase 4.3 complete)
+- started (Phase 4.1 through Phase 4.4 complete)
 
 Sub-phases:
 
 - Phase 4.1 timeline domain types complete
 - Phase 4.2 timeline store complete
 - Phase 4.3 timeline UI complete
-- Phase 4.4 sequencing/reorder next
+- Phase 4.4 sequencing/reorder complete
+- Phase 4.5 playback simulation next
+
+Verified in Phase 4.4:
+
+- timeline store now exposes `moveClipUp` and `moveClipDown` reorder actions
+- timeline UI now exposes Move up/Move down controls that dispatch reorder actions only
+- reorder normalization is store-owned and recomputes `order`, contiguous `startMs`, and `totalDurationMs`
+- boundary reorder attempts are safe no-ops
+- scene lifecycle and generation orchestration remain unchanged
 
 ### Phase 5 — Agent System
 

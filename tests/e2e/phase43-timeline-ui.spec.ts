@@ -53,13 +53,23 @@ test.describe("Phase 4.3 timeline UI", () => {
       createPersistedStoreValue({
         scenes: [
           createScene({
-            id: "success-source-scene",
+            id: "success-source-scene-a",
             lifecycle: "success",
-            payload: { prompt: "Successful source scene", style: "cinematic", duration: 8 },
+            payload: { prompt: "Successful source scene A", style: "cinematic", duration: 8 },
             progress: 100,
             result: {
-              image: "https://example.com/success-source.png",
-              variations: ["https://example.com/success-source-var.png"],
+              image: "https://example.com/success-source-a.png",
+              variations: ["https://example.com/success-source-a-var.png"],
+            },
+          }),
+          createScene({
+            id: "success-source-scene-b",
+            lifecycle: "success",
+            payload: { prompt: "Successful source scene B", style: "cinematic", duration: 8 },
+            progress: 100,
+            result: {
+              image: "https://example.com/success-source-b.png",
+              variations: ["https://example.com/success-source-b-var.png"],
             },
           }),
           createScene({
@@ -105,28 +115,58 @@ test.describe("Phase 4.3 timeline UI", () => {
     await expect(page.getByTestId("timeline-track")).toContainText("Timeline is empty");
 
     const source = page.getByTestId("timeline-scene-source");
-    await expect(source).toContainText("Successful source scene");
+    await expect(source).toContainText("Successful source scene A");
+    await expect(source).toContainText("Successful source scene B");
     await expect(source).not.toContainText("Idle source scene");
     await expect(source).not.toContainText("Error source scene");
 
     await source
-      .getByRole("button", { name: /Add scene .* to timeline/ })
-      .first()
+      .getByRole("button", { name: "Add scene success-source-scene-a to timeline" })
       .click();
+    await source
+      .getByRole("button", { name: "Add scene success-source-scene-b to timeline" })
+      .click();
+
     const track = page.getByTestId("timeline-track");
-    await expect(track).toContainText("Clip 1");
-    await expect(track).toContainText("success-source-scene");
+    const clipCards = track.locator("article.scene-card");
+    await expect(clipCards).toHaveCount(2);
+    await expect(clipCards.nth(0)).toContainText("success-source-scene-a");
+    await expect(clipCards.nth(1)).toContainText("success-source-scene-b");
     await expect(track).toContainText("Start");
     await expect(track).toContainText("Duration");
 
+    await expect(
+      clipCards.nth(0).getByRole("button", { name: "Move clip up" }),
+    ).toBeDisabled();
+    await expect(
+      clipCards.nth(0).getByRole("button", { name: "Move clip down" }),
+    ).toBeEnabled();
+    await expect(
+      clipCards.nth(1).getByRole("button", { name: "Move clip up" }),
+    ).toBeEnabled();
+    await expect(
+      clipCards.nth(1).getByRole("button", { name: "Move clip down" }),
+    ).toBeDisabled();
+
+    await clipCards.nth(0).getByRole("button", { name: "Move clip down" }).click();
+    await expect(clipCards.nth(0)).toContainText("success-source-scene-b");
+    await expect(clipCards.nth(1)).toContainText("success-source-scene-a");
+
+    await clipCards.nth(1).getByRole("button", { name: "Move clip up" }).click();
+    await expect(clipCards.nth(0)).toContainText("success-source-scene-a");
+    await expect(clipCards.nth(1)).toContainText("success-source-scene-b");
+
     await track.getByRole("button", { name: "Remove clip" }).first().click();
-    await expect(track).toContainText("Timeline is empty");
+    await expect(clipCards).toHaveCount(1);
 
     const scenes = (await readPersistedScenes(page)) as Array<{
       id: string;
       lifecycle: string;
     }>;
-    expect(scenes.find((scene) => scene.id === "success-source-scene")?.lifecycle).toBe(
+    expect(scenes.find((scene) => scene.id === "success-source-scene-a")?.lifecycle).toBe(
+      "success",
+    );
+    expect(scenes.find((scene) => scene.id === "success-source-scene-b")?.lifecycle).toBe(
       "success",
     );
     expect(scenes.find((scene) => scene.id === "idle-source-scene")?.lifecycle).toBe(
