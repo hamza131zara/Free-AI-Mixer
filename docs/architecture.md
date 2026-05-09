@@ -26,6 +26,7 @@ This file is the operational architecture reference for Free AI Mixer. It comple
     SceneStatus.tsx
   /services
     sceneGenerationService.ts
+    exportService.ts
   /store
     sceneLifecycle.ts
     sceneSelectors.ts
@@ -135,13 +136,18 @@ Responsibilities:
 Files:
 
 - `src/services/sceneGenerationService.ts`
+- `src/services/exportService.ts`
 
 Responsibilities:
 
 - make provider HTTP requests
 - normalize immediate-success and terminal-success payloads to shared scene types
 - own submit/poll HTTP communication for provider jobs
+- own export submit/poll/artifact HTTP communication contracts
 - surface transport-level and protocol-level errors truthfully
+- keep AbortError truthful (do not convert aborts into fake success)
+- do not own orchestration loops, retry policy, store updates, or UI updates
+- do not fabricate completion, progress, artifacts, or cancellation outcomes
 
 Phase 3.8B note:
 

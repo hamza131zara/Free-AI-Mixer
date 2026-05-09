@@ -270,7 +270,8 @@ Sub-phases:
 
 - Phase 5.0A backend export architecture audit complete
 - Phase 5.1 export/render job domain types complete (contracts only)
-- Phase 5.2 service submit/poll contracts next
+- Phase 5.2 export service contracts complete
+- Phase 5.3 export agent orchestration scaffold next
 
 Phase 5.1 note:
 
@@ -278,6 +279,13 @@ Phase 5.1 note:
 - export runtime behavior is not implemented
 - backend rendering, render queue, workers, and webhooks remain deferred
 - downloadable video output is not implemented
+
+Phase 5.2 note:
+
+- `src/services/exportService.ts` now defines submit/poll/artifact HTTP service contracts
+- focused service tests exist in `tests/e2e/phase52-export-service.spec.ts`
+- service behavior is contract-only (no orchestration loop, retries, store updates, or UI updates)
+- export runtime wiring, backend rendering, render queue, workers, webhooks, and downloadable output remain deferred
 
 ### Phase 6 — Backend & Infrastructure
 

@@ -59,7 +59,13 @@ Target fix phase:
 Current state:
 
 - export/render job contracts exist in `src/types/exportJob.ts`
+- export submit/poll/artifact service contracts exist in `src/services/exportService.ts`
+- focused export service contract and edge tests exist in `tests/e2e/phase52-export-service.spec.ts`
 - actual video export is not implemented
+- export runtime integration is not implemented
+- export agent orchestration is not implemented
+- export store integration is not implemented
+- export UI is not implemented
 - backend render queue is not implemented
 - server workers are not implemented
 - webhook completion is not implemented
@@ -69,12 +75,12 @@ Current state:
 
 Why it matters:
 
-- Phase 5.1 adds type contracts only, not runtime export capability
+- Phase 5.2 currently adds service contracts and focused contract tests only, not runtime export capability
 - frontend must remain truthful and must not fake completion/progress/artifacts/cancellation
 
 Target fix phase:
 
-- Phase 5.2 and later backend/export phases
+- Phase 5.3 and later backend/export phases
 
 ### No Durable Backend Queue
 
