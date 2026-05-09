@@ -79,7 +79,9 @@ Responsibilities:
 Current verified store behavior:
 
 - `hasHydrated` and `hydrationError` exist
-- persisted `queued` and `generating` scenes sanitize to `idle`
+- persisted `queued` scenes sanitize to `idle`
+- persisted `generating` scenes without valid resumable provider job metadata sanitize to `idle`
+- persisted `generating` scenes with valid provider job metadata may resume browser-local polling after hydration
 - `selectedVariation` persists only if still valid against `result.variations`
 - `isGeneratingAll` is transient runtime state and does not persist
 
@@ -110,8 +112,9 @@ Files:
 Responsibilities:
 
 - make provider HTTP requests
-- normalize response shape to `GeneratedScene`
-- surface transport-level errors
+- normalize immediate-success and terminal-success payloads to shared scene types
+- own submit/poll HTTP communication for provider jobs
+- surface transport-level and protocol-level errors truthfully
 
 Phase 3.8B note:
 
@@ -144,6 +147,7 @@ Phase 3.8D3 note:
 - retry after resumed failure and regenerate after resumed success both clear old provider job ownership before new submission
 - fingerprint mismatches now fail safely instead of auto-resuming or auto-submitting
 - resumed terminal outcomes expose explicit after-reload labels in the UI without moving orchestration into components
+- browser-local resume is supported, but backend/server durability is not
 
 ## Lifecycle Contract
 
@@ -176,7 +180,7 @@ Durable state:
 - `result`
 - valid `selectedVariation`
 - terminal scene state
-- persisted provider job metadata needed for future resume classification
+- persisted provider job metadata needed for browser-local resume classification and resume polling
 
 Transient state:
 
@@ -197,6 +201,7 @@ Hydration rules:
 - valid persisted provider jobs may now be classified as resume-needed
 - valid persisted provider jobs now auto-resume polling after hydration
 - expired, corrupt, not-found, and fingerprint-mismatch jobs terminate safely and require explicit user action
+- backend/server ownership is not reattached during hydration because no durable server queue exists yet
 
 ## Selector Rules
 
@@ -227,6 +232,14 @@ Long-running provider contract rules:
 - queue/store runtime may expose long-running provider job wording while keeping lifecycle unchanged
 - browser-local resumable hydration now exists for valid persisted provider jobs
 - backend durability, cross-tab coordination, and remote cancellation still belong to later Phase 3.8E and backend phases
+
+Backend boundary rules:
+
+- browser-local persistence is the only supported resume substrate today
+- no server-owned durable queue exists in this repository
+- no multi-device or cross-tab lease coordination exists
+- no remote provider cancellation contract is implemented
+- no webhook or server-authoritative completion flow is implemented
 
 ## Progress Semantics
 

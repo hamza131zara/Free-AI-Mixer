@@ -53,7 +53,7 @@ Status:
 
 Status:
 
-- active delivery phase family
+- complete through Phase 3.8
 
 ### Phase 4: Timeline & Video System
 
@@ -97,7 +97,6 @@ Status:
 
 ## Current Priority Order
 
-1. finalize Phase 3.6 hydration browser/runtime sign-off
-2. complete Phase 3.7 transport truthfulness and provider realism
-3. start Phase 3.8 long-running provider patterns only after transport behavior is trustworthy
-4. start Phase 4 only after scene generation state can be trusted operationally
+1. preserve Phase 3.8 verification and backend-boundary clarity
+2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
+3. begin Phase 4 only on top of the verified Phase 3 scene-generation foundation

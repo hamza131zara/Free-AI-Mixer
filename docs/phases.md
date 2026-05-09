@@ -127,17 +127,17 @@ Verified in this phase:
 
 Status:
 
-- active
+- complete
 
 Sub-phases:
 
 - Phase 3.8A audit complete
 - Phase 3.8B provider job contracts complete
-- Phase 3.8C polling orchestration active
+- Phase 3.8C polling orchestration complete
 - Phase 3.8C1 service submit/poll contracts and polling scaffold complete
 - Phase 3.8C2 queue/store polling integration complete
 - Phase 3.8C3 runtime hardening and UI status refinement complete
-- Phase 3.8D persistence and resumable runtime design active
+- Phase 3.8D persistence and resumable runtime design complete
 - Phase 3.8D1 persisted provider job metadata and hydration classification complete
 - Phase 3.8D2 automatic resume polling for valid persisted provider jobs complete
 - Phase 3.8D3 resume hardening and UX finalization complete
@@ -148,6 +148,8 @@ Scope:
 - polling-capable services
 - durable provider job identity
 - resumable orchestration contracts
+- browser-local resume for valid persisted provider jobs
+- explicit backend boundary for durable queue and server-owned orchestration
 
 Verified in Phase 3.8B:
 
@@ -210,6 +212,15 @@ Verified in Phase 3.8D3:
 - resumed success, failure, not-found, expired, and resume-unavailable states now surface explicit render-only UI labels
 - resume polling starts once per valid hydrated scene and terminal outcomes still apply once
 - browser-local resume is now hardened, while backend durability and multi-device coordination remain deferred
+
+Phase 3.8 final sign-off:
+
+- browser-local long-running provider support is complete and verified
+- services own submit/poll HTTP contracts
+- agents own polling orchestration
+- store owns lifecycle, persistence boundaries, and resumable provider job metadata
+- components remain render/dispatch only
+- backend durable queue, multi-device resume, server workers, remote cancellation, and webhook completion remain deferred
 
 ### Phase 4 — Timeline & Video System
 

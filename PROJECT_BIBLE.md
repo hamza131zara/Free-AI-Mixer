@@ -215,9 +215,10 @@ Not persisted today:
 
 Important current rule:
 
-- scenes in `queued` or `generating` are sanitized back to `idle` during persistence/hydration
+- scenes in `queued` are sanitized back to `idle` during persistence/hydration
+- scenes in `generating` are sanitized back to `idle` unless valid browser-local resumable provider job metadata exists
 
-This is a safety choice that avoids resuming unknown in-flight work after refresh, but it also means the current system does not support resumable server-side jobs.
+This is a safety choice that avoids resuming unknown in-flight work after refresh, while still allowing browser-local resume for valid persisted provider jobs. The current system still does not support resumable server-side jobs.
 
 ## 3. FOLDER STRUCTURE
 
@@ -232,6 +233,7 @@ Current source structure:
   styles.css
   /agents
     sceneGenerationAgent.ts
+    scenePollingAgent.ts
     sceneQueueAgent.ts
   /components
     SceneComposer.tsx
@@ -245,6 +247,7 @@ Current source structure:
     sceneStore.ts
   /types
     scene.ts
+    providerJob.ts
 ```
 
 ### Target Architecture Surface
@@ -467,25 +470,28 @@ Rules:
 
 Current sanitization behavior:
 
-- `queued` and `generating` scenes are reset to `idle`
-- progress is reset to `0`
-- provider is cleared
-- errors are cleared
-- queue/execution timestamps are cleared
+- `queued` scenes are reset to `idle`
+- `generating` scenes without valid resumable provider job metadata are reset to `idle`
+- valid persisted provider jobs may remain resumable for browser-local polling after hydration
+- non-resumable progress is reset to `0`
+- non-resumable provider assignment is cleared
+- non-resumable errors are cleared
+- non-resumable queue/execution timestamps are cleared
 
 ### Hydration Rules
 
-Hydration must not recreate phantom in-progress jobs. Current behavior is safe but limited:
+Hydration must not recreate phantom in-progress jobs. Current behavior is safe but still browser-local:
 
 - hydration restores persisted scenes
-- any in-flight work becomes `idle`
+- non-resumable in-flight work becomes `idle`
+- valid persisted provider jobs may resume browser-local polling after hydration
 - batch generation state is reset
 - composer error is reset
 
 Implication:
 
-- a refresh can lose awareness of an already-started backend job
-- the current architecture assumes generation work is not resumable after refresh
+- refresh-safe browser-local resume now exists for valid persisted provider jobs
+- there is still no durable backend queue, multi-device resume, or server-owned recovery flow
 
 ### Lifecycle Enforcement
 
@@ -950,8 +956,8 @@ or
 
 Current limitations that must be treated explicitly:
 
-- no durable backend job IDs
-- no resume after refresh
+- no durable backend job IDs beyond browser-local persistence
+- no multi-device or server-owned resume after refresh
 - no cancellation action
 - progress is not real provider telemetry
 
@@ -1419,7 +1425,7 @@ Dependencies:
 
 Current status:
 
-- not complete
+- complete
 
 ### PHASE 3.5
 
@@ -1522,15 +1528,16 @@ Required systems:
 
 - polling-capable services
 - resumable job contracts
-- backend job ID storage
+- browser-local provider job identity and persisted resume metadata
 
 Success criteria:
 
 - providers that do not complete in one request can still be orchestrated cleanly
+- valid persisted provider jobs can resume browser-local polling after refresh without duplicate submission
 
 Blockers:
 
-- no job identity or resume support
+- backend durable queue, multi-device coordination, and server-owned orchestration remain deferred
 
 Dependencies:
 
@@ -1538,7 +1545,7 @@ Dependencies:
 
 Current status:
 
-- not complete
+- complete
 
 ### PHASE 4
 
@@ -1805,22 +1812,23 @@ Purpose:
 - batch generation and retry flows exist
 - scene variation selection exists
 - persisted store hydration exists
+- long-running provider submit/poll orchestration exists
+- browser-local resume exists for valid persisted provider jobs
+- expired, corrupt, not-found, and fingerprint-mismatch provider jobs fail safely
 
 ### Partially Complete
 
 - provider abstraction exists, but only through a shared HTTP service plus provider header routing
 - orchestration dashboard exists, but only as lightweight summary metrics
 - progress tracking exists, but is milestone-based rather than true provider telemetry
-- persistence is safe for refreshes, but not robust for resumable backend jobs
+- persistence is safe for browser-local resume, but not robust for backend-owned resumable jobs
 - design system exists as concrete CSS conventions, but not as a formal token framework
 
 ### Unstable or Architecturally Misaligned
 
-- service layer currently simulates successful generation through mock scene responses
-- non-OK API responses and invalid payloads do not surface as true failures
-- the codebase currently violates the “do not simulate backend behavior” rule
-- there is no polling support for long-running provider jobs
-- there is no durable queue or resumable job identity
+- there is no durable backend queue
+- there is no multi-device or cross-tab resume coordination
+- there is no remote provider cancellation contract
 
 ### Requires Verification
 
@@ -1829,3 +1837,4 @@ Purpose:
 - whether localStorage persistence is sufficient for the intended workload
 - whether current selector caching remains safe as the store grows
 - whether Vercel is the intended deployment target for the frontend only, or part of a larger backend plan
+

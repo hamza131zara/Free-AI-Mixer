@@ -10,7 +10,8 @@ Current state:
 
 - explicit hydration state exists
 - interaction is gated until restore completes
-- active scenes sanitize to `idle`
+- queued scenes sanitize to `idle`
+- generating scenes sanitize to `idle` unless valid browser-local resumable provider job metadata exists
 - queue dedupe guards were added
 
 Verification recorded:
@@ -53,64 +54,6 @@ Target fix phase:
 
 ## Platform Gaps
 
-### No Long-Running Provider Support
-
-Current state:
-
-- generation assumes request/response completion in one call
-- there is no provider job ID, polling loop, or resumable execution model
-
-Phase 3.8B update:
-
-- provider job contract types now exist in `src/types/providerJob.ts`
-- runtime generation still assumes single-request completion
-- polling/orchestration changes are deferred to Phase 3.8C
-- persistence/resume changes are deferred to later Phase 3.8D/E work
-
-Phase 3.8C1 update:
-
-- submit/poll service contracts now exist
-- polling agent scaffolding now exists
-- queue/store runtime still does not orchestrate long-running polling
-- refresh-safe resume still does not exist
-
-Phase 3.8C2 update:
-
-- queue/store runtime now orchestrates accepted provider jobs through polling
-- immediate success and terminal poll outcomes flow through the existing lifecycle contract
-- refresh-safe resume still does not exist
-
-Phase 3.8C3 update:
-
-- runtime hardening now blocks duplicate accepted-job submissions for the same scene
-- long-running provider jobs surface explicit accepted, waiting, polling, timeout, and completion wording in the UI
-- queue concurrency and terminal callback behavior are covered by dedicated hardening tests
-- refresh-safe resume still does not exist
-
-Phase 3.8D1 update:
-
-- durable provider job metadata now persists for hydration classification
-- hydration can distinguish resume-needed, expired, and resume-unavailable provider jobs
-- automatic resume polling still does not exist and remains deferred to Phase 3.8D2
-
-Phase 3.8D2 update:
-
-- valid persisted provider jobs now auto-resume polling after hydration
-- resume polling reuses the existing provider job id and does not submit a duplicate provider job
-- provider job not found after reload now becomes an explicit scene error
-- backend durability, cross-tab ownership, and server-side queue recovery still do not exist
-
-Phase 3.8D3 update:
-
-- browser-local resume now hardens retry-after-resume-failure and regenerate-after-resume-success flows
-- fingerprint mismatches now fail safely and require explicit user action instead of auto-resume
-- resumed success and failure states now surface explicit after-reload labels in the UI
-- backend durability, multi-device coordination, and remote cancellation still do not exist
-
-Target fix phase:
-
-- Phase 3.8
-
 ### No Durable Backend Queue
 
 Current state:
@@ -119,12 +62,59 @@ Current state:
 
 Why it matters:
 
-- refresh cannot safely resume real remote work
+- browser-local resume works only from persisted local state, not from a server-owned durable queue
 - concurrency and status are local, not globally durable
 
 Target fix phase:
 
-- Phase 3.8 and later backend work
+- later backend/infrastructure work
+
+### No Multi-Device Or Cross-Tab Resume Coordination
+
+Current state:
+
+- browser-local resume works only in the local persisted store for one browser context
+- there is no shared lease, coordination, or ownership model across devices or browser contexts
+
+Why it matters:
+
+- multiple clients cannot safely coordinate one remote provider job
+- resume guarantees stop at the local browser boundary
+
+Target fix phase:
+
+- later backend/infrastructure work
+
+### No Server Workers Or Webhook Completion
+
+Current state:
+
+- provider polling is browser-driven
+- there are no background workers, webhook consumers, or server-authoritative completion handlers
+
+Why it matters:
+
+- work only progresses while a browser runtime owns the polling loop
+- the system cannot yet claim durable backend orchestration
+
+Target fix phase:
+
+- later backend/infrastructure work
+
+### No Remote Provider Cancellation
+
+Current state:
+
+- local abort behavior exists only for the browser-owned polling flow
+- remote provider cancellation is not implemented
+
+Why it matters:
+
+- canceling browser activity does not imply the upstream provider job is canceled
+
+Target fix phase:
+
+- later backend/infrastructure work
 
 ## Verification Gaps
 
