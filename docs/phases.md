@@ -362,7 +362,10 @@ Sub-phases:
 - Phase 7.1-D temp/output path policy final sign-off (next)
 - Phase 7.2-A real file verification policy audit only complete
 - Phase 7.2-B real file verification helper implementation + tests complete
-- Phase 7.2-D real file verification final sign-off (next)
+- Phase 7.2-D real file verification final sign-off complete
+- Phase 7.3-A renderer failure mapping audit only complete
+- Phase 7.3-B renderer failure mapping helper implementation + tests complete
+- Phase 7.3-D renderer failure mapping final sign-off (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -607,6 +610,57 @@ Phase 7.2 note:
 - focused verification tests now exist in `tests/e2e/phase72-artifact-file-verification.spec.ts`
 - focused backend script `test:backend:phase72` now exists
 - test-only temp files/directories are allowed in tests and must be self-cleaned; production helper remains read-only
+
+Phase 7.3 note:
+
+- backend-only renderer failure mapper now exists in `backend/renderer/rendererFailureMapping.ts`
+- helper/types now include:
+  - `RendererFailureCode`
+  - `RendererFailureStage`
+  - `RendererFailureCauseCategory`
+  - `RendererMappedFailure`
+  - `RendererFailureInput`
+  - `mapRendererFailure(...)`
+  - `toPublicSafeRendererFailure(...)`
+  - `sanitizeRendererFailureDetails(...)`
+  - `isTimeoutError(...)`
+  - `isAbortError(...)`
+- supported failure codes:
+  - `input_snapshot_invalid`
+  - `output_path_invalid`
+  - `renderer_execution_failed`
+  - `renderer_timed_out`
+  - `renderer_cancelled_or_aborted`
+  - `output_write_failed`
+  - `artifact_verification_failed`
+  - `artifact_file_missing`
+  - `artifact_file_empty`
+  - `artifact_format_mismatch`
+- mapper is backend-internal only and maps raw/future renderer/runtime errors to normalized safe failures
+- artifact verification failure codes are preserved
+- timeout and cancellation/abort are mapped distinctly
+- supported stages:
+  - `snapshot`
+  - `path`
+  - `render`
+  - `verify`
+  - `finalize`
+- supported cause categories:
+  - `validation`
+  - `runtime`
+  - `timeout`
+  - `abort`
+  - `io`
+  - `verification`
+- retryability policy is encoded:
+  - timeout retryable
+  - unknown/transient runtime may be retryable
+  - invalid snapshot/path/format mismatch non-retryable
+  - artifact missing/empty/verification non-retryable for now
+- public-safe sanitizer strips stack traces, local paths, urls/download-like fields, command args, env vars, secret/token/password-like values, and raw renderer logs
+- helper does not run renderer, install Remotion, create files/directories/artifacts/urls/download urls, mutate lifecycle, call `markError`, or fake progress/success/cancellation
+- focused mapper tests now exist in `tests/e2e/phase73-renderer-failure-mapping.spec.ts`
+- focused backend script `test:backend:phase73` now exists
 
 ### Phase 7 — Production Optimization
 

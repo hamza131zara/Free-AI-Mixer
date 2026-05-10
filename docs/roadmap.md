@@ -183,6 +183,16 @@ Phase 7.2 real file verification note:
 - this phase does not add Remotion install, renderer execution, production file output, artifact hosting, signed URLs, or download URLs
 - next phase is Phase 7.2-D real file verification final sign-off, then Phase 7.3-A renderer failure mapping audit only
 
+Phase 7.3 renderer failure mapping note:
+
+- Phase 7.3-A audit is complete
+- Phase 7.3-B renderer failure mapping helper implementation + focused tests is complete
+- mapper is backend-internal only and normalizes raw renderer/runtime failures to safe structured failures
+- artifact verification failure codes are preserved, timeout and abort are distinguished, and retryability policy is explicit
+- public-safe sanitization strips stack/path/url/env/command/secret-like fields
+- no renderer execution, file generation, artifact hosting, signed URLs, download URLs, lifecycle mutation, or frontend changes were introduced
+- next phase is Phase 7.3-D renderer failure mapping final sign-off, then Phase 7.4-A single-process renderer execution harness audit only
+
 ### Phase 7: Production Optimization
 
 - monitoring
@@ -197,4 +207,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 7.2-D real file verification final sign-off, then Phase 7.3-A renderer failure mapping audit only
+3. run Phase 7.3-D renderer failure mapping final sign-off, then Phase 7.4-A single-process renderer execution harness audit only

@@ -601,3 +601,43 @@ Real file verification helper (Phase 7.2-A/B):
 - Helper does not write/create/delete files, host artifacts, sign URLs, create download URLs, call `markSuccess`, trigger lifecycle transitions, add progress percent, or fabricate artifacts/success.
 - Focused coverage exists in `tests/e2e/phase72-artifact-file-verification.spec.ts`.
 - Test-only temp files/directories are allowed within test temp roots and are test-cleaned; production helper remains read-only.
+
+Renderer failure mapping helper (Phase 7.3-A/B):
+
+- Backend-only failure mapper exists in `backend/renderer/rendererFailureMapping.ts`.
+- Mapper normalizes raw/future renderer/runtime errors into safe backend-internal failure objects.
+- Failure code set includes:
+  - `input_snapshot_invalid`
+  - `output_path_invalid`
+  - `renderer_execution_failed`
+  - `renderer_timed_out`
+  - `renderer_cancelled_or_aborted`
+  - `output_write_failed`
+  - `artifact_verification_failed`
+  - `artifact_file_missing`
+  - `artifact_file_empty`
+  - `artifact_format_mismatch`
+- Supports renderer stages:
+  - `snapshot`
+  - `path`
+  - `render`
+  - `verify`
+  - `finalize`
+- Supports cause categories:
+  - `validation`
+  - `runtime`
+  - `timeout`
+  - `abort`
+  - `io`
+  - `verification`
+- Retryability is policy-driven (timeout retryable; invalid snapshot/path/format mismatch non-retryable; artifact missing/empty/verification non-retryable for now).
+- Public-safe sanitization strips stack traces, local paths, URL/download-like fields, env/command/argv fields, and secret/token/password-like values.
+- Helper is side-effect free:
+  - no renderer execution
+  - no Remotion install
+  - no file or directory creation
+  - no artifact or URL/download output creation
+  - no lifecycle mutation
+  - no `markError` call
+  - no fake progress/success/cancellation
+- Focused coverage exists in `tests/e2e/phase73-renderer-failure-mapping.spec.ts`.
