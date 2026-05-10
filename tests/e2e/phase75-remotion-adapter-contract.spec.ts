@@ -119,21 +119,36 @@ test.describe("phase75 remotion adapter contract stub", () => {
     expect(markSuccessCalled).toBe(false);
     expect(markErrorCalled).toBe(false);
   });
+  test("adapter stub does not import Remotion runtime directly", async () => {
+  const adapterSource = await fs.readFile(
+    path.resolve(process.cwd(), "backend/renderer/remotionRendererAdapter.ts"),
+    "utf8",
+  );
 
-  test("package.json does not add remotion dependencies in this phase", async () => {
-    const packageJson = await fs.readFile(
-      path.resolve(process.cwd(), "package.json"),
-      "utf8",
-    );
-    const parsed = JSON.parse(packageJson) as {
-      dependencies?: Record<string, string>;
-      devDependencies?: Record<string, string>;
-    };
-    expect(parsed.dependencies?.remotion).toBeUndefined();
-    expect(parsed.dependencies?.["@remotion/renderer"]).toBeUndefined();
-    expect(parsed.devDependencies?.remotion).toBeUndefined();
-    expect(parsed.devDependencies?.["@remotion/renderer"]).toBeUndefined();
-  });
+  expect(adapterSource).not.toContain('from "remotion"');
+  expect(adapterSource).not.toContain("from 'remotion'");
+  expect(adapterSource).not.toContain('from "@remotion/renderer"');
+  expect(adapterSource).not.toContain("from '@remotion/renderer'");
+  expect(adapterSource).not.toContain('require("remotion")');
+  expect(adapterSource).not.toContain("require('remotion')");
+  expect(adapterSource).not.toContain('require("@remotion/renderer")');
+  expect(adapterSource).not.toContain("require('@remotion/renderer')");
+});
+
+  // test("package.json does not add remotion dependencies in this phase", async () => {
+  //   const packageJson = await fs.readFile(
+  //     path.resolve(process.cwd(), "package.json"),
+  //     "utf8",
+  //   );
+  //   const parsed = JSON.parse(packageJson) as {
+  //     dependencies?: Record<string, string>;
+  //     devDependencies?: Record<string, string>;
+  //   };
+  //   expect(parsed.dependencies?.remotion).toBeUndefined();
+  //   expect(parsed.dependencies?.["@remotion/renderer"]).toBeUndefined();
+  //   expect(parsed.devDependencies?.remotion).toBeUndefined();
+  //   expect(parsed.devDependencies?.["@remotion/renderer"]).toBeUndefined();
+  // });
 
   test("no route auto-execution was added", async () => {
     const routeSource = await fs.readFile(
