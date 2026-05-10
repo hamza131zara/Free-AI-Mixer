@@ -123,6 +123,112 @@ const seedTimelineWithClip = async (
 };
 
 test.describe("Phase 5.4 export store integration", () => {
+  test("rehydrates persisted resume_needed/resume_unavailable/expired jobs with selector visibility", async () => {
+    const storage = setUpWindowForStores();
+    const timelineIdResume = "timeline-resume-needed";
+    const timelineIdUnavailable = "timeline-resume-unavailable";
+    const timelineIdExpired = "timeline-expired";
+
+    storage.setItem(
+      exportPersistKey,
+      JSON.stringify({
+        state: {
+          jobsByTimelineId: {
+            [timelineIdResume]: {
+              timelineId: timelineIdResume,
+              requestId: "request-resume-needed",
+              lifecycle: "submitted",
+              handle: {
+                provider: "backend_render",
+                requestId: "request-resume-needed",
+                jobId: "job-resume-needed",
+                status: "submitted",
+              },
+              resumeState: "resume_needed",
+            },
+            [timelineIdUnavailable]: {
+              timelineId: timelineIdUnavailable,
+              requestId: "request-resume-unavailable",
+              lifecycle: "error",
+              resumeState: "resume_unavailable",
+              failure: {
+                message: "Export job resume metadata is unavailable.",
+                code: "export_resume_unavailable",
+              },
+            },
+            [timelineIdExpired]: {
+              timelineId: timelineIdExpired,
+              requestId: "request-expired",
+              lifecycle: "expired",
+              resumeState: "expired",
+              failure: {
+                message: "Export job has expired.",
+                code: "export_job_expired",
+              },
+            },
+          },
+          activeExportTimelineId: timelineIdResume,
+        },
+        version: 1,
+      }),
+    );
+
+    const exportStoreModule = (await import(
+      "../../src/store/exportStore"
+    )) as ExportStoreModule;
+    const { useExportStore } = exportStoreModule;
+
+    (useExportStore.persist as unknown as {
+      setOptions: (options: { storage: unknown }) => void;
+    }).setOptions({
+      storage: createJSONStorage(() => storage as unknown as Storage),
+    });
+
+    await useExportStore.persist.rehydrate();
+
+    const state = useExportStore.getState();
+    expect(state.jobsByTimelineId[timelineIdResume]).toBeTruthy();
+    expect(state.jobsByTimelineId[timelineIdResume]?.lifecycle).toBe("submitted");
+    expect(state.jobsByTimelineId[timelineIdResume]?.resumeState).toBe(
+      "resume_needed",
+    );
+
+    expect(state.jobsByTimelineId[timelineIdUnavailable]?.lifecycle).toBe("error");
+    expect(state.jobsByTimelineId[timelineIdUnavailable]?.resumeState).toBe(
+      "resume_unavailable",
+    );
+
+    expect(state.jobsByTimelineId[timelineIdExpired]?.lifecycle).toBe("expired");
+    expect(state.jobsByTimelineId[timelineIdExpired]?.resumeState).toBe("expired");
+
+    expect(
+      exportStoreModule.selectExportStateByTimelineId(state, timelineIdResume),
+    ).toBeTruthy();
+    expect(
+      exportStoreModule.selectExportLifecycleByTimelineId(state, timelineIdResume),
+    ).toBe("submitted");
+    expect(
+      exportStoreModule.selectExportResumeState(state, timelineIdResume),
+    ).toBe("resume_needed");
+
+    expect(
+      exportStoreModule.selectExportLifecycleByTimelineId(
+        state,
+        timelineIdUnavailable,
+      ),
+    ).toBe("error");
+    expect(
+      exportStoreModule.selectExportResumeState(state, timelineIdUnavailable),
+    ).toBe("resume_unavailable");
+
+    expect(
+      exportStoreModule.selectExportLifecycleByTimelineId(state, timelineIdExpired),
+    ).toBe("expired");
+    expect(
+      exportStoreModule.selectExportResumeState(state, timelineIdExpired),
+    ).toBe("expired");
+  });
+
   test("requestExport creates accepted job state and duplicate submit is blocked while in-flight", async () => {
     setUpWindowForStores();
     const { timelineId, exportStore } = await seedTimelineWithClip();
