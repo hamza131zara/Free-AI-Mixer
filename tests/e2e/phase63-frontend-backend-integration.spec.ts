@@ -68,14 +68,16 @@ test.beforeEach(() => {
     exportArtifactsPath: "/exports",
   });
 });
-
 test.afterEach(() => {
-  const globalWithWindow = globalThis as typeof globalThis & {
-    window?: { __FREE_AI_MIXER_RUNTIME_CONFIG__?: RuntimeConfig };
-  };
-
-  delete globalWithWindow.window;
+  Reflect.deleteProperty(globalThis, "window");
 });
+// test.afterEach(() => {
+//   const globalWithWindow = globalThis as typeof globalThis & {
+//     window?: { __FREE_AI_MIXER_RUNTIME_CONFIG__?: RuntimeConfig };
+//   };
+
+//   delete globalWithWindow.window;
+// });
 
 const loadServiceModule = async (
   cacheKey: string,
