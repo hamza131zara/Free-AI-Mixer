@@ -124,3 +124,4 @@ Phase numbering in prompts must match `docs/phases.md`.
 - Phase 6.9 prompts should remain sign-off/readiness-only: confirm boundaries and deferred systems before opening Phase 7 Remotion pilot planning; no implementation changes.
 - Phase 7.0 prompts should keep renderer-snapshot work backend-only: no Remotion install, no renderer execution, no file output, no queue/worker runtime loop, and no frontend orchestration changes.
 - Phase 7.1 prompts should keep temp/output path policy work helper-only: path validation/derivation and traversal protections are allowed, but no file/directory creation runtime and no renderer execution.
+- Phase 7.2 prompts should keep real file verification work backend-only and read-only: `fs.stat` checks and verified metadata mapping are allowed, but no renderer execution, no production file writes/deletes, no artifact hosting/signing/download URLs, and no frontend orchestration changes.

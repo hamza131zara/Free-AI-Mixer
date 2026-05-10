@@ -577,3 +577,27 @@ Temp/output path policy helper (Phase 7.1-A/B):
   - no URL/download URL generation
   - no lifecycle transitions
   - no API exposure of local paths
+
+Real file verification helper (Phase 7.2-A/B):
+
+- Backend-only verification helper exists in `backend/renderer/artifactVerification.ts`.
+- Helper accepts backend-internal resolved output paths only and re-checks root containment before filesystem access.
+- Verification is read-only (`fs.stat` checks only) and validates:
+  - file exists
+  - target is a regular file
+  - file size is greater than zero
+  - file extension matches expected format
+- Verified artifact metadata is emitted only after checks pass and includes:
+  - `artifactId`
+  - `jobId`
+  - `kind`
+  - `format`
+  - `status: available`
+  - `createdAt`
+  - `sizeBytes`
+- Verified metadata excludes local path and URL fields:
+  - `path`, `filePath`, `localPath`
+  - `url`, `downloadUrl`, `publicUrl`, `signedUrl`
+- Helper does not write/create/delete files, host artifacts, sign URLs, create download URLs, call `markSuccess`, trigger lifecycle transitions, add progress percent, or fabricate artifacts/success.
+- Focused coverage exists in `tests/e2e/phase72-artifact-file-verification.spec.ts`.
+- Test-only temp files/directories are allowed within test temp roots and are test-cleaned; production helper remains read-only.

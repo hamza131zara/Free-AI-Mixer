@@ -360,7 +360,9 @@ Sub-phases:
 - Phase 7.1-A temp/output path policy audit only complete
 - Phase 7.1-B temp/output path policy helper implementation + tests complete
 - Phase 7.1-D temp/output path policy final sign-off (next)
-- Phase 7.2-A real file verification policy audit only (after 7.1-D)
+- Phase 7.2-A real file verification policy audit only complete
+- Phase 7.2-B real file verification helper implementation + tests complete
+- Phase 7.2-D real file verification final sign-off (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -576,6 +578,35 @@ Phase 7.1 note:
 - helper does not create files, directories, artifacts, URLs/download URLs, lifecycle transitions, or API path exposure
 - focused path policy tests now exist in `tests/e2e/phase71-output-path-policy.spec.ts`
 - focused backend script `test:backend:phase71` now exists
+
+Phase 7.2 note:
+
+- backend-only artifact file verification helper now exists in `backend/renderer/artifactVerification.ts`
+- helper accepts backend-internal `ResolvedRenderOutputPath` only
+- helper re-checks root containment before filesystem access
+- helper uses read-only `fs.stat` verification only
+- helper verifies file exists, target is regular file, size is greater than zero, and extension matches expected format
+- verified artifact metadata is built only after verification passes
+- verified metadata includes:
+  - `artifactId`
+  - `jobId`
+  - `kind`
+  - `format`
+  - `status: available`
+  - `createdAt`
+  - `sizeBytes`
+- verified metadata excludes:
+  - `path`
+  - `filePath`
+  - `localPath`
+  - `url`
+  - `downloadUrl`
+  - `publicUrl`
+  - `signedUrl`
+- helper does not write files, create directories, delete files, host artifacts, sign URLs, create download URLs, trigger lifecycle transitions, call `markSuccess`, add progress percent, or fake artifacts/success
+- focused verification tests now exist in `tests/e2e/phase72-artifact-file-verification.spec.ts`
+- focused backend script `test:backend:phase72` now exists
+- test-only temp files/directories are allowed in tests and must be self-cleaned; production helper remains read-only
 
 ### Phase 7 — Production Optimization
 

@@ -173,6 +173,16 @@ Phase 7.1 temp/output path policy note:
 - no file/directory creation, no artifact creation, no URL/download output, and no lifecycle mutation were introduced
 - next phase is Phase 7.1-D temp/output path policy final sign-off
 
+Phase 7.2 real file verification note:
+
+- Phase 7.2-A audit is complete
+- Phase 7.2-B real file verification helper implementation + focused tests is complete
+- verification helper is backend-internal and read-only, and validates existence, regular-file target, non-empty size, and expected format
+- verified metadata includes only safe artifact metadata fields and excludes local path/URL/download fields
+- tests may use test-only temp files/directories and must clean up; production helper does not create/write/delete files
+- this phase does not add Remotion install, renderer execution, production file output, artifact hosting, signed URLs, or download URLs
+- next phase is Phase 7.2-D real file verification final sign-off, then Phase 7.3-A renderer failure mapping audit only
+
 ### Phase 7: Production Optimization
 
 - monitoring
@@ -187,4 +197,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 7.1-D temp/output path policy final sign-off, then Phase 7.2-A real file verification policy audit only
+3. run Phase 7.2-D real file verification final sign-off, then Phase 7.3-A renderer failure mapping audit only
