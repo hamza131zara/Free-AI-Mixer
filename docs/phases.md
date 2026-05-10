@@ -325,7 +325,24 @@ Phase 5.6 note:
 
 Status:
 
-- not started
+- started (Phase 6.0-A planning complete; Phase 6.0-B docs sync complete)
+
+Sub-phases:
+
+- Phase 6.0-A backend/export implementation planning audit complete
+- Phase 6.0-B backend/export architecture docs sync complete
+- Phase 6.1 backend contract scaffold next
+- Phase 6.2 in-memory job registry and truthful pending/failure lifecycle
+- Phase 6.3 frontend config wiring to local backend endpoints
+- Phase 6.4 contract/integration tests
+- Phase 6.5 renderer architecture decision
+- Phase 6.6 durable persistence planning
+
+Phase 6 boundary note:
+
+- recommended implementation path is an in-repo Node/Express contract-first backend scaffold
+- backend rendering is not implemented yet
+- render queue, workers, webhook completion, remote cancellation, and downloadable output remain deferred
 
 ### Phase 7 — Production Optimization
 

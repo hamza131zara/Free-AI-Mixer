@@ -92,6 +92,7 @@ OUTPUT REQUIRED
 2. transport truthfulness and provider realism
 3. long-running provider support
 4. timeline and sequencing
+5. backend/export contract-first planning and boundary enforcement
 
 ## Documentation Read Order
 
@@ -106,3 +107,9 @@ When prompting future AI sessions, use this read order:
 Use `docs/roadmap.md` for product direction, not for low-level implementation rules.
 
 Phase numbering in prompts must match `docs/phases.md`.
+
+## Phase 6 Prompt Notes
+
+- Phase 6.0-A should remain audit/planning only and define backend/export ownership boundaries before implementation.
+- Phase 6.0-B should remain docs/architecture sync only.
+- Early Phase 6 implementation prompts must enforce truthful backend responses with no fake success/progress/artifacts/download claims.

@@ -349,3 +349,35 @@ Backend boundary rules:
 - No downloadable video output exists in the current implementation.
 - No video file generation exists in the current implementation.
 - Frontend must not fake export completion, progress, artifacts, or cancellation behavior.
+
+## Phase 6 Backend Ownership Plan
+
+- API handlers own request validation and HTTP responses.
+- Job registry owns server-authoritative export job lifecycle state.
+- Worker layer will own real rendering later.
+- Artifact layer will own artifact metadata and URL issuance later.
+- Frontend owns lifecycle display and artifact references only.
+- `exportService` owns HTTP communication only.
+- `exportAgent` owns orchestration/polling only.
+- `exportStore` owns frontend export lifecycle/persistence only.
+- Components render state and dispatch store actions only.
+
+### Recommended Backend Path
+
+- Build an in-repo Node/Express contract-first backend scaffold first.
+- Contract-first means export endpoints exist before real renderer integration.
+- Backend must not fake terminal success when renderer is absent.
+- Without renderer, backend may return truthful `accepted_job`, `pending`, or `terminal_failure` (for example `renderer_unavailable`).
+
+### Planned Export API Contracts
+
+- `POST /exports`
+- `GET /exports/:jobId`
+- `GET /exports/:jobId/artifacts`
+
+Contract response rules:
+
+- JSON uses handles/results/failures/artifact refs only.
+- No raw video/media blobs in JSON responses.
+- No filesystem/internal paths in artifact refs.
+- Percent progress is returned only when server-side telemetry can truthfully provide it.

@@ -76,11 +76,18 @@ Current state:
 - remote render cancellation is not implemented
 - downloadable video output is not implemented
 - real video rendering is not implemented
+- durable export job persistence is not implemented
+- artifact hosting/signed URLs are not implemented
+- multi-device export resume coordination is not implemented
+- auth/credits/billing are not implemented
+- production queue/worker scaling is not implemented
 
 Why it matters:
 
 - Phase 5.2 currently adds service contracts and focused contract tests only, not runtime export capability
 - frontend must remain truthful and must not fake completion/progress/artifacts/cancellation
+- Phase 6.1 backend scaffold must avoid fake success/progress/artifacts/download claims
+- initial backend job registry may be in-memory and local-only before durable persistence phases
 
 Target fix phase:
 

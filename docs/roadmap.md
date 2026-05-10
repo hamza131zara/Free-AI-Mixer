@@ -83,7 +83,16 @@ Status:
 
 Status:
 
-- not started
+- started (Phase 6.0-A backend/export planning audit complete; Phase 6.0-B docs/architecture sync complete; contract-first backend scaffold next)
+
+Recommended Phase 6 path:
+
+- backend contract scaffold first
+- truthful local job registry next
+- frontend endpoint/config integration next
+- contract/integration testing next
+- renderer architecture decision after contract stability
+- do not claim real video rendering or downloadable export output yet
 
 ### Phase 7: Production Optimization
 
@@ -99,4 +108,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. Phase 5.7 backend-boundary verification/docs sync or Phase 6 backend/export implementation planning (backend rendering runtime still deferred)
+3. start Phase 6.1 backend contract scaffold (truthful contracts only; no renderer/output claims)
