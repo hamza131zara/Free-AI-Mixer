@@ -122,7 +122,16 @@ Phase 6.6 lifecycle state machine note:
 - backend lifecycle transition guards now exist in registry/contracts while route behavior remains contract-compatible
 - frontend remains unchanged
 - no renderer/worker/queue runtime, artifact hosting, or downloadable output was introduced
-- next phase is Phase 6.6-D backend lifecycle state machine final sign-off
+- next phase was Phase 6.6-D backend lifecycle state machine final sign-off
+
+Phase 6.7 artifact metadata note:
+
+- Phase 6.7-A audit is complete
+- Phase 6.7-B artifact metadata contract implementation + focused tests is complete
+- artifact metadata contract is backend-only and structural-only in this phase
+- no real artifact files, hosting/signing URLs, or downloadable outputs exist yet
+- routes remain truthful and keep artifacts unavailable unless real artifacts exist
+- next phase is Phase 6.7-D artifact metadata contract final sign-off
 
 ### Phase 7: Production Optimization
 
@@ -138,4 +147,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 6.6-D backend lifecycle state machine final sign-off
+3. run Phase 6.7-D artifact metadata contract final sign-off

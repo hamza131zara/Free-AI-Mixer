@@ -119,3 +119,4 @@ Phase numbering in prompts must match `docs/phases.md`.
 - Phase 6.5 prompts should remain renderer-planning/boundary-focused until worker/queue prerequisites are defined; no renderer code, no fake output/progress, and no artifact URLs/download claims without real produced files.
 - Phase 6.6 prompts should start with backend lifecycle state-machine audit/contract work only and keep renderer execution, workers, queues, webhooks, and durable persistence deferred until explicitly phased.
 - After Phase 6.6-B, prompts should preserve route compatibility and frontend non-impact while expanding lifecycle guards; renderer runtime and artifact hosting/download behavior must stay deferred until explicit renderer phases.
+- Phase 6.7 prompts should keep artifact metadata contract work backend-only and structural-only: no real artifact generation, no hosting/signing URLs, no download output claims, and no React/store/agent/service drift.

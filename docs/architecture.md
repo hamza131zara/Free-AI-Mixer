@@ -466,3 +466,32 @@ Backend lifecycle state machine (Phase 6.6-A/B):
 - Current route behavior remains compatible with existing contract-first `accepted_job`/`pending` behavior.
 - Frontend architecture remains unchanged: no React orchestration changes.
 - No renderer runtime, worker runtime, queue runtime, artifact hosting URLs, or downloadable outputs were introduced.
+
+Artifact metadata contract (Phase 6.7-A/B):
+
+- Artifact metadata contract is backend-only (contracts/registry) in this phase.
+- Required fields:
+  - `artifactId`
+  - `jobId`
+  - `kind`
+  - `format`
+  - `status`
+  - `createdAt`
+- Optional fields:
+  - `sizeBytes`
+  - `durationMs`
+- Allowed statuses:
+  - `unavailable`
+  - `pending_verification`
+  - `available`
+  - `expired`
+  - `failed`
+- Unsafe fields are rejected:
+  - `path`
+  - `filePath`
+  - `localPath`
+  - `url`
+  - `downloadUrl`
+- Success still requires structurally valid artifact metadata.
+- Contract remains structural-only: no real file verification, no hosting/signing, no download URLs.
+- Route behavior remains truthful and unchanged for no-artifact runtime state.

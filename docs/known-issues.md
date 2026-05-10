@@ -98,6 +98,7 @@ Why it matters:
 - planned progress policy remains truthful-only (stage milestones only unless renderer can compute real percent)
 - backend lifecycle state-machine guards now exist (Phase 6.6-B), but renderer execution and real artifact production are still deferred
 - no real artifact URLs/download outputs exist; artifact hosting/signing remains deferred
+- backend artifact metadata contract now exists (Phase 6.7-B), but it is structural-only and does not imply real artifact files
 
 Target fix phase:
 

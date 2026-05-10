@@ -345,7 +345,10 @@ Sub-phases:
 - Phase 6.5-D renderer prerequisite contract docs update complete
 - Phase 6.6-A backend lifecycle state machine audit complete
 - Phase 6.6-B backend lifecycle state machine implementation + tests complete
-- Phase 6.6-D backend lifecycle state machine final sign-off (next)
+- Phase 6.6-D backend lifecycle state machine final sign-off complete
+- Phase 6.7-A artifact metadata contract audit complete
+- Phase 6.7-B artifact metadata contract implementation + tests complete
+- Phase 6.7-D artifact metadata contract final sign-off (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -443,6 +446,38 @@ Phase 6.6 note:
 - frontend was unchanged in this phase
 - no renderer, worker runtime, queue runtime, artifact hosting, or download URL implementation exists yet
 - no fake progress percent, fake success, fake artifacts, or fake cancellation behavior was added
+
+Phase 6.7 note:
+
+- backend artifact metadata contract now exists in backend contracts/registry only
+- required artifact metadata fields are:
+  - `artifactId`
+  - `jobId`
+  - `kind`
+  - `format`
+  - `status`
+  - `createdAt`
+- optional artifact metadata fields are:
+  - `sizeBytes`
+  - `durationMs`
+- allowed artifact statuses are:
+  - `unavailable`
+  - `pending_verification`
+  - `available`
+  - `expired`
+  - `failed`
+- registry artifact validation now rejects unsafe fields:
+  - `path`
+  - `filePath`
+  - `localPath`
+  - `url`
+  - `downloadUrl`
+- success remains blocked unless artifact metadata is structurally valid
+- artifact metadata is structural-only in this phase; no real file verification exists yet
+- frontend was unchanged and routes remain truthful with no-artifact behavior
+- `GET /exports/:jobId/artifacts` remains unavailable unless real artifacts exist
+- focused artifact contract tests now exist in `tests/e2e/phase67-artifact-metadata-contract.spec.ts`
+- focused backend script `test:backend:phase67` now exists
 
 ### Phase 7 — Production Optimization
 
