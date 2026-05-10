@@ -18,6 +18,7 @@
     "test:backend:phase70": "playwright test tests/e2e/phase70-renderer-input-snapshot-contract.spec.ts",
     "test:backend:phase71": "playwright test tests/e2e/phase71-output-path-policy.spec.ts",
     "test:backend:phase72": "playwright test tests/e2e/phase72-artifact-file-verification.spec.ts",
+    "test:backend:phase73": "playwright test tests/e2e/phase73-renderer-failure-mapping.spec.ts",
     "test:integration:phase63": "playwright test tests/e2e/phase63-frontend-backend-integration.spec.ts",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
