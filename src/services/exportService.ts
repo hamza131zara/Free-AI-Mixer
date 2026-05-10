@@ -181,6 +181,27 @@ const isExportFailure = (value: unknown): value is ExportFailure => {
   return typeof candidate.message === "string";
 };
 
+const toBackendFailure = (value: unknown): ExportFailure | undefined => {
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
+
+  const candidate = value as Partial<ExportFailure>;
+  if (
+    typeof candidate.message !== "string" ||
+    typeof candidate.code !== "string" ||
+    candidate.code.trim().length === 0
+  ) {
+    return undefined;
+  }
+
+  return {
+    message: candidate.message,
+    code: candidate.code,
+    details: candidate.details,
+  };
+};
+
 const toExportPollResult = (value: unknown): ExportPollResult | undefined => {
   if (typeof value !== "object" || value === null) {
     return undefined;
@@ -196,10 +217,11 @@ const toExportPollResult = (value: unknown): ExportPollResult | undefined => {
   };
 
   if (candidate.kind === "pending" && isExportJobHandle(candidate.handle)) {
+    const progress = toProgressSnapshot(candidate.progress);
     return {
       kind: "pending",
       handle: candidate.handle,
-      progress: toProgressSnapshot(candidate.progress),
+      ...(progress ? { progress } : {}),
     };
   }
 
@@ -284,18 +306,18 @@ const exportServiceConfig = {
   ),
   submitPath: normalizePath(
     hasRuntimeConfigValue(runtimeConfig, "exportSubmitPath")
-      ? runtimeConfig.exportSubmitPath ?? "/exports/jobs"
-      : env?.VITE_EXPORT_SUBMIT_PATH ?? "/exports/jobs",
+      ? runtimeConfig.exportSubmitPath ?? "/exports"
+      : env?.VITE_EXPORT_SUBMIT_PATH ?? "/exports",
   ),
   pollPath: normalizePath(
     hasRuntimeConfigValue(runtimeConfig, "exportPollPath")
-      ? runtimeConfig.exportPollPath ?? "/exports/jobs"
-      : env?.VITE_EXPORT_POLL_PATH ?? "/exports/jobs",
+      ? runtimeConfig.exportPollPath ?? "/exports"
+      : env?.VITE_EXPORT_POLL_PATH ?? "/exports",
   ),
   artifactsPath: normalizePath(
     hasRuntimeConfigValue(runtimeConfig, "exportArtifactsPath")
-      ? runtimeConfig.exportArtifactsPath ?? "/exports/jobs"
-      : env?.VITE_EXPORT_ARTIFACTS_PATH ?? "/exports/jobs",
+      ? runtimeConfig.exportArtifactsPath ?? "/exports"
+      : env?.VITE_EXPORT_ARTIFACTS_PATH ?? "/exports",
   ),
 };
 
@@ -332,6 +354,14 @@ export const submitExportJob = async (
     const body = await readJson(response);
 
     if (!response.ok) {
+      const backendFailure = toBackendFailure(body);
+      if (backendFailure) {
+        return {
+          kind: "failure",
+          failure: backendFailure,
+        };
+      }
+
       return {
         kind: "failure",
         failure: toFailure(
@@ -404,6 +434,15 @@ export const pollExportJob = async (
     const body = await readJson(response);
 
     if (!response.ok) {
+      const backendFailure = toBackendFailure(body);
+      if (backendFailure) {
+        return {
+          kind: "terminal_failure",
+          jobId: handle.jobId,
+          failure: backendFailure,
+        };
+      }
+
       const isNotFound = response.status === 404;
       return {
         kind: "terminal_failure",
@@ -481,6 +520,14 @@ export const getExportArtifactInfo = async (
     const body = await readJson(response);
 
     if (!response.ok) {
+      const backendFailure = toBackendFailure(body);
+      if (backendFailure) {
+        return {
+          kind: "failure",
+          failure: backendFailure,
+        };
+      }
+
       return {
         kind: "failure",
         failure: toFailure(

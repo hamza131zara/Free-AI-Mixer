@@ -12,6 +12,7 @@
     "typecheck": "tsc -b --pretty",
     "test:backend": "playwright test tests/e2e/phase61-backend-contract.spec.ts",
     "test:backend:phase62": "playwright test tests/e2e/phase62-backend-registry-lifecycle.spec.ts",
+    "test:integration:phase63": "playwright test tests/e2e/phase63-frontend-backend-integration.spec.ts",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:trace": "playwright test --trace on",
