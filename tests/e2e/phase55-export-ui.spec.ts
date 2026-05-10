@@ -5,10 +5,30 @@ import {
   persistKey,
 } from "./helpers/persist";
 import { sceneApiUrl } from "./helpers/runtime";
+
 const timelinePersistKey = "free-ai-mixer-timelines";
 const exportPersistKey = "free-ai-mixer-exports";
 
-const seedSceneStore = async (page: Page, scenes: ReturnType<typeof createScene>[]) => {
+type RuntimeConfigSeed = {
+  exportBaseUrl: string;
+  exportSubmitPath?: string;
+};
+
+const seedRuntimeConfig = async (
+  page: Page,
+  config: RuntimeConfigSeed,
+): Promise<void> => {
+  await page.addInitScript((runtimeConfig: RuntimeConfigSeed) => {
+    Object.assign(window, {
+      __FREE_AI_MIXER_RUNTIME_CONFIG__: runtimeConfig,
+    });
+  }, config);
+};
+
+const seedSceneStore = async (
+  page: Page,
+  scenes: ReturnType<typeof createScene>[],
+): Promise<void> => {
   await page.addInitScript(
     ({ key, persistedValue }: { key: string; persistedValue: string }) => {
       window.localStorage.setItem(key, persistedValue);
@@ -20,7 +40,11 @@ const seedSceneStore = async (page: Page, scenes: ReturnType<typeof createScene>
   );
 };
 
-const seedTimelineStore = async (page: Page, timelineId: string, sceneId: string) => {
+const seedTimelineStore = async (
+  page: Page,
+  timelineId: string,
+  sceneId: string,
+): Promise<void> => {
   await page.addInitScript(
     ({ key, persistedValue }: { key: string; persistedValue: string }) => {
       window.localStorage.setItem(key, persistedValue);
@@ -58,7 +82,7 @@ const seedTimelineStore = async (page: Page, timelineId: string, sceneId: string
   );
 };
 
-const seedExportStore = async (page: Page, state: unknown) => {
+const seedExportStore = async (page: Page, state: unknown): Promise<void> => {
   await page.addInitScript(
     ({ key, value }: { key: string; value: string }) => {
       window.localStorage.setItem(key, value);
@@ -76,7 +100,7 @@ const seedExportStore = async (page: Page, state: unknown) => {
 const assertExportSeedDiagnostics = async (
   page: Page,
   expectedTimelineId: string,
-) => {
+): Promise<void> => {
   const diagnostics = await page.evaluate(
     ({
       timelineKey,
@@ -111,8 +135,11 @@ const assertExportSeedDiagnostics = async (
     },
   );
 
-  const hasMatchingTimeline = diagnostics.activeTimelineId === expectedTimelineId;
-  const hasMatchingExportJobKey = diagnostics.exportJobKeys.includes(expectedTimelineId);
+  const hasMatchingTimeline =
+    diagnostics.activeTimelineId === expectedTimelineId;
+  const hasMatchingExportJobKey =
+    diagnostics.exportJobKeys.includes(expectedTimelineId);
+
   if (!hasMatchingTimeline || !hasMatchingExportJobKey) {
     throw new Error(
       [
@@ -132,14 +159,17 @@ const gotoAppWithDiagnostics = async (page: Page): Promise<void> => {
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
   const requestFailures: string[] = [];
+
   page.on("console", (message) => {
     if (message.type() === "error") {
       consoleErrors.push(message.text());
     }
   });
+
   page.on("pageerror", (error) => {
     pageErrors.push(error.message);
   });
+
   page.on("requestfailed", (request) => {
     requestFailures.push(
       `${request.method()} ${request.url()} :: ${
@@ -151,9 +181,11 @@ const gotoAppWithDiagnostics = async (page: Page): Promise<void> => {
   await page.goto("/");
 
   const heading = page.getByRole("heading", { name: "Free AI Mixer" });
+
   if (!(await heading.isVisible())) {
     const url = page.url();
     const bodyText = (await page.locator("body").innerText()).slice(0, 500);
+
     throw new Error(
       [
         "App shell did not render.",
@@ -168,7 +200,9 @@ const gotoAppWithDiagnostics = async (page: Page): Promise<void> => {
 };
 
 test.describe("Phase 5.5 export UI status/actions", () => {
-  test("export panel renders and request button gating works", async ({ page }) => {
+  test("export panel renders and request button gating works", async ({
+    page,
+  }) => {
     await seedSceneStore(page, [
       createScene({
         id: "success-scene-a",
@@ -187,36 +221,44 @@ test.describe("Phase 5.5 export UI status/actions", () => {
     ]);
 
     await gotoAppWithDiagnostics(page);
+
     await expect(page.getByTestId("timeline-export-panel")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Request export" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Request export" }),
+    ).toBeDisabled();
     await expect(page.getByTestId("timeline-export-panel")).toContainText(
       "Create and select a timeline to request export.",
     );
 
     await page.getByRole("button", { name: "Create Timeline" }).click();
-    await expect(page.getByRole("button", { name: "Request export" })).toBeDisabled();
+
+    await expect(
+      page.getByRole("button", { name: "Request export" }),
+    ).toBeDisabled();
 
     await page
       .getByRole("button", {
         name: "Add scene success-scene-a to timeline",
       })
       .click();
-    await expect(page.getByRole("button", { name: "Request export" })).toBeEnabled();
+
+    await expect(
+      page.getByRole("button", { name: "Request export" }),
+    ).toBeEnabled();
   });
 
   test("missing backend config failure is shown truthfully and UI does not trigger scene generation", async ({
     page,
   }) => {
     let generationRequestCount = 0;
+
     await page.route(sceneApiUrl, async (route) => {
       generationRequestCount += 1;
       await route.abort();
     });
 
-    await page.addInitScript(() => {
-      window.__FREE_AI_MIXER_RUNTIME_CONFIG__ = {
-        exportBaseUrl: "",
-      };
+    await seedRuntimeConfig(page, {
+      exportBaseUrl: "",
     });
 
     await seedSceneStore(page, [
@@ -237,6 +279,7 @@ test.describe("Phase 5.5 export UI status/actions", () => {
     ]);
 
     await gotoAppWithDiagnostics(page);
+
     await page.getByRole("button", { name: "Create Timeline" }).click();
     await page
       .getByRole("button", {
@@ -245,20 +288,23 @@ test.describe("Phase 5.5 export UI status/actions", () => {
       .click();
 
     await page.getByRole("button", { name: "Request export" }).click();
+
     const failure = page.getByTestId("timeline-export-failure");
+
     await expect(failure).toContainText("missing_export_api_base_url");
-    await expect(failure).toContainText("Export API base URL is not configured.");
+    await expect(failure).toContainText(
+      "Export API base URL is not configured.",
+    );
+
     expect(generationRequestCount).toBe(0);
   });
 
   test("in-flight state appears and duplicate request is blocked after accepted submission", async ({
     page,
   }) => {
-    await page.addInitScript(() => {
-      window.__FREE_AI_MIXER_RUNTIME_CONFIG__ = {
-        exportBaseUrl: "http://127.0.0.1:4173",
-        exportSubmitPath: "/exports/jobs",
-      };
+    await seedRuntimeConfig(page, {
+      exportBaseUrl: "http://127.0.0.1:4173",
+      exportSubmitPath: "/exports/jobs",
     });
 
     await seedSceneStore(page, [
@@ -279,9 +325,12 @@ test.describe("Phase 5.5 export UI status/actions", () => {
     ]);
 
     await gotoAppWithDiagnostics(page);
+
     let exportSubmitCalls = 0;
+
     await page.route("http://127.0.0.1:4173/exports/jobs", async (route) => {
       exportSubmitCalls += 1;
+
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -296,17 +345,23 @@ test.describe("Phase 5.5 export UI status/actions", () => {
         }),
       });
     });
+
     await page.getByRole("button", { name: "Create Timeline" }).click();
     await page
       .getByRole("button", {
         name: "Add scene success-scene-a to timeline",
       })
       .click();
+
     await page.getByRole("button", { name: "Request export" }).click();
+
     await expect(page.getByTestId("timeline-export-panel")).toContainText(
       "Export requested / in progress.",
     );
-    await expect(page.getByRole("button", { name: "Request export" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Request export" }),
+    ).toBeDisabled();
+
     expect(exportSubmitCalls).toBe(1);
   });
 
@@ -330,12 +385,11 @@ test.describe("Phase 5.5 export UI status/actions", () => {
       }),
     ]);
 
-    await page.addInitScript(() => {
-      window.__FREE_AI_MIXER_RUNTIME_CONFIG__ = {
-        exportBaseUrl: "http://127.0.0.1:4173",
-        exportSubmitPath: "/exports/jobs",
-      };
+    await seedRuntimeConfig(page, {
+      exportBaseUrl: "http://127.0.0.1:4173",
+      exportSubmitPath: "/exports/jobs",
     });
+
     await page.route("http://127.0.0.1:4173/exports/jobs", async (route) => {
       await route.fulfill({
         status: 200,
@@ -354,15 +408,20 @@ test.describe("Phase 5.5 export UI status/actions", () => {
         }),
       });
     });
+
     await gotoAppWithDiagnostics(page);
+
     await page.getByRole("button", { name: "Create Timeline" }).click();
     await page
       .getByRole("button", {
         name: "Add scene success-scene-a to timeline",
       })
       .click();
+
     await page.getByRole("button", { name: "Request export" }).click();
+
     const panel = page.getByTestId("timeline-export-panel");
+
     await expect(panel).toContainText("Export completed.");
     await expect(panel.getByTestId("timeline-export-artifacts")).toContainText(
       "artifact-a",
@@ -392,12 +451,11 @@ test.describe("Phase 5.5 export UI status/actions", () => {
       }),
     ]);
 
-    await page.addInitScript(() => {
-      window.__FREE_AI_MIXER_RUNTIME_CONFIG__ = {
-        exportBaseUrl: "http://127.0.0.1:4173",
-        exportSubmitPath: "/exports/jobs",
-      };
+    await seedRuntimeConfig(page, {
+      exportBaseUrl: "http://127.0.0.1:4173",
+      exportSubmitPath: "/exports/jobs",
     });
+
     await page.route("http://127.0.0.1:4173/exports/jobs", async (route) => {
       await route.fulfill({
         status: 502,
@@ -407,14 +465,18 @@ test.describe("Phase 5.5 export UI status/actions", () => {
         }),
       });
     });
+
     await gotoAppWithDiagnostics(page);
+
     await page.getByRole("button", { name: "Create Timeline" }).click();
     await page
       .getByRole("button", {
         name: "Add scene success-scene-a to timeline",
       })
       .click();
+
     await page.getByRole("button", { name: "Request export" }).click();
+
     await expect(page.getByTestId("timeline-export-failure")).toContainText(
       "http_error",
     );
@@ -423,6 +485,7 @@ test.describe("Phase 5.5 export UI status/actions", () => {
   test("resume_needed label renders truthfully", async ({ page }) => {
     const sceneId = "success-scene-a";
     const timelineId = "timeline-resume-needed";
+
     await seedSceneStore(page, [
       createScene({
         id: sceneId,
@@ -439,6 +502,7 @@ test.describe("Phase 5.5 export UI status/actions", () => {
         },
       }),
     ]);
+
     await seedTimelineStore(page, timelineId, sceneId);
     await seedExportStore(page, {
       jobsByTimelineId: {
@@ -457,8 +521,10 @@ test.describe("Phase 5.5 export UI status/actions", () => {
       },
       activeExportTimelineId: timelineId,
     });
+
     await gotoAppWithDiagnostics(page);
     await assertExportSeedDiagnostics(page, timelineId);
+
     await expect(page.getByTestId("timeline-export-panel")).toContainText(
       "Resumable export job found. Resume is not started yet.",
     );
@@ -467,6 +533,7 @@ test.describe("Phase 5.5 export UI status/actions", () => {
   test("resume_unavailable label renders truthfully", async ({ page }) => {
     const sceneId = "success-scene-a";
     const timelineId = "timeline-resume-unavailable";
+
     await seedSceneStore(page, [
       createScene({
         id: sceneId,
@@ -483,6 +550,7 @@ test.describe("Phase 5.5 export UI status/actions", () => {
         },
       }),
     ]);
+
     await seedTimelineStore(page, timelineId, sceneId);
     await seedExportStore(page, {
       jobsByTimelineId: {
@@ -499,8 +567,10 @@ test.describe("Phase 5.5 export UI status/actions", () => {
       },
       activeExportTimelineId: timelineId,
     });
+
     await gotoAppWithDiagnostics(page);
     await assertExportSeedDiagnostics(page, timelineId);
+
     await expect(page.getByTestId("timeline-export-panel")).toContainText(
       "Resume unavailable. Request export again.",
     );
@@ -509,6 +579,7 @@ test.describe("Phase 5.5 export UI status/actions", () => {
   test("expired label renders truthfully", async ({ page }) => {
     const sceneId = "success-scene-a";
     const timelineId = "timeline-expired";
+
     await seedSceneStore(page, [
       createScene({
         id: sceneId,
@@ -525,6 +596,7 @@ test.describe("Phase 5.5 export UI status/actions", () => {
         },
       }),
     ]);
+
     await seedTimelineStore(page, timelineId, sceneId);
     await seedExportStore(page, {
       jobsByTimelineId: {
@@ -541,8 +613,10 @@ test.describe("Phase 5.5 export UI status/actions", () => {
       },
       activeExportTimelineId: timelineId,
     });
+
     await gotoAppWithDiagnostics(page);
     await assertExportSeedDiagnostics(page, timelineId);
+
     await expect(page.getByTestId("timeline-export-panel")).toContainText(
       "Export expired or timed out.",
     );
