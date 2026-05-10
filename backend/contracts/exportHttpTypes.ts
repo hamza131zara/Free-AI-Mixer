@@ -1,4 +1,5 @@
 import type {
+  ExportArtifactRef,
   ExportFailure,
   ExportJobHandle,
   ExportJobStatus,
@@ -13,15 +14,29 @@ export type BackendExportInFlightStatus = Extract<
   "queued" | "submitted" | "rendering" | "finalizing"
 >;
 
+export type BackendExportTerminalStatus = Extract<
+  ExportJobStatus,
+  "success" | "error" | "expired"
+>;
+
+export type BackendExportLifecycleStatus =
+  | BackendExportInFlightStatus
+  | BackendExportTerminalStatus;
+
 export interface BackendExportJobRecord {
   jobId: string;
   requestId: string;
   timelineId: string;
-  status: BackendExportInFlightStatus;
+  status: BackendExportLifecycleStatus;
   createdAt: string;
   updatedAt: string;
   renderSettings: ExportRenderSettings;
   failure?: ExportFailure;
+  artifacts?: ExportArtifactRef[];
+  completedAt?: string;
+  renderingAt?: string;
+  finalizingAt?: string;
+  expiredAt?: string;
 }
 
 export type ExportSubmitRequestBody = TimelineExportRequest;
@@ -44,6 +59,9 @@ export const toJobHandle = (
   provider: "backend_render",
   requestId: record.requestId,
   jobId: record.jobId,
-  status: record.status === "queued" ? "submitted" : record.status,
+  status:
+    record.status === "rendering" || record.status === "finalizing"
+      ? record.status
+      : "submitted",
   submittedAt: record.createdAt,
 });
