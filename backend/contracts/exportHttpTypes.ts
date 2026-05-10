@@ -45,6 +45,10 @@ export interface BackendExportJobRecord {
   requestId: string;
   timelineId: string;
   status: BackendExportLifecycleStatus;
+  attemptCount: number;
+  claimedByWorkerId?: string;
+  claimExpiresAt?: string;
+  startedAt?: string;
   createdAt: string;
   updatedAt: string;
   renderSettings: ExportRenderSettings;

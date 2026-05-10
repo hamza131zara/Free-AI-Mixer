@@ -19,6 +19,23 @@ export interface ExportJobRegistry {
   create(input: CreateExportJobInput): BackendExportJobRecord;
   getById(jobId: string): BackendExportJobRecord | undefined;
   getByRequestId(requestId: string): BackendExportJobRecord | undefined;
+  claim(
+    jobId: string,
+    workerId: string,
+    options?: ExportJobClaimOptions,
+  ): BackendExportJobRecord;
+  markRendering(jobId: string, workerId: string): BackendExportJobRecord;
+  markFinalizing(jobId: string, workerId: string): BackendExportJobRecord;
+  markSuccess(
+    jobId: string,
+    workerId: string,
+    artifacts: unknown[],
+  ): BackendExportJobRecord;
+  markError(
+    jobId: string,
+    workerId: string,
+    failure: ExportFailure,
+  ): BackendExportJobRecord;
   transition(
     jobId: string,
     nextStatus: BackendExportLifecycleStatus,
@@ -29,6 +46,10 @@ export interface ExportJobRegistry {
 export interface ExportJobTransitionOptions {
   failure?: ExportFailure;
   artifacts?: unknown[];
+}
+
+export interface ExportJobClaimOptions {
+  claimTtlMs?: number;
 }
 
 type TransitionMap = Record<
@@ -80,6 +101,7 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
       requestId: input.requestId,
       timelineId: input.timelineId,
       status,
+      attemptCount: 0,
       createdAt: now,
       updatedAt: now,
       renderSettings: input.renderSettings,
@@ -101,6 +123,70 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     }
 
     return this.jobsById.get(existingJobId);
+  }
+
+  claim(
+    jobId: string,
+    workerId: string,
+    options?: ExportJobClaimOptions,
+  ): BackendExportJobRecord {
+    const existing = this.requireExistingJob(jobId);
+    const normalizedWorkerId = readWorkerId(workerId);
+    assertClaimable(existing);
+
+    const now = new Date().toISOString();
+    const existingClaimActive = isClaimActive(existing);
+    if (
+      existingClaimActive &&
+      existing.claimedByWorkerId &&
+      existing.claimedByWorkerId !== normalizedWorkerId
+    ) {
+      throw new ExportJobTransitionError(
+        `Export job '${jobId}' is already claimed by another worker.`,
+      );
+    }
+
+    const nextRecord: BackendExportJobRecord = {
+      ...existing,
+      claimedByWorkerId: normalizedWorkerId,
+      attemptCount: existing.attemptCount + 1,
+      updatedAt: now,
+      ...(existing.startedAt ? {} : { startedAt: now }),
+      ...(options?.claimTtlMs && options.claimTtlMs > 0
+        ? { claimExpiresAt: new Date(Date.now() + options.claimTtlMs).toISOString() }
+        : {}),
+    };
+
+    this.jobsById.set(jobId, nextRecord);
+    return nextRecord;
+  }
+
+  markRendering(jobId: string, workerId: string): BackendExportJobRecord {
+    this.assertWorkerOwnsClaim(jobId, workerId);
+    return this.transition(jobId, "rendering");
+  }
+
+  markFinalizing(jobId: string, workerId: string): BackendExportJobRecord {
+    this.assertWorkerOwnsClaim(jobId, workerId);
+    return this.transition(jobId, "finalizing");
+  }
+
+  markSuccess(
+    jobId: string,
+    workerId: string,
+    artifacts: unknown[],
+  ): BackendExportJobRecord {
+    this.assertWorkerOwnsClaim(jobId, workerId);
+    return this.transition(jobId, "success", { artifacts });
+  }
+
+  markError(
+    jobId: string,
+    workerId: string,
+    failure: ExportFailure,
+  ): BackendExportJobRecord {
+    this.assertWorkerOwnsClaim(jobId, workerId);
+    return this.transition(jobId, "error", { failure });
   }
 
   transition(
@@ -171,6 +257,38 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     };
     this.jobsById.set(jobId, nextRecord);
     return nextRecord;
+  }
+
+  private assertWorkerOwnsClaim(jobId: string, workerId: string): void {
+    const existing = this.requireExistingJob(jobId);
+    const normalizedWorkerId = readWorkerId(workerId);
+
+    if (isTerminalStatus(existing.status)) {
+      throw new ExportJobTransitionError(
+        `Export job '${jobId}' is terminal and cannot be updated by a worker.`,
+      );
+    }
+
+    if (!existing.claimedByWorkerId || !isClaimActive(existing)) {
+      throw new ExportJobTransitionError(
+        `Export job '${jobId}' is not actively claimed by any worker.`,
+      );
+    }
+
+    if (existing.claimedByWorkerId !== normalizedWorkerId) {
+      throw new ExportJobTransitionError(
+        `Worker '${normalizedWorkerId}' does not own export job '${jobId}'.`,
+      );
+    }
+  }
+
+  private requireExistingJob(jobId: string): BackendExportJobRecord {
+    const existing = this.jobsById.get(jobId);
+    if (!existing) {
+      throw new ExportJobTransitionError(`Export job '${jobId}' was not found.`);
+    }
+
+    return existing;
   }
 }
 
@@ -292,6 +410,37 @@ const readOptionalNonNegativeNumber = (
   }
 
   return value;
+};
+
+const readWorkerId = (workerId: string): string => {
+  if (typeof workerId !== "string" || workerId.trim().length === 0) {
+    throw new ExportJobTransitionError("Worker id must be a non-empty string.");
+  }
+
+  return workerId;
+};
+
+const isTerminalStatus = (status: BackendExportLifecycleStatus): boolean =>
+  status === "success" || status === "error" || status === "expired";
+
+const isClaimActive = (record: BackendExportJobRecord): boolean => {
+  if (!record.claimedByWorkerId) {
+    return false;
+  }
+
+  if (!record.claimExpiresAt) {
+    return true;
+  }
+
+  return Date.now() < Date.parse(record.claimExpiresAt);
+};
+
+const assertClaimable = (record: BackendExportJobRecord): void => {
+  if (isTerminalStatus(record.status)) {
+    throw new ExportJobTransitionError(
+      `Export job '${record.jobId}' is terminal and cannot be claimed.`,
+    );
+  }
 };
 
 const createJobId = (): string =>
