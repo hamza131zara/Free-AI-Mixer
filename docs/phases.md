@@ -351,7 +351,10 @@ Sub-phases:
 - Phase 6.7-D artifact metadata contract final sign-off complete
 - Phase 6.8-A worker boundary / render execution contract audit complete
 - Phase 6.8-B worker boundary claim contract implementation + tests complete
-- Phase 6.8-D worker boundary claim contract final sign-off (next)
+- Phase 6.8-D worker boundary claim contract final sign-off complete
+- Phase 6.9-A backend renderer-readiness final audit complete
+- Phase 6.9-C final Phase 6 manual sign-off (next)
+- Phase 7.0-A Remotion renderer pilot audit only (next after 6.9-C)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -505,6 +508,23 @@ Phase 6.8 note:
 - this is not a real worker runtime, not a queue, and does not start renderer execution
 - focused worker-boundary tests now exist in `tests/e2e/phase68-worker-boundary-claim-contract.spec.ts`
 - focused backend script `test:backend:phase68` now exists
+
+Phase 6.9 note:
+
+- backend/export foundation is renderer-readiness-audited
+- lifecycle/transition guards are ready for future render execution boundaries
+- worker claim/ownership contract is sufficient for a future single-process renderer pilot boundary
+- artifact metadata contract blocks fake outputs at contract level
+- frontend boundaries remain clean and unchanged
+- remaining prerequisites before renderer implementation are:
+  - renderer input snapshot contract
+  - media input reference normalization
+  - temp/output directory policy
+  - real file existence verification
+  - artifact retention/cleanup policy
+  - Remotion runtime/dependency execution wrapper
+  - renderer failure mapping
+  - single-process worker execution harness
 
 ### Phase 7 — Production Optimization
 

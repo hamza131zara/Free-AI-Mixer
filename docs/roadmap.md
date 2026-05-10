@@ -140,7 +140,22 @@ Phase 6.8 worker boundary claim note:
 - worker boundary claim ownership exists in backend registry only (process-local/in-memory)
 - no route mutation surface was added, and frontend remains unchanged
 - this is not worker runtime, queue runtime, or renderer execution
-- next phase is Phase 6.8-D worker boundary claim contract final sign-off
+- next phase was Phase 6.8-D worker boundary claim contract final sign-off
+
+Phase 6.9 renderer-readiness note:
+
+- Phase 6.9-A backend renderer-readiness audit is complete
+- backend/export foundation is ready to move into Phase 7.0-A Remotion renderer pilot audit planning
+- remaining implementation prerequisites are:
+  - renderer input snapshot contract
+  - media input reference normalization
+  - temp/output directory policy
+  - real file existence verification
+  - artifact retention/cleanup policy
+  - Remotion runtime/dependency execution wrapper
+  - renderer failure mapping
+  - single-process worker execution harness
+- next phase is Phase 6.9-C final Phase 6 manual sign-off, then Phase 7.0-A audit-only planning
 
 ### Phase 7: Production Optimization
 
@@ -156,4 +171,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 6.8-D worker boundary claim contract final sign-off
+3. run Phase 6.9-C final Phase 6 manual sign-off, then Phase 7.0-A Remotion renderer pilot audit only

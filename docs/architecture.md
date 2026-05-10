@@ -516,3 +516,18 @@ Worker boundary claim contract (Phase 6.8-A/B):
 - Route surface remains unchanged.
 - Frontend architecture remains unchanged.
 - This phase does not add worker runtime loops, queue runtime, renderer execution, or downloadable outputs.
+
+Renderer-readiness audit status (Phase 6.9-A):
+
+- Phase 6 backend/export foundation is ready to enter Phase 7 renderer pilot planning.
+- Core boundaries are in place: lifecycle guards, artifact metadata guards, and worker claim ownership guards.
+- No renderer implementation, worker runtime loop, queue runtime, artifact hosting/signing, or download outputs are implemented yet.
+- Remaining prerequisites before implementation:
+  - renderer input snapshot contract
+  - media input reference normalization
+  - temp/output directory policy
+  - real file existence verification
+  - artifact retention/cleanup policy
+  - Remotion runtime/dependency execution wrapper
+  - renderer failure mapping
+  - single-process worker execution harness
