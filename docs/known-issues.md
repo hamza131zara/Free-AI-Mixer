@@ -94,6 +94,8 @@ Why it matters:
 - local integration support must remain truthful: no fake progress, no fake terminal success, no fake artifacts, and no fake downloadable URLs
 - real artifact records must only exist after real files are produced and verified
 - export API responses must remain metadata-only (no raw blobs, no local filesystem paths)
+- planned renderer lifecycle/worker contracts are documented, but workers/queues/webhooks/database/durable persistence are still deferred
+- planned progress policy remains truthful-only (stage milestones only unless renderer can compute real percent)
 
 Target fix phase:
 

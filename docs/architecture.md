@@ -430,3 +430,20 @@ Renderer direction decision (Phase 6.5-A/B):
 - API responses must expose metadata refs only; no raw blobs and no local filesystem paths in export responses.
 - Progress percent must be emitted only when backend renderer telemetry can truthfully compute it.
 - Frontend component boundaries remain unchanged until backend can provide truthful real artifacts.
+
+Renderer prerequisite contracts (Phase 6.5-C/D):
+
+- Planned lifecycle contract: `submitted -> rendering -> finalizing -> success | error | expired`.
+- `queued` remains deferred until a real backend queue exists.
+- Planned worker lifecycle boundary:
+  - `claim(jobId, workerId)`
+  - `markRendering(jobId, workerId)`
+  - `markFinalizing(jobId, workerId)`
+  - `markSuccess(jobId, workerId, artifacts[])`
+  - `markError(jobId, workerId, failure)`
+- Lifecycle transitions must be backend-authoritative and must not be frontend-driven.
+- Artifact records must exist only after real file production and verification.
+- APIs must return metadata refs only, with no raw blobs and no local filesystem paths.
+- Artifact URLs may appear only when hosting/signing is truly available later.
+- Progress stage comes only from real backend milestones; percent is allowed only when truthfully computed by renderer telemetry.
+- No timer-based progress and no frontend-generated progress are allowed.

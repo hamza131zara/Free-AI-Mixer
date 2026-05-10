@@ -109,7 +109,11 @@ Phase 6.5 renderer decision note:
 - no real video rendering or downloadable output exists yet
 - artifact hosting/signed URLs are still deferred
 - renderer rollout requires worker/queue boundaries first
-- next phase is Phase 6.5-C renderer prerequisite contract audit/planning
+- planned prerequisite lifecycle is `submitted -> rendering -> finalizing -> success | error | expired` (`queued` deferred)
+- planned worker boundary is claim/render/finalize/success-or-error with backend-authoritative transitions
+- metadata-only artifact API contract remains required (no raw blobs, no local paths)
+- progress remains stage-only unless truthful renderer percent becomes available
+- next phase is Phase 6.6-A backend lifecycle state machine audit only
 
 ### Phase 7: Production Optimization
 
@@ -125,4 +129,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 6.5-C renderer prerequisite contract audit/planning
+3. run Phase 6.6-A backend lifecycle state machine audit only

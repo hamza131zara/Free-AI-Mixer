@@ -341,7 +341,9 @@ Sub-phases:
 - Phase 6.4 contract/integration tests
 - Phase 6.5-A renderer architecture decision audit complete
 - Phase 6.5-B renderer architecture decision docs update complete
-- Phase 6.5-C renderer prerequisite contract audit/planning (next)
+- Phase 6.5-C renderer prerequisite contract audit/planning complete
+- Phase 6.5-D renderer prerequisite contract docs update complete
+- Phase 6.6-A backend lifecycle state machine audit only (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -409,6 +411,15 @@ Phase 6.5 note:
 - progress percent may appear only when the renderer can truthfully compute it
 - worker/queue boundary is required before renderer implementation
 - frontend remains unchanged until backend can provide truthful real artifacts
+- planned lifecycle contract is `submitted -> rendering -> finalizing -> success | error | expired`
+- `queued` is deferred until a real queue exists
+- planned worker lifecycle boundary is:
+  - `claim(jobId, workerId)`
+  - `markRendering(jobId, workerId)`
+  - `markFinalizing(jobId, workerId)`
+  - `markSuccess(jobId, workerId, artifacts[])`
+  - `markError(jobId, workerId, failure)`
+- lifecycle transitions must remain backend-authoritative, never frontend-driven
 
 ### Phase 7 — Production Optimization
 
