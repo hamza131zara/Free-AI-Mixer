@@ -193,6 +193,18 @@ Phase 7.3 renderer failure mapping note:
 - no renderer execution, file generation, artifact hosting, signed URLs, download URLs, lifecycle mutation, or frontend changes were introduced
 - next phase is Phase 7.3-D renderer failure mapping final sign-off, then Phase 7.4-A single-process renderer execution harness audit only
 
+Phase 7.4 single-process execution harness note:
+
+- Phase 7.4-A audit is complete
+- Phase 7.4-B harness contract + injected orchestrator helper + focused tests is complete
+- harness remains backend-only and adapter-injected (no real renderer runtime)
+- no route auto-execution from `POST /exports` was introduced
+- no queue/scheduler/worker loop/database/durable persistence was introduced
+- no hosting/signing/download URL behavior was introduced
+- no fake artifacts/progress/cancellation behavior was introduced
+- frontend behavior remains unchanged
+- next phase is Phase 7.4-D single-process renderer execution harness final sign-off, then Phase 7.5-A Remotion dependency / renderer adapter audit only
+
 ### Phase 7: Production Optimization
 
 - monitoring
@@ -207,4 +219,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 7.3-D renderer failure mapping final sign-off, then Phase 7.4-A single-process renderer execution harness audit only
+3. run Phase 7.4-D single-process renderer execution harness final sign-off, then Phase 7.5-A Remotion dependency / renderer adapter audit only

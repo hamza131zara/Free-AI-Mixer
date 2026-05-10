@@ -641,3 +641,44 @@ Renderer failure mapping helper (Phase 7.3-A/B):
   - no `markError` call
   - no fake progress/success/cancellation
 - Focused coverage exists in `tests/e2e/phase73-renderer-failure-mapping.spec.ts`.
+
+Single-process renderer execution harness (Phase 7.4-A/B):
+
+- Backend-only harness exists in `backend/renderer/singleProcessRenderHarness.ts`.
+- Harness is contract-first orchestration with injected adapter only.
+- Harness may orchestrate:
+  - `claim(jobId, workerId)`
+  - render snapshot creation/validation
+  - output-path resolution
+  - `markRendering(jobId, workerId)`
+  - injected adapter call
+  - artifact verification
+  - `markFinalizing(jobId, workerId)`
+  - `markSuccess(jobId, workerId, artifacts)`
+- Failure path:
+  - catches snapshot/path/adapter/verification/finalization failures
+  - maps via renderer failure mapper
+  - sanitizes to public-safe failure
+  - calls `markError` through worker-boundary ownership
+  - never falls back to success
+- Adapter boundary:
+  - receives snapshot + resolved output path + optional abort signal
+  - must not mutate lifecycle
+  - must not emit URL/download URL outputs
+  - must not return API-facing local paths
+  - must not create verified metadata
+  - must not call `markSuccess`/`markError`
+- Harness/test boundaries:
+  - test adapters may create temp files in test-only temp directories
+  - tests clean up their own temp files/directories
+  - production harness does not directly write/create/delete files/directories
+- Explicit non-behaviors:
+  - no Remotion install/import
+  - no real renderer runtime
+  - no auto-run from `POST /exports`
+  - no queue/scheduler/worker loop
+  - no database/durable persistence
+  - no artifact hosting/signing/download URL outputs
+  - no fake artifacts/progress/cancellation
+  - no frontend architecture changes
+- Focused coverage exists in `tests/e2e/phase74-single-process-render-harness.spec.ts`.

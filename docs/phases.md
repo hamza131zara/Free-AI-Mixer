@@ -365,7 +365,10 @@ Sub-phases:
 - Phase 7.2-D real file verification final sign-off complete
 - Phase 7.3-A renderer failure mapping audit only complete
 - Phase 7.3-B renderer failure mapping helper implementation + tests complete
-- Phase 7.3-D renderer failure mapping final sign-off (next)
+- Phase 7.3-D renderer failure mapping final sign-off complete
+- Phase 7.4-A single-process renderer execution harness audit only complete
+- Phase 7.4-B single-process renderer execution harness contract + injected orchestrator helper + tests complete
+- Phase 7.4-D single-process renderer execution harness final sign-off (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -661,6 +664,59 @@ Phase 7.3 note:
 - helper does not run renderer, install Remotion, create files/directories/artifacts/urls/download urls, mutate lifecycle, call `markError`, or fake progress/success/cancellation
 - focused mapper tests now exist in `tests/e2e/phase73-renderer-failure-mapping.spec.ts`
 - focused backend script `test:backend:phase73` now exists
+
+Phase 7.4 note:
+
+- backend-only single-process render harness now exists in `backend/renderer/singleProcessRenderHarness.ts`
+- harness types/helpers now include:
+  - `SingleProcessRenderHarnessInput`
+  - `SingleProcessRenderHarnessResult`
+  - `RendererAdapterInput`
+  - `RendererAdapterResult`
+  - `RendererAdapter`
+  - `executeSingleProcessRender(...)`
+- successful harness flow:
+  1. `claim(jobId, workerId)`
+  2. create/validate render input snapshot
+  3. resolve output path
+  4. `markRendering(jobId, workerId)`
+  5. call injected renderer adapter
+  6. verify rendered artifact file
+  7. `markFinalizing(jobId, workerId)`
+  8. `markSuccess(jobId, workerId, verified artifact metadata)`
+  9. return safe internal result
+- failure harness flow:
+  1. catch snapshot/path/adapter/verification/finalization errors
+  2. map via renderer failure mapping
+  3. sanitize public-safe failure
+  4. `markError` through registry worker boundary
+  5. return safe failure result
+  6. never fallback to success
+- adapter boundary:
+  - adapter is injected
+  - adapter receives snapshot + resolved output path + optional abort signal
+  - adapter must not mutate lifecycle
+  - adapter must not create urls/download urls
+  - adapter must not return public local paths
+  - adapter must not create verified metadata
+  - adapter must not call `markSuccess`/`markError`
+- test-only behavior:
+  - phase 7.4 tests use injected test adapters
+  - test adapters may create temp files in test-only temp directories
+  - tests clean up temp files/directories
+  - production harness does not directly write/create/delete files/directories
+- non-behaviors:
+  - no Remotion install/import
+  - no real renderer runtime
+  - no auto-run from `POST /exports`
+  - no queue/scheduler/worker loop
+  - no database/durable persistence
+  - no artifact hosting
+  - no signed/download url generation
+  - no fake artifacts/progress/cancellation
+  - no frontend changes
+- focused harness tests now exist in `tests/e2e/phase74-single-process-render-harness.spec.ts`
+- focused backend script `test:backend:phase74` now exists
 
 ### Phase 7 — Production Optimization
 
