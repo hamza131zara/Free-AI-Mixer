@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "backend:dev": "tsx backend/server.ts",
+    "backend:start": "tsx backend/server.ts",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty",
+    "test:backend": "playwright test tests/e2e/phase61-backend-contract.spec.ts",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:trace": "playwright test --trace on",
@@ -28,6 +31,7 @@
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^5.0.0",
+    "tsx": "^4.20.6",
     "typescript": "^5.7.3",
     "vite": "^6.1.0"
   }
