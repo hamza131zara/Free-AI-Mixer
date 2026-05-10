@@ -1,9 +1,10 @@
 import type {
-  ExportArtifactRef,
   ExportFailure,
   ExportRenderSettings,
 } from "../../src/types/exportJob";
 import type {
+  BackendArtifactMetadata,
+  BackendArtifactStatus,
   BackendExportJobRecord,
   BackendExportLifecycleStatus,
 } from "../contracts/exportHttpTypes";
@@ -27,7 +28,7 @@ export interface ExportJobRegistry {
 
 export interface ExportJobTransitionOptions {
   failure?: ExportFailure;
-  artifacts?: ExportArtifactRef[];
+  artifacts?: unknown[];
 }
 
 type TransitionMap = Record<
@@ -44,6 +45,14 @@ const allowedTransitions: TransitionMap = {
   error: new Set(),
   expired: new Set(),
 };
+
+const allowedArtifactStatuses: ReadonlySet<BackendArtifactStatus> = new Set([
+  "unavailable",
+  "pending_verification",
+  "available",
+  "expired",
+  "failed",
+]);
 
 export const canTransition = (
   from: BackendExportLifecycleStatus,
@@ -111,7 +120,7 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     }
 
     if (nextStatus === "success") {
-      const artifacts = validateSuccessArtifacts(options?.artifacts);
+      const artifacts = validateSuccessArtifacts(jobId, options?.artifacts);
       const now = new Date().toISOString();
       const nextRecord: BackendExportJobRecord = {
         ...existing,
@@ -176,27 +185,113 @@ const validateFailure = (failure: ExportFailure | undefined): ExportFailure => {
 };
 
 const validateSuccessArtifacts = (
-  artifacts: ExportArtifactRef[] | undefined,
-): ExportArtifactRef[] => {
+  jobId: string,
+  artifacts: unknown[] | undefined,
+): BackendArtifactMetadata[] => {
   if (!Array.isArray(artifacts) || artifacts.length === 0) {
     throw new ExportJobTransitionError(
       "Transition to 'success' requires at least one verified artifact.",
     );
   }
 
-  for (const artifact of artifacts) {
-    if (!artifact || typeof artifact.id !== "string" || artifact.id.trim().length === 0) {
-      throw new ExportJobTransitionError("Artifact metadata must include a non-empty id.");
-    }
+  return artifacts.map((artifact) => validateArtifactMetadata(jobId, artifact));
+};
 
-    if (typeof artifact.url === "string" && artifact.url.trim().length > 0) {
+export const validateArtifactMetadata = (
+  jobId: string,
+  artifact: unknown,
+): BackendArtifactMetadata => {
+  if (typeof artifact !== "object" || artifact === null) {
+    throw new ExportJobTransitionError("Artifact metadata must be an object.");
+  }
+
+  const candidate = artifact as Record<string, unknown>;
+  rejectUnsafeArtifactFields(candidate);
+
+  if (!("artifactId" in candidate) && "id" in candidate) {
+    const legacyArtifactId = readNonEmptyString(candidate.id, "id");
+    return {
+      artifactId: legacyArtifactId,
+      jobId,
+      kind: "render_output",
+      format: "unknown",
+      status: "available",
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  const artifactId = readNonEmptyString(candidate.artifactId, "artifactId");
+  const artifactJobId = readNonEmptyString(candidate.jobId, "jobId");
+  if (artifactJobId !== jobId) {
+    throw new ExportJobTransitionError(
+      `Artifact jobId '${artifactJobId}' does not match export job '${jobId}'.`,
+    );
+  }
+
+  const kind = readNonEmptyString(candidate.kind, "kind");
+  const format = readNonEmptyString(candidate.format, "format");
+  const status = readArtifactStatus(candidate.status);
+  const createdAt = readNonEmptyString(candidate.createdAt, "createdAt");
+
+  const sizeBytes = readOptionalNonNegativeNumber(candidate.sizeBytes, "sizeBytes");
+  const durationMs = readOptionalNonNegativeNumber(candidate.durationMs, "durationMs");
+
+  return {
+    artifactId,
+    jobId: artifactJobId,
+    kind,
+    format,
+    status,
+    createdAt,
+    ...(sizeBytes === undefined ? {} : { sizeBytes }),
+    ...(durationMs === undefined ? {} : { durationMs }),
+  };
+};
+
+const rejectUnsafeArtifactFields = (candidate: Record<string, unknown>): void => {
+  const blockedKeys = ["path", "filePath", "localPath", "url", "downloadUrl"];
+  for (const key of blockedKeys) {
+    if (key in candidate) {
       throw new ExportJobTransitionError(
-        "Artifact URLs are not allowed in this phase.",
+        `Artifact field '${key}' is not allowed in this phase.`,
       );
     }
   }
+};
 
-  return artifacts;
+const readNonEmptyString = (value: unknown, field: string): string => {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ExportJobTransitionError(
+      `Artifact metadata field '${field}' must be a non-empty string.`,
+    );
+  }
+
+  return value;
+};
+
+const readArtifactStatus = (value: unknown): BackendArtifactStatus => {
+  if (typeof value !== "string" || !allowedArtifactStatuses.has(value as BackendArtifactStatus)) {
+    throw new ExportJobTransitionError("Artifact metadata field 'status' is invalid.");
+  }
+
+  return value as BackendArtifactStatus;
+};
+
+const readOptionalNonNegativeNumber = (
+  value: unknown,
+  field: string,
+): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "number" || Number.isNaN(value) || value < 0) {
+    throw new ExportJobTransitionError(
+      `Artifact metadata field '${field}' must be a non-negative number when provided.`,
+    );
+  }
+
+  return value;
 };
 
 const createJobId = (): string =>

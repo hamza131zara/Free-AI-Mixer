@@ -7,6 +7,15 @@ import {
 
 const createRegistry = () => new InMemoryExportJobRegistry();
 
+const createArtifact = (jobId: string, artifactId = "artifact-phase66") => ({
+  artifactId,
+  jobId,
+  kind: "render_output",
+  format: "mp4",
+  status: "available",
+  createdAt: "2026-05-10T00:00:00.000Z",
+});
+
 test.describe("Phase 6.6 backend lifecycle state machine", () => {
   test("allowed transitions pass", () => {
     const registry = createRegistry();
@@ -29,11 +38,14 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
     const finalizing = registry.transition(job.jobId, "finalizing");
     expect(finalizing.status).toBe("finalizing");
 
+    const artifact = createArtifact(job.jobId);
+
     const success = registry.transition(job.jobId, "success", {
-      artifacts: [{ id: "artifact-phase66" }],
+      artifacts: [artifact],
     });
+
     expect(success.status).toBe("success");
-    expect(success.artifacts).toEqual([{ id: "artifact-phase66" }]);
+    expect(success.artifacts).toEqual([artifact]);
   });
 
   test("forbidden transitions fail", () => {
@@ -50,9 +62,11 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
     });
 
     expect(canTransition(job.status, "success")).toBe(false);
-    expect(() => registry.transition(job.jobId, "success", { artifacts: [{ id: "a" }] })).toThrow(
-      ExportJobTransitionError,
-    );
+    expect(() =>
+      registry.transition(job.jobId, "success", {
+        artifacts: [createArtifact(job.jobId, "artifact-forbidden")],
+      }),
+    ).toThrow(ExportJobTransitionError);
     expect(() => registry.transition(job.jobId, "finalizing")).toThrow(
       ExportJobTransitionError,
     );
@@ -77,9 +91,11 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
     expect(() => registry.transition(job.jobId, "rendering")).toThrow(
       ExportJobTransitionError,
     );
-    expect(() => registry.transition(job.jobId, "success", { artifacts: [{ id: "x" }] })).toThrow(
-      ExportJobTransitionError,
-    );
+    expect(() =>
+      registry.transition(job.jobId, "success", {
+        artifacts: [createArtifact(job.jobId, "artifact-terminal")],
+      }),
+    ).toThrow(ExportJobTransitionError);
   });
 
   test("success without artifacts is rejected", () => {
@@ -121,9 +137,11 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
     expect(finalizing.status).toBe("finalizing");
 
     const success = registry.transition(job.jobId, "success", {
-      artifacts: [{ id: "artifact-verified", status: "ready" }],
+      artifacts: [createArtifact(job.jobId, "artifact-verified")],
     });
+
     expect(success.status).toBe("success");
+    expect(success.artifacts?.[0].artifactId).toBe("artifact-verified");
     expect(success.artifacts?.[0].url).toBeUndefined();
   });
 
@@ -161,7 +179,9 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
     });
 
     const rendering = registry.transition(job.jobId, "rendering");
-    expect((rendering as unknown as Record<string, unknown>).progress).toBeUndefined();
+    expect(
+      (rendering as unknown as Record<string, unknown>).progress,
+    ).toBeUndefined();
     expect(
       (rendering as unknown as Record<string, unknown>).percent,
     ).toBeUndefined();

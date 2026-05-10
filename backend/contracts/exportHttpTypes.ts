@@ -1,5 +1,4 @@
 import type {
-  ExportArtifactRef,
   ExportFailure,
   ExportJobHandle,
   ExportJobStatus,
@@ -23,6 +22,24 @@ export type BackendExportLifecycleStatus =
   | BackendExportInFlightStatus
   | BackendExportTerminalStatus;
 
+export type BackendArtifactStatus =
+  | "unavailable"
+  | "pending_verification"
+  | "available"
+  | "expired"
+  | "failed";
+
+export interface BackendArtifactMetadata {
+  artifactId: string;
+  jobId: string;
+  kind: string;
+  format: string;
+  status: BackendArtifactStatus;
+  createdAt: string;
+  sizeBytes?: number;
+  durationMs?: number;
+}
+
 export interface BackendExportJobRecord {
   jobId: string;
   requestId: string;
@@ -32,7 +49,7 @@ export interface BackendExportJobRecord {
   updatedAt: string;
   renderSettings: ExportRenderSettings;
   failure?: ExportFailure;
-  artifacts?: ExportArtifactRef[];
+  artifacts?: BackendArtifactMetadata[];
   completedAt?: string;
   renderingAt?: string;
   finalizingAt?: string;
