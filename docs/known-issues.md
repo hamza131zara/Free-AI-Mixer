@@ -81,6 +81,7 @@ Current state:
 - multi-device export resume coordination is not implemented
 - auth/credits/billing are not implemented
 - production queue/worker scaling is not implemented
+- frontend-to-backend export runtime integration is not implemented yet
 
 Why it matters:
 

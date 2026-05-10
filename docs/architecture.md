@@ -361,6 +361,7 @@ Backend boundary rules:
 - `exportAgent` owns orchestration/polling only.
 - `exportStore` owns frontend export lifecycle/persistence only.
 - Components render state and dispatch store actions only.
+- Backend route handlers now exist for export contracts, but renderer execution remains deferred.
 
 ### Recommended Backend Path
 
@@ -381,3 +382,11 @@ Contract response rules:
 - No raw video/media blobs in JSON responses.
 - No filesystem/internal paths in artifact refs.
 - Percent progress is returned only when server-side telemetry can truthfully provide it.
+
+Current scaffold behavior (Phase 6.1-B/C):
+
+- `POST /exports` validates input and returns truthful `accepted_job` only.
+- `GET /exports/:jobId` returns truthful `pending` for known jobs and `export_job_not_found` for unknown jobs.
+- `GET /exports/:jobId/artifacts` returns `export_artifacts_unavailable` for known jobs without real artifacts and `export_job_not_found` for unknown jobs.
+- Validation failures return normalized `invalid_export_request`.
+- No terminal success, no fake artifacts, no fake download URLs, and no fake progress are produced by the scaffold.

@@ -331,7 +331,9 @@ Sub-phases:
 
 - Phase 6.0-A backend/export implementation planning audit complete
 - Phase 6.0-B backend/export architecture docs sync complete
-- Phase 6.1 backend contract scaffold next
+- Phase 6.1-A backend contract scaffold audit complete
+- Phase 6.1-B backend export contract scaffold complete
+- Phase 6.1-C backend runtime scripts and focused backend contract tests complete
 - Phase 6.2 in-memory job registry and truthful pending/failure lifecycle
 - Phase 6.3 frontend config wiring to local backend endpoints
 - Phase 6.4 contract/integration tests
@@ -343,6 +345,24 @@ Phase 6 boundary note:
 - recommended implementation path is an in-repo Node/Express contract-first backend scaffold
 - backend rendering is not implemented yet
 - render queue, workers, webhook completion, remote cancellation, and downloadable output remain deferred
+
+Phase 6.1 note:
+
+- backend scaffold now exists under `backend/` with:
+  - `backend/app.ts`
+  - `backend/server.ts`
+  - `backend/routes/exports.ts`
+  - `backend/validation/exportValidation.ts`
+  - `backend/contracts/exportHttpTypes.ts`
+  - `backend/errors/exportErrors.ts`
+  - `backend/registry/exportJobRegistry.ts`
+- backend runtime/test scripts now exist:
+  - `backend:dev`
+  - `backend:start`
+  - `test:backend`
+- focused backend contract tests now exist in `tests/e2e/phase61-backend-contract.spec.ts`
+- local verification for Phase 6.1-C passed with backend contract tests
+- no renderer, no workers, no queue infrastructure, no webhooks, no durable persistence, and no frontend integration yet
 
 ### Phase 7 — Production Optimization
 
