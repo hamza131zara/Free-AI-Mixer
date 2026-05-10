@@ -205,6 +205,16 @@ Phase 7.4 single-process execution harness note:
 - frontend behavior remains unchanged
 - next phase is Phase 7.4-D single-process renderer execution harness final sign-off, then Phase 7.5-A Remotion dependency / renderer adapter audit only
 
+Phase 7.5 Remotion adapter stub note:
+
+- Phase 7.5-A audit is complete
+- Phase 7.5-B Remotion adapter contract stub + focused tests is complete
+- adapter stub is backend-only, harness-compatible, and explicit non-success (`ok: false`) while Remotion runtime remains unimplemented
+- stub import is safe without Remotion installed
+- no Remotion install/import, no `@remotion/renderer`, and no composition files were introduced
+- no route auto-execution, queue/scheduler/worker loop, database/durable persistence, hosting/signing/download URLs, or frontend changes were introduced
+- next phase is Phase 7.5-D Remotion adapter contract stub final sign-off, then Phase 7.6-A Remotion dependency install audit only
+
 ### Phase 7: Production Optimization
 
 - monitoring
@@ -219,4 +229,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 7.4-D single-process renderer execution harness final sign-off, then Phase 7.5-A Remotion dependency / renderer adapter audit only
+3. run Phase 7.5-D Remotion adapter contract stub final sign-off, then Phase 7.6-A Remotion dependency install audit only

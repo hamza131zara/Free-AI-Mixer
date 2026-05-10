@@ -368,7 +368,10 @@ Sub-phases:
 - Phase 7.3-D renderer failure mapping final sign-off complete
 - Phase 7.4-A single-process renderer execution harness audit only complete
 - Phase 7.4-B single-process renderer execution harness contract + injected orchestrator helper + tests complete
-- Phase 7.4-D single-process renderer execution harness final sign-off (next)
+- Phase 7.4-D single-process renderer execution harness final sign-off complete
+- Phase 7.5-A Remotion dependency / renderer adapter audit only complete
+- Phase 7.5-B Remotion adapter contract stub only + tests complete
+- Phase 7.5-D Remotion adapter contract stub final sign-off (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -717,6 +720,46 @@ Phase 7.4 note:
   - no frontend changes
 - focused harness tests now exist in `tests/e2e/phase74-single-process-render-harness.spec.ts`
 - focused backend script `test:backend:phase74` now exists
+
+Phase 7.5 note:
+
+- backend-only Remotion adapter contract stub now exists in `backend/renderer/remotionRendererAdapter.ts`
+- exports include:
+  - `RemotionRendererAdapterOptions`
+  - `remotionRendererAdapterNotImplementedCode`
+  - `createRemotionRendererAdapter(...)`
+- adapter factory returns a `RendererAdapter`-compatible function
+- stub always returns truthful non-success:
+  - `ok: false`
+  - explicit not-implemented message
+- stub is safe to import without Remotion installed
+- diagnostics remain safe-only:
+  - `code`
+  - `summary`
+  - `retryable`
+  - optional `workerId`
+- stub never returns `ok: true`
+- stub does not expose local paths
+- stub does not create url/download/signed/public url fields
+- stub does not create artifact metadata
+- stub does not mutate lifecycle
+- stub does not call `markSuccess` or `markError`
+- stub does not write files or create directories
+- non-behaviors in this phase:
+  - no Remotion install
+  - no Remotion import
+  - no `@remotion/renderer` import
+  - no Remotion composition files
+  - no renderer runtime execution
+  - no auto-run from `POST /exports`
+  - no queue/scheduler/worker loop
+  - no database/durable persistence
+  - no artifact hosting
+  - no signed/download url creation
+  - no fake artifacts/success/progress/cancellation
+  - no frontend changes
+- focused adapter contract tests now exist in `tests/e2e/phase75-remotion-adapter-contract.spec.ts`
+- focused backend script `test:backend:phase75` now exists
 
 ### Phase 7 — Production Optimization
 

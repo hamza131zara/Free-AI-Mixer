@@ -682,3 +682,25 @@ Single-process renderer execution harness (Phase 7.4-A/B):
   - no fake artifacts/progress/cancellation
   - no frontend architecture changes
 - Focused coverage exists in `tests/e2e/phase74-single-process-render-harness.spec.ts`.
+
+Remotion adapter contract stub (Phase 7.5-A/B):
+
+- Backend-only adapter stub exists in `backend/renderer/remotionRendererAdapter.ts`.
+- Adapter factory returns a `RendererAdapter`-compatible function for harness injection.
+- Stub behavior is explicit and truthful:
+  - always returns `ok: false`
+  - includes not-implemented message
+  - includes safe diagnostics only (`code`, `summary`, `retryable`, optional `workerId`)
+- Stub boundary guarantees:
+  - no Remotion install/import
+  - no `@remotion/renderer` import
+  - no composition files
+  - no real renderer runtime execution
+  - no lifecycle mutation
+  - no `markSuccess`/`markError` calls
+  - no file/directory writes
+  - no artifact metadata creation
+  - no URL/download/signed/public URL output
+- Route behavior is unchanged; no auto-run from `POST /exports`.
+- Frontend architecture remains unchanged.
+- Focused coverage exists in `tests/e2e/phase75-remotion-adapter-contract.spec.ts`.
