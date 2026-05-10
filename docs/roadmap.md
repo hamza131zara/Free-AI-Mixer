@@ -73,7 +73,7 @@ Status:
 
 Status:
 
-- in progress (Phase 5.1 export/render job domain types complete; Phase 5.2 export service contracts complete; Phase 5.3 export agent scaffold complete; Phase 5.4 export store integration complete; Phase 5.5 export UI/status actions complete; runtime export still deferred)
+- in progress (Phase 5.1 export/render job domain types complete; Phase 5.2 export service contracts complete; Phase 5.3 export agent scaffold complete; Phase 5.4 export store integration complete; Phase 5.5 export UI/status actions complete; Phase 5.6 export resume/hardening complete; runtime export still deferred)
 
 ### Phase 6: Backend & Infrastructure
 
@@ -99,4 +99,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. implement Phase 5.6 export resume/hardening (no backend rendering runtime yet)
+3. Phase 5.7 backend-boundary verification/docs sync or Phase 6 backend/export implementation planning (backend rendering runtime still deferred)

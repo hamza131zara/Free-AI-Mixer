@@ -25,6 +25,7 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
     (state) => state.activeExportTimelineId,
   );
   const requestExport = useExportStore((state) => state.requestExport);
+  const resumeExport = useExportStore((state) => state.resumeExport);
   const clearExportState = useExportStore((state) => state.clearExportState);
   const hasExportStateForTimeline = useExportStore((state) =>
     timelineId ? !!state.jobsByTimelineId[timelineId] : false,
@@ -57,6 +58,12 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
     resolvedTimelineId
       ? selectExportResultArtifacts(state, resolvedTimelineId)
       : emptyArtifacts,
+  );
+  const isSubmitting = useExportStore((state) =>
+    resolvedTimelineId ? !!state.isSubmittingByTimelineId[resolvedTimelineId] : false,
+  );
+  const isResolving = useExportStore((state) =>
+    resolvedTimelineId ? !!state.isResolvingByTimelineId[resolvedTimelineId] : false,
   );
 
   const statusMessage = useMemo(() => {
@@ -97,6 +104,13 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
 
   const canRequestExport =
     !!timelineId && clipCount > 0 && hasHydrated && !hydrationError && canSubmitBySelector && !isInFlight;
+  const showResumeButton = !!timelineId && resumeState === "resume_needed";
+  const canResumeExport =
+    !!timelineId &&
+    showResumeButton &&
+    !isSubmitting &&
+    !isResolving &&
+    !terminalLifecycle(lifecycle);
 
   return (
     <section className="scene-status" data-testid="timeline-export-panel">
@@ -111,6 +125,20 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
       </div>
 
       <div className="scene-card-actions">
+        {showResumeButton ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (!timelineId) {
+                return;
+              }
+              void resumeExport(timelineId);
+            }}
+            disabled={!canResumeExport}
+          >
+            Resume export
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => {
@@ -172,3 +200,9 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
     </section>
   );
 }
+
+const terminalLifecycle = (lifecycle: string | undefined): boolean =>
+  lifecycle === "success" ||
+  lifecycle === "error" ||
+  lifecycle === "canceled" ||
+  lifecycle === "expired";

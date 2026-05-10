@@ -68,6 +68,7 @@ Allowed:
 - dispatch timeline reorder commands through store actions only (`moveClipUp` / `moveClipDown`)
 - render manual playback preview state and dispatch playback actions through `timelineStore` only
 - render export status state and dispatch export actions through `exportStore` only
+- dispatch `resumeExport` through `exportStore` only for resumable export jobs
 
 Forbidden:
 
@@ -82,6 +83,7 @@ Forbidden:
 - implementing drag/drop orchestration in components (deferred)
 - implementing playback timers/RAF/loops in components
 - reading `localStorage` directly in components for export state
+- component-owned polling loops or auto-resume behavior for export jobs
 
 ### Store Layer
 
@@ -116,7 +118,9 @@ Current verified store behavior:
 - export orchestration state is isolated in `exportStore` and does not change scene/timeline lifecycle
 - export store may validate timeline export eligibility but does not mutate timeline/scene lifecycle
 - export store calls `exportAgent` (not `exportService` directly) for submit orchestration
+- export store owns manual resume action/state and calls `exportAgent` (not `exportService`) for resume polling
 - export store implements duplicate-submit guards while export jobs are in-flight
+- export store blocks duplicate resume/submit while export jobs are resolving/submitting
 - export store persists durable export job metadata and hydration classification outcomes
 - export store owns persisted export fallback/readiness behavior
 - export store hydration currently classifies resumable jobs only; it does not auto-resume polling
@@ -339,6 +343,7 @@ Backend boundary rules:
 - Components should only render export-request UI and dispatch actions in later phases.
 - Components must not import `exportAgent`/`exportService` directly, and must not read `localStorage` directly for export state.
 - Export UI has no polling loops and no auto-resume polling.
+- Resume uses existing accepted export handles only and does not submit a new export job.
 - No export runtime implementation exists yet.
 - No backend render queue exists in the current implementation.
 - No downloadable video output exists in the current implementation.

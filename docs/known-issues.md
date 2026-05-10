@@ -84,7 +84,7 @@ Why it matters:
 
 Target fix phase:
 
-- Phase 5.6 and later backend/export phases
+- later backend/export phases
 
 ### No Durable Backend Queue
 

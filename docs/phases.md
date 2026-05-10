@@ -264,7 +264,7 @@ Verified in Phase 4.6A:
 
 Status:
 
-- in progress (Phase 5.5 complete)
+- in progress (Phase 5.6 complete)
 
 Sub-phases:
 
@@ -274,7 +274,7 @@ Sub-phases:
 - Phase 5.3 export agent orchestration scaffold complete
 - Phase 5.4 export store integration complete
 - Phase 5.5 export UI/status actions complete
-- Phase 5.6 export resume/hardening next
+- Phase 5.6 export resume/hardening complete
 
 Phase 5.1 note:
 
@@ -312,6 +312,14 @@ Phase 5.5 note:
 - focused export UI coverage exists in `tests/e2e/phase55-export-ui.spec.ts`
 - resume label coverage exists for `resume_needed`, `resume_unavailable`, and `expired`
 - backend rendering, render queue, workers, webhooks, and downloadable output remain deferred
+
+Phase 5.6 note:
+
+- `src/store/exportStore.ts` now supports manual `resumeExport` for valid `resume_needed` jobs using existing accepted handles only
+- `src/components/TimelineExportPanel.tsx` now exposes a manual `Resume export` button for resumable jobs
+- focused resume coverage exists in `tests/e2e/phase54-export-store.spec.ts` and `tests/e2e/phase55-export-ui.spec.ts`
+- auto-resume polling for export jobs remains deferred
+- backend rendering, render queue, workers, webhooks, remote cancellation, and downloadable output remain deferred
 
 ### Phase 6 — Backend & Infrastructure
 

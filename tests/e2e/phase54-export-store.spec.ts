@@ -467,4 +467,268 @@ test.describe("Phase 5.4 export store integration", () => {
       exportAgent.startExport = originalStart;
     }
   });
+
+  test("resumeExport polls existing handle and applies terminal success without submit", async () => {
+    setUpWindowForStores();
+    const { timelineId, exportStore } = await seedTimelineWithClip();
+    let startCalls = 0;
+    let pollCalls = 0;
+    const originalStart = exportAgent.startExport;
+    const originalPoll = exportAgent.pollExportUntilTerminal;
+
+    exportAgent.startExport = async () => {
+      startCalls += 1;
+      return {
+        kind: "failure",
+        failure: { message: "should not submit", code: "unexpected_submit" },
+      };
+    };
+    exportAgent.pollExportUntilTerminal = async () => {
+      pollCalls += 1;
+      return {
+        kind: "success",
+        result: {
+          provider: "backend_render",
+          requestId: "request-resume",
+          jobId: "job-resume",
+          artifacts: [{ id: "artifact-resume" }],
+        },
+      };
+    };
+
+    exportStore.setState({
+      jobsByTimelineId: {
+        [timelineId]: {
+          timelineId,
+          requestId: "request-resume",
+          lifecycle: "submitted",
+          handle: {
+            provider: "backend_render",
+            requestId: "request-resume",
+            jobId: "job-resume",
+            status: "submitted",
+          },
+          resumeState: "resume_needed",
+        },
+      },
+      isResolvingByTimelineId: {},
+      isSubmittingByTimelineId: {},
+    });
+
+    try {
+      const result = await exportStore.getState().resumeExport(timelineId);
+      expect(result?.lifecycle).toBe("success");
+      expect(result?.result?.artifacts).toEqual([{ id: "artifact-resume" }]);
+      expect(result?.resumeState).toBe("none");
+      expect(startCalls).toBe(0);
+      expect(pollCalls).toBe(1);
+    } finally {
+      exportAgent.startExport = originalStart;
+      exportAgent.pollExportUntilTerminal = originalPoll;
+    }
+  });
+
+  test("resumeExport applies terminal failure truthfully", async () => {
+    setUpWindowForStores();
+    const { timelineId, exportStore } = await seedTimelineWithClip();
+    const originalPoll = exportAgent.pollExportUntilTerminal;
+    exportAgent.pollExportUntilTerminal = async () => ({
+      kind: "failure",
+      failure: { message: "provider failed", code: "backend_failure" },
+      jobId: "job-failed",
+    });
+
+    exportStore.setState({
+      jobsByTimelineId: {
+        [timelineId]: {
+          timelineId,
+          requestId: "request-fail",
+          lifecycle: "rendering",
+          handle: {
+            provider: "backend_render",
+            requestId: "request-fail",
+            jobId: "job-failed",
+            status: "rendering",
+          },
+          resumeState: "resume_needed",
+        },
+      },
+      isResolvingByTimelineId: {},
+      isSubmittingByTimelineId: {},
+    });
+
+    try {
+      const result = await exportStore.getState().resumeExport(timelineId);
+      expect(result?.lifecycle).toBe("error");
+      expect(result?.failure?.code).toBe("backend_failure");
+      expect(result?.resumeState).toBe("none");
+    } finally {
+      exportAgent.pollExportUntilTerminal = originalPoll;
+    }
+  });
+
+  test("resumeExport timeout maps to expired and export_poll_timeout", async () => {
+    setUpWindowForStores();
+    const { timelineId, exportStore } = await seedTimelineWithClip();
+    const originalPoll = exportAgent.pollExportUntilTerminal;
+    exportAgent.pollExportUntilTerminal = async () => ({
+      kind: "failure",
+      failure: { message: "timeout", code: "export_poll_timeout" },
+      jobId: "job-timeout",
+    });
+
+    exportStore.setState({
+      jobsByTimelineId: {
+        [timelineId]: {
+          timelineId,
+          requestId: "request-timeout",
+          lifecycle: "submitted",
+          handle: {
+            provider: "backend_render",
+            requestId: "request-timeout",
+            jobId: "job-timeout",
+            status: "submitted",
+          },
+          resumeState: "resume_needed",
+        },
+      },
+      isResolvingByTimelineId: {},
+      isSubmittingByTimelineId: {},
+    });
+
+    try {
+      const result = await exportStore.getState().resumeExport(timelineId);
+      expect(result?.lifecycle).toBe("expired");
+      expect(result?.failure?.code).toBe("export_poll_timeout");
+      expect(result?.resumeState).toBe("expired");
+    } finally {
+      exportAgent.pollExportUntilTerminal = originalPoll;
+    }
+  });
+
+  test("resumeExport duplicate and invalid resume attempts are blocked", async () => {
+    setUpWindowForStores();
+    const { timelineId, exportStore } = await seedTimelineWithClip();
+    let pollCalls = 0;
+    const originalPoll = exportAgent.pollExportUntilTerminal;
+    exportAgent.pollExportUntilTerminal = async () => {
+      pollCalls += 1;
+      return {
+        kind: "success",
+        result: {
+          provider: "backend_render",
+          requestId: "request-ok",
+          jobId: "job-ok",
+          artifacts: [{ id: "artifact-ok" }],
+        },
+      };
+    };
+
+    try {
+      exportStore.setState({
+        jobsByTimelineId: {
+          [timelineId]: {
+            timelineId,
+            requestId: "request-blocked",
+            lifecycle: "rendering",
+            handle: {
+              provider: "backend_render",
+              requestId: "request-blocked",
+              jobId: "job-blocked",
+              status: "rendering",
+            },
+            resumeState: "resume_needed",
+          },
+        },
+        isResolvingByTimelineId: { [timelineId]: true },
+        isSubmittingByTimelineId: {},
+      });
+      const blocked = await exportStore.getState().resumeExport(timelineId);
+      expect(blocked?.lifecycle).toBe("rendering");
+      expect(pollCalls).toBe(0);
+
+      exportStore.setState({
+        jobsByTimelineId: {
+          [timelineId]: {
+            timelineId,
+            requestId: "request-not-needed",
+            lifecycle: "rendering",
+            handle: {
+              provider: "backend_render",
+              requestId: "request-not-needed",
+              jobId: "job-not-needed",
+              status: "rendering",
+            },
+            resumeState: "none",
+          },
+        },
+        isResolvingByTimelineId: {},
+        isSubmittingByTimelineId: {},
+      });
+      const notNeeded = await exportStore.getState().resumeExport(timelineId);
+      expect(notNeeded?.resumeState).toBe("none");
+      expect(pollCalls).toBe(0);
+
+      exportStore.setState({
+        jobsByTimelineId: {
+          [timelineId]: {
+            timelineId,
+            requestId: "request-bad-handle",
+            lifecycle: "submitted",
+            resumeState: "resume_needed",
+          },
+        },
+      });
+      const missingHandle = await exportStore.getState().resumeExport(timelineId);
+      expect(missingHandle?.requestId).toBe("request-bad-handle");
+      expect(pollCalls).toBe(0);
+    } finally {
+      exportAgent.pollExportUntilTerminal = originalPoll;
+    }
+  });
+
+  test("resumeExport AbortError clears resolving guard and does not fake success", async () => {
+    setUpWindowForStores();
+    const { timelineId, exportStore, timelineStore, sceneStore } =
+      await seedTimelineWithClip();
+    const timelineBefore = JSON.stringify(timelineStore.getState().timelines);
+    const sceneBefore = JSON.stringify(sceneStore.getState().scenes);
+    const originalPoll = exportAgent.pollExportUntilTerminal;
+    exportAgent.pollExportUntilTerminal = async () => {
+      throw new DOMException("Aborted", "AbortError");
+    };
+
+    exportStore.setState({
+      jobsByTimelineId: {
+        [timelineId]: {
+          timelineId,
+          requestId: "request-abort",
+          lifecycle: "rendering",
+          handle: {
+            provider: "backend_render",
+            requestId: "request-abort",
+            jobId: "job-abort",
+            status: "rendering",
+          },
+          resumeState: "resume_needed",
+        },
+      },
+      isResolvingByTimelineId: {},
+      isSubmittingByTimelineId: {},
+    });
+
+    try {
+      await expect(exportStore.getState().resumeExport(timelineId)).rejects.toThrow(
+        "Aborted",
+      );
+      expect(exportStore.getState().isResolvingByTimelineId[timelineId]).toBeFalsy();
+      expect(exportStore.getState().jobsByTimelineId[timelineId]?.lifecycle).toBe(
+        "rendering",
+      );
+      expect(JSON.stringify(timelineStore.getState().timelines)).toBe(timelineBefore);
+      expect(JSON.stringify(sceneStore.getState().scenes)).toBe(sceneBefore);
+    } finally {
+      exportAgent.pollExportUntilTerminal = originalPoll;
+    }
+  });
 });

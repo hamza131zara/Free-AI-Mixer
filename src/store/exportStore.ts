@@ -77,6 +77,15 @@ export interface ExportStoreState {
   markExportTimeout: (timelineId: TimelineId, timeoutMs?: number) => void;
   clearExportState: (timelineId: TimelineId) => void;
   classifyHydratedExportJobs: (nowIso?: string) => void;
+  resumeExport: (
+    timelineId: TimelineId,
+    options?: {
+      signal?: AbortSignal;
+      timeoutMs?: number;
+      maxTransientFailures?: number;
+      pollDelayMs?: number;
+    },
+  ) => Promise<ExportTimelineState | undefined>;
 }
 
 type PersistedExportStoreState = Pick<
@@ -433,6 +442,156 @@ export const useExportStore = create<ExportStoreState>()(
           ) as Record<TimelineId, ExportTimelineState>,
         }));
       },
+      resumeExport: async (timelineId, options) => {
+        const state = get();
+        const current =
+          state.jobsByTimelineId[timelineId] ??
+          readPersistedExportTimelineState(timelineId);
+        if (!current || !timelineId) {
+          return undefined;
+        }
+
+        if (!state.jobsByTimelineId[timelineId]) {
+          set((s) => ({
+            jobsByTimelineId: {
+              ...s.jobsByTimelineId,
+              [timelineId]: current,
+            },
+          }));
+        }
+
+        if (
+          state.isSubmittingByTimelineId[timelineId] ||
+          state.isResolvingByTimelineId[timelineId]
+        ) {
+          return current;
+        }
+
+        if (
+          terminalStatuses.has(current.lifecycle) ||
+          current.resumeState !== "resume_needed" ||
+          !isValidHandle(current.handle)
+        ) {
+          return current;
+        }
+
+        set((s) => ({
+          isResolvingByTimelineId: {
+            ...s.isResolvingByTimelineId,
+            [timelineId]: true,
+          },
+          jobsByTimelineId: {
+            ...s.jobsByTimelineId,
+            [timelineId]: {
+              ...current,
+              lifecycle:
+                current.lifecycle === "queued" ? "rendering" : current.lifecycle,
+            },
+          },
+        }));
+
+        try {
+          const resolved = await exportAgent.pollExportUntilTerminal(current.handle, {
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+            maxTransientFailures: options?.maxTransientFailures,
+            pollDelayMs: options?.pollDelayMs,
+          });
+          const nowIso = new Date().toISOString();
+          let nextState: ExportTimelineState | undefined;
+
+          set((s) => {
+            const latest = s.jobsByTimelineId[timelineId];
+            if (!latest) {
+              return s;
+            }
+
+            if (resolved.kind === "success") {
+              nextState = {
+                ...latest,
+                lifecycle: "success",
+                handle: undefined,
+                failure: undefined,
+                result: {
+                  ...resolved.result,
+                  artifacts: resolved.result.artifacts.map((artifact) => ({
+                    ...artifact,
+                  })),
+                },
+                lastPolledAt: nowIso,
+                resumeState: "none",
+              };
+            } else {
+              const failureCode = resolved.failure.code;
+              nextState = {
+                ...latest,
+                lifecycle:
+                  failureCode === "export_poll_timeout" ||
+                  failureCode === "export_job_expired"
+                    ? "expired"
+                    : failureCode === "export_job_canceled"
+                      ? "canceled"
+                      : "error",
+                handle: undefined,
+                result: undefined,
+                failure: resolved.failure,
+                lastPolledAt: nowIso,
+                resumeState:
+                  failureCode === "export_poll_timeout" ||
+                  failureCode === "export_job_expired"
+                    ? "expired"
+                    : failureCode === "export_resume_unavailable"
+                      ? "resume_unavailable"
+                      : "none",
+              };
+            }
+
+            return {
+              jobsByTimelineId: {
+                ...s.jobsByTimelineId,
+                [timelineId]: nextState!,
+              },
+            };
+          });
+
+          return nextState;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            throw error;
+          }
+
+          const failureState: ExportTimelineState = {
+            ...current,
+            lifecycle: "error",
+            handle: undefined,
+            result: undefined,
+            failure: {
+              message: "Export resume polling failed.",
+              code: "transport_exception",
+              details:
+                error instanceof Error
+                  ? { name: error.name, message: error.message }
+                  : error,
+            },
+            lastPolledAt: new Date().toISOString(),
+            resumeState: "none",
+          };
+          set((s) => ({
+            jobsByTimelineId: {
+              ...s.jobsByTimelineId,
+              [timelineId]: failureState,
+            },
+          }));
+          return failureState;
+        } finally {
+          set((s) => ({
+            isResolvingByTimelineId: {
+              ...s.isResolvingByTimelineId,
+              [timelineId]: false,
+            },
+          }));
+        }
+      },
     }),
     {
       name: exportStorePersistKey,
@@ -681,6 +840,36 @@ const readPersistedExportJob = (
       lifecycle: typeof job.lifecycle === "string" ? job.lifecycle : undefined,
       resumeState: typeof job.resumeState === "string" ? job.resumeState : undefined,
     };
+  } catch {
+    return undefined;
+  }
+};
+
+const readPersistedExportTimelineState = (
+  timelineId: TimelineId,
+): ExportTimelineState | undefined => {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(exportStorePersistKey);
+    if (!raw) {
+      return undefined;
+    }
+
+    const parsed = JSON.parse(raw) as {
+      state?: {
+        jobsByTimelineId?: Record<string, ExportTimelineState>;
+      };
+    };
+
+    const candidate = parsed.state?.jobsByTimelineId?.[timelineId];
+    if (!candidate || typeof candidate !== "object") {
+      return undefined;
+    }
+
+    return sanitizeJob(candidate);
   } catch {
     return undefined;
   }

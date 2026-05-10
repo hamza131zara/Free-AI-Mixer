@@ -12,6 +12,7 @@ const exportPersistKey = "free-ai-mixer-exports";
 type RuntimeConfigSeed = {
   exportBaseUrl: string;
   exportSubmitPath?: string;
+  exportPollPath?: string;
 };
 
 const seedRuntimeConfig = async (
@@ -528,6 +529,9 @@ test.describe("Phase 5.5 export UI status/actions", () => {
     await expect(page.getByTestId("timeline-export-panel")).toContainText(
       "Resumable export job found. Resume is not started yet.",
     );
+    await expect(
+      page.getByRole("button", { name: "Resume export" }),
+    ).toBeVisible();
   });
 
   test("resume_unavailable label renders truthfully", async ({ page }) => {
@@ -574,6 +578,9 @@ test.describe("Phase 5.5 export UI status/actions", () => {
     await expect(page.getByTestId("timeline-export-panel")).toContainText(
       "Resume unavailable. Request export again.",
     );
+    await expect(
+      page.getByRole("button", { name: "Resume export" }),
+    ).toHaveCount(0);
   });
 
   test("expired label renders truthfully", async ({ page }) => {
@@ -620,5 +627,233 @@ test.describe("Phase 5.5 export UI status/actions", () => {
     await expect(page.getByTestId("timeline-export-panel")).toContainText(
       "Export expired or timed out.",
     );
+    await expect(
+      page.getByRole("button", { name: "Resume export" }),
+    ).toHaveCount(0);
+  });
+
+  test("clicking Resume export polls existing handle to terminal success with truthful artifacts and no submit", async ({
+    page,
+  }) => {
+    const sceneId = "success-scene-a";
+    const timelineId = "timeline-resume-success";
+    let generationRequestCount = 0;
+    let submitCalls = 0;
+    let pollCalls = 0;
+
+    await page.route(sceneApiUrl, async (route) => {
+      generationRequestCount += 1;
+      await route.abort();
+    });
+
+    await seedRuntimeConfig(page, {
+      exportBaseUrl: "http://127.0.0.1:4173",
+      exportPollPath: "/exports/jobs",
+      exportSubmitPath: "/exports/jobs",
+    });
+
+    await page.route("http://127.0.0.1:4173/exports/jobs", async (route) => {
+      if (route.request().method() === "POST") {
+        submitCalls += 1;
+      }
+      await route.fallback();
+    });
+
+    await page.route("http://127.0.0.1:4173/exports/jobs/*", async (route) => {
+      pollCalls += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          kind: "terminal_success",
+          result: {
+            provider: "backend_render",
+            requestId: "request-resume-success",
+            jobId: "job-resume-success",
+            artifacts: [{ id: "artifact-resume-success", url: "https://example.com/resume.mp4" }],
+          },
+        }),
+      });
+    });
+
+    await seedSceneStore(page, [
+      createScene({
+        id: sceneId,
+        lifecycle: "success",
+        payload: { prompt: "Scene A", style: "cinematic", duration: 8 },
+        progress: 100,
+        result: {
+          image: "https://example.com/a.png",
+          variations: ["https://example.com/a-var.png"],
+        },
+      }),
+    ]);
+    await seedTimelineStore(page, timelineId, sceneId);
+    await seedExportStore(page, {
+      jobsByTimelineId: {
+        [timelineId]: {
+          timelineId,
+          requestId: "request-resume-success",
+          lifecycle: "submitted",
+          handle: {
+            provider: "backend_render",
+            requestId: "request-resume-success",
+            jobId: "job-resume-success",
+            status: "submitted",
+          },
+          resumeState: "resume_needed",
+        },
+      },
+      activeExportTimelineId: timelineId,
+    });
+
+    await gotoAppWithDiagnostics(page);
+    await page.getByRole("button", { name: "Resume export" }).click();
+
+    const panel = page.getByTestId("timeline-export-panel");
+    await expect(panel).toContainText("Export completed.");
+    await expect(panel.getByTestId("timeline-export-artifacts")).toContainText(
+      "artifact-resume-success",
+    );
+    await expect(
+      panel.getByRole("link", { name: "Open artifact" }),
+    ).toHaveAttribute("href", "https://example.com/resume.mp4");
+
+    expect(submitCalls).toBe(0);
+    expect(pollCalls).toBe(1);
+    expect(generationRequestCount).toBe(0);
+  });
+
+  test("resume failure shows truthful failure code/message", async ({ page }) => {
+    const sceneId = "success-scene-a";
+    const timelineId = "timeline-resume-failure";
+
+    await seedRuntimeConfig(page, {
+      exportBaseUrl: "http://127.0.0.1:4173",
+      exportPollPath: "/exports/jobs",
+    });
+
+    await page.route("http://127.0.0.1:4173/exports/jobs/*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          kind: "terminal_failure",
+          jobId: "job-resume-failure",
+          failure: {
+            message: "Backend render failed.",
+            code: "backend_render_failed",
+          },
+        }),
+      });
+    });
+
+    await seedSceneStore(page, [
+      createScene({
+        id: sceneId,
+        lifecycle: "success",
+        payload: { prompt: "Scene A", style: "cinematic", duration: 8 },
+        progress: 100,
+        result: {
+          image: "https://example.com/a.png",
+          variations: ["https://example.com/a-var.png"],
+        },
+      }),
+    ]);
+    await seedTimelineStore(page, timelineId, sceneId);
+    await seedExportStore(page, {
+      jobsByTimelineId: {
+        [timelineId]: {
+          timelineId,
+          requestId: "request-resume-failure",
+          lifecycle: "rendering",
+          handle: {
+            provider: "backend_render",
+            requestId: "request-resume-failure",
+            jobId: "job-resume-failure",
+            status: "rendering",
+          },
+          resumeState: "resume_needed",
+        },
+      },
+      activeExportTimelineId: timelineId,
+    });
+
+    await gotoAppWithDiagnostics(page);
+    await page.getByRole("button", { name: "Resume export" }).click();
+    await expect(page.getByTestId("timeline-export-failure")).toContainText(
+      "backend_render_failed",
+    );
+    await expect(page.getByTestId("timeline-export-failure")).toContainText(
+      "Backend render failed.",
+    );
+  });
+
+  test("duplicate resume is blocked while resolving", async ({ page }) => {
+    const sceneId = "success-scene-a";
+    const timelineId = "timeline-resume-resolving";
+    let pollCalls = 0;
+
+    await seedRuntimeConfig(page, {
+      exportBaseUrl: "http://127.0.0.1:4173",
+      exportPollPath: "/exports/jobs",
+    });
+
+    await page.route("http://127.0.0.1:4173/exports/jobs/*", async (route) => {
+      pollCalls += 1;
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          kind: "terminal_success",
+          result: {
+            provider: "backend_render",
+            requestId: "request-resume-resolving",
+            jobId: "job-resume-resolving",
+            artifacts: [{ id: "artifact-resume-resolving" }],
+          },
+        }),
+      });
+    });
+
+    await seedSceneStore(page, [
+      createScene({
+        id: sceneId,
+        lifecycle: "success",
+        payload: { prompt: "Scene A", style: "cinematic", duration: 8 },
+        progress: 100,
+        result: {
+          image: "https://example.com/a.png",
+          variations: ["https://example.com/a-var.png"],
+        },
+      }),
+    ]);
+    await seedTimelineStore(page, timelineId, sceneId);
+    await seedExportStore(page, {
+      jobsByTimelineId: {
+        [timelineId]: {
+          timelineId,
+          requestId: "request-resume-resolving",
+          lifecycle: "submitted",
+          handle: {
+            provider: "backend_render",
+            requestId: "request-resume-resolving",
+            jobId: "job-resume-resolving",
+            status: "submitted",
+          },
+          resumeState: "resume_needed",
+        },
+      },
+      activeExportTimelineId: timelineId,
+    });
+
+    await gotoAppWithDiagnostics(page);
+    const resumeButton = page.getByRole("button", { name: "Resume export" });
+    await resumeButton.click();
+    await expect(page.getByTestId("timeline-export-panel")).toContainText(
+      "Export completed.",
+    );
+    expect(pollCalls).toBe(1);
   });
 });
