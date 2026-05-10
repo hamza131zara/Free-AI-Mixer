@@ -23,11 +23,14 @@ export const createExportRouter = (registry: ExportJobRegistry): Router => {
       response: Response<ExportSubmitResponseBody>,
     ) => {
       const body = parseSubmitBody(request.body);
-      const record = registry.create({
-        requestId: body.requestId,
-        timelineId: body.timelineId,
-        renderSettings: body.renderSettings,
-      });
+      const existingRecord = registry.getByRequestId(body.requestId);
+      const record =
+        existingRecord ??
+        registry.create({
+          requestId: body.requestId,
+          timelineId: body.timelineId,
+          renderSettings: body.renderSettings,
+        });
 
       response.status(202).json({
         kind: "accepted_job",

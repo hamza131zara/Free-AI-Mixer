@@ -13,10 +13,12 @@ export interface CreateExportJobInput {
 export interface ExportJobRegistry {
   create(input: CreateExportJobInput): BackendExportJobRecord;
   getById(jobId: string): BackendExportJobRecord | undefined;
+  getByRequestId(requestId: string): BackendExportJobRecord | undefined;
 }
 
 export class InMemoryExportJobRegistry implements ExportJobRegistry {
   private readonly jobsById = new Map<string, BackendExportJobRecord>();
+  private readonly jobIdByRequestId = new Map<string, string>();
 
   create(input: CreateExportJobInput): BackendExportJobRecord {
     const now = new Date().toISOString();
@@ -34,11 +36,21 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     };
 
     this.jobsById.set(jobId, record);
+    this.jobIdByRequestId.set(record.requestId, record.jobId);
     return record;
   }
 
   getById(jobId: string): BackendExportJobRecord | undefined {
     return this.jobsById.get(jobId);
+  }
+
+  getByRequestId(requestId: string): BackendExportJobRecord | undefined {
+    const existingJobId = this.jobIdByRequestId.get(requestId);
+    if (!existingJobId) {
+      return undefined;
+    }
+
+    return this.jobsById.get(existingJobId);
   }
 }
 
