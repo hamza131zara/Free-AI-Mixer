@@ -163,7 +163,15 @@ Phase 7.0 renderer snapshot note:
 - Phase 7.0-B renderer input snapshot contract implementation + focused tests is complete
 - backend-only snapshot contract now exists with strict structural validation and immutable snapshot creation
 - no Remotion install, no renderer execution, no file generation, and no download output were introduced
-- next phase is Phase 7.0-D renderer input snapshot contract final sign-off
+- next phase was Phase 7.0-D renderer input snapshot contract final sign-off
+
+Phase 7.1 temp/output path policy note:
+
+- Phase 7.1-A audit is complete
+- Phase 7.1-B temp/output path policy helper implementation + focused tests is complete
+- output path policy is backend-internal only with safe root-key derivation and traversal/injection rejection
+- no file/directory creation, no artifact creation, no URL/download output, and no lifecycle mutation were introduced
+- next phase is Phase 7.1-D temp/output path policy final sign-off
 
 ### Phase 7: Production Optimization
 
@@ -179,4 +187,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 7.0-D renderer input snapshot contract final sign-off, then Phase 7.1-A temp/output path policy audit only
+3. run Phase 7.1-D temp/output path policy final sign-off, then Phase 7.2-A real file verification policy audit only

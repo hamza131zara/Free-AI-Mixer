@@ -555,3 +555,25 @@ Renderer input snapshot contract (Phase 7.0-A/B):
   - path traversal in output target descriptors
 - Contract does not start rendering, create files/artifacts, emit progress percent, create download URLs, or mutate lifecycle state.
 - No frontend architecture changes were introduced in this phase.
+
+Temp/output path policy helper (Phase 7.1-A/B):
+
+- Backend-only path policy helper exists in `backend/renderer/outputPathPolicy.ts`.
+- Supports internal root keys: `temp` and `output`.
+- Safely derives per-job output descriptors under configured backend roots.
+- Allows only safe path segment characters (`a-z`, `A-Z`, `0-9`, `-`, `_`).
+- Rejects traversal and injection patterns including:
+  - `..`, `/`, `\`
+  - absolute paths
+  - Windows drive-letter and UNC forms
+  - URL-like values
+  - reserved Windows device names
+  - trailing spaces/dots
+- Enforces resolved path containment within selected root.
+- Helper is non-executing policy logic only:
+  - no file creation
+  - no directory creation
+  - no artifact creation
+  - no URL/download URL generation
+  - no lifecycle transitions
+  - no API exposure of local paths

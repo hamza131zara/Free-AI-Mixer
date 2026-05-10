@@ -356,8 +356,11 @@ Sub-phases:
 - Phase 6.9-C final Phase 6 manual sign-off (next)
 - Phase 7.0-A Remotion renderer pilot audit only complete
 - Phase 7.0-B renderer input snapshot contract implementation + tests complete
-- Phase 7.0-D renderer input snapshot contract final sign-off (next)
-- Phase 7.1-A temp/output path policy audit only (after 7.0-D)
+- Phase 7.0-D renderer input snapshot contract final sign-off complete
+- Phase 7.1-A temp/output path policy audit only complete
+- Phase 7.1-B temp/output path policy helper implementation + tests complete
+- Phase 7.1-D temp/output path policy final sign-off (next)
+- Phase 7.2-A real file verification policy audit only (after 7.1-D)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -550,6 +553,29 @@ Phase 7.0 note:
 - snapshot helpers do not start rendering, create files/artifacts, add progress percent, create download URLs, or trigger lifecycle transitions
 - focused contract tests now exist in `tests/e2e/phase70-renderer-input-snapshot-contract.spec.ts`
 - focused backend script `test:backend:phase70` now exists
+
+Phase 7.1 note:
+
+- backend-only output path policy helper now exists in `backend/renderer/outputPathPolicy.ts`
+- helper supports safe root keys:
+  - `temp`
+  - `output`
+- helper safely derives per-job temp/output paths under configured backend roots
+- helper enforces safe path segment characters (`a-z`, `A-Z`, `0-9`, `-`, `_`)
+- helper rejects traversal/path injection:
+  - `..`
+  - `/`
+  - `\`
+  - absolute paths
+  - Windows drive-letter paths
+  - UNC paths
+  - URL-like values
+  - reserved Windows device names
+  - trailing spaces/dots
+- helper enforces resolved-path containment under selected root
+- helper does not create files, directories, artifacts, URLs/download URLs, lifecycle transitions, or API path exposure
+- focused path policy tests now exist in `tests/e2e/phase71-output-path-policy.spec.ts`
+- focused backend script `test:backend:phase71` now exists
 
 ### Phase 7 — Production Optimization
 
