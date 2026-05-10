@@ -96,6 +96,8 @@ Why it matters:
 - export API responses must remain metadata-only (no raw blobs, no local filesystem paths)
 - planned renderer lifecycle/worker contracts are documented, but workers/queues/webhooks/database/durable persistence are still deferred
 - planned progress policy remains truthful-only (stage milestones only unless renderer can compute real percent)
+- backend lifecycle state-machine guards now exist (Phase 6.6-B), but renderer execution and real artifact production are still deferred
+- no real artifact URLs/download outputs exist; artifact hosting/signing remains deferred
 
 Target fix phase:
 

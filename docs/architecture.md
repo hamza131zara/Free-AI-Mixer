@@ -447,3 +447,22 @@ Renderer prerequisite contracts (Phase 6.5-C/D):
 - Artifact URLs may appear only when hosting/signing is truly available later.
 - Progress stage comes only from real backend milestones; percent is allowed only when truthfully computed by renderer telemetry.
 - No timer-based progress and no frontend-generated progress are allowed.
+
+Backend lifecycle state machine (Phase 6.6-A/B):
+
+- Lifecycle state machine now exists in backend registry/contracts only.
+- Implemented lifecycle statuses:
+  - `submitted`
+  - `rendering`
+  - `finalizing`
+  - `success`
+  - `error`
+  - `expired`
+- Registry transition helpers now exist:
+  - `canTransition(from, to)`
+  - `transition(jobId, nextStatus, options?)`
+- Terminal states are immutable.
+- `success` requires structurally valid artifact metadata and cannot be reached by invalid transitions.
+- Current route behavior remains compatible with existing contract-first `accepted_job`/`pending` behavior.
+- Frontend architecture remains unchanged: no React orchestration changes.
+- No renderer runtime, worker runtime, queue runtime, artifact hosting URLs, or downloadable outputs were introduced.

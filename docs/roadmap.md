@@ -113,7 +113,16 @@ Phase 6.5 renderer decision note:
 - planned worker boundary is claim/render/finalize/success-or-error with backend-authoritative transitions
 - metadata-only artifact API contract remains required (no raw blobs, no local paths)
 - progress remains stage-only unless truthful renderer percent becomes available
-- next phase is Phase 6.6-A backend lifecycle state machine audit only
+- next phase was Phase 6.6-A backend lifecycle state machine audit only
+
+Phase 6.6 lifecycle state machine note:
+
+- Phase 6.6-A audit is complete
+- Phase 6.6-B backend lifecycle state machine implementation + focused tests is complete
+- backend lifecycle transition guards now exist in registry/contracts while route behavior remains contract-compatible
+- frontend remains unchanged
+- no renderer/worker/queue runtime, artifact hosting, or downloadable output was introduced
+- next phase is Phase 6.6-D backend lifecycle state machine final sign-off
 
 ### Phase 7: Production Optimization
 
@@ -129,4 +138,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 6.6-A backend lifecycle state machine audit only
+3. run Phase 6.6-D backend lifecycle state machine final sign-off

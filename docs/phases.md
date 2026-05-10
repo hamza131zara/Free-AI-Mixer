@@ -343,7 +343,9 @@ Sub-phases:
 - Phase 6.5-B renderer architecture decision docs update complete
 - Phase 6.5-C renderer prerequisite contract audit/planning complete
 - Phase 6.5-D renderer prerequisite contract docs update complete
-- Phase 6.6-A backend lifecycle state machine audit only (next)
+- Phase 6.6-A backend lifecycle state machine audit complete
+- Phase 6.6-B backend lifecycle state machine implementation + tests complete
+- Phase 6.6-D backend lifecycle state machine final sign-off (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -420,6 +422,27 @@ Phase 6.5 note:
   - `markSuccess(jobId, workerId, artifacts[])`
   - `markError(jobId, workerId, failure)`
 - lifecycle transitions must remain backend-authoritative, never frontend-driven
+
+Phase 6.6 note:
+
+- backend lifecycle state-machine typing now exists in registry/contracts for:
+  - `submitted`
+  - `rendering`
+  - `finalizing`
+  - `success`
+  - `error`
+  - `expired`
+- backend registry now exposes transition helpers:
+  - `canTransition(from, to)`
+  - `transition(jobId, nextStatus, options?)`
+- terminal states are immutable
+- `success` is guarded and requires structurally valid artifact metadata
+- focused lifecycle state-machine tests now exist in `tests/e2e/phase66-backend-lifecycle-state-machine.spec.ts`
+- focused backend script `test:backend:phase66` now exists
+- route behavior remains compatible with existing `accepted_job`/`pending` flow
+- frontend was unchanged in this phase
+- no renderer, worker runtime, queue runtime, artifact hosting, or download URL implementation exists yet
+- no fake progress percent, fake success, fake artifacts, or fake cancellation behavior was added
 
 ### Phase 7 — Production Optimization
 
