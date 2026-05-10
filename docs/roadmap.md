@@ -157,6 +157,14 @@ Phase 6.9 renderer-readiness note:
   - single-process worker execution harness
 - next phase is Phase 6.9-C final Phase 6 manual sign-off, then Phase 7.0-A audit-only planning
 
+Phase 7.0 renderer snapshot note:
+
+- Phase 7.0-A audit is complete
+- Phase 7.0-B renderer input snapshot contract implementation + focused tests is complete
+- backend-only snapshot contract now exists with strict structural validation and immutable snapshot creation
+- no Remotion install, no renderer execution, no file generation, and no download output were introduced
+- next phase is Phase 7.0-D renderer input snapshot contract final sign-off
+
 ### Phase 7: Production Optimization
 
 - monitoring
@@ -171,4 +179,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 6.9-C final Phase 6 manual sign-off, then Phase 7.0-A Remotion renderer pilot audit only
+3. run Phase 7.0-D renderer input snapshot contract final sign-off, then Phase 7.1-A temp/output path policy audit only

@@ -122,3 +122,4 @@ Phase numbering in prompts must match `docs/phases.md`.
 - Phase 6.7 prompts should keep artifact metadata contract work backend-only and structural-only: no real artifact generation, no hosting/signing URLs, no download output claims, and no React/store/agent/service drift.
 - Phase 6.8 prompts should keep worker-boundary work registry-only: claim/ownership guards are allowed, but no worker runtime loop, no queue runtime, no renderer execution, and no frontend orchestration changes.
 - Phase 6.9 prompts should remain sign-off/readiness-only: confirm boundaries and deferred systems before opening Phase 7 Remotion pilot planning; no implementation changes.
+- Phase 7.0 prompts should keep renderer-snapshot work backend-only: no Remotion install, no renderer execution, no file output, no queue/worker runtime loop, and no frontend orchestration changes.

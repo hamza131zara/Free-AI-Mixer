@@ -531,3 +531,27 @@ Renderer-readiness audit status (Phase 6.9-A):
   - Remotion runtime/dependency execution wrapper
   - renderer failure mapping
   - single-process worker execution harness
+
+Renderer input snapshot contract (Phase 7.0-A/B):
+
+- Backend-only renderer input snapshot contract now exists in `backend/contracts/renderInputSnapshot.ts`.
+- Core contract includes:
+  - `jobId`
+  - `timelineId`
+  - `renderSettings`
+  - `timelineSnapshot`
+  - scene/media references
+  - `outputTarget`
+- Contract helpers:
+  - `validateRenderInputSnapshot(input)`
+  - `createRenderInputSnapshot(input)`
+- Snapshot data is structural and immutable.
+- Contract rejects:
+  - empty clips
+  - invalid clip timing
+  - missing scene/media references
+  - blob-like fields
+  - url/download/public URL fields
+  - path traversal in output target descriptors
+- Contract does not start rendering, create files/artifacts, emit progress percent, create download URLs, or mutate lifecycle state.
+- No frontend architecture changes were introduced in this phase.

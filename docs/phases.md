@@ -354,7 +354,10 @@ Sub-phases:
 - Phase 6.8-D worker boundary claim contract final sign-off complete
 - Phase 6.9-A backend renderer-readiness final audit complete
 - Phase 6.9-C final Phase 6 manual sign-off (next)
-- Phase 7.0-A Remotion renderer pilot audit only (next after 6.9-C)
+- Phase 7.0-A Remotion renderer pilot audit only complete
+- Phase 7.0-B renderer input snapshot contract implementation + tests complete
+- Phase 7.0-D renderer input snapshot contract final sign-off (next)
+- Phase 7.1-A temp/output path policy audit only (after 7.0-D)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -525,6 +528,28 @@ Phase 6.9 note:
   - Remotion runtime/dependency execution wrapper
   - renderer failure mapping
   - single-process worker execution harness
+
+Phase 7.0 note:
+
+- renderer input snapshot contract now exists in `backend/contracts/renderInputSnapshot.ts`
+- snapshot contract is backend-internal only and includes:
+  - `jobId`
+  - `timelineId`
+  - `renderSettings`
+  - `timelineSnapshot`
+  - scene/media references
+  - `outputTarget`
+- snapshot creation/validation helpers now exist:
+  - `validateRenderInputSnapshot(input)`
+  - `createRenderInputSnapshot(input)`
+- snapshot contract is structural and immutable
+- empty clips, invalid clip timing, and missing scene/media refs are rejected
+- raw blob-like fields are rejected
+- url/download/public url fields are rejected
+- path traversal in `outputTarget` is rejected
+- snapshot helpers do not start rendering, create files/artifacts, add progress percent, create download URLs, or trigger lifecycle transitions
+- focused contract tests now exist in `tests/e2e/phase70-renderer-input-snapshot-contract.spec.ts`
+- focused backend script `test:backend:phase70` now exists
 
 ### Phase 7 — Production Optimization
 
