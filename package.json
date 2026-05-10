@@ -15,6 +15,7 @@
     "test:backend:phase66": "playwright test tests/e2e/phase66-backend-lifecycle-state-machine.spec.ts",
     "test:backend:phase67": "playwright test tests/e2e/phase67-artifact-metadata-contract.spec.ts",
     "test:backend:phase68": "playwright test tests/e2e/phase68-worker-boundary-claim-contract.spec.ts",
+    "test:backend:phase70": "playwright test tests/e2e/phase70-renderer-input-snapshot-contract.spec.ts",
     "test:integration:phase63": "playwright test tests/e2e/phase63-frontend-backend-integration.spec.ts",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
