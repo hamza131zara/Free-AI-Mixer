@@ -390,3 +390,12 @@ Current scaffold behavior (Phase 6.1-B/C):
 - `GET /exports/:jobId/artifacts` returns `export_artifacts_unavailable` for known jobs without real artifacts and `export_job_not_found` for unknown jobs.
 - Validation failures return normalized `invalid_export_request`.
 - No terminal success, no fake artifacts, no fake download URLs, and no fake progress are produced by the scaffold.
+
+Current scaffold behavior (Phase 6.2-A/B):
+
+- In-memory export registry now supports process-local `requestId` idempotency.
+- Repeated `POST /exports` with the same `requestId` returns the same accepted job handle instead of creating a duplicate job.
+- `POST /exports` with a different `requestId` creates a different accepted job.
+- Known jobs remain truthful `pending/accepted` by default because no renderer exists yet.
+- No expiration timers, no background lifecycle progression, and no fake terminal success are introduced.
+- Artifacts remain unavailable unless real artifacts exist; no fake refs/URLs/download outputs are produced.

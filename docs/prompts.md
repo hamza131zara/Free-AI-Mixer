@@ -114,3 +114,4 @@ Phase numbering in prompts must match `docs/phases.md`.
 - Phase 6.0-B should remain docs/architecture sync only.
 - Early Phase 6 implementation prompts must enforce truthful backend responses with no fake success/progress/artifacts/download claims.
 - Phase 6.1 prompts should stay backend-only and contract-first (no renderer, no frontend integration, no fake completion/artifacts/downloads).
+- Phase 6.2 prompts should keep registry lifecycle truthful: process-local idempotency is allowed, but fake completion/progress/artifacts/downloads and timer-driven fake advancement are forbidden.

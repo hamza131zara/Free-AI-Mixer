@@ -1815,6 +1815,9 @@ Purpose:
 - long-running provider submit/poll orchestration exists
 - browser-local resume exists for valid persisted provider jobs
 - expired, corrupt, not-found, and fingerprint-mismatch provider jobs fail safely
+- backend export contract scaffold exists under `backend/` with routes for `POST /exports`, `GET /exports/:jobId`, and `GET /exports/:jobId/artifacts`
+- backend runtime scripts exist (`backend:dev`, `backend:start`) and focused backend contract tests exist (`test:backend`, `test:backend:phase62`)
+- backend in-memory registry now supports process-local `requestId` idempotency and returns the same accepted handle for duplicate request IDs
 
 ### Partially Complete
 

@@ -334,7 +334,8 @@ Sub-phases:
 - Phase 6.1-A backend contract scaffold audit complete
 - Phase 6.1-B backend export contract scaffold complete
 - Phase 6.1-C backend runtime scripts and focused backend contract tests complete
-- Phase 6.2 in-memory job registry and truthful pending/failure lifecycle
+- Phase 6.2-A backend job registry/lifecycle audit complete
+- Phase 6.2-B backend registry idempotency and truthful lifecycle complete
 - Phase 6.3 frontend config wiring to local backend endpoints
 - Phase 6.4 contract/integration tests
 - Phase 6.5 renderer architecture decision
@@ -363,6 +364,17 @@ Phase 6.1 note:
 - focused backend contract tests now exist in `tests/e2e/phase61-backend-contract.spec.ts`
 - local verification for Phase 6.1-C passed with backend contract tests
 - no renderer, no workers, no queue infrastructure, no webhooks, no durable persistence, and no frontend integration yet
+
+Phase 6.2 note:
+
+- backend in-memory export registry now supports process-local `requestId` idempotency
+- repeated `POST /exports` with the same `requestId` returns the same accepted job handle
+- different `requestId` values create different accepted jobs
+- known jobs remain truthful `pending/accepted` by default because no renderer exists yet
+- no expiration timers or background lifecycle advancement were added
+- artifacts route still returns `export_artifacts_unavailable` unless real artifacts exist
+- focused backend lifecycle/idempotency coverage exists in `tests/e2e/phase62-backend-registry-lifecycle.spec.ts`
+- backend script `test:backend:phase62` now exists for focused lifecycle/idempotency verification
 
 ### Phase 7 — Production Optimization
 

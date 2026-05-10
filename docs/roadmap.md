@@ -83,7 +83,7 @@ Status:
 
 Status:
 
-- started (Phase 6.0-A backend/export planning audit complete; Phase 6.0-B docs/architecture sync complete; Phase 6.1-A/B/C backend scaffold and contract tests complete)
+- started (Phase 6.0-A backend/export planning audit complete; Phase 6.0-B docs/architecture sync complete; Phase 6.1-A/B/C backend scaffold and contract tests complete; Phase 6.2-A/B registry idempotency/lifecycle complete)
 
 Recommended Phase 6 path:
 
@@ -108,4 +108,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 6.1-E backend scaffold final sign-off audit, then start Phase 6.2-A in-memory job lifecycle hardening audit
+3. run Phase 6.2-D backend registry lifecycle final sign-off audit, then start Phase 6.3-A frontend/backend integration audit

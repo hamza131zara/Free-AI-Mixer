@@ -89,6 +89,7 @@ Why it matters:
 - frontend must remain truthful and must not fake completion/progress/artifacts/cancellation
 - Phase 6.1 backend scaffold must avoid fake success/progress/artifacts/download claims
 - initial backend job registry may be in-memory and local-only before durable persistence phases
+- current requestId idempotency is process-local/in-memory only and is not durable across restarts
 
 Target fix phase:
 
