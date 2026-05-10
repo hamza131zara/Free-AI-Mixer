@@ -419,3 +419,14 @@ Current frontend/backend local integration behavior (Phase 6.3-A/B):
   - `TimelineExportPanel` renders state and dispatches store actions only
 - Focused contract coverage exists in `tests/e2e/phase63-frontend-backend-integration.spec.ts`.
 - This phase does not introduce a renderer, downloadable output, artifact hosting URLs, or cancellation authority.
+
+Renderer direction decision (Phase 6.5-A/B):
+
+- Recommended future renderer direction is a Remotion-first backend renderer pilot.
+- FFmpeg remains a strong long-term option, but direct FFmpeg-first and hybrid Remotion+FFmpeg rollout are deferred.
+- Browser/screenshot capture is not recommended for production-quality rendering.
+- Worker/queue boundaries must be in place before renderer implementation begins.
+- Artifact records must be created only after real files are produced and verified.
+- API responses must expose metadata refs only; no raw blobs and no local filesystem paths in export responses.
+- Progress percent must be emitted only when backend renderer telemetry can truthfully compute it.
+- Frontend component boundaries remain unchanged until backend can provide truthful real artifacts.

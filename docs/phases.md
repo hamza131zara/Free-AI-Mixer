@@ -339,7 +339,9 @@ Sub-phases:
 - Phase 6.3-A frontend/backend integration audit complete
 - Phase 6.3-B frontend/backend local integration support complete
 - Phase 6.4 contract/integration tests
-- Phase 6.5 renderer architecture decision
+- Phase 6.5-A renderer architecture decision audit complete
+- Phase 6.5-B renderer architecture decision docs update complete
+- Phase 6.5-C renderer prerequisite contract audit/planning (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -394,6 +396,19 @@ Phase 6.3 note:
 - focused local integration coverage exists in `tests/e2e/phase63-frontend-backend-integration.spec.ts`
 - script `test:integration:phase63` exists for focused local integration verification
 - this is local integration support only; real renderer/export output is still not implemented
+
+Phase 6.5 note:
+
+- renderer architecture decision audit is complete
+- recommended future direction is a Remotion-first backend renderer pilot
+- FFmpeg remains a strong long-term option and hybrid Remotion+FFmpeg remains deferred until artifact pipeline maturity
+- no renderer implementation exists yet
+- no real video rendering or downloadable output exists yet
+- artifact records must only be created after real files are produced and verified
+- export APIs must return metadata refs only (no raw blobs, no local filesystem paths)
+- progress percent may appear only when the renderer can truthfully compute it
+- worker/queue boundary is required before renderer implementation
+- frontend remains unchanged until backend can provide truthful real artifacts
 
 ### Phase 7 — Production Optimization
 

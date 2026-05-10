@@ -82,6 +82,7 @@ Current state:
 - auth/credits/billing are not implemented
 - production queue/worker scaling is not implemented
 - frontend-to-backend local development integration now exists (Phase 6.3-B), but production-grade export runtime integration remains incomplete
+- renderer implementation is not started (Phase 6.5 decision recorded; implementation deferred)
 
 Why it matters:
 
@@ -91,6 +92,8 @@ Why it matters:
 - initial backend job registry may be in-memory and local-only before durable persistence phases
 - current requestId idempotency is process-local/in-memory only and is not durable across restarts
 - local integration support must remain truthful: no fake progress, no fake terminal success, no fake artifacts, and no fake downloadable URLs
+- real artifact records must only exist after real files are produced and verified
+- export API responses must remain metadata-only (no raw blobs, no local filesystem paths)
 
 Target fix phase:
 

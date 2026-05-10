@@ -83,7 +83,7 @@ Status:
 
 Status:
 
-- started (Phase 6.0-A backend/export planning audit complete; Phase 6.0-B docs/architecture sync complete; Phase 6.1-A/B/C backend scaffold and contract tests complete; Phase 6.2-A/B registry idempotency/lifecycle complete; Phase 6.3-A/B local frontend/backend integration support complete)
+- started (Phase 6.0-A backend/export planning audit complete; Phase 6.0-B docs/architecture sync complete; Phase 6.1-A/B/C backend scaffold and contract tests complete; Phase 6.2-A/B registry idempotency/lifecycle complete; Phase 6.3-A/B local frontend/backend integration support complete; Phase 6.5-A renderer architecture decision audit complete)
 
 Recommended Phase 6 path:
 
@@ -102,6 +102,15 @@ Phase 6.3 integration note:
 - focused local integration test coverage exists in `tests/e2e/phase63-frontend-backend-integration.spec.ts`
 - this does not imply renderer availability, artifact URLs, progress telemetry, cancellation authority, or downloadable output
 
+Phase 6.5 renderer decision note:
+
+- recommended future direction is a Remotion-first backend renderer pilot
+- no renderer implementation exists yet
+- no real video rendering or downloadable output exists yet
+- artifact hosting/signed URLs are still deferred
+- renderer rollout requires worker/queue boundaries first
+- next phase is Phase 6.5-C renderer prerequisite contract audit/planning
+
 ### Phase 7: Production Optimization
 
 - monitoring
@@ -116,4 +125,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 6.3-D frontend/backend integration final sign-off audit
+3. run Phase 6.5-C renderer prerequisite contract audit/planning
