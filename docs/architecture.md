@@ -719,3 +719,29 @@ Remotion dependency install-only milestone (Phase 7.6-A/B):
   - dependencies may exist
   - adapter stub remains truthful not-implemented
   - adapter stub still must not import Remotion runtime directly
+
+Remotion import smoke test milestone (Phase 7.7-A/B):
+
+- Backend-only smoke coverage exists in `tests/e2e/phase77-remotion-import-smoke.spec.ts`.
+- Scope is import smoke only:
+  - dynamic import of `remotion`
+  - dynamic import of `@remotion/renderer`
+  - no renderer runtime execution
+- Adapter boundary remains unchanged:
+  - adapter stub stays not implemented
+  - adapter still returns `ok: false`
+  - adapter implementation remains deferred
+- Runtime API verification remains deferred:
+  - smoke tests should not require specific runtime export assertions
+  - runtime rendering calls are still forbidden in this phase
+- Forbidden runtime calls include:
+  - `renderMedia`
+  - `bundle`
+  - `selectComposition`
+  - `getCompositions`
+  - `openBrowser`
+  - any output-writing renderer call
+- Route/frontend boundaries remain unchanged:
+  - no route auto-execution
+  - no lifecycle mutation via smoke phase
+  - no frontend architecture changes

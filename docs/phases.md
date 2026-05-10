@@ -374,7 +374,10 @@ Sub-phases:
 - Phase 7.5-D Remotion adapter contract stub final sign-off complete
 - Phase 7.6-A Remotion dependency install audit only complete
 - Phase 7.6-B Remotion dependency install only complete
-- Phase 7.6-D Remotion dependency install final sign-off (next)
+- Phase 7.6-D Remotion dependency install final sign-off complete
+- Phase 7.7-A Remotion import smoke test audit only complete
+- Phase 7.7-B Remotion import smoke test only complete
+- Phase 7.7-D Remotion import smoke test final sign-off (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -785,6 +788,42 @@ Phase 7.6 note:
   - build passed
   - focused backend checks passed
   - git status clean after commit
+
+Phase 7.7 note:
+
+- backend-only Remotion import smoke test now exists in `tests/e2e/phase77-remotion-import-smoke.spec.ts`
+- focused backend script `test:backend:phase77` now exists
+- smoke test behavior:
+  1. dynamically imports `remotion`
+  2. dynamically imports `@remotion/renderer`
+  3. confirms imports work without running renderer runtime APIs
+  4. keeps adapter stub truthful and not implemented (`ok: false`)
+  5. confirms no Remotion composition files are added
+  6. confirms no route auto-execution is added
+  7. confirms no artifact metadata or url/download/signed/public-url fields are created
+  8. confirms no lifecycle transition is triggered
+- important correction:
+  - phase 7.7-B is import smoke only
+  - phase 7.7-B should not require asserting specific runtime exports (for example `bundle`) from `@remotion/renderer`
+  - runtime rendering API verification remains deferred
+- forbidden runtime calls in this phase include:
+  - `renderMedia`
+  - `bundle`
+  - `selectComposition`
+  - `getCompositions`
+  - `openBrowser`
+  - any output-writing renderer call
+- non-behaviors:
+  - no renderer runtime execution
+  - no file/directory creation
+  - no Remotion composition files
+  - no adapter implementation
+  - no route changes and no auto-run from `POST /exports`
+  - no queue/scheduler/worker loop
+  - no database/durable persistence
+  - no artifact hosting or signed/download urls
+  - no fake artifacts/success/progress/cancellation
+  - no frontend changes
 
 ### Phase 7 — Production Optimization
 

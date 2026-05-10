@@ -230,6 +230,21 @@ Phase 7.6 Remotion dependency install note:
 - validation recorded: typecheck/build/focused backend checks passed, with clean git status after commit
 - next phase is Phase 7.6-D Remotion dependency install final sign-off, then Phase 7.7-A Remotion import smoke test audit only
 
+Phase 7.7 Remotion import smoke note:
+
+- Phase 7.7-A audit is complete
+- Phase 7.7-B import smoke test only is complete
+- smoke scope is import-only:
+  - dynamic import of `remotion`
+  - dynamic import of `@remotion/renderer`
+- smoke scope intentionally excludes runtime API execution and renderer output generation
+- correction recorded:
+  - this phase should not require asserting specific runtime exports (for example `bundle`)
+  - runtime rendering API verification remains deferred
+- adapter stub remains truthful and not implemented (`ok: false`)
+- no composition files, route auto-execution, artifact metadata outputs, url/download/signed/public-url outputs, or frontend changes were introduced
+- next phase is Phase 7.7-D Remotion import smoke test final sign-off, then Phase 7.8-A Remotion adapter implementation audit only
+
 ### Phase 7: Production Optimization
 
 - monitoring
@@ -244,4 +259,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 7.6-D Remotion dependency install final sign-off, then Phase 7.7-A Remotion import smoke test audit only
+3. run Phase 7.7-D Remotion import smoke test final sign-off, then Phase 7.8-A Remotion adapter implementation audit only
