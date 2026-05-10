@@ -215,6 +215,21 @@ Phase 7.5 Remotion adapter stub note:
 - no route auto-execution, queue/scheduler/worker loop, database/durable persistence, hosting/signing/download URLs, or frontend changes were introduced
 - next phase is Phase 7.5-D Remotion adapter contract stub final sign-off, then Phase 7.6-A Remotion dependency install audit only
 
+Phase 7.6 Remotion dependency install note:
+
+- Phase 7.6-A audit is complete
+- Phase 7.6-B dependency install only is complete
+- dependencies added:
+  - `remotion`
+  - `@remotion/renderer`
+- no Remotion imports, renderer runtime, adapter runtime implementation, composition files, route auto-execution, or frontend changes were introduced
+- Phase 7.5 adapter expectations remain truthful:
+  - dependencies may now exist
+  - adapter stub still returns not-implemented failure
+  - adapter stub still must not import Remotion runtime directly
+- validation recorded: typecheck/build/focused backend checks passed, with clean git status after commit
+- next phase is Phase 7.6-D Remotion dependency install final sign-off, then Phase 7.7-A Remotion import smoke test audit only
+
 ### Phase 7: Production Optimization
 
 - monitoring
@@ -229,4 +244,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 7.5-D Remotion adapter contract stub final sign-off, then Phase 7.6-A Remotion dependency install audit only
+3. run Phase 7.6-D Remotion dependency install final sign-off, then Phase 7.7-A Remotion import smoke test audit only

@@ -371,7 +371,10 @@ Sub-phases:
 - Phase 7.4-D single-process renderer execution harness final sign-off complete
 - Phase 7.5-A Remotion dependency / renderer adapter audit only complete
 - Phase 7.5-B Remotion adapter contract stub only + tests complete
-- Phase 7.5-D Remotion adapter contract stub final sign-off (next)
+- Phase 7.5-D Remotion adapter contract stub final sign-off complete
+- Phase 7.6-A Remotion dependency install audit only complete
+- Phase 7.6-B Remotion dependency install only complete
+- Phase 7.6-D Remotion dependency install final sign-off (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -760,6 +763,28 @@ Phase 7.5 note:
   - no frontend changes
 - focused adapter contract tests now exist in `tests/e2e/phase75-remotion-adapter-contract.spec.ts`
 - focused backend script `test:backend:phase75` now exists
+
+Phase 7.6 note:
+
+- dependency-install milestone is complete for:
+  - `remotion`
+  - `@remotion/renderer`
+- only dependency files were updated in this milestone (`package.json`, `package-lock.json`)
+- no Remotion imports were added
+- no renderer runtime was added
+- no adapter implementation was added
+- no Remotion composition files were added
+- no route auto-execution was added
+- no frontend changes were added
+- Phase 7.5 adapter test expectations were safely updated for this milestone:
+  - dependencies may now exist
+  - adapter stub must still not import Remotion runtime directly
+  - adapter stub must still return truthful not-implemented failure
+- validation recorded:
+  - typecheck passed
+  - build passed
+  - focused backend checks passed
+  - git status clean after commit
 
 ### Phase 7 — Production Optimization
 

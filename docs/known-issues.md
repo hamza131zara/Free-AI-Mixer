@@ -107,6 +107,7 @@ Why it matters:
 - renderer failure mapping helper exists (Phase 7.3-B), but it is mapping/sanitization only; no renderer runtime, lifecycle mutation, artifact output, or download capability exists yet
 - single-process render harness exists (Phase 7.4-B), but it is injected-orchestration foundation only; no Remotion runtime, no route auto-execution, no queue/worker loop, and no download capability exist yet
 - Remotion adapter contract stub exists (Phase 7.5-B), but it is not-implemented by design; no Remotion dependency/import, no renderer runtime, no composition files, and no download capability exist yet
+- Remotion dependencies now exist (Phase 7.6-B), but runtime remains deferred: no Remotion imports in runtime adapter flow, no renderer execution, no composition files, no route auto-execution, and no download capability exist yet
 
 Target fix phase:
 

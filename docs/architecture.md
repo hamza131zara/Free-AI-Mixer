@@ -704,3 +704,18 @@ Remotion adapter contract stub (Phase 7.5-A/B):
 - Route behavior is unchanged; no auto-run from `POST /exports`.
 - Frontend architecture remains unchanged.
 - Focused coverage exists in `tests/e2e/phase75-remotion-adapter-contract.spec.ts`.
+
+Remotion dependency install-only milestone (Phase 7.6-A/B):
+
+- `remotion` and `@remotion/renderer` dependencies are installed as a dependency-only step.
+- This milestone is dependency onboarding only:
+  - no Remotion imports
+  - no renderer runtime execution
+  - no adapter runtime implementation
+  - no composition files
+  - no route auto-execution
+  - no frontend architecture changes
+- Phase 7.5 adapter contract expectations remain boundary-safe:
+  - dependencies may exist
+  - adapter stub remains truthful not-implemented
+  - adapter stub still must not import Remotion runtime directly
