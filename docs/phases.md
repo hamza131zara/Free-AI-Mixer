@@ -348,7 +348,10 @@ Sub-phases:
 - Phase 6.6-D backend lifecycle state machine final sign-off complete
 - Phase 6.7-A artifact metadata contract audit complete
 - Phase 6.7-B artifact metadata contract implementation + tests complete
-- Phase 6.7-D artifact metadata contract final sign-off (next)
+- Phase 6.7-D artifact metadata contract final sign-off complete
+- Phase 6.8-A worker boundary / render execution contract audit complete
+- Phase 6.8-B worker boundary claim contract implementation + tests complete
+- Phase 6.8-D worker boundary claim contract final sign-off (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -478,6 +481,30 @@ Phase 6.7 note:
 - `GET /exports/:jobId/artifacts` remains unavailable unless real artifacts exist
 - focused artifact contract tests now exist in `tests/e2e/phase67-artifact-metadata-contract.spec.ts`
 - focused backend script `test:backend:phase67` now exists
+
+Phase 6.8 note:
+
+- worker boundary claim contract now exists in backend registry only
+- claim metadata now includes:
+  - `claimedByWorkerId?`
+  - `claimExpiresAt?`
+  - `attemptCount`
+  - `startedAt?`
+- worker-boundary registry methods now include:
+  - `claim(jobId, workerId, options?)`
+  - `markRendering(jobId, workerId)`
+  - `markFinalizing(jobId, workerId)`
+  - `markSuccess(jobId, workerId, artifacts[])`
+  - `markError(jobId, workerId, failure)`
+- only the claiming worker can perform worker lifecycle transitions
+- terminal jobs cannot be claimed or transitioned through worker methods
+- lifecycle and artifact validation guards remain enforced (`markSuccess` still requires valid artifact metadata)
+- claim ownership is process-local/in-memory only
+- route behavior remains unchanged
+- frontend was unchanged
+- this is not a real worker runtime, not a queue, and does not start renderer execution
+- focused worker-boundary tests now exist in `tests/e2e/phase68-worker-boundary-claim-contract.spec.ts`
+- focused backend script `test:backend:phase68` now exists
 
 ### Phase 7 — Production Optimization
 

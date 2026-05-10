@@ -120,3 +120,4 @@ Phase numbering in prompts must match `docs/phases.md`.
 - Phase 6.6 prompts should start with backend lifecycle state-machine audit/contract work only and keep renderer execution, workers, queues, webhooks, and durable persistence deferred until explicitly phased.
 - After Phase 6.6-B, prompts should preserve route compatibility and frontend non-impact while expanding lifecycle guards; renderer runtime and artifact hosting/download behavior must stay deferred until explicit renderer phases.
 - Phase 6.7 prompts should keep artifact metadata contract work backend-only and structural-only: no real artifact generation, no hosting/signing URLs, no download output claims, and no React/store/agent/service drift.
+- Phase 6.8 prompts should keep worker-boundary work registry-only: claim/ownership guards are allowed, but no worker runtime loop, no queue runtime, no renderer execution, and no frontend orchestration changes.

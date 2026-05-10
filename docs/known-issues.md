@@ -99,6 +99,7 @@ Why it matters:
 - backend lifecycle state-machine guards now exist (Phase 6.6-B), but renderer execution and real artifact production are still deferred
 - no real artifact URLs/download outputs exist; artifact hosting/signing remains deferred
 - backend artifact metadata contract now exists (Phase 6.7-B), but it is structural-only and does not imply real artifact files
+- worker-boundary claim ownership contract now exists (Phase 6.8-B), but no real worker runtime/queue/renderer execution exists yet
 
 Target fix phase:
 

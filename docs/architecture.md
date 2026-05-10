@@ -495,3 +495,24 @@ Artifact metadata contract (Phase 6.7-A/B):
 - Success still requires structurally valid artifact metadata.
 - Contract remains structural-only: no real file verification, no hosting/signing, no download URLs.
 - Route behavior remains truthful and unchanged for no-artifact runtime state.
+
+Worker boundary claim contract (Phase 6.8-A/B):
+
+- Worker claim/authorization contract exists in backend registry only.
+- Claim metadata is process-local/in-memory only:
+  - `claimedByWorkerId?`
+  - `claimExpiresAt?`
+  - `attemptCount`
+  - `startedAt?`
+- Registry worker-boundary methods exist for future execution ownership:
+  - `claim(jobId, workerId, options?)`
+  - `markRendering(jobId, workerId)`
+  - `markFinalizing(jobId, workerId)`
+  - `markSuccess(jobId, workerId, artifacts[])`
+  - `markError(jobId, workerId, failure)`
+- Only the claiming worker may execute worker lifecycle transitions.
+- Terminal jobs cannot be claimed or transitioned through worker methods.
+- Existing lifecycle and artifact guards remain enforced; `markSuccess` still requires valid artifact metadata.
+- Route surface remains unchanged.
+- Frontend architecture remains unchanged.
+- This phase does not add worker runtime loops, queue runtime, renderer execution, or downloadable outputs.
