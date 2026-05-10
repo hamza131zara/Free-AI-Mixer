@@ -81,7 +81,7 @@ Current state:
 - multi-device export resume coordination is not implemented
 - auth/credits/billing are not implemented
 - production queue/worker scaling is not implemented
-- frontend-to-backend export runtime integration is not implemented yet
+- frontend-to-backend local development integration now exists (Phase 6.3-B), but production-grade export runtime integration remains incomplete
 
 Why it matters:
 
@@ -90,6 +90,7 @@ Why it matters:
 - Phase 6.1 backend scaffold must avoid fake success/progress/artifacts/download claims
 - initial backend job registry may be in-memory and local-only before durable persistence phases
 - current requestId idempotency is process-local/in-memory only and is not durable across restarts
+- local integration support must remain truthful: no fake progress, no fake terminal success, no fake artifacts, and no fake downloadable URLs
 
 Target fix phase:
 

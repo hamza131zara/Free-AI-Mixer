@@ -83,7 +83,7 @@ Status:
 
 Status:
 
-- started (Phase 6.0-A backend/export planning audit complete; Phase 6.0-B docs/architecture sync complete; Phase 6.1-A/B/C backend scaffold and contract tests complete; Phase 6.2-A/B registry idempotency/lifecycle complete)
+- started (Phase 6.0-A backend/export planning audit complete; Phase 6.0-B docs/architecture sync complete; Phase 6.1-A/B/C backend scaffold and contract tests complete; Phase 6.2-A/B registry idempotency/lifecycle complete; Phase 6.3-A/B local frontend/backend integration support complete)
 
 Recommended Phase 6 path:
 
@@ -93,6 +93,14 @@ Recommended Phase 6 path:
 - contract/integration testing next
 - renderer architecture decision after contract stability
 - do not claim real video rendering or downloadable export output yet
+
+Phase 6.3 integration note:
+
+- local Vite proxy support is in place for `/exports -> http://127.0.0.1:8787`
+- export service defaults align to backend scaffold `/exports` route family
+- runtime config precedence and `VITE_EXPORT_*` fallback behavior remain preserved
+- focused local integration test coverage exists in `tests/e2e/phase63-frontend-backend-integration.spec.ts`
+- this does not imply renderer availability, artifact URLs, progress telemetry, cancellation authority, or downloadable output
 
 ### Phase 7: Production Optimization
 
@@ -108,4 +116,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 6.2-D backend registry lifecycle final sign-off audit, then start Phase 6.3-A frontend/backend integration audit
+3. run Phase 6.3-D frontend/backend integration final sign-off audit

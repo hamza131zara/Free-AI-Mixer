@@ -399,3 +399,23 @@ Current scaffold behavior (Phase 6.2-A/B):
 - Known jobs remain truthful `pending/accepted` by default because no renderer exists yet.
 - No expiration timers, no background lifecycle progression, and no fake terminal success are introduced.
 - Artifacts remain unavailable unless real artifacts exist; no fake refs/URLs/download outputs are produced.
+
+Current frontend/backend local integration behavior (Phase 6.3-A/B):
+
+- Local Vite development proxy routes `/exports` traffic to `http://127.0.0.1:8787`.
+- `exportService` default paths align with backend scaffold contracts:
+  - submit: `/exports`
+  - poll: `/exports/:jobId`
+  - artifacts: `/exports/:jobId/artifacts`
+- Runtime config remains first-class:
+  - `window.__FREE_AI_MIXER_RUNTIME_CONFIG__` first
+  - `VITE_EXPORT_*` fallbacks second
+- Missing-config behavior remains truthful and explicit.
+- Service error normalization preserves normalized backend error codes when provided (`export_artifacts_unavailable`, `export_job_not_found`, `invalid_export_request`) and preserves `http_error` normalization for generic invalid/non-OK responses.
+- Layer boundaries remain enforced:
+  - `exportService` owns HTTP only
+  - `exportAgent` owns orchestration/polling
+  - `exportStore` owns lifecycle state/actions
+  - `TimelineExportPanel` renders state and dispatches store actions only
+- Focused contract coverage exists in `tests/e2e/phase63-frontend-backend-integration.spec.ts`.
+- This phase does not introduce a renderer, downloadable output, artifact hosting URLs, or cancellation authority.

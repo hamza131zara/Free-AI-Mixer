@@ -325,7 +325,7 @@ Phase 5.6 note:
 
 Status:
 
-- started (Phase 6.0-A planning complete; Phase 6.0-B docs sync complete)
+- started (Phase 6.0-A planning complete; Phase 6.0-B docs sync complete; Phase 6.3-A/B local integration support complete)
 
 Sub-phases:
 
@@ -336,7 +336,8 @@ Sub-phases:
 - Phase 6.1-C backend runtime scripts and focused backend contract tests complete
 - Phase 6.2-A backend job registry/lifecycle audit complete
 - Phase 6.2-B backend registry idempotency and truthful lifecycle complete
-- Phase 6.3 frontend config wiring to local backend endpoints
+- Phase 6.3-A frontend/backend integration audit complete
+- Phase 6.3-B frontend/backend local integration support complete
 - Phase 6.4 contract/integration tests
 - Phase 6.5 renderer architecture decision
 - Phase 6.6 durable persistence planning
@@ -375,6 +376,24 @@ Phase 6.2 note:
 - artifacts route still returns `export_artifacts_unavailable` unless real artifacts exist
 - focused backend lifecycle/idempotency coverage exists in `tests/e2e/phase62-backend-registry-lifecycle.spec.ts`
 - backend script `test:backend:phase62` now exists for focused lifecycle/idempotency verification
+
+Phase 6.3 note:
+
+- local frontend/backend integration support now exists for development
+- Vite dev proxy now routes `/exports` to `http://127.0.0.1:8787`
+- export service default paths now align to backend scaffold routes:
+  - submit default: `/exports`
+  - poll default: `/exports`
+  - artifacts default: `/exports`
+- runtime config precedence remains:
+  - `window.__FREE_AI_MIXER_RUNTIME_CONFIG__` first
+  - `VITE_EXPORT_*` fallback second
+- missing-config failure behavior remains truthful
+- normalized backend error preservation exists for `export_artifacts_unavailable`, `export_job_not_found`, and `invalid_export_request`
+- generic invalid/non-OK HTTP responses still normalize to `http_error` when no normalized backend code is present
+- focused local integration coverage exists in `tests/e2e/phase63-frontend-backend-integration.spec.ts`
+- script `test:integration:phase63` exists for focused local integration verification
+- this is local integration support only; real renderer/export output is still not implemented
 
 ### Phase 7 — Production Optimization
 
