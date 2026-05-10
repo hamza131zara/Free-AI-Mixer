@@ -142,7 +142,10 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
 
     expect(success.status).toBe("success");
     expect(success.artifacts?.[0].artifactId).toBe("artifact-verified");
-    expect(success.artifacts?.[0].url).toBeUndefined();
+    // expect(success.artifacts?.[0].url).toBeUndefined();
+    expect(
+  (success.artifacts?.[0] as unknown as Record<string, unknown>)?.url,
+).toBeUndefined();
   });
 
   test("expired is terminal", () => {
