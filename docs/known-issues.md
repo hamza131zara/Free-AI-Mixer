@@ -65,9 +65,10 @@ Current state:
 - focused export agent orchestration tests exist in `tests/e2e/phase53-export-agent.spec.ts`
 - export store integration exists in `src/store/exportStore.ts`
 - focused export store tests exist in `tests/e2e/phase54-export-store.spec.ts`
+- export UI/status actions exist in `src/components/TimelineExportPanel.tsx`
+- focused export UI tests exist in `tests/e2e/phase55-export-ui.spec.ts`
 - actual video export is not implemented
 - export runtime integration is not implemented
-- export UI is not implemented
 - auto-resume polling is not implemented for export jobs
 - backend render queue is not implemented
 - server workers are not implemented
@@ -83,7 +84,7 @@ Why it matters:
 
 Target fix phase:
 
-- Phase 5.5 and later backend/export phases
+- Phase 5.6 and later backend/export phases
 
 ### No Durable Backend Queue
 

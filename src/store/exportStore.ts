@@ -16,6 +16,7 @@ import type { TimelineId } from "../types/timeline";
 import { useTimelineStore } from "./timelineStore";
 
 const exportStorePersistKey = "free-ai-mixer-exports";
+const emptyExportArtifacts: ExportArtifactRef[] = [];
 const inFlightStatuses = new Set<ExportJobStatus>([
   "queued",
   "submitted",
@@ -443,7 +444,17 @@ export const useExportStore = create<ExportStoreState>()(
         activeExportTimelineId: state.activeExportTimelineId,
       }),
       merge: (persistedState, currentState): ExportStoreState => {
-        const persisted = persistedState as Partial<PersistedExportStoreState>;
+        const persistedCandidate = persistedState as
+          | Partial<PersistedExportStoreState>
+          | { state?: Partial<PersistedExportStoreState> };
+        const persisted =
+          typeof persistedCandidate === "object" &&
+          persistedCandidate !== null &&
+          "state" in persistedCandidate &&
+          typeof persistedCandidate.state === "object" &&
+          persistedCandidate.state !== null
+            ? persistedCandidate.state
+            : (persistedCandidate as Partial<PersistedExportStoreState>);
         return {
           ...currentState,
           jobsByTimelineId:
@@ -498,7 +509,8 @@ export const selectExportIsInFlight = (
 export const selectExportResultArtifacts = (
   state: ExportStoreState,
   timelineId: TimelineId,
-): ExportArtifactRef[] => state.jobsByTimelineId[timelineId]?.result?.artifacts ?? [];
+): ExportArtifactRef[] =>
+  state.jobsByTimelineId[timelineId]?.result?.artifacts ?? emptyExportArtifacts;
 
 export const selectExportFailure = (
   state: ExportStoreState,
@@ -509,6 +521,37 @@ export const selectExportResumeState = (
   state: ExportStoreState,
   timelineId: TimelineId,
 ): ExportResumeState => state.jobsByTimelineId[timelineId]?.resumeState ?? "none";
+
+const selectPersistedFallbackByTimelineId = (
+  timelineId: TimelineId,
+): { lifecycle?: string; resumeState?: string } | undefined =>
+  readPersistedExportJob(timelineId);
+
+export const selectEffectiveExportLifecycleByTimelineId = (
+  state: ExportStoreState,
+  timelineId: TimelineId,
+): ExportJobStatus | undefined => {
+  const live = state.jobsByTimelineId[timelineId];
+  if (live) {
+    return live.lifecycle;
+  }
+
+  const persisted = selectPersistedFallbackByTimelineId(timelineId);
+  return persisted?.lifecycle as ExportJobStatus | undefined;
+};
+
+export const selectEffectiveExportResumeStateByTimelineId = (
+  state: ExportStoreState,
+  timelineId: TimelineId,
+): ExportResumeState => {
+  const live = state.jobsByTimelineId[timelineId];
+  if (live) {
+    return live.resumeState ?? "none";
+  }
+
+  const persisted = selectPersistedFallbackByTimelineId(timelineId);
+  return (persisted?.resumeState as ExportResumeState | undefined) ?? "none";
+};
 
 useExportStore.persist.onFinishHydration(() => {
   useExportStore.setState({
@@ -603,3 +646,42 @@ const createFailureState = (
   lastPolledAt: new Date().toISOString(),
   resumeState: "none",
 });
+
+const readPersistedExportJob = (
+  timelineId: TimelineId,
+): { lifecycle?: string; resumeState?: string } | undefined => {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(exportStorePersistKey);
+    if (!raw) {
+      return undefined;
+    }
+
+    const parsed = JSON.parse(raw) as {
+      state?: {
+        jobsByTimelineId?: Record<
+          string,
+          {
+            lifecycle?: string;
+            resumeState?: string;
+          }
+        >;
+      };
+    };
+
+    const job = parsed.state?.jobsByTimelineId?.[timelineId];
+    if (!job || typeof job !== "object") {
+      return undefined;
+    }
+
+    return {
+      lifecycle: typeof job.lifecycle === "string" ? job.lifecycle : undefined,
+      resumeState: typeof job.resumeState === "string" ? job.resumeState : undefined,
+    };
+  } catch {
+    return undefined;
+  }
+};

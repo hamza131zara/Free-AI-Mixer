@@ -55,6 +55,7 @@ Files:
 - `src/components/TimelineClipItem.tsx`
 - `src/components/TimelineSceneSource.tsx`
 - `src/components/TimelinePlaybackControls.tsx`
+- `src/components/TimelineExportPanel.tsx`
 
 Allowed:
 
@@ -66,6 +67,7 @@ Allowed:
 - read successful scenes for timeline eligibility and dispatch `sceneId` references only
 - dispatch timeline reorder commands through store actions only (`moveClipUp` / `moveClipDown`)
 - render manual playback preview state and dispatch playback actions through `timelineStore` only
+- render export status state and dispatch export actions through `exportStore` only
 
 Forbidden:
 
@@ -75,9 +77,11 @@ Forbidden:
 - lifecycle transition logic
 - local orchestration with `useEffect` or `useState`
 - importing agents/services into timeline UI components
+- importing `exportAgent` or `exportService` directly in export UI components
 - mutating scene generation lifecycle from timeline UI components
 - implementing drag/drop orchestration in components (deferred)
 - implementing playback timers/RAF/loops in components
+- reading `localStorage` directly in components for export state
 
 ### Store Layer
 
@@ -114,6 +118,7 @@ Current verified store behavior:
 - export store calls `exportAgent` (not `exportService` directly) for submit orchestration
 - export store implements duplicate-submit guards while export jobs are in-flight
 - export store persists durable export job metadata and hydration classification outcomes
+- export store owns persisted export fallback/readiness behavior
 - export store hydration currently classifies resumable jobs only; it does not auto-resume polling
 - export store does not persist timers, controllers, or in-memory lock maps
 - export store does not fabricate completion, progress, artifacts, or cancellation outcomes
@@ -332,6 +337,8 @@ Backend boundary rules:
 - Future export agents should own export orchestration flows.
 - Future export services should own backend/render API communication.
 - Components should only render export-request UI and dispatch actions in later phases.
+- Components must not import `exportAgent`/`exportService` directly, and must not read `localStorage` directly for export state.
+- Export UI has no polling loops and no auto-resume polling.
 - No export runtime implementation exists yet.
 - No backend render queue exists in the current implementation.
 - No downloadable video output exists in the current implementation.

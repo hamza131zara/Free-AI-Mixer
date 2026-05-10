@@ -255,8 +255,13 @@ test.describe("Phase 4.3 timeline UI", () => {
     expect(generationRequestCount).toBe(0);
     expect(queueLogs).toHaveLength(0);
 
-    await expect(page.getByRole("button", { name: /export/i })).toHaveCount(0);
-    await expect(page.locator("text=backend rendering")).toHaveCount(0);
+    const exportPanel = page.getByTestId("timeline-export-panel");
+    await expect(exportPanel).toBeVisible();
+    await expect(exportPanel).toContainText(
+      "No backend rendering queue is built yet.",
+    );
+    await expect(exportPanel).not.toContainText("Export completed.");
+    await expect(exportPanel).not.toContainText("Open artifact");
     await expect(page.locator("text=Download video")).toHaveCount(0);
   });
 });

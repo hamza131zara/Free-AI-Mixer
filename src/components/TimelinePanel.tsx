@@ -8,6 +8,7 @@ import {
 } from "../store/timelineStore";
 import { TimelineHeader } from "./TimelineHeader";
 import { TimelinePlaybackControls } from "./TimelinePlaybackControls";
+import { TimelineExportPanel } from "./TimelineExportPanel";
 import { TimelineSceneSource } from "./TimelineSceneSource";
 import { TimelineTrack } from "./TimelineTrack";
 
@@ -62,6 +63,7 @@ export function TimelinePanel() {
         onRemoveTimeline={removeTimeline}
       />
       <TimelinePlaybackControls timelineId={activeTimeline?.id} />
+      <TimelineExportPanel timelineId={activeTimeline?.id} clipCount={clips.length} />
       <TimelineSceneSource activeTimelineId={activeTimeline?.id} />
       <TimelineTrack
         timelineId={activeTimeline?.id}

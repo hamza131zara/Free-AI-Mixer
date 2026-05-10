@@ -264,7 +264,7 @@ Verified in Phase 4.6A:
 
 Status:
 
-- in progress (Phase 5.4 complete)
+- in progress (Phase 5.5 complete)
 
 Sub-phases:
 
@@ -273,7 +273,8 @@ Sub-phases:
 - Phase 5.2 export service contracts complete
 - Phase 5.3 export agent orchestration scaffold complete
 - Phase 5.4 export store integration complete
-- Phase 5.5 export UI/status actions next
+- Phase 5.5 export UI/status actions complete
+- Phase 5.6 export resume/hardening next
 
 Phase 5.1 note:
 
@@ -303,6 +304,14 @@ Phase 5.4 note:
 - export lifecycle state, persistence, selectors, duplicate-submit guards, and hydration classification are implemented
 - Phase 5.4 classifies resumable jobs only; it does not auto-resume polling
 - export UI wiring, backend rendering, render queue, workers, webhooks, and downloadable output remain deferred
+
+Phase 5.5 note:
+
+- `src/components/TimelineExportPanel.tsx` now exists and is integrated in timeline UI
+- export UI dispatches export requests and state-clearing actions through `exportStore` only
+- focused export UI coverage exists in `tests/e2e/phase55-export-ui.spec.ts`
+- resume label coverage exists for `resume_needed`, `resume_unavailable`, and `expired`
+- backend rendering, render queue, workers, webhooks, and downloadable output remain deferred
 
 ### Phase 6 — Backend & Infrastructure
 
