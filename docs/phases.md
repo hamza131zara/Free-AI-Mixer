@@ -383,7 +383,11 @@ Sub-phases:
 - Phase 7.8-D Remotion adapter implementation final sign-off complete
 - Phase 7.9-A Remotion composition boundary audit only complete
 - Phase 7.9-B Remotion composition boundary scaffold only complete
-- Phase 7.9-D Remotion composition boundary final sign-off (next)
+- Phase 7.9-D Remotion composition boundary final sign-off complete
+- Phase 8.0-A real renderer runtime execution audit only complete
+- Phase 8.0-B Remotion runtime helper boundary + adapter delegation (mocked calls only) complete
+- Phase 8.0-C docs update only complete
+- Phase 8.0-D final sign-off pending
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -904,7 +908,22 @@ Phase 7.9 note:
   - no database/durable persistence
   - no artifact hosting/signed urls/download urls
   - no fake success/progress/artifacts/cancellation
-  - no real renderer runtime execution in this phase
+- no real renderer runtime execution in this phase
+
+Phase 8.0 note:
+
+- `backend/renderer/remotionRuntime.ts` now exists as the dedicated backend-only Remotion runtime helper boundary
+- `backend/renderer/remotionRendererAdapter.ts` now delegates runtime sequencing through the runtime helper or injected runtime boundary
+- focused runtime-boundary coverage now exists in `tests/e2e/phase80-remotion-runtime-boundary.spec.ts`
+- focused backend script now exists:
+  - `test:backend:phase80`
+- Phase 8.0-B remains mocked-call only:
+  - no real renderer runtime execution is enabled yet
+  - no route auto-execution is enabled
+  - no frontend changes were introduced
+  - no artifact hosting, signed URLs, or download URLs were introduced
+  - no lifecycle mutation was introduced in runtime helper, adapter, or composition
+- lifecycle ownership remains in harness/registry only
 
 ### Phase 7 — Production Optimization
 

@@ -270,6 +270,25 @@ Phase 7.9 Remotion composition boundary scaffold note:
 - boundary checks ensure no imports from frontend store/service/agent layers or backend route/registry layers
 - next phase is Phase 7.9-D Remotion composition boundary final sign-off, then Phase 8.0-A real renderer runtime execution audit only
 
+Phase 8.0 runtime helper boundary note:
+
+- Phase 8.0-A audit is complete
+- Phase 8.0-B runtime helper boundary + adapter delegation is complete
+- runtime helper boundary now exists in `backend/renderer/remotionRuntime.ts`
+- adapter delegates runtime sequencing through backend runtime helper/injected runtime boundary
+- this phase remains mocked-call only:
+  - no real renderer runtime execution
+  - no route auto-execution
+  - no frontend changes
+  - no artifact hosting/signed URLs/download URLs
+  - no lifecycle mutation in runtime helper/adapter/composition
+- next phase is Phase 8.0-D final sign-off
+- later audited phases are still required for:
+  - real Remotion runtime execution with proper composition selection and full VideoConfig handling
+  - verified output production flow through artifact verification before success
+  - explicit route/job execution trigger decisions
+  - artifact hosting and downloadable URL issuance
+
 ### Phase 7: Production Optimization
 
 - monitoring

@@ -780,3 +780,19 @@ Remotion composition boundary scaffold (Phase 7.9-A/B):
   - no route auto-execution
   - no frontend architecture changes
 - Focused boundary coverage exists in `tests/e2e/phase79-remotion-composition-boundary.spec.ts`.
+
+Remotion runtime helper boundary and adapter delegation (Phase 8.0-A/B):
+
+- Dedicated runtime helper boundary now exists in `backend/renderer/remotionRuntime.ts`.
+- This helper is the backend-only Remotion runtime boundary for renderer runtime API wrapping.
+- `backend/renderer/remotionRendererAdapter.ts` delegates runtime sequencing through this helper (or an injected runtime boundary in mocked phases).
+- `backend/renderer/singleProcessRenderHarness.ts` and backend registry remain lifecycle owners:
+  - claim/render/finalize/success/error transitions stay harness/registry-owned
+  - runtime helper, adapter, and composition layers must not mutate lifecycle state
+- Route layer remains non-executing for renderer runtime:
+  - no auto-execution from `POST /exports`
+  - no hidden queue/worker/scheduler loop
+- Phase 8.0-B boundary remains mocked-call only:
+  - no real renderer runtime execution is enabled yet
+  - no artifact hosting/signed URL/download URL behavior is enabled
+  - no frontend architecture changes were introduced

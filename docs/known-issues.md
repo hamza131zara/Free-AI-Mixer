@@ -111,6 +111,8 @@ Why it matters:
 - Remotion import smoke test now exists (Phase 7.7-B), but it is import-only; runtime API execution, adapter implementation, composition files, renderer output generation, and download capability remain deferred
 - Remotion adapter now supports mocked runtime call sequencing (Phase 7.8-B), but real renderer runtime execution, composition files, verified output production, route auto-execution, and download capability remain deferred
 - Remotion composition scaffold now exists (Phase 7.9-B), but it is boundary-only: real renderer runtime execution, verified output production, route auto-execution, and download capability remain deferred
+- Remotion runtime helper boundary now exists (Phase 8.0-B), but default runtime execution remains intentionally not implemented/truthful for real rendering until a later audited runtime phase defines full bundle/composition-selection/renderMedia handling
+- no public download URLs exist yet
 
 Target fix phase:
 

@@ -132,3 +132,18 @@ Phase numbering in prompts must match `docs/phases.md`.
 - Phase 7.7 prompts should keep Remotion validation import-only: dynamic module import smoke tests are allowed, but no runtime API execution, no adapter implementation, no composition files, no route auto-execution, and no frontend orchestration changes.
 - Phase 7.8 prompts should keep adapter implementation mocked-runtime-only first: injected runtime call sequencing tests are allowed, but no real renderer runtime execution, no composition files, no route auto-execution, no lifecycle mutation in adapter, and no frontend orchestration changes.
 - Phase 7.9 prompts should keep composition work backend-only and boundary-first: snapshot-derived serializable composition props and deterministic placeholder rendering are allowed, but no renderer runtime API calls, no file/artifact output creation, no route auto-execution, and no frontend orchestration changes.
+- Phase 8.0 prompts should keep real-runtime preparation backend-only and boundary-first: runtime helper boundaries and adapter delegation are allowed with mocked calls, but no real renderer runtime execution, no route auto-execution, no lifecycle mutation outside harness/registry, and no hosting/signing/download URL behavior.
+
+## Phase 8 Prompt Notes
+
+- Phase 8.0-B implementation prompts should scope to backend runtime boundary only:
+  - `backend/renderer/remotionRuntime.ts` as the dedicated runtime helper boundary
+  - adapter delegation through runtime helper/injected runtime boundary
+  - focused mocked-call tests only
+- Phase 8.0-B prompts must preserve:
+  - no real renderer execution
+  - no route auto-execution
+  - no frontend changes
+  - no lifecycle mutation in runtime/helper/adapter/composition
+  - no artifact hosting/signed/download URL behavior
+- Phase 8.0-C prompts should remain docs-only and preserve credit-safe workflow boundaries (no code/test/package changes).
