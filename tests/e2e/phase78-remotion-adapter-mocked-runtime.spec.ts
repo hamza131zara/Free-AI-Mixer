@@ -6,6 +6,7 @@ import {
   type RemotionRendererRuntime,
 } from "../../backend/renderer/remotionRendererAdapter";
 import type { RendererAdapterInput } from "../../backend/renderer/singleProcessRenderHarness";
+import { toFreeMixerCompositionProps } from "../../backend/renderer/compositions/compositionProps";
 
 const createAdapterInput = (): RendererAdapterInput => ({
   snapshot: {
@@ -95,8 +96,9 @@ test.describe("phase78 remotion adapter with mocked runtime", () => {
 
     const result = await adapter(input);
     expect(calls).toEqual(["bundle", "selectComposition", "renderMedia"]);
-    expect(selectedProps).toEqual(input.snapshot);
-    expect(renderProps).toEqual(input.snapshot);
+    const expectedProps = toFreeMixerCompositionProps(input.snapshot);
+    expect(selectedProps).toEqual(expectedProps);
+    expect(renderProps).toEqual(expectedProps);
     expect(renderOutputLocation).toBe(input.resolvedOutputPath.filePath);
     expect(result.ok).toBe(true);
     if (!result.ok) {

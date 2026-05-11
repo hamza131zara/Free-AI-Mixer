@@ -3,6 +3,10 @@ import {
   runRemotionRuntime,
   type RemotionRendererRuntime,
 } from "./remotionRuntime";
+import {
+  FREE_MIXER_COMPOSITION_ID,
+  toFreeMixerCompositionProps,
+} from "./compositions/compositionProps";
 export type { RemotionRendererRuntime } from "./remotionRuntime";
 
 export interface RemotionRendererAdapterOptions {
@@ -88,8 +92,9 @@ export const createRemotionRendererAdapter = (
 ): RendererAdapter => {
   const runtime = options?.runtime;
   const runtimeExecutor = options?.runtimeExecutor ?? runRemotionRuntime;
-  const entryPoint = options?.entryPoint ?? "backend/renderer/remotion-entry.ts";
-  const compositionId = options?.compositionId ?? "FreeAiMixerComposition";
+  const entryPoint =
+    options?.entryPoint ?? "backend/renderer/compositions/remotionEntry.tsx";
+  const compositionId = options?.compositionId ?? FREE_MIXER_COMPOSITION_ID;
   const workerId = options?.workerId;
 
   return async ({ snapshot, resolvedOutputPath, abortSignal }) => {
@@ -103,11 +108,13 @@ export const createRemotionRendererAdapter = (
 
     try {
       const codec = snapshot.outputTarget.format === "webm" ? "vp8" : "h264";
+      const compositionProps = toFreeMixerCompositionProps(snapshot);
+
       const runtimeResult = await runtimeExecutor({
         runtime,
         entryPoint,
         compositionId,
-        inputProps: snapshot,
+        inputProps: compositionProps,
         outputLocation: resolvedOutputPath.filePath,
         codec,
         signal: abortSignal,
