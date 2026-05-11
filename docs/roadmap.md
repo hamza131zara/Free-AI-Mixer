@@ -245,6 +245,21 @@ Phase 7.7 Remotion import smoke note:
 - no composition files, route auto-execution, artifact metadata outputs, url/download/signed/public-url outputs, or frontend changes were introduced
 - next phase is Phase 7.7-D Remotion import smoke test final sign-off, then Phase 7.8-A Remotion adapter implementation audit only
 
+Phase 7.8 Remotion adapter mocked-runtime note:
+
+- Phase 7.8-A audit is complete
+- Phase 7.8-B adapter implementation with mocked renderer calls is complete
+- adapter remains backend-only and harness-compatible
+- optional mocked runtime injection is supported with explicit call sequencing:
+  - `bundle`
+  - `selectComposition`
+  - `renderMedia`
+- mocked success is adapter-call success only (not verified artifact success)
+- no real renderer runtime execution, no composition files, and no route auto-execution were introduced
+- no lifecycle mutation, no artifact metadata creation, no url/download/signed/public-url outputs, and no frontend changes were introduced
+- failure diagnostics are sanitized with no stack/path/url/env/secret leakage
+- next phase is Phase 7.8-D Remotion adapter implementation final sign-off, then Phase 7.9-A Remotion composition boundary audit only
+
 ### Phase 7: Production Optimization
 
 - monitoring
@@ -259,4 +274,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 7.7-D Remotion import smoke test final sign-off, then Phase 7.8-A Remotion adapter implementation audit only
+3. run Phase 7.8-D Remotion adapter implementation final sign-off, then Phase 7.9-A Remotion composition boundary audit only

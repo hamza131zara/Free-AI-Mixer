@@ -377,7 +377,10 @@ Sub-phases:
 - Phase 7.6-D Remotion dependency install final sign-off complete
 - Phase 7.7-A Remotion import smoke test audit only complete
 - Phase 7.7-B Remotion import smoke test only complete
-- Phase 7.7-D Remotion import smoke test final sign-off (next)
+- Phase 7.7-D Remotion import smoke test final sign-off complete
+- Phase 7.8-A Remotion adapter implementation audit only complete
+- Phase 7.8-B Remotion adapter implementation with mocked renderer calls complete
+- Phase 7.8-D Remotion adapter implementation final sign-off (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -823,6 +826,55 @@ Phase 7.7 note:
   - no database/durable persistence
   - no artifact hosting or signed/download urls
   - no fake artifacts/success/progress/cancellation
+  - no frontend changes
+
+Phase 7.8 note:
+
+- backend-only Remotion adapter implementation now exists in `backend/renderer/remotionRendererAdapter.ts`
+- mocked runtime injection support is now implemented
+- focused mocked-runtime tests now exist in `tests/e2e/phase78-remotion-adapter-mocked-runtime.spec.ts`
+- focused backend script `test:backend:phase78` now exists
+- adapter behavior:
+  1. `createRemotionRendererAdapter(...)` remains the main factory
+  2. adapter remains compatible with the existing `RendererAdapter` contract
+  3. adapter supports optional injected Remotion-like runtime via options
+  4. mocked runtime contract supports `bundle(...)`, `selectComposition(...)`, and `renderMedia(...)`
+  5. when runtime is injected, call order is `bundle -> selectComposition -> renderMedia`
+  6. snapshot data is passed into the mocked render boundary
+  7. backend-internal resolved output path is passed only to mocked `renderMedia`
+  8. adapter returns minimal safe internal result
+  9. truthful not-implemented behavior is preserved when no runtime is injected
+- safety boundaries:
+  - mocked success means adapter-call success only
+  - mocked success is not verified artifact success
+  - adapter does not create artifact metadata
+  - adapter does not verify files
+  - adapter does not call `markSuccess`/`markError`
+  - adapter does not mutate lifecycle
+  - adapter does not expose local paths publicly
+  - adapter does not create url/download/signed/public-url fields
+  - adapter does not create fake progress percent
+- failure behavior:
+  - bundle/select/render failures return safe `ok: false`
+  - failure diagnostics are sanitized
+  - stack traces, local paths, urls, download-like values, command/env/secret-like values are not exposed
+- test scope:
+  - phase 7.8 tests use mocked injected runtime functions only
+  - no real Remotion runtime API calls are executed
+  - no real `renderMedia`, `bundle`, `selectComposition`, `getCompositions`, or `openBrowser` calls are executed
+  - no composition files are required
+  - no production files are created
+  - phase 7.7 import smoke tests and phase 7.5 adapter tests remain compatible
+- non-behaviors:
+  - no real renderer execution
+  - no composition files
+  - no frontend component reuse
+  - no Zustand/store/hooks in renderer path
+  - no route changes and no auto-run from `POST /exports`
+  - no queue/scheduler/worker loop
+  - no database/durable persistence
+  - no artifact hosting/signed urls/download urls
+  - no fake terminal success/artifacts/progress/cancellation
   - no frontend changes
 
 ### Phase 7 — Production Optimization

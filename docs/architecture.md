@@ -745,3 +745,20 @@ Remotion import smoke test milestone (Phase 7.7-A/B):
   - no route auto-execution
   - no lifecycle mutation via smoke phase
   - no frontend architecture changes
+
+Remotion adapter mocked-runtime implementation (Phase 7.8-A/B):
+
+- Adapter remains backend-only in `backend/renderer/remotionRendererAdapter.ts`.
+- `createRemotionRendererAdapter(...)` remains the primary factory and stays compatible with the harness `RendererAdapter` contract.
+- Adapter now supports optional injected mocked runtime boundaries:
+  - `bundle(...)`
+  - `selectComposition(...)`
+  - `renderMedia(...)`
+- Injected runtime call order is explicit: `bundle -> selectComposition -> renderMedia`.
+- Snapshot data is passed to mocked render boundaries; only backend-internal resolved output path is passed to mocked `renderMedia`.
+- Adapter success here means adapter-call success only (not verified artifact success).
+- Adapter still does not create artifact metadata, verify files, mutate lifecycle, or call `markSuccess`/`markError`.
+- Adapter diagnostics remain sanitized and must not expose stack traces, local paths, urls/download-like fields, or command/env/secret-like values.
+- When no runtime is injected, truthful not-implemented (`ok: false`) behavior remains intact.
+- Focused mocked-runtime coverage exists in `tests/e2e/phase78-remotion-adapter-mocked-runtime.spec.ts`.
+- Real renderer runtime execution, composition files, route auto-execution, and frontend changes remain deferred.
