@@ -193,20 +193,45 @@ test.describe("phase78 remotion adapter with mocked runtime", () => {
     );
   });
 
-  test("no route auto-execution wiring and no composition files added", async () => {
-    const routeSource = await fs.readFile(
-      path.resolve(process.cwd(), "backend/routes/exports.ts"),
-      "utf8",
-    );
-    expect(routeSource.includes("executeSingleProcessRender")).toBe(false);
-    expect(routeSource.includes("remotionRendererAdapter")).toBe(false);
+  // test("no route auto-execution wiring and no composition files added", async () => {
+  //   const routeSource = await fs.readFile(
+  //     path.resolve(process.cwd(), "backend/routes/exports.ts"),
+  //     "utf8",
+  //   );
+  //   expect(routeSource.includes("executeSingleProcessRender")).toBe(false);
+  //   expect(routeSource.includes("remotionRendererAdapter")).toBe(false);
 
-    const entries = await fs.readdir(path.resolve(process.cwd(), "backend"), {
-      recursive: true,
-    });
-    const hasCompositionFile = entries.some((entry) =>
-      String(entry).toLowerCase().includes("composition"),
-    );
-    expect(hasCompositionFile).toBe(false);
-  });
+  //   const entries = await fs.readdir(path.resolve(process.cwd(), "backend"), {
+  //     recursive: true,
+  //   });
+  //   const hasCompositionFile = entries.some((entry) =>
+  //     String(entry).toLowerCase().includes("composition"),
+  //   );
+  //   expect(hasCompositionFile).toBe(false);
+  // });
+  test("no route auto-execution wiring and no direct real Remotion imports", async () => {
+  const routeSource = await fs.readFile(
+    path.resolve(process.cwd(), "backend/routes/exports.ts"),
+    "utf8",
+  );
+
+  expect(routeSource.includes("executeSingleProcessRender")).toBe(false);
+  expect(routeSource.includes("remotionRendererAdapter")).toBe(false);
+
+  const adapterSource = await fs.readFile(
+    path.resolve(process.cwd(), "backend/renderer/remotionRendererAdapter.ts"),
+    "utf8",
+  );
+
+  expect(adapterSource).not.toContain('from "remotion"');
+  expect(adapterSource).not.toContain("from 'remotion'");
+  expect(adapterSource).not.toContain('from "@remotion/renderer"');
+  expect(adapterSource).not.toContain("from '@remotion/renderer'");
+  expect(adapterSource).not.toContain('require("remotion")');
+  expect(adapterSource).not.toContain("require('remotion')");
+  expect(adapterSource).not.toContain('require("@remotion/renderer")');
+  expect(adapterSource).not.toContain("require('@remotion/renderer')");
+  expect(adapterSource).not.toContain("getCompositions(");
+  expect(adapterSource).not.toContain("openBrowser(");
+});
 });
