@@ -387,7 +387,11 @@ Sub-phases:
 - Phase 8.0-A real renderer runtime execution audit only complete
 - Phase 8.0-B Remotion runtime helper boundary + adapter delegation (mocked calls only) complete
 - Phase 8.0-C docs update only complete
-- Phase 8.0-D final sign-off pending
+- Phase 8.0-D final sign-off complete
+- Phase 8.1-A real Remotion runtime execution audit only complete
+- Phase 8.1-B Remotion bundler dependency + runtime type boundary prep (no real render) complete
+- Phase 8.1-C docs update only complete
+- Phase 8.1-D final sign-off pending
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -919,6 +923,21 @@ Phase 8.0 note:
   - `test:backend:phase80`
 - Phase 8.0-B remains mocked-call only:
   - no real renderer runtime execution is enabled yet
+  - no route auto-execution is enabled
+  - no frontend changes were introduced
+  - no artifact hosting, signed URLs, or download URLs were introduced
+  - no lifecycle mutation was introduced in runtime helper, adapter, or composition
+- lifecycle ownership remains in harness/registry only
+
+Phase 8.1 note:
+
+- `@remotion/bundler` dependency was added as boundary/dependency prep only
+- runtime helper boundary in `backend/renderer/remotionRuntime.ts` now includes safer type boundaries for future bundler/runtime integration
+- focused boundary test now exists in `tests/e2e/phase81-remotion-bundler-boundary.spec.ts`
+- focused backend script now exists:
+  - `test:backend:phase81`
+- Phase 8.1-B remains non-executing for real Remotion runtime:
+  - no real `bundle`, `selectComposition`, or `renderMedia` execution is enabled
   - no route auto-execution is enabled
   - no frontend changes were introduced
   - no artifact hosting, signed URLs, or download URLs were introduced

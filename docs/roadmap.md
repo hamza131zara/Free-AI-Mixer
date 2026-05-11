@@ -289,6 +289,23 @@ Phase 8.0 runtime helper boundary note:
   - explicit route/job execution trigger decisions
   - artifact hosting and downloadable URL issuance
 
+Phase 8.1 bundler + runtime type boundary prep note:
+
+- Phase 8.1-A audit is complete
+- Phase 8.1-B bundler dependency + runtime type boundary prep is complete
+- this phase is boundary/dependency prep only:
+  - `@remotion/bundler` added
+  - runtime helper type boundaries prepared for future real runtime integration
+  - no real runtime execution enabled
+- no route auto-execution, no frontend changes, and no artifact hosting/signed/download URL behavior were introduced
+- lifecycle ownership remains harness/registry only
+- next phase is Phase 8.1-D final sign-off
+- later audited phases are still required for:
+  - first controlled real render smoke execution
+  - artifactVerification-backed verified output before success
+  - explicit backend job execution trigger decisions
+  - artifact hosting and downloadable URL issuance
+
 ### Phase 7: Production Optimization
 
 - monitoring

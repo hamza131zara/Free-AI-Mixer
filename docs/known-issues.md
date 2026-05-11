@@ -106,12 +106,16 @@ Why it matters:
 - real file verification helper exists (Phase 7.2-B), but no renderer execution, production file generation pipeline, artifact hosting/signing, or download output exists yet
 - renderer failure mapping helper exists (Phase 7.3-B), but it is mapping/sanitization only; no renderer runtime, lifecycle mutation, artifact output, or download capability exists yet
 - single-process render harness exists (Phase 7.4-B), but it is injected-orchestration foundation only; no Remotion runtime, no route auto-execution, no queue/worker loop, and no download capability exist yet
-- Remotion adapter contract stub exists (Phase 7.5-B), but it is not-implemented by design; no Remotion dependency/import, no renderer runtime, no composition files, and no download capability exist yet
-- Remotion dependencies now exist (Phase 7.6-B), but runtime remains deferred: no Remotion imports in runtime adapter flow, no renderer execution, no composition files, no route auto-execution, and no download capability exist yet
-- Remotion import smoke test now exists (Phase 7.7-B), but it is import-only; runtime API execution, adapter implementation, composition files, renderer output generation, and download capability remain deferred
-- Remotion adapter now supports mocked runtime call sequencing (Phase 7.8-B), but real renderer runtime execution, composition files, verified output production, route auto-execution, and download capability remain deferred
-- Remotion composition scaffold now exists (Phase 7.9-B), but it is boundary-only: real renderer runtime execution, verified output production, route auto-execution, and download capability remain deferred
-- Remotion runtime helper boundary now exists (Phase 8.0-B), but default runtime execution remains intentionally not implemented/truthful for real rendering until a later audited runtime phase defines full bundle/composition-selection/renderMedia handling
+- Remotion adapter contract stub exists from Phase 7.5-B as a historical boundary step; real runtime execution was intentionally deferred at that stage
+- Remotion dependencies now exist from Phase 7.6-B as dependency onboarding only; real runtime execution remained deferred at that stage
+- Remotion import smoke coverage now exists from Phase 7.7-B as import-only validation; real runtime execution remained deferred at that stage
+- Remotion adapter mocked runtime call sequencing now exists from Phase 7.8-B; real runtime execution remained deferred at that stage
+- Backend-only Remotion composition boundary scaffold exists from Phase 7.9-B; composition scaffold is present, but verified runtime output production is still deferred
+- Remotion runtime helper boundary exists from Phase 8.0-B; default runtime execution remains intentionally non-executing/truthful until a later audited real-runtime phase
+- `@remotion/bundler` dependency and runtime type boundary prep exist from Phase 8.1-B; real runtime bundle/selectComposition/renderMedia execution remains deferred
+- route auto-execution remains deferred
+- verified output production remains deferred
+- artifact hosting/signed URL/download capability remains deferred
 - no public download URLs exist yet
 
 Target fix phase:

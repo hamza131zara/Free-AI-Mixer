@@ -761,7 +761,7 @@ Remotion adapter mocked-runtime implementation (Phase 7.8-A/B):
 - Adapter diagnostics remain sanitized and must not expose stack traces, local paths, urls/download-like fields, or command/env/secret-like values.
 - When no runtime is injected, truthful not-implemented (`ok: false`) behavior remains intact.
 - Focused mocked-runtime coverage exists in `tests/e2e/phase78-remotion-adapter-mocked-runtime.spec.ts`.
-- Real renderer runtime execution, composition files, route auto-execution, and frontend changes remain deferred.
+Real renderer runtime execution, composition files, route auto-execution, and frontend changes remain deferred.
 
 Remotion composition boundary scaffold (Phase 7.9-A/B):
 
@@ -796,3 +796,16 @@ Remotion runtime helper boundary and adapter delegation (Phase 8.0-A/B):
   - no real renderer runtime execution is enabled yet
   - no artifact hosting/signed URL/download URL behavior is enabled
   - no frontend architecture changes were introduced
+
+Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Phase 8.1-A audit):
+
+- `@remotion/bundler` is now present as dependency/boundary preparation only.
+- `backend/renderer/remotionRuntime.ts` remains the dedicated backend-only boundary for future Remotion bundler/runtime API integration.
+- Runtime helper now carries safer future-facing module/type boundaries for renderer and bundler integration.
+- Default runtime remains truthful and non-executing until a later audited phase explicitly enables controlled real runtime execution.
+- Lifecycle ownership remains unchanged:
+  - runtime/helper/adapter/composition must not mutate lifecycle
+  - harness/registry remain the only lifecycle transition owners
+- Route layer remains non-executing:
+  - no auto-execution from `POST /exports`
+  - no hidden worker loop/queue/scheduler introduced

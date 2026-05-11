@@ -133,6 +133,7 @@ Phase numbering in prompts must match `docs/phases.md`.
 - Phase 7.8 prompts should keep adapter implementation mocked-runtime-only first: injected runtime call sequencing tests are allowed, but no real renderer runtime execution, no composition files, no route auto-execution, no lifecycle mutation in adapter, and no frontend orchestration changes.
 - Phase 7.9 prompts should keep composition work backend-only and boundary-first: snapshot-derived serializable composition props and deterministic placeholder rendering are allowed, but no renderer runtime API calls, no file/artifact output creation, no route auto-execution, and no frontend orchestration changes.
 - Phase 8.0 prompts should keep real-runtime preparation backend-only and boundary-first: runtime helper boundaries and adapter delegation are allowed with mocked calls, but no real renderer runtime execution, no route auto-execution, no lifecycle mutation outside harness/registry, and no hosting/signing/download URL behavior.
+- Phase 8.1 prompts should split dependency/type-boundary prep from real runtime execution: bundler/runtime type prep is allowed, but real bundle/selectComposition/renderMedia execution remains deferred to a later audited phase.
 
 ## Phase 8 Prompt Notes
 
@@ -147,3 +148,10 @@ Phase numbering in prompts must match `docs/phases.md`.
   - no lifecycle mutation in runtime/helper/adapter/composition
   - no artifact hosting/signed/download URL behavior
 - Phase 8.0-C prompts should remain docs-only and preserve credit-safe workflow boundaries (no code/test/package changes).
+- Phase 8.1-A prompts should remain audit-only: identify safe first real runtime step, dependency boundaries, and strict lifecycle/route/frontend constraints.
+- Phase 8.1-B prompts should remain backend-only dependency/type-boundary prep:
+  - add `@remotion/bundler` in isolation
+  - prepare runtime helper type boundaries for future Remotion runtime integration
+  - keep default runtime truthful/non-executing
+  - no real renderer execution, no route auto-execution, no lifecycle mutation
+- Phase 8.1-C prompts should remain docs-only and preserve credit-safe workflow boundaries (no code/test/package changes).
