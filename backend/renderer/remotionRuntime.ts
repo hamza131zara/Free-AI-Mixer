@@ -1,30 +1,45 @@
+import type { VideoConfig } from "remotion";
+
 export interface RemotionBundleResult {
   serveUrl: string;
-}
-
-export interface RemotionCompositionResult {
-  id: string;
 }
 
 export interface RemotionRenderResult {
   ok: boolean;
 }
 
+export type RemotionRendererModule = typeof import("@remotion/renderer");
+export type RemotionBundlerModule = typeof import("@remotion/bundler");
+export type RequiredRemotionCompositionConfig = VideoConfig;
+export type RemotionCompositionSelectionResult =
+  | RequiredRemotionCompositionConfig
+  | { id: string };
+
+export interface RemotionBundleRuntimeInput {
+  entryPoint: string;
+}
+
+export interface RemotionSelectCompositionRuntimeInput {
+  serveUrl: string;
+  compositionId: string;
+  inputProps: unknown;
+}
+
+export interface RemotionRenderMediaRuntimeInput {
+  serveUrl: string;
+  composition: RemotionCompositionSelectionResult;
+  codec: "h264" | "vp8";
+  outputLocation: string;
+  inputProps: unknown;
+  signal?: AbortSignal;
+}
+
 export interface RemotionRendererRuntime {
-  bundle(input: { entryPoint: string }): Promise<RemotionBundleResult>;
-  selectComposition(input: {
-    serveUrl: string;
-    compositionId: string;
-    inputProps: unknown;
-  }): Promise<RemotionCompositionResult>;
-  renderMedia(input: {
-    serveUrl: string;
-    composition: RemotionCompositionResult;
-    codec: "h264" | "vp8";
-    outputLocation: string;
-    inputProps: unknown;
-    signal?: AbortSignal;
-  }): Promise<RemotionRenderResult>;
+  bundle(input: RemotionBundleRuntimeInput): Promise<RemotionBundleResult>;
+  selectComposition(
+    input: RemotionSelectCompositionRuntimeInput,
+  ): Promise<RemotionCompositionSelectionResult>;
+  renderMedia(input: RemotionRenderMediaRuntimeInput): Promise<RemotionRenderResult>;
 }
 
 export interface RunRemotionRuntimeInput {
@@ -41,11 +56,19 @@ export interface RunRemotionRuntimeResult {
   ok: boolean;
 }
 
+export const createDefaultRemotionBundlerBoundary =
+  async (): Promise<RemotionBundlerModule> => {
+    const remotionBundler: RemotionBundlerModule = await import("@remotion/bundler");
+    return remotionBundler;
+  };
+
 export const createDefaultRemotionRuntime = async (): Promise<RemotionRendererRuntime> => {
   const remotionRenderer: typeof import("@remotion/renderer") = await import(
-    "@remotion/renderer"
+    "@remotion/renderer",
   );
+  const remotionBundler = await createDefaultRemotionBundlerBoundary();
   void remotionRenderer;
+  void remotionBundler;
 
   return {
     async bundle() {
