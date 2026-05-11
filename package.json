@@ -22,6 +22,7 @@
     "test:backend:phase74": "playwright test tests/e2e/phase74-single-process-render-harness.spec.ts",
     "test:backend:phase75": "playwright test tests/e2e/phase75-remotion-adapter-contract.spec.ts",
     "test:backend:phase77": "playwright test tests/e2e/phase77-remotion-import-smoke.spec.ts",
+    "test:backend:phase78": "playwright test tests/e2e/phase78-remotion-adapter-mocked-runtime.spec.ts",
     "test:integration:phase63": "playwright test tests/e2e/phase63-frontend-backend-integration.spec.ts",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
