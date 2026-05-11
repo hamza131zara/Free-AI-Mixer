@@ -762,3 +762,21 @@ Remotion adapter mocked-runtime implementation (Phase 7.8-A/B):
 - When no runtime is injected, truthful not-implemented (`ok: false`) behavior remains intact.
 - Focused mocked-runtime coverage exists in `tests/e2e/phase78-remotion-adapter-mocked-runtime.spec.ts`.
 - Real renderer runtime execution, composition files, route auto-execution, and frontend changes remain deferred.
+
+Remotion composition boundary scaffold (Phase 7.9-A/B):
+
+- Backend-only composition boundary scaffold exists under `backend/renderer/compositions/`.
+- Composition inputs are strictly `RenderInputSnapshot`-derived serializable props.
+- Scaffold renders deterministic placeholder timeline structure from clip timing/order data only.
+- Composition boundary restrictions:
+  - no imports from `src/store`, `src/services`, `src/agents`, backend routes, or backend registry
+  - no renderer runtime API calls (`renderMedia`, `bundle`, `selectComposition`, `getCompositions`, `openBrowser`)
+  - no `localStorage`/`window`/`document`/network usage
+  - no artifact metadata or url/download field creation
+  - no lifecycle mutation
+- This phase remains scaffold-only:
+  - no real renderer runtime execution
+  - no composition-driven file output
+  - no route auto-execution
+  - no frontend architecture changes
+- Focused boundary coverage exists in `tests/e2e/phase79-remotion-composition-boundary.spec.ts`.

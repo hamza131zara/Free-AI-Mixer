@@ -110,6 +110,7 @@ Why it matters:
 - Remotion dependencies now exist (Phase 7.6-B), but runtime remains deferred: no Remotion imports in runtime adapter flow, no renderer execution, no composition files, no route auto-execution, and no download capability exist yet
 - Remotion import smoke test now exists (Phase 7.7-B), but it is import-only; runtime API execution, adapter implementation, composition files, renderer output generation, and download capability remain deferred
 - Remotion adapter now supports mocked runtime call sequencing (Phase 7.8-B), but real renderer runtime execution, composition files, verified output production, route auto-execution, and download capability remain deferred
+- Remotion composition scaffold now exists (Phase 7.9-B), but it is boundary-only: real renderer runtime execution, verified output production, route auto-execution, and download capability remain deferred
 
 Target fix phase:
 

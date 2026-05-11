@@ -260,6 +260,16 @@ Phase 7.8 Remotion adapter mocked-runtime note:
 - failure diagnostics are sanitized with no stack/path/url/env/secret leakage
 - next phase is Phase 7.8-D Remotion adapter implementation final sign-off, then Phase 7.9-A Remotion composition boundary audit only
 
+Phase 7.9 Remotion composition boundary scaffold note:
+
+- Phase 7.9-A audit is complete
+- Phase 7.9-B composition boundary scaffold only is complete
+- backend-only composition scaffold now exists under `backend/renderer/compositions/`
+- scaffold accepts only snapshot-derived serializable props and renders deterministic placeholder timeline structures
+- no renderer runtime API calls, no file/artifact output creation, no route auto-execution, and no frontend changes were introduced
+- boundary checks ensure no imports from frontend store/service/agent layers or backend route/registry layers
+- next phase is Phase 7.9-D Remotion composition boundary final sign-off, then Phase 8.0-A real renderer runtime execution audit only
+
 ### Phase 7: Production Optimization
 
 - monitoring
@@ -274,4 +284,4 @@ Status:
 
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
-3. run Phase 7.8-D Remotion adapter implementation final sign-off, then Phase 7.9-A Remotion composition boundary audit only
+3. run Phase 7.9-D Remotion composition boundary final sign-off, then Phase 8.0-A real renderer runtime execution audit only

@@ -380,7 +380,10 @@ Sub-phases:
 - Phase 7.7-D Remotion import smoke test final sign-off complete
 - Phase 7.8-A Remotion adapter implementation audit only complete
 - Phase 7.8-B Remotion adapter implementation with mocked renderer calls complete
-- Phase 7.8-D Remotion adapter implementation final sign-off (next)
+- Phase 7.8-D Remotion adapter implementation final sign-off complete
+- Phase 7.9-A Remotion composition boundary audit only complete
+- Phase 7.9-B Remotion composition boundary scaffold only complete
+- Phase 7.9-D Remotion composition boundary final sign-off (next)
 - Phase 6.6 durable persistence planning
 
 Phase 6 boundary note:
@@ -876,6 +879,32 @@ Phase 7.8 note:
   - no artifact hosting/signed urls/download urls
   - no fake terminal success/artifacts/progress/cancellation
   - no frontend changes
+
+Phase 7.9 note:
+
+- backend-only Remotion composition boundary scaffold now exists under:
+  - `backend/renderer/compositions/compositionProps.ts`
+  - `backend/renderer/compositions/freeMixerComposition.ts`
+- focused backend composition-boundary tests now exist in:
+  - `tests/e2e/phase79-remotion-composition-boundary.spec.ts`
+- focused backend script now exists:
+  - `test:backend:phase79`
+- composition scaffold behavior:
+  1. accepts `RenderInputSnapshot`-derived serializable props only
+  2. renders deterministic placeholder timeline structure from clip timing/order data
+  3. does not depend on frontend stores/hooks/services/agents/routes/registry
+  4. does not call renderer runtime APIs (`renderMedia`, `bundle`, `selectComposition`, `getCompositions`, `openBrowser`)
+  5. does not create files, verify files, create artifacts, or create url/download fields
+  6. does not mutate lifecycle
+- safety boundaries:
+  - no frontend component reuse
+  - no Zustand/store/hooks in renderer path
+  - no route changes and no auto-run from `POST /exports`
+  - no queue/scheduler/worker loop
+  - no database/durable persistence
+  - no artifact hosting/signed urls/download urls
+  - no fake success/progress/artifacts/cancellation
+  - no real renderer runtime execution in this phase
 
 ### Phase 7 — Production Optimization
 
