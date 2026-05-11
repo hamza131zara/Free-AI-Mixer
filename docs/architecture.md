@@ -809,3 +809,23 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - Route layer remains non-executing:
   - no auto-execution from `POST /exports`
   - no hidden worker loop/queue/scheduler introduced
+## Phase 8.2 backend real-smoke boundary (test-only)
+
+- Real Remotion smoke remains backend-only and opt-in.
+- Runtime boundary stays in `backend/renderer/remotionRuntime.ts`.
+- Adapter/runtime/composition boundaries remain lifecycle-neutral; harness/registry remain lifecycle owners.
+- Route layer remains non-executing (no auto-run from `POST /exports`).
+
+### Browser-mode stabilization note
+
+- Initial smoke failures surfaced as `selectComposition` timeout.
+- A `getCompositions` preflight was added for composition discovery diagnostics before selection.
+- A browser logs scoping issue was corrected.
+- Browser mode mismatch was resolved by using `chromeMode: "headless-shell"` to match the downloaded Remotion browser runtime.
+
+### Preserved safety boundaries
+
+- No frontend rendering/orchestration changes.
+- No artifact hosting, signed URLs, or download URLs.
+- No public local path exposure in API-safe outputs.
+- No fake progress/success/artifacts/cancellation behavior.

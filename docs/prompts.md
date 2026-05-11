@@ -155,3 +155,15 @@ Phase numbering in prompts must match `docs/phases.md`.
   - keep default runtime truthful/non-executing
   - no real renderer execution, no route auto-execution, no lifecycle mutation
 - Phase 8.1-C prompts should remain docs-only and preserve credit-safe workflow boundaries (no code/test/package changes).
+## Phase 8.2 prompt trail
+
+- Phase 8.2-A: audit-only prompt for controlled real backend Remotion smoke planning.
+- Phase 8.2-B: implementation prompt for opt-in real smoke (test-only), preserving backend/runtime safety boundaries.
+- Phase 8.2-C: docs-only prompt to record milestone behavior, browser-mode stabilization, and deferred scope.
+
+### Credit-safe workflow reminders preserved
+
+- Keep renderer execution off routes unless explicitly phased.
+- Keep lifecycle ownership in harness/registry.
+- Keep frontend free of backend orchestration logic.
+- Do not claim hosting/download capabilities before implementation.

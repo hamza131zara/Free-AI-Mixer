@@ -959,3 +959,27 @@ Status:
 - Provider telemetry beyond app lifecycle stages belongs to Phase 3.8 or later.
 - Phase 3.6 hydration/runtime verification is complete.
 - Phase 3.8B defines contracts only; it does not change runtime orchestration.
+## Phase 8.2-C — Real Remotion Smoke Docs Update
+
+- Phase 8.2-A (audit) is complete.
+- Phase 8.2-B (controlled real Remotion smoke) is complete, verified, and committed.
+- Commit message: `feat(phase-8.2): add controlled real remotion smoke`.
+- Phase 8.2-C is docs-only and records the milestone details below.
+- Phase 8.2-D (final sign-off) remains the next sign-off step.
+
+### Phase 8.2-B milestone summary
+
+- Added opt-in real smoke test: `tests/e2e/phase82-remotion-real-smoke.spec.ts`.
+- Added/updated runtime smoke boundary: `backend/renderer/remotionRuntime.ts`.
+- Added backend Remotion entry boundary: `backend/renderer/compositions/remotionEntry.tsx`.
+- Added package script: `test:backend:phase82`.
+- Real rendering is still not enabled for normal app flow or routes.
+
+### Real smoke behavior
+
+- Opt-in only via `FREE_AI_MIXER_RUN_REAL_RENDER_SMOKE=1`.
+- Default Phase 82 test mode safely skips real smoke.
+- Opt-in path performs real: `bundle` -> `getCompositions` preflight -> `selectComposition` -> `renderMedia`.
+- Output is written only to test temp output paths.
+- Success requires real file verification via artifact verification.
+- Runtime/helper/composition do not call `markSuccess` or `markError`.

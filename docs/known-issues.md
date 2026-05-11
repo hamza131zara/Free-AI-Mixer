@@ -216,3 +216,21 @@ Why it matters:
 Target fix phase:
 
 - Phase 4.6 and later timeline/video phases
+## Remotion runtime status (Phase 8.2-C accuracy)
+
+- Backend composition boundary scaffold exists (Phase 7.9).
+- Backend runtime helper boundary exists (Phase 8.0-B).
+- Bundler dependency/type-boundary prep exists (Phase 8.1-B).
+- Controlled opt-in real smoke exists (Phase 8.2-B) and is validated.
+
+### Still intentionally deferred
+
+- Full real runtime execution for normal app/job flow.
+- Verified output production wired into regular lifecycle success path.
+- Route auto-execution (`POST /exports` remains non-executing for renderer runtime).
+- Artifact hosting and public download delivery (signed/download URLs).
+
+### Safety reminder
+
+- No fake success/progress/artifacts/cancellation behavior is allowed in renderer phases.
+- No public/API-safe response should expose backend local filesystem paths.

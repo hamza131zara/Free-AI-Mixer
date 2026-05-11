@@ -321,3 +321,28 @@ Status:
 1. preserve Phase 3.8 verification and backend-boundary clarity
 2. keep backend durable queue and multi-device resume deferred until backend/infrastructure work
 3. run Phase 7.9-D Remotion composition boundary final sign-off, then Phase 8.0-A real renderer runtime execution audit only
+## Phase 8.2 status
+
+- Phase 8.2-A: complete (audit only).
+- Phase 8.2-B: complete (controlled real backend Remotion smoke, opt-in only).
+- Phase 8.2-C: docs update only (this update).
+- Next: Phase 8.2-D final sign-off.
+
+### What Phase 8.2-B delivered
+
+- First controlled real backend smoke path (test-only, opt-in).
+- Real pipeline for opt-in smoke: bundle -> composition discovery/selection -> render -> file verification.
+- Browser-mode stabilization via `chromeMode: "headless-shell"`.
+
+### Still deferred after 8.2-B
+
+- Route-triggered or auto renderer execution.
+- Frontend integration changes.
+- Real user media decoding pipeline.
+- Production artifact hosting.
+- Signed URL and download URL capability.
+- Queue/scheduler/worker-loop/database durability expansions.
+
+### Next planned audit after 8.2-D
+
+- Phase 8.3-A — Renderer Adapter Real Runtime Integration Audit Only.
