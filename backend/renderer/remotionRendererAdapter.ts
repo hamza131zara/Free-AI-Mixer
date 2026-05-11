@@ -1,39 +1,16 @@
 import type { RendererAdapter } from "./singleProcessRenderHarness";
-
-export interface RemotionBundleResult {
-  serveUrl: string;
-}
-
-export interface RemotionCompositionResult {
-  id: string;
-}
-
-export interface RemotionRenderResult {
-  ok: boolean;
-}
-
-export interface RemotionRendererRuntime {
-  bundle(input: { entryPoint: string }): Promise<RemotionBundleResult>;
-  selectComposition(input: {
-    serveUrl: string;
-    compositionId: string;
-    inputProps: unknown;
-  }): Promise<RemotionCompositionResult>;
-  renderMedia(input: {
-    serveUrl: string;
-    composition: RemotionCompositionResult;
-    codec: "h264" | "vp8";
-    outputLocation: string;
-    inputProps: unknown;
-    signal?: AbortSignal;
-  }): Promise<RemotionRenderResult>;
-}
+import {
+  runRemotionRuntime,
+  type RemotionRendererRuntime,
+} from "./remotionRuntime";
+export type { RemotionRendererRuntime } from "./remotionRuntime";
 
 export interface RemotionRendererAdapterOptions {
   runtime?: RemotionRendererRuntime;
   entryPoint?: string;
   compositionId?: string;
   workerId?: string;
+  runtimeExecutor?: typeof runRemotionRuntime;
 }
 
 export const remotionRendererAdapterNotImplementedCode =
@@ -110,6 +87,7 @@ export const createRemotionRendererAdapter = (
   options?: RemotionRendererAdapterOptions,
 ): RendererAdapter => {
   const runtime = options?.runtime;
+  const runtimeExecutor = options?.runtimeExecutor ?? runRemotionRuntime;
   const entryPoint = options?.entryPoint ?? "backend/renderer/remotion-entry.ts";
   const compositionId = options?.compositionId ?? "FreeAiMixerComposition";
   const workerId = options?.workerId;
@@ -124,24 +102,18 @@ export const createRemotionRendererAdapter = (
     }
 
     try {
-      const bundleResult = await runtime.bundle({ entryPoint });
-      const composition = await runtime.selectComposition({
-        serveUrl: bundleResult.serveUrl,
+      const codec = snapshot.outputTarget.format === "webm" ? "vp8" : "h264";
+      const runtimeResult = await runtimeExecutor({
+        runtime,
+        entryPoint,
         compositionId,
         inputProps: snapshot,
-      });
-
-      const codec = snapshot.outputTarget.format === "webm" ? "vp8" : "h264";
-      const renderResult = await runtime.renderMedia({
-        serveUrl: bundleResult.serveUrl,
-        composition,
-        codec,
         outputLocation: resolvedOutputPath.filePath,
-        inputProps: snapshot,
+        codec,
         signal: abortSignal,
       });
 
-      if (!renderResult.ok) {
+      if (!runtimeResult.ok) {
         return toSafeFailureResult(
           "renderer_execution_failed",
           "Remotion renderer adapter reported failure.",
