@@ -346,3 +346,23 @@ Status:
 ### Next planned audit after 8.2-D
 
 - Phase 8.3-A — Renderer Adapter Real Runtime Integration Audit Only.
+
+## Phase 8.3 status
+
+- Phase 8.3-A: complete (adapter real-runtime integration audit).
+- Phase 8.3-B: complete (adapter boundary aligned to real-smoke runtime entry/composition/props flow).
+- Phase 8.3-C: docs update only (this update).
+- Next: Phase 8.3-D final sign-off.
+
+### What 8.3-B completed
+
+- Adapter default runtime boundary alignment with backend composition entry.
+- Adapter snapshot-to-composition-props conversion before runtime delegation.
+- Delegation preserved: runtime API calls remain in runtime helper boundary.
+
+### Still deferred after 8.3-B
+
+- Harness/job execution expansion for production renderer flow.
+- Route-triggered backend renderer execution.
+- Production artifact hosting/signing/download URLs.
+- Frontend integration with real backend lifecycle/render completion.

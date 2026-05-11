@@ -983,3 +983,26 @@ Status:
 - Output is written only to test temp output paths.
 - Success requires real file verification via artifact verification.
 - Runtime/helper/composition do not call `markSuccess` or `markError`.
+
+## Phase 8.3-C — Renderer Adapter Real Runtime Integration Docs Update
+
+- Phase 8.3-A (audit) is complete.
+- Phase 8.3-B (adapter runtime boundary integration) is complete and committed.
+- Commit message: `feat(phase-8.3): integrate adapter real runtime boundary`.
+- Phase 8.3-C is docs-only (this update).
+- Phase 8.3-D (final sign-off) remains pending.
+
+### Phase 8.3-B boundary alignment summary
+
+- Adapter default entry point aligns to `backend/renderer/compositions/remotionEntry.tsx`.
+- Adapter default composition id aligns to `FREE_MIXER_COMPOSITION_ID`.
+- Adapter converts `RenderInputSnapshot` into composition props before runtime delegation.
+- Adapter no longer passes raw snapshot as runtime input props.
+- Real Remotion API calls remain in `backend/renderer/remotionRuntime.ts`.
+
+### Phase 8.3 boundaries preserved
+
+- Routes remain non-executing for renderer runtime (`POST /exports` is not wired).
+- Adapter remains lifecycle-neutral (no `markRendering`/`markFinalizing`/`markSuccess`/`markError`).
+- Adapter remains artifact-neutral (no verification, no metadata creation, no hosting/signing/download URLs).
+- Download capability is still not available.

@@ -167,3 +167,16 @@ Phase numbering in prompts must match `docs/phases.md`.
 - Keep lifecycle ownership in harness/registry.
 - Keep frontend free of backend orchestration logic.
 - Do not claim hosting/download capabilities before implementation.
+
+## Phase 8.3 prompt trail
+
+- Phase 8.3-A: audit-only prompt for adapter real-runtime integration boundaries and ownership.
+- Phase 8.3-B: implementation prompt for adapter boundary alignment (entry/composition defaults + snapshot-to-composition-props conversion) without route wiring.
+- Phase 8.3-C: docs-only prompt to record integration milestone and preserved deferrals.
+
+### Credit-safe guidance preserved
+
+- Keep lifecycle transitions in harness/registry.
+- Keep adapter lifecycle-neutral and artifact-neutral.
+- Keep route layer non-executing until explicitly phased.
+- Do not claim hosting/signing/download capabilities before implementation.

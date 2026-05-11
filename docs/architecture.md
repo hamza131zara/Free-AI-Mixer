@@ -829,3 +829,23 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - No artifact hosting, signed URLs, or download URLs.
 - No public local path exposure in API-safe outputs.
 - No fake progress/success/artifacts/cancellation behavior.
+
+## Phase 8.3 adapter real-runtime integration boundary
+
+- `backend/renderer/remotionRendererAdapter.ts` remains an orchestration boundary that delegates runtime execution.
+- Adapter default alignment now targets:
+  - entry point: `backend/renderer/compositions/remotionEntry.tsx`
+  - composition id: `FREE_MIXER_COMPOSITION_ID`
+- Adapter converts `RenderInputSnapshot` to Free Mixer composition props before runtime delegation.
+- Adapter does not pass raw render snapshot directly to real runtime input props.
+
+### Ownership and safety
+
+- Real Remotion API calls (`bundle`/composition selection/rendering) remain in `backend/renderer/remotionRuntime.ts`.
+- Harness/registry remain lifecycle owners.
+- Adapter/runtime/composition remain lifecycle-neutral (no mark* transitions).
+- Adapter remains artifact-neutral:
+  - no artifact verification
+  - no artifact metadata creation
+  - no hosting/signing/download URL behavior
+- Route layer remains non-executing for renderer runtime.
