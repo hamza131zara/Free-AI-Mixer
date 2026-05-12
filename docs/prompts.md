@@ -193,3 +193,16 @@ Phase numbering in prompts must match `docs/phases.md`.
 - Keep adapter/runtime/composition lifecycle-neutral and adapter artifact-neutral.
 - Keep route layer non-executing unless explicitly phased.
 - If repeated failures occur, inspect and correct contract assumptions before expanding implementation scope.
+
+## Phase 8.5 prompt trail
+
+- Phase 8.5-A: audit-only prompt for backend execution trigger planning and safety boundaries.
+- Phase 8.5-B: implementation prompt for internal trigger delegation to harness without route wiring.
+- Phase 8.5-C: docs-only prompt to capture trigger milestone and preserved deferrals.
+
+### Credit-safe guidance preserved
+
+- Keep `POST /exports` non-executing until explicitly phased.
+- Keep trigger layer lifecycle-neutral and artifact-neutral.
+- Keep lifecycle ownership in harness/registry.
+- If repeated failures occur, inspect contract assumptions before additional implementation iterations.

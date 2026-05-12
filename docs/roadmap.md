@@ -387,3 +387,23 @@ Status:
 - Production artifact hosting/signing/download URL delivery.
 - Frontend integration with real backend lifecycle/render completion.
 - Durable persistence/queue/worker/scheduler expansion.
+
+## Phase 8.5 status
+
+- Phase 8.5-A: complete (backend execution trigger audit).
+- Phase 8.5-B: complete (internal backend execution trigger milestone).
+- Phase 8.5-C: docs update only (this update).
+- Next: Phase 8.5-D final sign-off.
+
+### What 8.5-B delivered
+
+- Internal backend trigger boundary for harness execution (`executeRenderJob`).
+- Focused test coverage for delegation, lifecycle neutrality at trigger layer, and route non-execution guarantees.
+
+### Still deferred after 8.5-B
+
+- Route-triggered backend execution (`POST /exports` execution wiring).
+- Queue/worker/scheduler/database-backed durable execution.
+- Production artifact hosting/signing/download URL delivery.
+- Frontend integration with real backend lifecycle completion.
+- Production scalability/security hardening phases.

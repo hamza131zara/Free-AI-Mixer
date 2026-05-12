@@ -868,3 +868,22 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - Adapter/runtime/composition remain lifecycle-neutral (no mark* transitions).
 - Adapter remains artifact-neutral (no artifact verification, no metadata creation, no hosting/signing/download URLs).
 - Route layer remains non-executing (`POST /exports` still does not execute renderer runtime).
+
+## Phase 8.5 backend execution trigger boundary
+
+- `backend/renderer/executeRenderJob.ts` is an internal/manual backend trigger boundary.
+- It accepts explicit dependencies and delegates to `executeSingleProcessRender(...)`.
+- It returns harness results unchanged and does not duplicate harness lifecycle logic.
+
+### Ownership remains unchanged
+
+- Trigger does not directly own lifecycle transitions.
+- Trigger does not verify artifacts and does not create artifact metadata.
+- Harness/registry remain lifecycle owners.
+- Output path resolution and artifact verification remain harness-owned.
+
+### Route/API status remains unchanged
+
+- Routes remain non-executing for renderer runtime.
+- `POST /exports` remains acceptance/metadata-only.
+- No hosting/signing/download URL behavior is introduced.

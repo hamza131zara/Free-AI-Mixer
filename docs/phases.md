@@ -1029,3 +1029,26 @@ Status:
 - Adapter remains artifact-neutral (no verification, no metadata creation, no hosting/signing/download URL behavior).
 - Routes remain non-executing for renderer runtime; `POST /exports` is not wired to execution.
 - Download capability is still not available.
+
+## Phase 8.5-C — Backend Execution Trigger Docs Update
+
+- Phase 8.5-A (audit) is complete.
+- Phase 8.5-B (backend internal execution trigger) is complete and committed.
+- Commit message: `feat(phase-8.5): add backend execution trigger`.
+- Phase 8.5-C is docs-only (this update).
+- Phase 8.5-D (final sign-off) remains pending.
+
+### Phase 8.5-B summary
+
+- Added internal backend trigger module: `backend/renderer/executeRenderJob.ts`.
+- Added focused test: `tests/e2e/phase85-backend-execution-trigger.spec.ts`.
+- Added focused script: `test:backend:phase85`.
+- `executeRenderJob(...)` delegates directly to `executeSingleProcessRender(...)` and returns the harness result unchanged.
+
+### Boundaries preserved
+
+- `executeRenderJob` does not directly call lifecycle transitions.
+- Harness/registry remain lifecycle owners.
+- Output path resolution and artifact verification remain harness-owned.
+- `POST /exports` remains non-executing.
+- Download capability is still not available.
