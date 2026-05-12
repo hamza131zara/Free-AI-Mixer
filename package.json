@@ -28,6 +28,7 @@
     "test:backend:phase81": "playwright test tests/e2e/phase81-remotion-bundler-boundary.spec.ts",
     "test:backend:phase82": "playwright test tests/e2e/phase82-remotion-real-smoke.spec.ts",
     "test:backend:phase83": "playwright test tests/e2e/phase83-remotion-adapter-real-runtime.spec.ts",
+    "test:backend:phase84": "playwright test tests/e2e/phase84-harness-real-runtime.spec.ts",
     "test:integration:phase63": "playwright test tests/e2e/phase63-frontend-backend-integration.spec.ts",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
