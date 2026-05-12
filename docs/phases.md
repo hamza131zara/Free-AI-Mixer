@@ -1006,3 +1006,26 @@ Status:
 - Adapter remains lifecycle-neutral (no `markRendering`/`markFinalizing`/`markSuccess`/`markError`).
 - Adapter remains artifact-neutral (no verification, no metadata creation, no hosting/signing/download URLs).
 - Download capability is still not available.
+
+## Phase 8.4-C — Harness Real Runtime Integration Docs Update
+
+- Phase 8.4-A (audit) is complete.
+- Phase 8.4-B (harness real runtime integration test milestone) is complete and committed.
+- Commit message: `feat(phase-8.4): add harness real runtime integration test`.
+- Phase 8.4-C is docs-only (this update).
+- Phase 8.4-D (final sign-off) remains pending.
+
+### Phase 8.4-B summary
+
+- Added focused backend test: `tests/e2e/phase84-harness-real-runtime.spec.ts`.
+- Added focused script: `test:backend:phase84`.
+- Default phase84 path remains fast; real render path is opt-in via `FREE_AI_MIXER_RUN_REAL_RENDER_SMOKE=1`.
+- Opt-in path validates harness + real adapter/runtime execution with real artifact verification before success transition.
+
+### Boundaries preserved
+
+- Harness/registry own lifecycle transitions (`claim`, `markRendering`, `markFinalizing`, `markSuccess`, `markError`).
+- Adapter/runtime/composition remain lifecycle-neutral (no mark* calls).
+- Adapter remains artifact-neutral (no verification, no metadata creation, no hosting/signing/download URL behavior).
+- Routes remain non-executing for renderer runtime; `POST /exports` is not wired to execution.
+- Download capability is still not available.

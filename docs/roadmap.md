@@ -366,3 +366,24 @@ Status:
 - Route-triggered backend renderer execution.
 - Production artifact hosting/signing/download URLs.
 - Frontend integration with real backend lifecycle/render completion.
+
+## Phase 8.4 status
+
+- Phase 8.4-A: complete (harness real-runtime integration audit).
+- Phase 8.4-B: complete (focused harness-level real-runtime integration test milestone).
+- Phase 8.4-C: docs update only (this update).
+- Next: Phase 8.4-D final sign-off.
+
+### What 8.4-B delivered
+
+- Harness-level integration test coverage for real adapter/runtime execution in opt-in mode.
+- Verified boundary that harness-owned artifact verification gates success transition.
+- Preserved route non-execution and backend-only scoped runtime testing.
+
+### Still deferred after 8.4-B
+
+- Backend render job trigger wiring for normal flow.
+- Route-triggered backend renderer execution.
+- Production artifact hosting/signing/download URL delivery.
+- Frontend integration with real backend lifecycle/render completion.
+- Durable persistence/queue/worker/scheduler expansion.

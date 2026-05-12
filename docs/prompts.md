@@ -180,3 +180,16 @@ Phase numbering in prompts must match `docs/phases.md`.
 - Keep adapter lifecycle-neutral and artifact-neutral.
 - Keep route layer non-executing until explicitly phased.
 - Do not claim hosting/signing/download capabilities before implementation.
+
+## Phase 8.4 prompt trail
+
+- Phase 8.4-A: audit-only prompt for harness-level real-runtime integration planning.
+- Phase 8.4-B: implementation prompt for focused harness integration testing with opt-in real runtime execution.
+- Phase 8.4-C: docs-only prompt to capture milestone details, fixes, and preserved deferrals.
+
+### Credit-safe guidance preserved
+
+- Keep lifecycle ownership in harness/registry.
+- Keep adapter/runtime/composition lifecycle-neutral and adapter artifact-neutral.
+- Keep route layer non-executing unless explicitly phased.
+- If repeated failures occur, inspect and correct contract assumptions before expanding implementation scope.

@@ -849,3 +849,22 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
   - no artifact metadata creation
   - no hosting/signing/download URL behavior
 - Route layer remains non-executing for renderer runtime.
+
+## Phase 8.4 harness real-runtime integration boundary
+
+- Harness can execute the real adapter/runtime path in focused backend tests when explicitly opted in.
+- Opt-in control remains test-scoped (`FREE_AI_MIXER_RUN_REAL_RENDER_SMOKE=1`).
+- Default test path remains non-rendering and fast.
+
+### Ownership remains unchanged
+
+- Harness/registry continue to own lifecycle transitions end-to-end.
+- Output path resolution remains harness-owned via output path policy.
+- Artifact verification remains harness-owned and must complete before success transition.
+- Adapter success is execution success only; it is not equivalent to verified job success.
+
+### Neutrality remains unchanged
+
+- Adapter/runtime/composition remain lifecycle-neutral (no mark* transitions).
+- Adapter remains artifact-neutral (no artifact verification, no metadata creation, no hosting/signing/download URLs).
+- Route layer remains non-executing (`POST /exports` still does not execute renderer runtime).

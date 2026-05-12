@@ -223,6 +223,7 @@ Target fix phase:
 - Bundler dependency/type-boundary prep exists (Phase 8.1-B).
 - Controlled opt-in real smoke exists (Phase 8.2-B) and is validated.
 - Adapter real-runtime boundary alignment exists (Phase 8.3-B) and is validated.
+- Harness-level real-runtime integration test milestone exists (Phase 8.4-B) and is validated.
 
 ### Still intentionally deferred
 
@@ -231,9 +232,11 @@ Target fix phase:
 - Route auto-execution (`POST /exports` remains non-executing for renderer runtime).
 - Artifact hosting and public download delivery (signed/download URLs).
 - Real user-media decoding in renderer path.
+- Durable queue/worker/scheduler/database-backed renderer execution flow.
 
 ### Safety reminder
 
 - No fake success/progress/artifacts/cancellation behavior is allowed in renderer phases.
 - No public/API-safe response should expose backend local filesystem paths.
 - Adapter boundary alignment does not mean production rendering rollout is complete.
+- Harness opt-in test coverage does not mean production renderer rollout is complete.
