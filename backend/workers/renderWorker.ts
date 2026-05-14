@@ -100,6 +100,37 @@ export const drainRenderWorkerOnce = async (
   };
 };
 
+const getWorkerLoopEnabled = (): boolean =>
+  process.env.FREE_AI_MIXER_ENABLE_WORKER_LOOP === "1";
+
+const getWorkerPollInterval = (): number => {
+  const envValue = process.env.FREE_AI_MIXER_WORKER_POLL_INTERVAL_MS;
+  const parsed = parseInt(envValue ?? "", 10);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    return 2000;
+  }
+  return parsed;
+};
+
+export interface RenderWorkerLoopOptions {
+  workerId?: string;
+  pollIntervalMs?: number;
+}
+
+export interface RenderWorkerLoopStatus {
+  running: boolean;
+  workerId: string;
+  pollIntervalMs: number;
+  enabledByEnv: boolean;
+}
+
+export interface RenderWorkerLoopController {
+  start(): void;
+  stop(): void;
+  isRunning(): boolean;
+  getStatus(): RenderWorkerLoopStatus;
+}
+
 const buildSnapshotInput = (job: BackendExportJobRecord) => ({
   jobId: job.jobId,
   timelineId: job.timelineId,
@@ -124,3 +155,64 @@ const buildSnapshotInput = (job: BackendExportJobRecord) => ({
     format: job.renderSettings.format,
   },
 });
+
+export const createRenderWorkerLoop = (
+  registry: ExportJobRegistry,
+  rendererAdapter: RendererAdapter,
+  pathPolicy: RenderOutputPathPolicy,
+  options?: RenderWorkerLoopOptions,
+): RenderWorkerLoopController => {
+  const workerId = options?.workerId ?? `worker-loop-${Date.now()}`;
+  const pollIntervalMs = options?.pollIntervalMs ?? getWorkerPollInterval();
+  const enabledByEnv = getWorkerLoopEnabled();
+
+  let running = false;
+  let intervalId: NodeJS.Timeout | null = null;
+  let draining = false;
+
+  const getStatus = (): RenderWorkerLoopStatus => ({
+    running,
+    workerId,
+    pollIntervalMs,
+    enabledByEnv,
+  });
+
+  const tick = async (): Promise<void> => {
+    if (!running || draining) {
+      return;
+    }
+
+    draining = true;
+    try {
+      await drainRenderWorkerOnce(registry, rendererAdapter, pathPolicy, { workerId });
+    } catch {
+      // Contain errors - do not crash the loop
+    } finally {
+      draining = false;
+    }
+  };
+
+  return {
+    start: () => {
+      if (!enabledByEnv) {
+        return;
+      }
+      if (running && intervalId) {
+        return;
+      }
+      running = true;
+      intervalId = setInterval(tick, pollIntervalMs);
+      // Run immediately on start
+      tick();
+    },
+    stop: () => {
+      running = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    },
+    isRunning: () => running,
+    getStatus,
+  };
+};
