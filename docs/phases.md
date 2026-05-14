@@ -1158,3 +1158,34 @@ Status:
 - POST /exports remains non-executing.
 - POST /exports/:jobId/execute remains dev/test-gated and synchronous with timeout guard.
 - Route behavior is unchanged — worker helper is manual one-shot drain only.
+
+## Phase 8.9-C — Test-Controlled Worker Loop Helper Docs Update
+
+- Phase 8.9-A (audit) is complete.
+- Phase 8.9-B (test-controlled worker loop helper) is complete and committed.
+- Commit message: `feat(phase-8.9): add test-controlled worker loop helper`.
+- Phase 8.9-C is docs-only (this update).
+- Phase 8.9-D (final sign-off) remains pending.
+
+### Phase 8.9-B summary
+
+- Added test-controlled worker loop helper: `createRenderWorkerLoop(...)`.
+- Loop returns controller with `start()`, `stop()`, `isRunning()`, `getStatus()` methods.
+- Loop is disabled by default and requires `FREE_AI_MIXER_ENABLE_WORKER_LOOP=1` to start.
+- Default poll interval is `2000` ms via `FREE_AI_MIXER_WORKER_POLL_INTERVAL_MS`.
+- Loop reuses existing `drainRenderWorkerOnce(...)` for job processing.
+- Loop contains per-tick errors so one drain failure does not crash the loop.
+- Loop prevents overlapping drain calls via `draining` flag.
+- `start()` is idempotent — calling twice does not create duplicate intervals.
+- `stop()` clears interval and is idempotent.
+- Added focused test: `tests/e2e/phase89-worker-loop.spec.ts`.
+
+### Boundaries preserved
+
+- Loop does NOT directly call `executeSingleProcessRender`.
+- Loop does NOT directly call registry mutation methods.
+- Lifecycle ownership remains inside `executeRenderJob` / `executeSingleProcessRender` / harness / registry.
+- No app.ts wiring — worker does not auto-start on server startup.
+- No backend/server.ts changes.
+- Route behavior is unchanged — POST /exports remains non-executing, POST /exports/:jobId/execute remains dev/test-gated.
+- Loop status does not expose local paths, filePath, URLs, download URLs, or signed URLs.

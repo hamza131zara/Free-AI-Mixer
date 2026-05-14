@@ -241,8 +241,10 @@ Target fix phase:
 - Caller must poll job state after receiving 504 timeout response to get latest lifecycle status.
 - No cancellation, no queue, no scheduler yet.
 - Worker helper `drainRenderWorkerOnce` exists but requires manual invocation (not auto-started).
+- Worker loop helper `createRenderWorkerLoop` exists and is test-controlled, but requires manual `start()` call.
+- No production auto-start yet — worker loop is dev/test-gated only.
 - No app.ts wiring for worker startup yet.
-- No interval/polling worker loop yet.
+- No route enqueue behavior yet.
 
 ### Safety reminder
 
