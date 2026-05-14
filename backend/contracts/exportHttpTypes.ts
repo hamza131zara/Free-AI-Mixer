@@ -64,7 +64,7 @@ export type ExportSubmitRequestBody = TimelineExportRequest;
 
 export type ExportSubmitResponseBody = ExportSubmissionResult;
 
-export type ExportPollResponseBody = Extract<ExportPollResult, { kind: "pending" }>;
+export type ExportPollResponseBody = ExportPollResult;
 
 export interface ExportArtifactsUnavailableResponseBody {
   code: "export_artifacts_unavailable";

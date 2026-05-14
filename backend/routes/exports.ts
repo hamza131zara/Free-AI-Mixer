@@ -1,6 +1,9 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import type {
+  BackendArtifactMetadata,
+  BackendExportLifecycleStatus,
+  BackendExportJobRecord,
   ExportArtifactsUnavailableResponseBody,
   ExportPollResponseBody,
   ExportSubmitResponseBody,
@@ -15,7 +18,6 @@ import { toJobHandle } from "../contracts/exportHttpTypes";
 import { executeRenderJob } from "../renderer/executeRenderJob";
 import type { RendererAdapter } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
-import type { BackendArtifactMetadata } from "../contracts/exportHttpTypes";
 
 const isRouteExecutionEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION === "1";
@@ -31,6 +33,52 @@ const getRouteExecutionTimeout = (): number => {
 
 const wait = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
+
+const isTerminalStatus = (status: BackendExportLifecycleStatus): boolean =>
+  status === "success" || status === "error" || status === "expired";
+
+const mapRecordToPollResponse = (
+  record: BackendExportJobRecord,
+): ExportPollResponseBody => {
+  // In-flight statuses map to pending
+  if (!isTerminalStatus(record.status)) {
+    return {
+      kind: "pending",
+      handle: toJobHandle(record),
+    };
+  }
+
+  // Terminal: success
+  if (record.status === "success") {
+    return {
+      kind: "terminal_success",
+      result: {
+        provider: "backend_render",
+        requestId: record.requestId,
+        jobId: record.jobId,
+        artifacts: (record.artifacts ?? []).map((artifact) => ({
+          id: artifact.artifactId,
+          status: "ready" as const,
+          ...(artifact.sizeBytes !== undefined ? { bytes: artifact.sizeBytes } : {}),
+          ...(artifact.durationMs !== undefined ? { metadata: { durationMs: artifact.durationMs } } : {}),
+        })),
+        completedAt: record.completedAt,
+      },
+    };
+  }
+
+  // Terminal: error or expired
+  return {
+    kind: "terminal_failure",
+    failure: {
+      message: record.status === "expired"
+        ? "Export job has expired."
+        : record.failure?.message ?? "Export job failed.",
+      code: record.failure?.code ?? (record.status === "expired" ? "expired" : "error"),
+    },
+    jobId: record.jobId,
+  };
+};
 
 export interface ExportRouterOptions {
   rendererAdapter?: RendererAdapter;
@@ -75,10 +123,8 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         throw exportJobNotFound(jobId);
       }
 
-      response.json({
-        kind: "pending",
-        handle: toJobHandle(record),
-      });
+      const pollResponse = mapRecordToPollResponse(record);
+      response.json(pollResponse);
     },
   );
 
