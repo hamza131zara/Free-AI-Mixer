@@ -991,3 +991,45 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - Rendering/finalizing jobs after restart: expire (safe vs duplicate render risk).
 - Jobs with expired claims after restart: treat as submitted (re-queue).
 - Terminal jobs (success/error/expired): recovered, no re-processing needed.
+
+## Phase 8.16 graceful shutdown helper boundary
+
+- Graceful shutdown helper exists (Phase 8.16-B): `backend/lifecycle/gracefulShutdown.ts`.
+- Factory function: `createGracefulShutdown(...)`.
+- Helper API returns controller with:
+  - `shutdown()` — idempotent shutdown
+  - `isShuttingDown()` — current shutdown state
+  - `getStatus()` — safe status object
+- Helper accepts explicit dependencies:
+  - `lifecycle` — lifecycle controller (required)
+  - `server` — server-like object with `close()` (optional)
+- Helper behavior:
+  - Calls `lifecycle.shutdown()` to stop worker polling
+  - Calls `server.close()` if provided
+  - Idempotent (safe to call multiple times)
+  - Works when lifecycle never started or env flags disabled
+  - Status is safe (no local paths/URLs)
+
+### What this helper does NOT do
+
+- Does NOT register process signal handlers (SIGINT/SIGTERM)
+- Does NOT call process.exit()
+- Does NOT mutate job registry state
+- Does NOT cancel in-flight renders
+- Does NOT mark jobs as error/expired/cancelled
+- Does NOT add persistence/recovery
+
+### Current shutdown model (helper boundary only)
+
+- Helper provides a safe coordination layer for future server.ts wiring.
+- Real process signal handling is deferred.
+- Graceful shutdown stops future polling through lifecycle.shutdown.
+- In-flight renders are not interrupted.
+- Job state recovery is deferred until durable persistence exists.
+
+### Future server.ts wiring
+
+- Future phase should wire SIGINT/SIGTERM handlers in server.ts using this helper.
+- Store server reference in server.ts to pass to createGracefulShutdown.
+- Call shutdown on signal, then exit process.
+- Keep helper isolated for testability.

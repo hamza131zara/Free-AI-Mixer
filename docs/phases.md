@@ -1519,3 +1519,76 @@ Status:
 - No durable artifact metadata persistence yet.
 - No graceful shutdown yet.
 - No cancellation yet.
+
+## Phase 8.16-C — Graceful Shutdown Helper Docs Update
+
+Status:
+
+- Phase 8.16-A (graceful shutdown/worker stop audit) is complete.
+- Phase 8.16-B (shutdown helper boundary) is complete and committed.
+- Phase 8.16-C is docs-only (this update).
+- Phase 8.16-D (final sign-off) remains pending.
+
+### Phase 8.16-A finding: worker lifecycle has shutdown but no server coordination
+
+- `renderWorkerLifecycle.shutdown()` already exists and stops worker loop.
+- shutdown() is synchronous, idempotent, and safe.
+- No HTTP server shutdown coordination existed.
+- No process signal handlers existed.
+- Safe next step: create a testable shutdown helper boundary first.
+
+### Phase 8.16-B implementation summary
+
+- Added graceful shutdown helper: `backend/lifecycle/gracefulShutdown.ts`.
+- Added factory function: `createGracefulShutdown(...)`.
+- Shutdown helper API returns controller with:
+  - `shutdown()` — idempotent shutdown
+  - `isShuttingDown()` — current shutdown state
+  - `getStatus()` — safe status object
+- Helper accepts explicit dependencies:
+  - `lifecycle` — lifecycle controller
+  - `server` (optional) — server-like object with `close()`
+- Helper behavior:
+  - Calls `lifecycle.shutdown()` to stop worker polling
+  - Calls `server.close()` if server provided
+  - Tolerates missing server or never-running lifecycle
+  - Supports callback-style server.close
+  - Status is safe (no local paths/URLs)
+
+### What was NOT added
+
+- No backend/server.ts wiring added yet.
+- No process.on("SIGINT") handler.
+- No process.on("SIGTERM") handler.
+- No process.exit() call.
+- No public shutdown/status route.
+- No job registry state mutation on shutdown.
+- No jobs marked error/expired/cancelled on shutdown.
+- No render cancellation.
+- No bounded in-flight render wait.
+- No persistence/recovery.
+
+### Current shutdown model (helper boundary only)
+
+- Graceful shutdown helper provides a safe coordination layer.
+- Future server.ts wiring should use this helper.
+- Real process signal handling remains deferred.
+- Graceful shutdown currently stops future polling through lifecycle.shutdown.
+- In-flight renders are not cancelled.
+- Job state recovery remains deferred until durable persistence/recovery design exists.
+
+### Phase 8.16 test additions
+
+- Added `tests/e2e/phase816-graceful-shutdown.spec.ts` (12 tests).
+- Tests verify shutdown helper API, idempotency, no process handlers, no registry mutations.
+- All focused tests pass along with regression coverage for phase815/813.
+
+### Deferred items (unchanged scope)
+
+- No server.ts shutdown wiring yet.
+- No SIGINT/SIGTERM handlers yet.
+- No process-level graceful shutdown yet.
+- No bounded in-flight render wait/cancellation yet.
+- No durable recovery semantics yet.
+- No persistence-backed shutdown recovery yet.
+- No cancellation yet.

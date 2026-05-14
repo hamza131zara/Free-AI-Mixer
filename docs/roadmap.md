@@ -527,3 +527,41 @@ Status:
 - Server graceful shutdown (SIGINT/SIGTERM handlers, server.close wiring).
 - Frontend async worker integration.
 - Production artifact hosting/signed URLs/download capability.
+
+## Phase 8.16 status
+
+- Phase 8.16-A: complete (graceful shutdown/worker stop audit).
+- Phase 8.16-B: complete (shutdown helper boundary).
+- Phase 8.16-C: docs update only (this update).
+- Next: Phase 8.16-D final sign-off.
+
+### What 8.16-A found
+
+- Worker lifecycle has shutdown() but no server coordination.
+- Safe next step: create testable shutdown helper boundary first.
+
+### What 8.16-B delivered
+
+- Graceful shutdown helper: `backend/lifecycle/gracefulShutdown.ts`.
+- `createGracefulShutdown(...)` returns shutdown/isShuttingDown/getStatus controller.
+- Helper calls lifecycle.shutdown() and server.close() when provided.
+- Helper is idempotent and safe.
+- No SIGINT/SIGTERM handlers wired yet.
+
+### Preserved boundaries
+
+- No server.ts wiring added yet.
+- No process.exit() calls added.
+- No job registry state mutation.
+- No render cancellation.
+- No persistence/recovery.
+
+### Still deferred after 8.16-B
+
+- No server.ts shutdown wiring yet.
+- No SIGINT/SIGTERM handlers yet.
+- No process-level graceful shutdown yet.
+- No bounded in-flight render wait/cancellation yet.
+- Durable queue/persistence (Redis/database-backed execution).
+- Frontend async worker integration.
+- Production artifact hosting/signed URLs/download capability.
