@@ -1027,9 +1027,14 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - In-flight renders are not interrupted.
 - Job state recovery is deferred until durable persistence exists.
 
-### Future server.ts wiring
+### Server.ts wiring (Phase 8.17-B complete)
 
-- Future phase should wire SIGINT/SIGTERM handlers in server.ts using this helper.
-- Store server reference in server.ts to pass to createGracefulShutdown.
-- Call shutdown on signal, then exit process.
-- Keep helper isolated for testability.
+- Phase 8.17-B implemented server.ts shutdown wiring.
+- backend/server.ts exports startServer(...) factory function.
+- startServer(...) creates app, starts server, wires lifecycle shutdown.
+- startServer(...) registers SIGINT/SIGTERM handlers when registerSignals: true.
+- startServer(...) returns controller with app/server/shutdown/isShuttingDown/getStatus/cleanupSignalHandlers.
+- backend/server.ts no longer auto-starts when imported.
+- No process.exit() added.
+- No job state mutation on shutdown.
+- Shutdown stops polling/server intake but does not recover jobs after restart.

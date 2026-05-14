@@ -1592,3 +1592,77 @@ Status:
 - No durable recovery semantics yet.
 - No persistence-backed shutdown recovery yet.
 - No cancellation yet.
+
+## Phase 8.17-C — Server Shutdown Wiring Docs Update
+
+Status:
+
+- Phase 8.17-A (server shutdown wiring audit) is complete.
+- Phase 8.17-B (server shutdown wiring implementation) is complete and committed.
+- Phase 8.17-C is docs-only (this update).
+- Phase 8.17-D (final sign-off) remains pending.
+
+### Phase 8.17-A finding: server.ts needs shutdown coordination
+
+- backend/server.ts had no graceful shutdown coordination.
+- No SIGINT/SIGTERM handlers existed.
+- Importing server.ts would auto-start port 8787.
+- Safe next step: export startServer(...) with proper shutdown wiring.
+
+### Phase 8.17-B implementation summary
+
+- Updated backend/server.ts with startServer(...) factory.
+- startServer(...) creates Express app using createApp().
+- startServer(...) starts HTTP server on configurable port.
+- startServer(...) uses app.locals.renderWorkerLifecycle.
+- startServer(...) creates graceful shutdown coordination using createGracefulShutdown(...).
+- startServer(...) registers SIGINT/SIGTERM handlers when registerSignals: true.
+- startServer(...) returns controller with:
+  - app
+  - server
+  - shutdown()
+  - isShuttingDown()
+  - getStatus()
+  - cleanupSignalHandlers()
+- backend/server.ts no longer auto-starts when imported by tests.
+- Only startServer(...) calls app.listen.
+
+### Signal handler behavior
+
+- SIGINT/SIGTERM wiring handled through server startup.
+- Signal handlers call shutdown() on gracefulShutdown controller.
+- cleanupSignalHandlers() exists for test cleanup.
+- Duplicate handler registration prevented via registeredSignals Set.
+- Tests use port: 0 and registerSignals: false for safe isolation.
+
+### What was NOT added
+
+- No process.exit() call.
+- No public shutdown/status route.
+- No route behavior changed.
+- No backend/app.ts changes.
+- No worker internals changed.
+- No registry behavior changed.
+- No job state mutation on shutdown.
+- No jobs marked error/expired/cancelled on shutdown.
+- No render cancellation.
+- No bounded in-flight render wait.
+- No persistence/recovery.
+
+### Phase 8.17 test additions
+
+- Added tests/e2e/phase817-server-shutdown-wiring.spec.ts (11 tests).
+- Tests verify startServer API, lifecycle shutdown, idempotency, signal cleanup.
+- Tests use port: 0 for OS-assigned ephemeral port.
+- All focused tests pass along with regression coverage for phase816/813.
+
+### Deferred items (unchanged scope)
+
+- No process.exit() yet.
+- No public shutdown/status route yet.
+- No bounded in-flight render wait/cancellation yet.
+- No durable recovery semantics yet.
+- No persistence-backed shutdown recovery yet.
+- Shutdown stops polling/server intake but does not recover jobs after restart.
+- No artifact hosting/download/signed URLs.
+- No frontend changes.

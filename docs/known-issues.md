@@ -285,15 +285,20 @@ Target fix phase:
   - Submitted/rendering/finalizing jobs do not survive server restart yet
   - No restart recovery semantics yet
   - No JSON/SQLite/Postgres/Redis adapter yet
-- Graceful shutdown helper exists (Phase 8.16-B) but no server.ts wiring yet:
+- Graceful shutdown helper exists (Phase 8.16-B) with server.ts wiring (Phase 8.17-B):
   - `backend/lifecycle/gracefulShutdown.ts` provides testable shutdown coordinator
   - `createGracefulShutdown(...)` returns shutdown/isShuttingDown/getStatus controller
+  - `backend/server.ts` exports `startServer(...)` with shutdown coordination
+  - `startServer(...)` wires lifecycle shutdown and SIGINT/SIGTERM handlers
   - Helper calls lifecycle.shutdown() and server.close() when provided
   - Helper is idempotent and safe
-  - No SIGINT/SIGTERM handlers wired in server.ts yet
   - No process.exit() calls added
   - No bounded in-flight render wait/cancellation yet
   - No durable recovery semantics yet
+  - No persistence-backed shutdown recovery yet
+  - Shutdown stops polling/server intake but does not recover jobs after restart
+  - backend/server.ts no longer auto-starts when imported by tests
+  - Only startServer(...) calls app.listen
 
 ### Safety reminder
 
