@@ -1284,3 +1284,80 @@ Status:
 - No cancellation yet.
 - No frontend async worker integration yet.
 - process.cwd()-based roots are acceptable for dev/test but may need env override before production.
+
+## Phase 8.13-C — Worker Lifecycle App Wiring Docs Update
+
+Status:
+
+- Phase 8.13-A (audit) is complete.
+- Phase 8.13-B (worker lifecycle app wiring) is complete and committed.
+- Phase 8.13-C is docs-only (this update).
+- Phase 8.13-D (final sign-off) remains pending.
+
+### Phase 8.13-B summary
+
+- Added worker lifecycle module: `backend/workers/renderWorkerLifecycle.ts`.
+- Added lifecycle factory function: `createRenderWorkerLifecycle(...)`.
+- Lifecycle API returns controller with:
+  - `init()` — initializes worker startup factory
+  - `shutdown()` — stops worker loop and releases resources
+  - `isRunning()` — returns boolean running state
+  - `getStatus()` — returns detailed status object
+- Lifecycle chain: `createRenderWorkerLifecycle` → `createRenderWorkerStartup` → `createRenderWorkerLoop` → `drainRenderWorkerOnce` → `executeRenderJob` → `executeSingleProcessRender` → harness/registry.
+- App wiring added in `backend/app.ts`:
+  - Uses already-composed `backendDeps` (registry, rendererAdapter, pathPolicy)
+  - Calls `lifecycle.init()` during app creation
+  - Lifecycle is stored internally: `app.locals.renderWorkerLifecycle = lifecycle`
+- Lifecycle remains internal/test/dev accessible only.
+- No public lifecycle route or status endpoint added.
+
+### Environment gates preserved
+
+- `FREE_AI_MIXER_ENABLE_WORKER_STARTUP=1` is still required to enable worker startup.
+- `FREE_AI_MIXER_ENABLE_WORKER_LOOP=1` is still required to enable worker loop.
+- `FREE_AI_MIXER_WORKER_POLL_INTERVAL_MS` still defaults to 2000 ms.
+- `lifecycle.init()` is harmless when env flags are disabled (no-op).
+
+### Intentional boundary: rendererAdapter/pathPolicy NOT wired to exports router
+
+- `backend/app.ts` passes only `backendDeps.registry` into `createExportRouter`.
+- `rendererAdapter` and `pathPolicy` are composed for lifecycle but NOT passed into exports router.
+- `backend/routes/exports.ts` was NOT changed.
+- `POST /exports` remains non-executing.
+- `POST /exports/:jobId/execute` remains dev/test-gated with timeout protection.
+- No route response shape changed.
+
+### Boundaries preserved
+
+- `backend/server.ts` was NOT changed.
+- No process signal handlers added.
+- No `server.close` graceful shutdown wiring added.
+- No durable queue/persistence added.
+- No Redis/database queue added.
+- No scheduler added.
+- No cancellation added.
+- No frontend changes added.
+- No artifact hosting added.
+- No download URLs added.
+- No signed URLs added.
+- No local path exposure in public route responses.
+- No fake progress/success/artifacts added.
+
+### Phase 8.12 test update note
+
+- Phase 8.12 originally required app.ts to not start worker lifecycle.
+- Phase 8.13-B intentionally added lifecycle app wiring.
+- Phase 8.12 test was updated to preserve the lower-level boundary instead:
+  - app.ts must NOT directly call `createRenderWorkerStartup`, `createRenderWorkerLoop`, or `drainRenderWorkerOnce`.
+  - app.ts must still NOT pass `rendererAdapter`/`pathPolicy` into `createExportRouter`.
+
+### Deferred items (unchanged from 8.12)
+
+- No server.ts shutdown wiring yet.
+- No SIGINT/SIGTERM handlers yet.
+- No route enqueue behavior yet.
+- No durable queue/persistence yet.
+- No cancellation yet.
+- No frontend async worker integration yet.
+- Worker lifecycle depends on env gates and in-memory registry only.
+- rendererAdapter/pathPolicy are composed for lifecycle but still intentionally not wired into exports router.

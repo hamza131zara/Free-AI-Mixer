@@ -887,3 +887,33 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - Routes remain non-executing for renderer runtime.
 - `POST /exports` remains acceptance/metadata-only.
 - No hosting/signing/download URL behavior is introduced.
+
+## Phase 8.13 worker lifecycle app wiring boundary
+
+- Worker lifecycle module now exists in `backend/workers/renderWorkerLifecycle.ts`.
+- Lifecycle factory: `createRenderWorkerLifecycle(...)` returns controller with `init()`, `shutdown()`, `isRunning()`, `getStatus()`.
+- Lifecycle chain: `createRenderWorkerStartup` → `createRenderWorkerLoop` → `drainRenderWorkerOnce` → `executeRenderJob` → harness/registry.
+- App wiring in `backend/app.ts`:
+  - Uses already-composed `backendDeps` (registry, rendererAdapter, pathPolicy)
+  - Calls `lifecycle.init()` during app creation
+  - Lifecycle stored as `app.locals.renderWorkerLifecycle` (internal/test/dev only)
+  - `lifecycle.init()` is harmless when env flags are disabled
+- Environment gates:
+  - `FREE_AI_MIXER_ENABLE_WORKER_STARTUP=1` required to enable startup
+  - `FREE_AI_MIXER_ENABLE_WORKER_LOOP=1` required to enable loop
+  - `FREE_AI_MIXER_WORKER_POLL_INTERVAL_MS` defaults to 2000 ms
+- No public lifecycle/status route added.
+- No `backend/server.ts` changes.
+- No process signal handlers or graceful shutdown wiring.
+- No route enqueue behavior added.
+
+### Ownership and safety preserved
+
+- Lifecycle API is internal/test/dev only; no public route exposes lifecycle state.
+- `rendererAdapter` and `pathPolicy` are composed for lifecycle but NOT passed to `createExportRouter`.
+- Execute route (`POST /exports/:jobId/execute`) still returns 501 without configured dependencies.
+- `POST /exports` remains non-executing.
+- No artifact hosting, signed URLs, or download URLs introduced.
+- No local path leakage in API responses.
+- Worker lifecycle depends on in-memory registry only; no durable queue/persistence.
+- No cancellation or frontend async worker integration yet.

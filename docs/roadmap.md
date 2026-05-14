@@ -407,3 +407,40 @@ Status:
 - Production artifact hosting/signing/download URL delivery.
 - Frontend integration with real backend lifecycle completion.
 - Production scalability/security hardening phases.
+
+## Phase 8.13 status
+
+- Phase 8.13-A: complete (audit).
+- Phase 8.13-B: complete (worker lifecycle app wiring).
+- Phase 8.13-C: docs update only (this update).
+- Next: Phase 8.13-D final sign-off.
+
+### What 8.13-B delivered
+
+- Worker lifecycle module: `backend/workers/renderWorkerLifecycle.ts`.
+- Lifecycle factory `createRenderWorkerLifecycle(...)` with init/shutdown/isRunning/getStatus API.
+- App.ts wiring using already-composed backendDeps (registry, rendererAdapter, pathPolicy).
+- Lifecycle init called during app creation but remains harmless without env flags.
+- Lifecycle stored internally as `app.locals.renderWorkerLifecycle` (internal/test/dev only).
+- No public lifecycle/status route added.
+
+### Preserved boundaries
+
+- rendererAdapter/pathPolicy composed but NOT wired into exports router.
+- POST /exports remains non-executing.
+- POST /exports/:jobId/execute remains dev/test-gated with timeout.
+- No server.ts changes, no process signal handlers, no graceful shutdown wiring.
+- No route enqueue behavior yet.
+- No durable queue/persistence yet.
+- No cancellation yet.
+- No frontend changes yet.
+- Worker lifecycle depends on in-memory registry only.
+
+### Still deferred after 8.13-B
+
+- Route enqueue behavior (automatic execution on POST /exports).
+- Durable queue/persistence (Redis/database-backed execution).
+- Server graceful shutdown (SIGINT/SIGTERM handlers, server.close wiring).
+- Frontend async worker integration.
+- Production artifact hosting/signed URLs/download capability.
+- Production auto-start without env flags.

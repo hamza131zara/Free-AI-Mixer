@@ -116,6 +116,12 @@ Why it matters:
 - route auto-execution remains deferred
 - Phase 8.11-B safely stopped (app.ts lacked rendererAdapter/pathPolicy)
 - Phase 8.12-B adds backend dependency composition module (`backend/composition/backendDependencies.ts`) — composes registry, rendererAdapter, pathPolicy but does NOT wire them into exports router yet
+- Phase 8.13-B adds worker lifecycle app wiring (`backend/workers/renderWorkerLifecycle.ts`):
+  - lifecycle created in app.ts using already-composed backendDeps
+  - lifecycle.init() called during app creation but remains harmless when env flags disabled
+  - lifecycle stored internally as `app.locals.renderWorkerLifecycle`
+  - no public lifecycle/status route added
+  - rendererAdapter/pathPolicy still NOT wired into exports router (execute route still returns 501)
 - verified output production remains deferred
 - artifact hosting/signed URL/download capability remains deferred
 - no public download URLs exist yet
@@ -218,7 +224,7 @@ Why it matters:
 Target fix phase:
 
 - Phase 4.6 and later timeline/video phases
-## Remotion runtime status (Phase 8.12-C accuracy)
+## Remotion runtime status (Phase 8.13-C accuracy)
 
 - Backend composition boundary scaffold exists (Phase 7.9).
 - Backend runtime helper boundary exists (Phase 8.0-B).
@@ -251,12 +257,16 @@ Target fix phase:
 - Worker loop helper `createRenderWorkerLoop` exists and is test-controlled, but requires manual `start()` call.
 - Worker startup factory `createRenderWorkerStartup` exists but is not wired to app/server startup.
 - No production auto-start yet — worker loop and startup are dev/test-gated only.
-- No app.ts wiring for worker startup yet.
-- No server.ts wiring for worker startup yet.
-- No graceful shutdown integration yet.
+- Worker lifecycle app wiring exists (Phase 8.13-B):
+  - `createRenderWorkerLifecycle(...)` created in app.ts using composed backendDeps
+  - `lifecycle.init()` called during app creation but remains harmless without env flags
+  - lifecycle stored internally as `app.locals.renderWorkerLifecycle` (internal/test/dev only)
+  - no public lifecycle route or status endpoint added
+  - no server.ts shutdown wiring added
+  - no process signal handlers added
 - No route enqueue behavior yet.
 - Backend dependency composition module exists (Phase 8.12-B) but dependencies are not wired into exports router yet.
-- rendererAdapter and pathPolicy composed but not passed to createExportRouter yet — execute route returns 501 without them.
+- rendererAdapter and pathPolicy composed for lifecycle (Phase 8.13-B) but still NOT passed to createExportRouter — execute route returns 501 without them.
 - process.cwd()-based pathPolicy roots are acceptable for dev/test but may need env override before production.
 
 ### Safety reminder
