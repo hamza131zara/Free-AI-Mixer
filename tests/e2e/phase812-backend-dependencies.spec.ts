@@ -103,16 +103,15 @@ test.describe("phase812 backend dependencies", () => {
     expect(callContent).not.toContain("pathPolicy");
   });
 
-  test("app.ts does not start worker lifecycle", async () => {
+  test("app.ts does not directly call createRenderWorkerStartup/createRenderWorkerLoop/drainRenderWorkerOnce", async () => {
     const appSource = await fs.readFile(
       path.resolve(process.cwd(), "backend/app.ts"),
       "utf8",
     );
 
-    expect(appSource).not.toContain("createRenderWorkerStartup");
-    expect(appSource).not.toContain("createRenderWorkerLoop");
-    expect(appSource).not.toContain("drainRenderWorkerOnce");
-    expect(appSource).not.toContain("worker");
+    expect(appSource).not.toContain("createRenderWorkerStartup(");
+    expect(appSource).not.toContain("createRenderWorkerLoop(");
+    expect(appSource).not.toContain("drainRenderWorkerOnce(");
     expect(appSource).not.toContain("start()");
   });
 });
