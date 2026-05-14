@@ -230,7 +230,7 @@ Why it matters:
 Target fix phase:
 
 - Phase 4.6 and later timeline/video phases
-## Remotion runtime status (Phase 8.14-C accuracy)
+## Remotion runtime status (Phase 8.15-C accuracy)
 
 - Backend composition boundary scaffold exists (Phase 7.9).
 - Backend runtime helper boundary exists (Phase 8.0-B).
@@ -274,6 +274,17 @@ Target fix phase:
 - Backend dependency composition module exists (Phase 8.12-B) but dependencies are not wired into exports router yet.
 - rendererAdapter and pathPolicy composed for lifecycle (Phase 8.13-B) but still NOT passed to createExportRouter — execute route returns 501 without them.
 - process.cwd()-based pathPolicy roots are acceptable for dev/test but may need env override before production.
+- Registry interface boundary exists (Phase 8.15-B):
+  - `ExportJobRegistry` interface separated from `InMemoryExportJobRegistry` implementation
+  - `backend/registry/exportJobRegistry.ts` owns interface/types
+  - `backend/registry/inMemoryExportJobRegistry.ts` contains implementation
+  - Future durable persistence adapters can implement `ExportJobRegistry` without changing consumers
+  - No real persistence/storage added — jobs remain in-memory only
+  - requestId idempotency remains process-local only
+  - Claims/leases remain in-memory only with TTL support
+  - Submitted/rendering/finalizing jobs do not survive server restart yet
+  - No restart recovery semantics yet
+  - No JSON/SQLite/Postgres/Redis adapter yet
 
 ### Safety reminder
 

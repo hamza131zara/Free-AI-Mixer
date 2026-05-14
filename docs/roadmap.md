@@ -485,3 +485,45 @@ Status:
 - Frontend async worker integration.
 - Production artifact hosting/signed URLs/download capability.
 - Production auto-start without env flags.
+
+## Phase 8.15 status
+
+- Phase 8.15-A: complete (durable queue/persistence strategy audit).
+- Phase 8.15-B: complete (registry interface boundary).
+- Phase 8.15-C: docs update only (this update).
+- Next: Phase 8.15-D final sign-off.
+
+### What 8.15-A found
+
+- Durable persistence not ready for real storage yet.
+- Current InMemoryExportJobRegistry clean enough for interface boundary.
+- Safest next step: interface separation only.
+- Recommended: interface → JSON file → SQLite → Postgres progression.
+
+### What 8.15-B delivered
+
+- Registry interface/implementation separation.
+- `backend/registry/exportJobRegistry.ts` owns interface/types.
+- `backend/registry/inMemoryExportJobRegistry.ts` contains implementation.
+- `createBackendDependencies` returns `registry: ExportJobRegistry` (interface type).
+- Future durable persistence adapters can implement `ExportJobRegistry` without changing consumers.
+
+### Preserved boundaries
+
+- No real persistence/storage added.
+- All registry behavior preserved (create, getById, getByRequestId, getByStatus, claim, mark*, transition).
+- requestId idempotency still process-local only.
+- Claims/leases still in-memory with TTL support.
+- No route, worker, app, server, or frontend changes.
+
+### Still deferred after 8.15-B
+
+- No JSON/SQLite/Postgres/Redis adapter yet.
+- No restart recovery semantics yet.
+- No durable requestId idempotency across restarts yet.
+- No durable worker claim/lease persistence yet.
+- No durable artifact metadata persistence yet.
+- Durable queue/persistence (Redis/database-backed execution).
+- Server graceful shutdown (SIGINT/SIGTERM handlers, server.close wiring).
+- Frontend async worker integration.
+- Production artifact hosting/signed URLs/download capability.

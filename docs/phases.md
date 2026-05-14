@@ -1446,3 +1446,76 @@ Status:
 - Added `tests/e2e/phase814-get-status-truthful.spec.ts` (10 tests).
 - Tests verify truthful status mapping, no path leakage, no failure.details in terminal_failure.
 - All focused tests pass along with regression coverage for phase63/813/812/810/89/88/87/86/85.
+
+## Phase 8.15-C — Registry Interface Boundary Docs Update
+
+Status:
+
+- Phase 8.15-A (durable queue/persistence strategy audit) is complete.
+- Phase 8.15-B (registry interface boundary) is complete and committed.
+- Phase 8.15-C is docs-only (this update).
+- Phase 8.15-D (final sign-off) remains pending.
+
+### Phase 8.15-A finding: durable persistence not ready for real storage yet
+
+- Current InMemoryExportJobRegistry is clean enough to serve as one implementation behind a registry interface.
+- The safest next step is interface separation only — no real storage.
+- Recommended progression: interface boundary → JSON file → SQLite → Postgres (if multi-instance needed).
+- No JSON/SQLite/Postgres/Redis in this phase.
+
+### Phase 8.15-B implementation summary
+
+- Refactored registry structure into interface/implementation separation.
+- `backend/registry/exportJobRegistry.ts` now exports only:
+  - `ExportJobRegistry` interface
+  - Related types (`CreateExportJobInput`, `ExportJobTransitionOptions`, `ExportJobClaimOptions`)
+  - `ExportJobTransitionError` class
+  - `validateArtifactMetadata` helper (re-exported)
+  - `InMemoryExportJobRegistry` (re-exported for backwards compatibility)
+- `backend/registry/inMemoryExportJobRegistry.ts` now contains:
+  - `InMemoryExportJobRegistry` class implementing `ExportJobRegistry`
+  - All internal validation and helper functions
+- `backend/composition/backendDependencies.ts` now:
+  - Imports `InMemoryExportJobRegistry` from the implementation file
+  - Returns `registry: ExportJobRegistry` (interface type, not concrete class)
+
+### Interface boundary benefits
+
+- Future durable persistence adapters can implement `ExportJobRegistry` without changing consumers.
+- `createBackendDependencies` can inject different registry implementations.
+- Clean separation between interface contract and storage implementation.
+
+### What was NOT added
+
+- No JSON file persistence.
+- No SQLite, Postgres, or Redis.
+- No filesystem job storage.
+- No recovery semantics or startup recovery.
+- No idempotency persistence across restarts.
+- No durable claim/lease persistence.
+- No artifact metadata persistence to disk.
+- No route, worker, app, server, or frontend changes.
+
+### Current state (still in-memory only)
+
+- requestId idempotency is process-local only.
+- Claims and claim TTL are in-memory only.
+- Submitted/rendering/finalizing jobs do not survive server restart.
+- Artifact metadata is in-memory only.
+- Worker lifecycle is env-gated and in-memory only.
+
+### Phase 8.15 test additions
+
+- Added `tests/e2e/phase815-registry-interface.spec.ts` (15 tests).
+- Tests verify interface/implementation separation, behavior preservation, no storage code added.
+- All focused tests pass along with regression coverage for phase814/813/812/89/88.
+
+### Deferred items (unchanged scope)
+
+- No JSON/SQLite/Postgres/Redis adapter yet.
+- No restart recovery semantics yet.
+- No durable requestId idempotency yet.
+- No durable worker claim/lease persistence yet.
+- No durable artifact metadata persistence yet.
+- No graceful shutdown yet.
+- No cancellation yet.

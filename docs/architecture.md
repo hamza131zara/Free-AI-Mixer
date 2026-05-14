@@ -949,3 +949,45 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - rendererAdapter/pathPolicy still NOT wired into createExportRouter.
 - No public lifecycle/status route added.
 - No durable queue/persistence, cancellation, or frontend changes.
+
+## Phase 8.15 registry interface boundary
+
+- Registry interface/implementation separation exists (Phase 8.15-B).
+- `backend/registry/exportJobRegistry.ts` owns:
+  - `ExportJobRegistry` interface with all job lifecycle methods
+  - Related types (`CreateExportJobInput`, `ExportJobClaimOptions`, `ExportJobTransitionOptions`)
+  - `ExportJobTransitionError` class
+  - `InMemoryExportJobRegistry` (re-exported for backwards compatibility)
+- `backend/registry/inMemoryExportJobRegistry.ts` owns:
+  - `InMemoryExportJobRegistry` class implementing `ExportJobRegistry`
+  - All internal validation and helper functions
+- `createBackendDependencies` returns `registry: ExportJobRegistry` (interface type).
+
+### Interface boundary benefits
+
+- Future durable persistence adapters can implement `ExportJobRegistry` interface.
+- `createBackendDependencies` can inject different registry implementations.
+- Clean separation between interface contract and storage implementation.
+- All existing consumers continue to work unchanged.
+
+### Current persistence state (in-memory only)
+
+- Jobs stored in `Map<string, BackendExportJobRecord>` — lost on restart.
+- requestId idempotency stored in `Map<string, string>` — lost on restart.
+- Claims and claim TTL stored in memory — lost on restart.
+- Artifact metadata stored in memory — lost on restart.
+- Worker lifecycle is env-gated and in-memory only.
+
+### Future storage options documented for later phases
+
+- JSON file (`.free-ai-mixer-jobs.json`) — local dev, single instance, simplest.
+- SQLite — single-instance production, self-contained, transactional.
+- Postgres — multi-instance/cross-region, most robust, requires infra.
+- Redis — caching layer + durability, requires Redis server.
+
+### Recovery semantics deferred
+
+- Submitted jobs after restart: re-queue for worker drain (future).
+- Rendering/finalizing jobs after restart: expire (safe vs duplicate render risk).
+- Jobs with expired claims after restart: treat as submitted (re-queue).
+- Terminal jobs (success/error/expired): recovered, no re-processing needed.
