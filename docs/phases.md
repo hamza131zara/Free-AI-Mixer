@@ -1189,3 +1189,35 @@ Status:
 - No backend/server.ts changes.
 - Route behavior is unchanged — POST /exports remains non-executing, POST /exports/:jobId/execute remains dev/test-gated.
 - Loop status does not expose local paths, filePath, URLs, download URLs, or signed URLs.
+
+## Phase 8.10-C — Worker Startup Factory Boundary Docs Update
+
+- Phase 8.10-A (audit) is complete.
+- Phase 8.10-B (worker startup factory boundary) is complete and committed.
+- Commit message: `feat(phase-8.10): add worker startup factory boundary`.
+- Phase 8.10-C is docs-only (this update).
+- Phase 8.10-D (final sign-off) remains pending.
+
+### Phase 8.10-B summary
+
+- Added worker startup factory boundary: `backend/workers/renderWorkerStartup.ts`.
+- Added startup factory function: `createRenderWorkerStartup(...)`.
+- Startup factory returns controller with `start()`, `stop()`, `isRunning()`, `getStatus()` methods.
+- Startup factory does NOT auto-start on creation — manual start required.
+- Startup factory is gated by `FREE_AI_MIXER_ENABLE_WORKER_STARTUP=1`.
+- Runtime loop also requires `FREE_AI_MIXER_ENABLE_WORKER_LOOP=1`.
+- Default poll interval remains `2000` ms via `FREE_AI_MIXER_WORKER_POLL_INTERVAL_MS`.
+- Startup factory wraps/reuses `createRenderWorkerLoop(...)` — does NOT duplicate loop logic.
+- Startup factory does NOT call `setInterval`, `drainRenderWorkerOnce`, or `executeRenderJob` directly.
+- Added focused test: `tests/e2e/phase810-worker-startup.spec.ts`.
+
+### Boundaries preserved
+
+- Startup factory does NOT directly call `executeSingleProcessRender`.
+- Startup factory does NOT directly call registry mutation methods.
+- Lifecycle ownership remains in `createRenderWorkerLoop` → `drainRenderWorkerOnce` → `executeRenderJob` → harness/registry.
+- No app.ts wiring — worker startup factory is not wired to server startup.
+- No server.ts changes.
+- Route behavior is unchanged — POST /exports remains non-executing, POST /exports/:jobId/execute remains synchronous with timeout.
+- No route enqueue behavior.
+- Startup status does not expose local paths, filePath, URLs, download URLs, or signed URLs.

@@ -242,8 +242,11 @@ Target fix phase:
 - No cancellation, no queue, no scheduler yet.
 - Worker helper `drainRenderWorkerOnce` exists but requires manual invocation (not auto-started).
 - Worker loop helper `createRenderWorkerLoop` exists and is test-controlled, but requires manual `start()` call.
-- No production auto-start yet — worker loop is dev/test-gated only.
+- Worker startup factory `createRenderWorkerStartup` exists but is not wired to app/server startup.
+- No production auto-start yet — worker loop and startup are dev/test-gated only.
 - No app.ts wiring for worker startup yet.
+- No server.ts wiring for worker startup yet.
+- No graceful shutdown integration yet.
 - No route enqueue behavior yet.
 
 ### Safety reminder
