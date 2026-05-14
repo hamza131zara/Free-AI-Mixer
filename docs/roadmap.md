@@ -444,3 +444,44 @@ Status:
 - Frontend async worker integration.
 - Production artifact hosting/signed URLs/download capability.
 - Production auto-start without env flags.
+
+## Phase 8.14 status
+
+- Phase 8.14-A: complete (enqueue behavior audit).
+- Phase 8.14-A2: complete (GET status truthfulness audit).
+- Phase 8.14-B: complete (truthful GET status implementation).
+- Phase 8.14-C: docs update only (this update).
+- Next: Phase 8.14-D final sign-off.
+
+### What 8.14-A found
+
+- POST /exports already behaves as an enqueue boundary when worker flags are enabled.
+- No route code change needed for enqueue behavior.
+- GET /exports/:jobId was always returning "pending" — a truthfulness bug.
+
+### What 8.14-B delivered
+
+- Truthful GET /exports/:jobId status mapping in `backend/routes/exports.ts`.
+- `mapRecordToPollResponse()` helper maps registry status to public types.
+- `ExportPollResponseBody` updated to allow full `ExportPollResult` union.
+- Status mapping: submitted/rendering/finalizing → pending, success → terminal_success, error/expired → terminal_failure.
+- Success response: safe artifact metadata only (no paths/URLs).
+- Failure response: message/code/jobId only, no failure.details (no leak risk).
+
+### Preserved boundaries
+
+- POST /exports unchanged (accepted_job, creates submitted job).
+- POST /exports/:jobId/execute unchanged (dev/test-gated, 503/501).
+- rendererAdapter/pathPolicy NOT wired into createExportRouter.
+- No artifact hosting, signed URLs, or download URLs.
+- No durable queue/persistence, cancellation, or frontend changes.
+- Worker processing remains env-gated and in-memory only.
+
+### Still deferred after 8.14-B
+
+- Route enqueue response fields (not needed — POST /exports already enqueues).
+- Durable queue/persistence (Redis/database-backed execution).
+- Server graceful shutdown (SIGINT/SIGTERM handlers, server.close wiring).
+- Frontend async worker integration.
+- Production artifact hosting/signed URLs/download capability.
+- Production auto-start without env flags.

@@ -917,3 +917,35 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - No local path leakage in API responses.
 - Worker lifecycle depends on in-memory registry only; no durable queue/persistence.
 - No cancellation or frontend async worker integration yet.
+
+## Phase 8.14 truthful GET status boundary
+
+- GET `/exports/:jobId` now maps actual registry status to truthful public poll responses.
+- `ExportPollResponseBody` type updated to allow full `ExportPollResult` union (was pending-only).
+- Status mapping:
+  - `submitted`/`rendering`/`finalizing` → `kind: "pending"` with handle
+  - `success` → `kind: "terminal_success"` with safe artifact metadata
+  - `error`/`expired` → `kind: "terminal_failure"` with safe failure fields
+
+### Success response safety
+
+- `terminal_success` includes safe artifact metadata only:
+  - `id` (artifactId), `status: "ready"`, optional `bytes` (sizeBytes), `completedAt`
+- Excluded: local paths, filePath, path, url, downloadUrl, signedUrl, artifactUrl
+- Artifact hosting and download URLs remain deferred
+
+### Failure response safety
+
+- `terminal_failure` returns only safe public fields:
+  - `message`, `code`, `jobId`
+- `failure.details` intentionally excluded to prevent leak risk
+- No stack traces, local paths, URLs, or internal details
+
+### Route boundaries preserved
+
+- POST /exports unchanged (returns accepted_job, creates submitted job).
+- POST /exports already acts as enqueue boundary when worker flags enabled.
+- POST /exports/:jobId/execute unchanged (dev/test-gated, returns 503/501).
+- rendererAdapter/pathPolicy still NOT wired into createExportRouter.
+- No public lifecycle/status route added.
+- No durable queue/persistence, cancellation, or frontend changes.

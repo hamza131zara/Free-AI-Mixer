@@ -122,6 +122,12 @@ Why it matters:
   - lifecycle stored internally as `app.locals.renderWorkerLifecycle`
   - no public lifecycle/status route added
   - rendererAdapter/pathPolicy still NOT wired into exports router (execute route still returns 501)
+- Phase 8.14-B adds truthful GET /exports/:jobId status mapping:
+  - GET now maps actual registry status to public ExportPollResult types
+  - GET no longer always returns kind: "pending"
+  - terminal_success returns safe artifact metadata only (no local paths/URLs)
+  - terminal_failure intentionally excludes failure.details (no leak risk)
+  - POST /exports remains unchanged (already acts as enqueue boundary when worker flags enabled)
 - verified output production remains deferred
 - artifact hosting/signed URL/download capability remains deferred
 - no public download URLs exist yet
@@ -224,7 +230,7 @@ Why it matters:
 Target fix phase:
 
 - Phase 4.6 and later timeline/video phases
-## Remotion runtime status (Phase 8.13-C accuracy)
+## Remotion runtime status (Phase 8.14-C accuracy)
 
 - Backend composition boundary scaffold exists (Phase 7.9).
 - Backend runtime helper boundary exists (Phase 8.0-B).

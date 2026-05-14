@@ -1361,3 +1361,88 @@ Status:
 - No frontend async worker integration yet.
 - Worker lifecycle depends on env gates and in-memory registry only.
 - rendererAdapter/pathPolicy are composed for lifecycle but still intentionally not wired into exports router.
+
+## Phase 8.14-C — Truthful GET Status Docs Update
+
+Status:
+
+- Phase 8.14-A (enqueue behavior audit) is complete.
+- Phase 8.14-A2 (GET status truthfulness audit) is complete.
+- Phase 8.14-B (truthful GET status implementation) is complete and committed.
+- Phase 8.14-C is docs-only (this update).
+- Phase 8.14-D (final sign-off) remains pending.
+
+### Phase 8.14-A finding: POST /exports already acts as enqueue boundary
+
+- POST /exports creates a job with status "submitted" in the registry.
+- Worker lifecycle drains submitted jobs when enabled via env flags.
+- POST /exports does NOT claim rendering started, progress, success, or return artifacts.
+- POST /exports already behaves as an enqueue entrypoint when worker flags are enabled.
+- No route code change was needed for enqueue behavior.
+
+### Phase 8.14-A2 finding: GET status was a truthfulness bug
+
+- GET /exports/:jobId previously always returned `kind: "pending"`.
+- This was misleading when registry status was success, error, or expired.
+- Phase 8.14-B fixed GET to return truthful status mapping.
+
+### Phase 8.14-B implementation summary
+
+- Added `mapRecordToPollResponse()` helper in `backend/routes/exports.ts`.
+- Updated `backend/contracts/exportHttpTypes.ts` — `ExportPollResponseBody` now allows full `ExportPollResult` union.
+- GET status now maps registry status truthfully.
+
+### GET status mapping
+
+- `submitted`, `rendering`, `finalizing` → `kind: "pending"` with handle
+- `success` → `kind: "terminal_success"` with result and artifact metadata
+- `error` → `kind: "terminal_failure"` with failure message and code
+- `expired` → `kind: "terminal_failure"` with expired message and code
+
+### Success response safety
+
+- `terminal_success` returns safe artifact metadata only:
+  - `id` (from artifactId)
+  - `status: "ready"`
+  - `bytes` (optional, from sizeBytes)
+  - `completedAt`
+- No local file paths, filePath, path, url, downloadUrl, or signedUrl.
+- Artifact hosting and download URLs remain deferred.
+
+### Failure response safety
+
+- `terminal_failure` returns only safe public fields:
+  - `message`
+  - `code`
+  - `jobId`
+- `failure.details` is intentionally NOT returned to prevent leak risk.
+- No stack traces, local paths, URLs, or internal details.
+
+### Route boundaries preserved
+
+- POST /exports remains unchanged (returns accepted_job, creates submitted job).
+- POST /exports/:jobId/execute remains dev/test-gated:
+  - Returns 503 when `FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION` is not set.
+  - Returns 501 when enabled but rendererAdapter/pathPolicy not configured in router.
+- rendererAdapter/pathPolicy are still NOT passed into createExportRouter.
+- backend/app.ts and backend/server.ts were not changed.
+- No public lifecycle/status route added.
+- No artifact hosting, signed URLs, or download URLs added.
+- No frontend changes added.
+- No durable queue/persistence added.
+- No cancellation added.
+
+### Worker/enqueue boundary (unchanged from 8.13)
+
+- Worker processing remains env-gated:
+  - `FREE_AI_MIXER_ENABLE_WORKER_STARTUP=1` required.
+  - `FREE_AI_MIXER_ENABLE_WORKER_LOOP=1` required.
+- Worker lifecycle remains in-memory only.
+- Durable queue/persistence remains deferred.
+- Frontend async worker integration remains deferred.
+
+### Phase 8.14 test additions
+
+- Added `tests/e2e/phase814-get-status-truthful.spec.ts` (10 tests).
+- Tests verify truthful status mapping, no path leakage, no failure.details in terminal_failure.
+- All focused tests pass along with regression coverage for phase63/813/812/810/89/88/87/86/85.
