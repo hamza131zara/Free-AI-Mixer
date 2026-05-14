@@ -200,9 +200,42 @@ const createJobId = (): string =>
     ? crypto.randomUUID()
     : `job_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
+export interface InMemoryExportJobRegistrySeed {
+  jobs?: BackendExportJobRecord[];
+  requestIdToJobId?: Record<string, string>;
+}
+
+export interface InMemoryExportJobRegistryOptions {
+  seed?: InMemoryExportJobRegistrySeed;
+}
+
 export class InMemoryExportJobRegistry implements ExportJobRegistry {
   private readonly jobsById = new Map<string, BackendExportJobRecord>();
   private readonly jobIdByRequestId = new Map<string, string>();
+
+  constructor(options?: InMemoryExportJobRegistryOptions) {
+    if (options?.seed) {
+      const { jobs, requestIdToJobId } = options.seed;
+      if (jobs) {
+        for (const record of jobs) {
+          this.jobsById.set(record.jobId, record);
+          // Only seed requestId mapping for non-terminal jobs
+          if (!isTerminalStatus(record.status)) {
+            this.jobIdByRequestId.set(record.requestId, record.jobId);
+          }
+        }
+      }
+      if (requestIdToJobId) {
+        for (const [requestId, jobId] of Object.entries(requestIdToJobId)) {
+          // Only seed if job exists and is non-terminal
+          const job = this.jobsById.get(jobId);
+          if (job && !isTerminalStatus(job.status)) {
+            this.jobIdByRequestId.set(requestId, jobId);
+          }
+        }
+      }
+    }
+  }
 
   create(input: CreateExportJobInput): BackendExportJobRecord {
     const now = new Date().toISOString();
@@ -408,6 +441,17 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     }
 
     return existing;
+  }
+
+  /**
+   * Snapshot current registry state for persistence.
+   * Returns jobs and requestId mapping for serialization.
+   */
+  toSnapshot(): { jobs: BackendExportJobRecord[]; requestIdToJobId: Record<string, string> } {
+    return {
+      jobs: Array.from(this.jobsById.values()),
+      requestIdToJobId: Object.fromEntries(this.jobIdByRequestId),
+    };
   }
 }
 

@@ -1,5 +1,6 @@
 import path from "node:path";
 import { InMemoryExportJobRegistry } from "../registry/inMemoryExportJobRegistry";
+import { JsonFileExportJobRegistry } from "../registry/jsonFileExportJobRegistry";
 import type { ExportJobRegistry } from "../registry/exportJobRegistry";
 import { createRemotionRendererAdapter } from "../renderer/remotionRendererAdapter";
 import type { RendererAdapter } from "../renderer/singleProcessRenderHarness";
@@ -30,7 +31,13 @@ export const createBackendDependencies = (): BackendDependencies => {
     runtime: undefined,
   });
 
-  const registry = new InMemoryExportJobRegistry();
+  // Use JSON file persistence when env flag is set, otherwise use in-memory
+  const usePersistence = process.env.FREE_AI_MIXER_PERSISTENCE_ENABLED === "true";
+  const registry: ExportJobRegistry = usePersistence
+    ? new JsonFileExportJobRegistry({
+        filePath: process.env.FREE_AI_MIXER_PERSISTENCE_FILE_PATH,
+      })
+    : new InMemoryExportJobRegistry();
 
   return {
     registry,

@@ -25,3 +25,7 @@ Thumbs.db
 
 # optional local cache
 .cache/
+
+# persistence files (env-gated, disabled by default)
+.free-ai-mixer-jobs.json
+.free-ai-mixer-jobs.json.tmp
