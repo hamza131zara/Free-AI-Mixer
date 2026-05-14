@@ -1750,3 +1750,109 @@ Status:
 - No artifact metadata persistence yet.
 - No cancellation yet.
 - Future JSON persistence adapter should use this recovery policy.
+
+## Phase 8.19-C — JSON File Persistence Adapter Docs Update
+
+Status:
+
+- Phase 8.19-A (JSON persistence adapter audit) is complete.
+- Phase 8.19-B (JSON persistence adapter implementation) is complete and committed.
+- Phase 8.19-C is docs-only (this update).
+- Phase 8.19-D (final sign-off) remains pending.
+
+### Phase 8.19-A finding: JSON adapter is safe and ready
+
+- ExportJobRegistry interface is ready for persistence adapter.
+- Phase 8.18 recovery policy provides safe recovery semantics.
+- App startup order allows recovery before worker polling.
+- JSON file is simplest local/dev persistence without external dependencies.
+- Safe next step: add JSON file persistence adapter behind interface.
+
+### Phase 8.19-B implementation summary
+
+- Added JSON file persistence adapter: backend/registry/jsonFileExportJobRegistry.ts.
+- JsonFileExportJobRegistry implements ExportJobRegistry interface.
+- Delegation pattern: JSON adapter wraps InMemoryExportJobRegistry for lifecycle/state-machine logic.
+- InMemoryExportJobRegistry remains source of truth for transitions, validation, state guards.
+- JSON adapter handles persistence, hydration, recovery, snapshotting, atomic writes.
+
+### Environment flags
+
+- FREE_AI_MIXER_PERSISTENCE_ENABLED — enable with "true" (disabled by default).
+- FREE_AI_MIXER_PERSISTENCE_FILE_PATH — optional custom file path override.
+- Default persistence file: .free-ai-mixer-jobs.json in process.cwd().
+
+### JSON schema
+
+- version: 1
+- jobs: BackendExportJobRecord[]
+- requestIdToJobId: Record<string, string>
+- updatedAt: ISO string
+
+### Persistence behavior
+
+- Loads JSON file on initialization when enabled.
+- Uses versioned JSON schema.
+- Persists jobs and requestId mapping.
+- Atomic writes: write temp file, then rename to final file.
+- Persists after each registry mutation (create, claim, markRendering, markFinalizing, markSuccess, markError, transition).
+- RequestId idempotency survives restart through getByRequestId.
+
+### Recovery-on-load
+
+Uses Phase 8.18 recovery policy on load:
+- submitted stays submitted.
+- rendering recovers to submitted (worker died, claim expired).
+- finalizing recovers to submitted (worker died, claim expired).
+- success remains success.
+- error remains error.
+- expired remains expired.
+- recovered rendering/finalizing records clear claimedByWorkerId and claimExpiresAt.
+- attemptCount preserved.
+
+### Safety sanitization
+
+- No failure.details persisted — only message and code.
+- Artifact metadata sanitized — only safe fields persisted:
+  artifactId, jobId, kind, format, status, createdAt, sizeBytes, durationMs.
+- No local path/filePath/path/url/artifactUrl/downloadUrl/signedUrl persisted.
+- No artifact hosting added.
+- No download URLs added.
+
+### What was NOT added
+
+- No production database adapter (Postgres, Redis, SQLite).
+- No multi-process locking.
+- No large-scale query/indexing support.
+- No artifact hosting/download persistence.
+- No cancellation.
+- No frontend async persistence UX.
+- No route behavior changes.
+- No worker behavior changes.
+- No app.ts changes.
+- No server.ts changes.
+- No gracefulShutdown.ts changes.
+- No frontend changes.
+
+### Phase 8.19 test additions
+
+- Added tests/e2e/phase819-json-persistence.spec.ts (25 tests).
+- Tests verify create/getById/getByRequestId/getByStatus.
+- Tests verify requestId idempotency surviving restart.
+- Tests verify claim/markRendering/markFinalizing/markSuccess/markError persistence.
+- Tests verify recovery-on-load using Phase 8.18 policy.
+- Tests verify sanitized failure/artifact persistence.
+- Tests verify atomic write temp-file behavior.
+- Tests verify .gitignore entries.
+- Tests verify env-gated registry selection.
+- All focused tests pass.
+
+### Deferred items (unchanged scope)
+
+- JSON persistence is local/dev only for now.
+- No production DB adapter yet.
+- No multi-process locking yet.
+- No large-scale query/indexing support yet.
+- No artifact hosting/download persistence yet.
+- No cancellation yet.
+- No frontend async persistence UX yet.

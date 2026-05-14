@@ -310,15 +310,28 @@ Recovery policy boundary exists (Phase 8.18-B):
 - attemptCount and identity fields preserved
 - Clone-based (original records not mutated)
 - No filesystem I/O, no registry mutations, no path leakage
+- Recovery policy used by JSON persistence adapter for on-load recovery
+
+### JSON File Persistence Adapter (Phase 8.19-B)
+
+JSON file persistence adapter exists (Phase 8.19-B):
+- `backend/registry/jsonFileExportJobRegistry.ts` implements ExportJobRegistry
+- Env-gated: FREE_AI_MIXER_PERSISTENCE_ENABLED (disabled by default)
+- Optional: FREE_AI_MIXER_PERSISTENCE_FILE_PATH
+- Default file: .free-ai-mixer-jobs.json in process.cwd()
+- Atomic writes: temp file + rename
+- Uses Phase 8.18 recovery policy on load
+- Sanitized failure/artifact persistence (no paths/URLs/details)
+- .gitignore entries for persistence files
 
 Still deferred:
-- No JSON persistence adapter yet
-- No startup recovery yet
-- No persistence flush on graceful shutdown yet
-- No durable requestId idempotency yet
-- No durable claim/lease persistence yet
-- No artifact metadata persistence yet
-- Future JSON persistence adapter should use this recovery policy
+- JSON persistence is local/dev only
+- No production DB adapter yet (Postgres, Redis, SQLite)
+- No multi-process locking yet
+- No large-scale query/indexing support yet
+- No artifact hosting/download persistence yet
+- No cancellation yet
+- No frontend async persistence UX yet
 
 ### Safety reminder
 

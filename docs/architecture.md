@@ -1050,4 +1050,18 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
   - attemptCount and identity preserved
 - Policy is clone-based (no mutation of input records)
 - No filesystem I/O, no registry mutations, no path leakage
-- Future persistence adapters should use this policy for consistent recovery semantics
+- Used by JSON persistence adapter for on-load recovery
+
+### JSON File Persistence Adapter (Phase 8.19-B complete)
+
+- Phase 8.19-B added JSON file persistence adapter.
+- backend/registry/jsonFileExportJobRegistry.ts implements ExportJobRegistry.
+- Delegation pattern: JSON adapter wraps InMemoryExportJobRegistry for lifecycle logic.
+- InMemoryExportJobRegistry remains source of truth for transitions, validation, state guards.
+- Env-gated: FREE_AI_MIXER_PERSISTENCE_ENABLED (disabled by default).
+- Optional: FREE_AI_MIXER_PERSISTENCE_FILE_PATH.
+- Default: .free-ai-mixer-jobs.json in process.cwd().
+- Atomic writes: temp file + rename.
+- RequestId idempotency survives restart.
+- Recovery-on-load uses Phase 8.18 policy.
+- Sanitized persistence: no failure.details, no artifact paths/URLs.
