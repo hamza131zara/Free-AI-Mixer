@@ -1,14 +1,14 @@
 import express, { type Express } from "express";
 import { exportErrorHandler } from "./errors/exportErrors";
-import { InMemoryExportJobRegistry } from "./registry/exportJobRegistry";
 import { createExportRouter } from "./routes/exports";
+import { createBackendDependencies } from "./composition/backendDependencies";
 
 export const createApp = (): Express => {
   const app = express();
-  const registry = new InMemoryExportJobRegistry();
+  const backendDeps = createBackendDependencies();
 
   app.use(express.json());
-  app.use(createExportRouter(registry));
+  app.use(createExportRouter(backendDeps.registry));
   app.use(exportErrorHandler);
 
   return app;
