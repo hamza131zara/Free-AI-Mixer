@@ -300,6 +300,26 @@ Target fix phase:
   - backend/server.ts no longer auto-starts when imported by tests
   - Only startServer(...) calls app.listen
 
+### Recovery Policy Boundary (Phase 8.18-B)
+
+Recovery policy boundary exists (Phase 8.18-B):
+- `backend/registry/exportJobRecoveryPolicy.ts` provides restart recovery policy
+- Exports: recoverExportJobRecord, recoverExportJobRecords, getRecoverableRecords, getTerminalRecords
+- Recovery rules: submitted stays, rendering/finalizing → submitted, terminal stays
+- Claims cleared for recovered non-terminal jobs
+- attemptCount and identity fields preserved
+- Clone-based (original records not mutated)
+- No filesystem I/O, no registry mutations, no path leakage
+
+Still deferred:
+- No JSON persistence adapter yet
+- No startup recovery yet
+- No persistence flush on graceful shutdown yet
+- No durable requestId idempotency yet
+- No durable claim/lease persistence yet
+- No artifact metadata persistence yet
+- Future JSON persistence adapter should use this recovery policy
+
 ### Safety reminder
 
 - No fake success/progress/artifacts/cancellation behavior is allowed in renderer phases.

@@ -1038,3 +1038,16 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - No process.exit() added.
 - No job state mutation on shutdown.
 - Shutdown stops polling/server intake but does not recover jobs after restart.
+
+### Recovery Policy Boundary (Phase 8.18-B complete)
+
+- Phase 8.18-B added restart recovery policy boundary.
+- backend/registry/exportJobRecoveryPolicy.ts defines safe recovery rules:
+  - submitted stays submitted
+  - rendering/finalizing recover to submitted (worker died, claim expired)
+  - success/error/expired remain terminal
+  - claims cleared for recovered jobs
+  - attemptCount and identity preserved
+- Policy is clone-based (no mutation of input records)
+- No filesystem I/O, no registry mutations, no path leakage
+- Future persistence adapters should use this policy for consistent recovery semantics

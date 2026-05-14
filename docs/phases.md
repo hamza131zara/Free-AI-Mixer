@@ -1666,3 +1666,87 @@ Status:
 - Shutdown stops polling/server intake but does not recover jobs after restart.
 - No artifact hosting/download/signed URLs.
 - No frontend changes.
+
+## Phase 8.18-C — Recovery Policy Boundary Docs Update
+
+Status:
+
+- Phase 8.18-A (restart recovery/persistence adapter audit) is complete.
+- Phase 8.18-B (recovery policy boundary implementation) is complete and committed.
+- Phase 8.18-C is docs-only (this update).
+- Phase 8.18-D (final sign-off) remains pending.
+
+### Phase 8.18-A finding: restart recovery is high-risk without recovery policy
+
+- Restart recovery is not ready for full JSON adapter implementation.
+- ExportJobRegistry interface boundary is ready for persistence adapter.
+- But first a recovery policy boundary is needed so future adapters use the same safe rules.
+- No real storage in Phase 8.18-B.
+- No startup recovery in Phase 8.18-B.
+- No filesystem writes in Phase 8.18-B.
+- Safe next step: add recovery policy boundary only.
+
+### Phase 8.18-B implementation summary
+
+- Added restart recovery policy module: backend/registry/exportJobRecoveryPolicy.ts.
+- Added recovery policy APIs:
+  - recoverExportJobRecord(record, options?) — applies recovery rules to single record
+  - recoverExportJobRecords(records, options?) — applies recovery rules to batch
+  - getRecoverableRecords(records) — filters non-terminal records
+  - getTerminalRecords(records) — filters terminal records
+- Recovery rules implemented:
+  - submitted stays submitted (already recoverable)
+  - rendering recovers to submitted (worker died, claim expired)
+  - finalizing recovers to submitted (worker died, claim expired)
+  - success remains success (terminal)
+  - error remains error (terminal)
+  - expired remains expired (terminal)
+- recovered rendering/finalizing records clear claimedByWorkerId and claimExpiresAt
+- attemptCount is preserved
+- requestId/jobId/timelineId/renderSettings are preserved
+- original records are not mutated (clone-based)
+- RecoveredExportJobRecord result includes record, recovered flag, and reason
+
+### What was NOT added
+
+- No JSON persistence adapter.
+- No filesystem storage.
+- No SQLite/Postgres/Redis.
+- No env flags.
+- No startup recovery logic.
+- No graceful shutdown persistence flush.
+- No route behavior changes.
+- No worker behavior changes.
+- No app.ts changes.
+- No server.ts changes.
+- No registry implementation changes.
+- No cancellation.
+- No artifact hosting/download URLs.
+
+### Safety boundaries preserved
+
+- Recovery policy does not import fs.
+- Recovery policy does not write files.
+- Recovery policy does not import routes/workers/app/server.
+- Recovery policy does not call registry lifecycle mutation methods.
+- Recovery policy does not introduce failure.details.
+- Recovery policy does not expose local paths/filePath/url/artifactUrl/downloadUrl/signedUrl.
+
+### Phase 8.18 test additions
+
+- Added tests/e2e/phase818-recovery-policy.spec.ts (18 tests).
+- Tests verify recovery rules for all status transitions.
+- Tests verify no filesystem I/O, no registry mutations, no path leakage.
+- Tests verify clone-based behavior (original records not mutated).
+- All focused tests pass.
+
+### Deferred items (unchanged scope)
+
+- No JSON persistence adapter yet.
+- No startup recovery yet.
+- No persistence flush on graceful shutdown yet.
+- No durable requestId idempotency yet.
+- No durable claim/lease persistence yet.
+- No artifact metadata persistence yet.
+- No cancellation yet.
+- Future JSON persistence adapter should use this recovery policy.
