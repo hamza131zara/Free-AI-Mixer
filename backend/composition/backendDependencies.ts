@@ -1,11 +1,12 @@
 import path from "node:path";
-import { InMemoryExportJobRegistry } from "../registry/exportJobRegistry";
+import { InMemoryExportJobRegistry } from "../registry/inMemoryExportJobRegistry";
+import type { ExportJobRegistry } from "../registry/exportJobRegistry";
 import { createRemotionRendererAdapter } from "../renderer/remotionRendererAdapter";
 import type { RendererAdapter } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
 
 export interface BackendDependencies {
-  registry: InMemoryExportJobRegistry;
+  registry: ExportJobRegistry;
   rendererAdapter: RendererAdapter;
   pathPolicy: RenderOutputPathPolicy;
 }
