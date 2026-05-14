@@ -19,6 +19,7 @@ export interface ExportJobRegistry {
   create(input: CreateExportJobInput): BackendExportJobRecord;
   getById(jobId: string): BackendExportJobRecord | undefined;
   getByRequestId(requestId: string): BackendExportJobRecord | undefined;
+  getByStatus(status: BackendExportLifecycleStatus): BackendExportJobRecord[];
   claim(
     jobId: string,
     workerId: string,
@@ -123,6 +124,12 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     }
 
     return this.jobsById.get(existingJobId);
+  }
+
+  getByStatus(status: BackendExportLifecycleStatus): BackendExportJobRecord[] {
+    return Array.from(this.jobsById.values()).filter(
+      (job) => job.status === status,
+    );
   }
 
   claim(
