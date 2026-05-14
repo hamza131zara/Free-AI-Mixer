@@ -1082,3 +1082,42 @@ Status:
 - No POST /exports auto-execution.
 - No frontend changes.
 - Synchronous HTTP execution remains a known deferred limitation (route blocks request until complete).
+
+## Phase 8.7-C — Route Execution Timeout Guard Docs Update
+
+- Phase 8.7-A (audit) is complete.
+- Phase 8.7-B (route timeout guard) is complete and committed.
+- Commit message: `feat(phase-8.7): add route execution timeout guard`.
+- Phase 8.7-C is docs-only (this update).
+- Phase 8.7-D (final sign-off) remains pending.
+
+### Phase 8.7-B summary
+
+- Added timeout protection to the dev/test-gated execute route: `POST /exports/:jobId/execute`.
+- Added timeout environment variable: `FREE_AI_MIXER_ROUTE_EXECUTION_TIMEOUT_MS`.
+- Default timeout: `120000` ms (120 seconds).
+- Invalid, missing, or unsafe timeout values fall back to the default.
+- Route execution is raced against timeout using `Promise.race`.
+- If `executeRenderJob` finishes before timeout, existing success/failure response behavior remains.
+- If timeout wins, route returns truthful HTTP 504 with safe JSON.
+- Timeout response does not claim cancellation — it says "the job may still be running; poll the job state for the latest lifecycle status."
+- Timeout response does not expose local paths, artifact metadata, download URLs, signed URLs, or fake progress.
+- Route remains gated by `FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION=1`.
+- Added focused test: `tests/e2e/phase87-route-execution-timeout.spec.ts`.
+
+### 120000 ms explanation
+
+- 120 seconds is acceptable for now because this route is dev/test-gated and synchronous.
+- This is a defensive safety limit, not a production UX target.
+- Future async worker phases should make route responses fast and move render execution to background processing.
+- Current synchronous execution can still block until timeout or completion.
+
+### Boundaries preserved
+
+- Route does not directly call lifecycle mutation methods.
+- Lifecycle ownership remains inside `executeRenderJob` / `executeSingleProcessRender` / harness / registry.
+- No local filesystem path is returned in 504 response.
+- No artifact metadata, download URLs, or signed URLs in 504 response.
+- No worker loop, queue, scheduler, or cancellation implementation.
+- POST /exports remains unchanged and non-executing.
+- No frontend changes.

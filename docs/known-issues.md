@@ -237,6 +237,9 @@ Target fix phase:
 - Frontend export lifecycle integration with real backend completion.
 - Synchronous HTTP route execution blocks request until render completes (no async queue/worker yet).
 - Route trigger (`POST /exports/:jobId/execute`) is dev/test-gated only; not production-exposed.
+- Timeout guard now exists (120000ms default via `FREE_AI_MIXER_ROUTE_EXECUTION_TIMEOUT_MS`) but does not cancel render — only protects HTTP response from hanging.
+- Caller must poll job state after receiving 504 timeout response to get latest lifecycle status.
+- No cancellation, no async worker loop, no queue, no scheduler yet.
 
 ### Safety reminder
 
