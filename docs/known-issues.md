@@ -239,7 +239,10 @@ Target fix phase:
 - Route trigger (`POST /exports/:jobId/execute`) is dev/test-gated only; not production-exposed.
 - Timeout guard now exists (120000ms default via `FREE_AI_MIXER_ROUTE_EXECUTION_TIMEOUT_MS`) but does not cancel render — only protects HTTP response from hanging.
 - Caller must poll job state after receiving 504 timeout response to get latest lifecycle status.
-- No cancellation, no async worker loop, no queue, no scheduler yet.
+- No cancellation, no queue, no scheduler yet.
+- Worker helper `drainRenderWorkerOnce` exists but requires manual invocation (not auto-started).
+- No app.ts wiring for worker startup yet.
+- No interval/polling worker loop yet.
 
 ### Safety reminder
 

@@ -1121,3 +1121,40 @@ Status:
 - No worker loop, queue, scheduler, or cancellation implementation.
 - POST /exports remains unchanged and non-executing.
 - No frontend changes.
+
+## Phase 8.8-C — Worker Helper Boundary Docs Update
+
+- Phase 8.8-A (audit) is complete.
+- Phase 8.8-B (worker helper boundary) is complete and committed.
+- Commit message: `feat(phase-8.8): add worker helper boundary`.
+- Phase 8.8-C is docs-only (this update).
+- Phase 8.8-D (final sign-off) remains pending.
+
+### Phase 8.8-B summary
+
+- Added first worker helper boundary: `backend/workers/renderWorker.ts`.
+- Added manual one-shot worker drain helper: `drainRenderWorkerOnce(...)`.
+- Added minimal read-only registry job listing support: `registry.getByStatus(status)`.
+- Added focused test: `tests/e2e/phase88-worker-helper.spec.ts`.
+- Worker helper finds eligible submitted jobs via `registry.getByStatus("submitted")`.
+- Worker helper delegates execution to `executeRenderJob`, not direct harness calls.
+- Worker helper does NOT directly call `executeSingleProcessRender`.
+- Worker helper does NOT directly call registry mutation methods.
+- Lifecycle ownership remains inside `executeRenderJob` / `executeSingleProcessRender` / harness / registry.
+- Artifact verification before success remains preserved.
+- Output path policy remains the path leakage boundary.
+- Worker summary does not expose local paths, filePath, URLs, artifact URLs, download URLs, or signed URLs.
+- Duplicate execution safety relies on existing registry claim mechanism.
+
+### Boundaries preserved
+
+- No app.ts wiring — worker does not auto-start.
+- No auto-start worker loop.
+- No interval polling loop.
+- No queue persistence.
+- No Redis/database queue.
+- No cancellation.
+- No frontend changes.
+- POST /exports remains non-executing.
+- POST /exports/:jobId/execute remains dev/test-gated and synchronous with timeout guard.
+- Route behavior is unchanged — worker helper is manual one-shot drain only.
