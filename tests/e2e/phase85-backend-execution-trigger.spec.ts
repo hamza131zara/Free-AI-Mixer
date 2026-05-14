@@ -85,12 +85,22 @@ test.describe("phase85 backend execution trigger", () => {
       "utf8",
     );
 
-    expect(routeSource).not.toContain("executeRenderJob");
-    expect(routeSource).not.toContain("executeSingleProcessRender");
-    expect(routeSource).not.toContain("createRemotionRendererAdapter");
-    expect(routeSource).not.toContain("runRealRemotionSmokeTestOnly");
-    expect(routeSource).toContain('response.status(202).json({');
-    expect(routeSource).toContain('kind: "accepted_job"');
+    const postExportStart = routeSource.indexOf('router.post(\n    "/exports"');
+    const getExportStart = routeSource.indexOf('router.get(\n    "/exports/:jobId"');
+    const getArtifactsStart = routeSource.indexOf('router.get(\n    "/exports/:jobId/artifacts"');
+    const postExecuteStart = routeSource.indexOf('router.post(\n    "/exports/:jobId/execute"');
+
+    const originalRoutesSource = routeSource.slice(
+      postExportStart,
+      postExecuteStart > -1 ? postExecuteStart : routeSource.length
+    );
+
+    expect(originalRoutesSource).not.toContain("executeRenderJob");
+    expect(originalRoutesSource).not.toContain("executeSingleProcessRender");
+    expect(originalRoutesSource).not.toContain("createRemotionRendererAdapter");
+    expect(originalRoutesSource).not.toContain("runRealRemotionSmokeTestOnly");
+    expect(originalRoutesSource).toContain('response.status(202).json({');
+    expect(originalRoutesSource).toContain('kind: "accepted_job"');
   });
 
   test("internal trigger success path uses harness verification and reaches success", async () => {
