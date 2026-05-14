@@ -114,6 +114,8 @@ Why it matters:
 - Remotion runtime helper boundary exists from Phase 8.0-B; default runtime execution remains intentionally non-executing/truthful until a later audited real-runtime phase
 - `@remotion/bundler` dependency and runtime type boundary prep exist from Phase 8.1-B; real runtime bundle/selectComposition/renderMedia execution remains deferred
 - route auto-execution remains deferred
+- Phase 8.11-B safely stopped (app.ts lacked rendererAdapter/pathPolicy)
+- Phase 8.12-B adds backend dependency composition module (`backend/composition/backendDependencies.ts`) — composes registry, rendererAdapter, pathPolicy but does NOT wire them into exports router yet
 - verified output production remains deferred
 - artifact hosting/signed URL/download capability remains deferred
 - no public download URLs exist yet
@@ -216,7 +218,7 @@ Why it matters:
 Target fix phase:
 
 - Phase 4.6 and later timeline/video phases
-## Remotion runtime status (Phase 8.2-C accuracy)
+## Remotion runtime status (Phase 8.12-C accuracy)
 
 - Backend composition boundary scaffold exists (Phase 7.9).
 - Backend runtime helper boundary exists (Phase 8.0-B).
@@ -225,6 +227,11 @@ Target fix phase:
 - Adapter real-runtime boundary alignment exists (Phase 8.3-B) and is validated.
 - Harness-level real-runtime integration test milestone exists (Phase 8.4-B) and is validated.
 - Internal backend execution trigger milestone exists (Phase 8.5-B) and is validated.
+- Phase 8.11-B safely stopped (app.ts lacked rendererAdapter/pathPolicy).
+- Backend dependency composition boundary exists (Phase 8.12-B).
+  - `backend/composition/backendDependencies.ts` creates registry, rendererAdapter (no-op), pathPolicy.
+  - Dependencies are composed but NOT wired into exports router yet.
+  - Route behavior preserved: execute route returns 501 without dependencies.
 
 ### Still intentionally deferred
 
@@ -248,6 +255,9 @@ Target fix phase:
 - No server.ts wiring for worker startup yet.
 - No graceful shutdown integration yet.
 - No route enqueue behavior yet.
+- Backend dependency composition module exists (Phase 8.12-B) but dependencies are not wired into exports router yet.
+- rendererAdapter and pathPolicy composed but not passed to createExportRouter yet — execute route returns 501 without them.
+- process.cwd()-based pathPolicy roots are acceptable for dev/test but may need env override before production.
 
 ### Safety reminder
 

@@ -1221,3 +1221,66 @@ Status:
 - Route behavior is unchanged — POST /exports remains non-executing, POST /exports/:jobId/execute remains synchronous with timeout.
 - No route enqueue behavior.
 - Startup status does not expose local paths, filePath, URLs, download URLs, or signed URLs.
+
+## Phase 8.12-C — Backend Dependency Composition Module Docs Update
+
+Status:
+
+- Phase 8.12-A (audit) is complete.
+- Phase 8.12-B (backend dependency composition module) is complete and committed.
+- Phase 8.12-C is docs-only (this update).
+- Phase 8.12-D (final sign-off) remains pending.
+
+### Phase 8.12-B summary
+
+- Added backend dependency composition boundary: `backend/composition/backendDependencies.ts`.
+- Added composition function: `createBackendDependencies()`.
+- `createBackendDependencies()` returns:
+  - `registry`: InMemoryExportJobRegistry instance
+  - `rendererAdapter`: createRemotionRendererAdapter({ runtime: undefined }) — safe no-op default
+  - `pathPolicy`: RenderOutputPathPolicy using backend-local temp/output roots
+- pathPolicy uses `process.cwd()`-based roots: `.free-ai-mixer-temp` and `.free-ai-mixer-output`.
+- Added focused test: `tests/e2e/phase812-backend-dependencies.spec.ts`.
+
+### Intentional boundary: dependencies composed but NOT wired to router
+
+- rendererAdapter and pathPolicy are composed but NOT passed into createExportRouter in this phase.
+- app.ts passes only `dependencies.registry` into createExportRouter.
+- This preserves existing execute-route behavior: POST /exports/:jobId/execute returns 501 (not-configured) when dependencies are missing.
+- No route behavior change — POST /exports remains non-executing.
+
+### Boundaries preserved
+
+- backend/routes/exports.ts was NOT changed.
+- backend/server.ts was NOT changed.
+- No worker lifecycle wiring added.
+- No createRenderWorkerStartup call from app.ts.
+- No createRenderWorkerLoop call from app.ts.
+- No graceful shutdown integration.
+- No process signal handlers.
+- No route enqueue behavior.
+- No queue persistence.
+- No cancellation.
+- No frontend changes.
+- No artifact hosting.
+- No download URLs.
+- No signed URLs.
+- No local path leakage in public route responses.
+
+### Phase 8.11-B was safely stopped
+
+- Phase 8.11-B correctly stopped because app.ts lacked rendererAdapter/pathPolicy.
+- Phase 8.12-A audit found dependency composition was ready.
+- Phase 8.12-B created a small composition module without changing route behavior.
+
+### Deferred items tracked in known-issues.md
+
+- rendererAdapter/pathPolicy composed but not wired into exports router yet.
+- Worker lifecycle still not wired into app.ts.
+- No graceful shutdown integration yet.
+- No production auto-start yet.
+- No route enqueue behavior yet.
+- No durable queue/persistence yet.
+- No cancellation yet.
+- No frontend async worker integration yet.
+- process.cwd()-based roots are acceptable for dev/test but may need env override before production.
