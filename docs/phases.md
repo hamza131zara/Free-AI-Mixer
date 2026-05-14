@@ -1052,3 +1052,33 @@ Status:
 - Output path resolution and artifact verification remain harness-owned.
 - `POST /exports` remains non-executing.
 - Download capability is still not available.
+
+## Phase 8.6-C — Backend Route Execution Trigger Docs Update
+
+- Phase 8.6-A (audit) is complete.
+- Phase 8.6-B (dev/test-gated route execution trigger) is complete and committed.
+- Commit message: `feat(phase-8.6): add backend route execution trigger boundary`.
+- Phase 8.6-C is docs-only (this update).
+- Phase 8.6-D (final sign-off) remains pending.
+
+### Phase 8.6-B summary
+
+- Added dev/test-gated route execution trigger: `POST /exports/:jobId/execute`.
+- Route execution is gated by environment variable: `FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION=1`.
+- When env flag is missing, trigger route returns 503 with clear disabled message.
+- When enabled but `rendererAdapter`/`pathPolicy` not configured, returns 501.
+- When configured, route delegates to `executeRenderJob` (which delegates to harness).
+- `POST /exports` remains non-executing (unchanged from Phase 8.5).
+- Added focused test: `tests/e2e/phase86-backend-route-execution-trigger.spec.ts`.
+- TypeScript import fix applied: `RenderOutputPathPolicy` imported from correct module.
+
+### Boundaries preserved
+
+- Route does not directly call `registry.markSuccess`, `registry.markError`, or lifecycle mutation methods.
+- Lifecycle ownership remains inside `executeRenderJob` / `executeSingleProcessRender` / harness / registry.
+- No local filesystem path is returned in API responses.
+- No artifact hosting or download URLs.
+- No queue/worker/scheduler implementation.
+- No POST /exports auto-execution.
+- No frontend changes.
+- Synchronous HTTP execution remains a known deferred limitation (route blocks request until complete).

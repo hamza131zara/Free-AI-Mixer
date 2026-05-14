@@ -235,6 +235,8 @@ Target fix phase:
 - Real user-media decoding in renderer path.
 - Durable queue/worker/scheduler/database-backed renderer execution flow.
 - Frontend export lifecycle integration with real backend completion.
+- Synchronous HTTP route execution blocks request until render completes (no async queue/worker yet).
+- Route trigger (`POST /exports/:jobId/execute`) is dev/test-gated only; not production-exposed.
 
 ### Safety reminder
 
@@ -243,3 +245,4 @@ Target fix phase:
 - Adapter boundary alignment does not mean production rendering rollout is complete.
 - Harness opt-in test coverage does not mean production renderer rollout is complete.
 - Internal trigger availability does not mean route execution is enabled or production rollout is complete.
+- Dev/test-gated route trigger (`POST /exports/:jobId/execute`) is now available behind `FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION=1` but still requires env flag and executor configuration; it is not production-ready auto-execution.
