@@ -15,9 +15,22 @@ import { toJobHandle } from "../contracts/exportHttpTypes";
 import { executeRenderJob } from "../renderer/executeRenderJob";
 import type { RendererAdapter } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
+import type { BackendArtifactMetadata } from "../contracts/exportHttpTypes";
 
 const isRouteExecutionEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION === "1";
+
+const getRouteExecutionTimeout = (): number => {
+  const envValue = process.env.FREE_AI_MIXER_ROUTE_EXECUTION_TIMEOUT_MS;
+  const parsed = parseInt(envValue ?? "", 10);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    return 120000;
+  }
+  return parsed;
+};
+
+const wait = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface ExportRouterOptions {
   rendererAdapter?: RendererAdapter;
@@ -141,7 +154,8 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         },
       };
 
-      const result = await executeRenderJob({
+      const timeoutMs = getRouteExecutionTimeout();
+      const renderPromise = executeRenderJob({
         registry,
         rendererAdapter: options.rendererAdapter,
         pathPolicy: options.pathPolicy,
@@ -149,20 +163,40 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         jobId: record.jobId,
         snapshotInput,
       });
+      const timeoutPromise = wait(timeoutMs).then(() => ({ timedOut: true }));
+
+      const outcome = await Promise.race([renderPromise, timeoutPromise]) as
+        | { ok: true; jobId: string; status: string; artifact: unknown }
+        | { ok: false; jobId: string; status: string; failure: unknown }
+        | { timedOut: true };
+
+      if ("timedOut" in outcome && outcome.timedOut) {
+        response.status(504).json({
+          code: "route_execution_timeout",
+          message: "Route execution response timed out before completion. The job may still be running; poll the job state for the latest lifecycle status.",
+          jobId: record.jobId,
+        });
+        return;
+      }
+
+      const result = outcome as
+        | { ok: true; jobId: string; status: string; artifact: BackendArtifactMetadata }
+        | { ok: false; jobId: string; status: string; failure: unknown };
 
       if (result.ok) {
+        const artifact = result.artifact as BackendArtifactMetadata;
         response.json({
           kind: "executed",
           jobId: result.jobId,
           status: result.status,
           artifact: {
-            artifactId: result.artifact.artifactId,
-            jobId: result.artifact.jobId,
-            kind: result.artifact.kind,
-            format: result.artifact.format,
-            status: result.artifact.status,
-            createdAt: result.artifact.createdAt,
-            sizeBytes: result.artifact.sizeBytes,
+            artifactId: artifact.artifactId,
+            jobId: artifact.jobId,
+            kind: artifact.kind,
+            format: artifact.format,
+            status: artifact.status,
+            createdAt: artifact.createdAt,
+            ...(artifact.sizeBytes !== undefined ? { sizeBytes: artifact.sizeBytes } : {}),
           },
         });
       } else {
