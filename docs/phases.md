@@ -2661,10 +2661,79 @@ Scope:
 
 ### Deferred items
 
-- local dev stream provider implementation
+- local dev stream provider implementation (completed in Phase 11-F)
 - backend stream route
 - provider wiring to app/router
 - path-root validation implementation
+- production signed URL provider
+- frontend artifact access service
+- frontend download UI
+
+---
+
+## Phase 11-F — Local Dev Stream Provider Implementation
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only implementation
+- provider only
+- no route wiring
+- no stream route
+- no app wiring
+
+### Phase 11-F completion summary
+
+- Created `backend/artifacts/localDevArtifactAccessProvider.ts`
+- Added `LocalDevProviderOptions` interface with injected functions:
+  - `resolveArtifactStorageRef` — lookup internal storage ref from job/artifact
+  - `streamUrlForArtifact` — generate backend route URL for streaming
+  - `isPathWithinRoot` — validate file path is within allowed root
+- Added `createLocalDevArtifactAccessProvider(options)` factory
+- Provider implements `ArtifactAccessProvider` interface
+- Added URL safety validation (`isSafeBackendRouteUrl`)
+- Tests added: `tests/e2e/phase11-local-dev-provider.spec.ts` (20 tests)
+
+### Provider behavior
+
+Returns `artifact_access_ready` with `access.kind: local_dev_stream` when:
+- Internal storage ref exists
+- Path is within allowed root
+- Verified artifact metadata exists
+- Stream URL is safe (backend route, not file path)
+
+Returns `artifact_access_unavailable` when:
+- Storage ref missing → reason: `artifact_not_found`
+- Artifact metadata missing → reason: `artifact_not_found`
+- Path outside allowed root → reason: `artifact_not_ready`
+- Stream URL unsafe → reason: `artifact_not_ready`
+
+### URL/path safety rules
+
+- Stream URL must be safe backend route (starts with `/exports/`)
+- Rejects `file://` URLs
+- Rejects Windows paths (`C:\`)
+- Rejects path traversal (`..`)
+- Rejects backslashes
+- Never returns `filePath`, `rootPath`, `directoryPath`, `storageKey` in response
+
+### What was NOT added
+
+- No stream route implementation
+- No route wiring
+- No app/dependency wiring
+- No file serving/streaming
+- No file existence checking
+- No frontend changes
+
+### Deferred items
+
+- backend stream route audit/implementation
+- provider wiring to app/router
+- file existence check at stream time
 - production signed URL provider
 - frontend artifact access service
 - frontend download UI

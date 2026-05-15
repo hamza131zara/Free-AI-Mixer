@@ -173,6 +173,14 @@ Why it matters:
   - Prerequisite for future local dev stream provider
   - No provider implementation yet
   - No stream route yet
+- Phase 11-F adds local dev stream provider:
+  - backend/artifacts/localDevArtifactAccessProvider.ts with createLocalDevArtifactAccessProvider
+  - LocalDevProviderOptions with injected resolveArtifactStorageRef, streamUrlForArtifact, isPathWithinRoot
+  - Returns local_dev_stream access when ref exists, path is safe, URL is safe
+  - Rejects file://, Windows paths, path traversal in URLs
+  - No stream route implementation yet
+  - No route wiring yet
+  - No file serving yet
 
 Target fix phase:
 
