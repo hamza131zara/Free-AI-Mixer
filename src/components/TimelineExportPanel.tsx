@@ -6,6 +6,7 @@ import {
   selectExportFailure,
   selectExportIsInFlight,
   selectExportResultArtifacts,
+  selectHasPersistedHandle,
   useExportStore,
 } from "../store/exportStore";
 import type { ExportArtifactRef } from "../types/exportJob";
@@ -65,6 +66,17 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
   const isResolving = useExportStore((state) =>
     resolvedTimelineId ? !!state.isResolvingByTimelineId[resolvedTimelineId] : false,
   );
+  const reconnectExport = useExportStore((state) => state.reconnectExport);
+  const hasPersistedHandle = useExportStore((state) =>
+    timelineId ? selectHasPersistedHandle(state, timelineId) : false,
+  );
+
+  // Reconnect button: show when persisted handle exists but no active store state
+  const showReconnectButton =
+    !!timelineId &&
+    hasPersistedHandle &&
+    !hasExportStateForTimeline &&
+    !isResolving;
 
   const statusMessage = useMemo(() => {
     if (!timelineId) {
@@ -137,6 +149,20 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
             disabled={!canResumeExport}
           >
             Resume export
+          </button>
+        ) : null}
+        {showReconnectButton ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (!timelineId) {
+                return;
+              }
+              void reconnectExport(timelineId);
+            }}
+            disabled={isResolving}
+          >
+            {isResolving ? "Reconnecting..." : "Reconnect export"}
           </button>
         ) : null}
         <button

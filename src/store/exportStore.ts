@@ -800,6 +800,15 @@ export const selectEffectiveExportResumeStateByTimelineId = (
   return (persisted?.resumeState as ExportResumeState | undefined) ?? "none";
 };
 
+export const selectHasPersistedHandle = (
+  state: ExportStoreState,
+  timelineId: TimelineId,
+): boolean => {
+  // Read from exportHandleStorage - no state mutation, no backend call
+  const handle = getExportHandle(timelineId);
+  return !!handle;
+};
+
 useExportStore.persist.onFinishHydration(() => {
   useExportStore.setState({
     hasHydrated: true,
