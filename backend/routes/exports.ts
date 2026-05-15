@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import type {
+  BackendArtifactAccessResponse,
   BackendArtifactMetadata,
   BackendExportLifecycleStatus,
   BackendExportJobRecord,
@@ -18,6 +19,8 @@ import { toJobHandle } from "../contracts/exportHttpTypes";
 import { executeRenderJob } from "../renderer/executeRenderJob";
 import type { RendererAdapter } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
+import type { ArtifactAccessProvider } from "../artifacts/artifactAccessProvider";
+import { createNotConfiguredArtifactAccessProvider } from "../artifacts/notConfiguredArtifactAccessProvider";
 
 const isRouteExecutionEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION === "1";
@@ -83,10 +86,14 @@ const mapRecordToPollResponse = (
 export interface ExportRouterOptions {
   rendererAdapter?: RendererAdapter;
   pathPolicy?: RenderOutputPathPolicy;
+  artifactAccessProvider?: ArtifactAccessProvider;
 }
 
 export const createExportRouter = (registry: ExportJobRegistry, options?: ExportRouterOptions): Router => {
   const router = Router();
+
+  // Artifact access provider: use injected or default to not-configured
+  const artifactAccessProvider = options?.artifactAccessProvider ?? createNotConfiguredArtifactAccessProvider();
 
   router.post(
     "/exports",
@@ -144,6 +151,71 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       response.status(error.status).json(
         error.body as ExportArtifactsUnavailableResponseBody,
       );
+    },
+  );
+
+  router.get(
+    "/exports/:jobId/artifacts/:artifactId/access",
+    async (
+      request: Request<{ jobId: string; artifactId: string }, BackendArtifactAccessResponse>,
+      response: Response<BackendArtifactAccessResponse>,
+    ) => {
+     const { jobId } = parseJobIdParams(request.params);
+     const { artifactId } = request.params;
+      const record = registry.getById(jobId);
+
+      if (!record) {
+        response.json({
+          kind: "artifact_access_unavailable",
+          reason: "job_not_found",
+          message: "Export job was not found.",
+        });
+        return;
+      }
+
+      if (record.status !== "success") {
+        response.json({
+          kind: "artifact_access_unavailable",
+          reason: "job_not_successful",
+          message: "Artifact access is available only for successful export jobs.",
+        });
+        return;
+      }
+
+      const artifact = (record.artifacts ?? []).find((a) => a.artifactId === artifactId);
+
+      if (!artifact) {
+        response.json({
+          kind: "artifact_access_unavailable",
+          reason: "artifact_not_found",
+          message: "Artifact was not found for this export job.",
+        });
+        return;
+      }
+
+      if (artifact.status && artifact.status !== "available") {
+        response.json({
+          kind: "artifact_access_unavailable",
+          reason: "artifact_not_ready",
+          message: "Artifact is not ready for access.",
+        });
+        return;
+      }
+
+      try {
+        const accessResponse = await artifactAccessProvider.getArtifactAccess({
+          jobId,
+          artifactId,
+          artifact,
+        });
+        response.json(accessResponse);
+      } catch {
+        response.json({
+          kind: "artifact_access_unavailable",
+          reason: "artifact_access_not_configured",
+          message: "Artifact access is not configured.",
+        });
+      }
     },
   );
 

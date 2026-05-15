@@ -106,15 +106,36 @@ test.describe("phase9 artifact access provider boundary", () => {
     expect(source).not.toContain("sendFile");
   });
 
-  test("backend/routes/exports.ts remains unchanged by this phase", async () => {
-    const source = await fs.readFile(
-      path.join(process.cwd(), "backend", "routes", "exports.ts"),
-      "utf8",
-    );
+ test("backend/routes/exports.ts uses provider boundary without unsafe artifact access behavior", async () => {
+  const source = await fs.readFile(
+    path.join(process.cwd(), "backend", "routes", "exports.ts"),
+    "utf8",
+  );
 
-    expect(source).not.toContain("ArtifactAccessProvider");
-    expect(source).not.toContain("artifactAccessProvider");
-  });
+  expect(source).toContain("ArtifactAccessProvider");
+  expect(source).toContain("createNotConfiguredArtifactAccessProvider");
+  expect(source).toContain("/exports/:jobId/artifacts/:artifactId/access");
+
+  const forbiddenTerms = [
+    '"filePath"',
+    '"localPath"',
+    '"outputPath"',
+    '"absolutePath"',
+    '"filesystemPath"',
+    '"storageKey"',
+    '"downloadUrl"',
+    "createReadStream",
+    "sendFile",
+    "express.static",
+    "getSignedUrl",
+    "createSigned",
+    "presign",
+  ];
+
+  for (const term of forbiddenTerms) {
+    expect(source).not.toContain(term);
+  }
+});
 
   test("no frontend files changed in this phase", async () => {
     const timelineExportSource = await fs.readFile(

@@ -1,17 +1,40 @@
 import { expect, test } from "@playwright/test";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import type { BackendArtifactAccessResponse } from "../../backend/contracts/exportHttpTypes";
+
+const expectUnavailableResponse = (
+  response: BackendArtifactAccessResponse,
+) => {
+  expect(response.kind).toBe("artifact_access_unavailable");
+
+  if (response.kind !== "artifact_access_unavailable") {
+    throw new Error("Expected artifact_access_unavailable response.");
+  }
+
+  return response;
+};
 
 test.describe("phase9 not-configured artifact access provider", () => {
   test("notConfiguredArtifactAccessProvider.ts exists", async () => {
     await fs.access(
-      path.join(process.cwd(), "backend", "artifacts", "notConfiguredArtifactAccessProvider.ts"),
+      path.join(
+        process.cwd(),
+        "backend",
+        "artifacts",
+        "notConfiguredArtifactAccessProvider.ts",
+      ),
     );
   });
 
   test("createNotConfiguredArtifactAccessProvider is exported", async () => {
     const source = await fs.readFile(
-      path.join(process.cwd(), "backend", "artifacts", "notConfiguredArtifactAccessProvider.ts"),
+      path.join(
+        process.cwd(),
+        "backend",
+        "artifacts",
+        "notConfiguredArtifactAccessProvider.ts",
+      ),
       "utf8",
     );
 
@@ -24,6 +47,7 @@ test.describe("phase9 not-configured artifact access provider", () => {
     );
 
     const provider = createNotConfiguredArtifactAccessProvider();
+
     expect(typeof provider.getArtifactAccess).toBe("function");
   });
 
@@ -38,7 +62,7 @@ test.describe("phase9 not-configured artifact access provider", () => {
       artifactId: "any-artifact",
     });
 
-    expect(result.kind).toBe("artifact_access_unavailable");
+    expectUnavailableResponse(result);
   });
 
   test("reason is artifact_access_not_configured", async () => {
@@ -52,7 +76,9 @@ test.describe("phase9 not-configured artifact access provider", () => {
       artifactId: "any-artifact",
     });
 
-    expect(result.reason).toBe("artifact_access_not_configured");
+    const unavailable = expectUnavailableResponse(result);
+
+    expect(unavailable.reason).toBe("artifact_access_not_configured");
   });
 
   test("message is present and non-empty", async () => {
@@ -66,8 +92,10 @@ test.describe("phase9 not-configured artifact access provider", () => {
       artifactId: "any-artifact",
     });
 
-    expect(typeof result.message).toBe("string");
-    expect(result.message.length).toBeGreaterThan(0);
+    const unavailable = expectUnavailableResponse(result);
+
+    expect(typeof unavailable.message).toBe("string");
+    expect(unavailable.message.length).toBeGreaterThan(0);
   });
 
   test("response does not contain url", async () => {
@@ -96,13 +124,17 @@ test.describe("phase9 not-configured artifact access provider", () => {
       artifactId: "any-artifact",
     });
 
-    // Unavailable responses don't include access descriptor
     expect(result).not.toHaveProperty("access");
   });
 
   test("source does not contain forbidden path/storage fields", async () => {
     const source = await fs.readFile(
-      path.join(process.cwd(), "backend", "artifacts", "notConfiguredArtifactAccessProvider.ts"),
+      path.join(
+        process.cwd(),
+        "backend",
+        "artifacts",
+        "notConfiguredArtifactAccessProvider.ts",
+      ),
       "utf8",
     );
 
@@ -117,25 +149,42 @@ test.describe("phase9 not-configured artifact access provider", () => {
 
   test("source does not import backend/renderer", async () => {
     const source = await fs.readFile(
-      path.join(process.cwd(), "backend", "artifacts", "notConfiguredArtifactAccessProvider.ts"),
+      path.join(
+        process.cwd(),
+        "backend",
+        "artifacts",
+        "notConfiguredArtifactAccessProvider.ts",
+      ),
       "utf8",
     );
 
     expect(source).not.toContain("backend/renderer");
+    expect(source).not.toContain("../renderer");
   });
 
   test("source does not import backend/routes", async () => {
     const source = await fs.readFile(
-      path.join(process.cwd(), "backend", "artifacts", "notConfiguredArtifactAccessProvider.ts"),
+      path.join(
+        process.cwd(),
+        "backend",
+        "artifacts",
+        "notConfiguredArtifactAccessProvider.ts",
+      ),
       "utf8",
     );
 
     expect(source).not.toContain("backend/routes");
+    expect(source).not.toContain("../routes");
   });
 
   test("source does not import fs or path", async () => {
     const source = await fs.readFile(
-      path.join(process.cwd(), "backend", "artifacts", "notConfiguredArtifactAccessProvider.ts"),
+      path.join(
+        process.cwd(),
+        "backend",
+        "artifacts",
+        "notConfiguredArtifactAccessProvider.ts",
+      ),
       "utf8",
     );
 
@@ -144,14 +193,35 @@ test.describe("phase9 not-configured artifact access provider", () => {
     expect(source).not.toContain("import.meta.url");
   });
 
-  test("backend/routes/exports.ts remains unchanged", async () => {
+  test("backend/routes/exports.ts safety boundaries preserved", async () => {
     const source = await fs.readFile(
       path.join(process.cwd(), "backend", "routes", "exports.ts"),
       "utf8",
     );
 
-    expect(source).not.toContain("notConfiguredArtifactAccessProvider");
-    expect(source).not.toContain("ArtifactAccessProvider");
+    // Phase 10-B allows the route to use the not-configured provider as a safe default.
+    expect(source).toContain("createNotConfiguredArtifactAccessProvider");
+    expect(source).toContain("ArtifactAccessProvider");
+
+    const forbiddenTerms = [
+      '"filePath"',
+      '"localPath"',
+      '"outputPath"',
+      '"absolutePath"',
+      '"filesystemPath"',
+      '"storageKey"',
+      '"downloadUrl"',
+      "createSigned",
+      "getSignedUrl",
+      "presign",
+      "createReadStream",
+      "sendFile",
+      "express.static",
+    ];
+
+    for (const term of forbiddenTerms) {
+      expect(source).not.toContain(term);
+    }
   });
 
   test("frontend files remain unchanged", async () => {
@@ -171,7 +241,6 @@ test.describe("phase9 not-configured artifact access provider", () => {
     );
 
     expect(source).not.toContain("notConfiguredArtifactAccessProvider");
-    // Should still have artifact_access_not_configured in reason enum
     expect(source).toContain("artifact_access_not_configured");
   });
 });

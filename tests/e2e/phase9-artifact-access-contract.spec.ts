@@ -78,16 +78,36 @@ test.describe("phase9 artifact access contract boundary", () => {
     expect(interfaceBody).not.toContain("filePath");
   });
 
-  test("No backend route files changed in this phase", async () => {
-    await fs.access(path.join(process.cwd(), "backend", "routes", "exports.ts"));
-    const source = await fs.readFile(
-      path.join(process.cwd(), "backend", "routes", "exports.ts"),
-      "utf8",
-    );
+test("backend route artifact access usage remains contract-safe after Phase 10 wiring", async () => {
+  const source = await fs.readFile(
+    path.join(process.cwd(), "backend", "routes", "exports.ts"),
+    "utf8",
+  );
 
-    expect(source).not.toContain("artifact_access");
-    expect(source).not.toContain("BackendArtifactAccess");
-  });
+  expect(source).toContain("BackendArtifactAccessResponse");
+  expect(source).toContain("artifact_access_unavailable");
+  expect(source).toContain("/exports/:jobId/artifacts/:artifactId/access");
+
+  const forbiddenTerms = [
+    '"filePath"',
+    '"localPath"',
+    '"outputPath"',
+    '"absolutePath"',
+    '"filesystemPath"',
+    '"storageKey"',
+    '"downloadUrl"',
+    "createReadStream",
+    "sendFile",
+    "express.static",
+    "getSignedUrl",
+    "createSigned",
+    "presign",
+  ];
+
+  for (const term of forbiddenTerms) {
+    expect(source).not.toContain(term);
+  }
+});
 
   test("No frontend files changed in this phase", async () => {
     const timelineExportSource = await fs.readFile(
