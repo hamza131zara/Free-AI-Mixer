@@ -2011,3 +2011,66 @@ Status:
 - No artifact hosting/download persistence yet.
 - No frontend async persistence UX yet.
 - JSON persistence remains dev/local only.
+
+## Phase 8.22-B — Frontend Export Status Refresh Service Boundary
+
+### What was added
+
+Frontend export status refresh service boundary now exists:
+
+- `src/store/exportStore.ts` exports `refreshExportStatus` action
+- `refreshExportStatus(timelineId)` polls backend GET /exports/:jobId
+- Uses existing `pollExportJob` from `src/services/exportService.ts`
+- Applies result via `applyExportPollEvent` to update store state
+- Returns updated `ExportTimelineState` or `undefined`
+- Works with persisted jobs that have `handle.jobId` or `requestId`
+- No polling loop, no automatic refresh — only manual trigger
+
+### Frontend refresh boundary contract
+
+```typescript
+interface ExportStoreState {
+  refreshExportStatus: (
+    timelineId: TimelineId,
+    options?: { signal?: AbortSignal },
+  ) => Promise<ExportTimelineState | undefined>;
+}
+```
+
+### Frontend refresh usage pattern
+
+```typescript
+// Manual refresh button click handler
+const handleRefresh = async () => {
+  const updated = await exportStore.getState().refreshExportStatus(timelineId);
+  // Store updated, UI re-renders with latest status
+};
+```
+
+### What was NOT added
+
+- No automatic polling loop in frontend.
+- No polling interval/timer implementation.
+- No WebSocket/SSE real-time updates.
+- No retry with backoff logic.
+- No background refresh while app is in background.
+- No shared worker or service worker integration.
+- No optimistic UI updates before confirmation.
+- No batch refresh for multiple timelines.
+
+### Test coverage
+
+`tests/e2e/phase822-frontend-refresh.spec.ts` verifies:
+- Backend returns truthful status for persisted job (GET /exports/:jobId)
+- Frontend refresh polls backend and receives valid response
+- Persisted job survives backend restart (recreated app reads same file)
+- Refresh works for job with handle.jobId and for reconstructed handles
+- 4/4 tests passing
+
+### Safety boundaries
+
+- `refreshExportStatus` always uses `pollExportJob` from exportService
+- No local paths/URLs exposed in frontend state
+- Status mapping respects backend contract (pending/success/failure)
+- No fake success/progress before actual backend confirmation
+- Resume state classification happens after status refresh

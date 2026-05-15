@@ -362,7 +362,8 @@ Still deferred:
 - No large-scale query/indexing support yet
 - No artifact hosting/download persistence yet
 - No cancellation yet
-- No frontend async persistence UX yet
+- Frontend manual refresh boundary exists (Phase 8.22-B); automatic polling loop not implemented yet
+- No retry with backoff, no WebSocket/SSE real-time updates, no background refresh
 
 ### Safety reminder
 
