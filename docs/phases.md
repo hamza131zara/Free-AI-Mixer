@@ -2169,3 +2169,100 @@ clearAllExportHandles(): void
 - UI component to trigger reconnect not added yet
 - Automatic polling remains deferred
 - Artifact hosting/download URLs remain deferred
+
+## Phase 8.24-B — Manual Reconnect Store Action
+
+### What was added
+
+Store-only manual reconnect that loads persisted handle and triggers a single refresh:
+
+- `src/store/exportStore.ts` — added `reconnectExport(timelineId, options?)` action
+- `tests/e2e/phase824-reconnect.spec.ts` — 11 focused tests
+
+### reconnectExport behavior
+
+```typescript
+reconnectExport: async (timelineId, options) => {
+  // 1. Load persisted handle from exportHandleStorage
+  const persisted = getExportHandle(timelineId);
+  if (!persisted) return undefined;
+
+  // 2. Seed minimal ExportTimelineState for refreshExportStatus
+  const initialState: ExportTimelineState = {
+    timelineId,
+    requestId: persisted.requestId,
+    lifecycle: "submitted",
+    handle: {
+      provider: "backend_render",
+      requestId: persisted.requestId,
+      jobId: persisted.jobId,
+      status: "submitted",
+    },
+    submittedAt: persisted.submittedAt,
+    lastPolledAt: new Date().toISOString(),
+    resumeState: "none",
+  };
+
+  // 3. Write to store
+  set((state) => ({
+    jobsByTimelineId: {
+      ...state.jobsByTimelineId,
+      [timelineId]: initialState,
+    },
+  }));
+
+  // 4. Call refreshExportStatus once (single poll, not polling loop)
+  const result = await get().refreshExportStatus(timelineId, options);
+
+  // 5. Update lastCheckedAt in localStorage on success
+  if (result) {
+    saveExportHandle({
+      ...persisted,
+      lastCheckedAt: new Date().toISOString(),
+    });
+  }
+
+  return result;
+}
+```
+
+### Key behaviors
+
+- Returns `undefined` if no persisted handle exists
+- Seeds store with minimal state before calling refresh
+- Calls `refreshExportStatus` exactly once — no polling loop
+- Updates `lastCheckedAt` in localStorage after successful refresh
+- Handles corrupt localStorage, network errors, and 404 gracefully
+- Does not fake progress, success, artifacts, or downloads
+
+### Test coverage
+
+`tests/e2e/phase824-reconnect.spec.ts` verifies:
+- Returns undefined when no persisted handle exists
+- Loads persisted handle and seeds store
+- Seeds minimal state without fake progress
+- Calls refreshExportStatus once (fetch called exactly once)
+- Updates lastCheckedAt after successful refresh
+- Handles corrupt localStorage safely
+- Handles backend 404 gracefully without throwing
+- Handles network errors without throwing
+- Does not add polling loop (exactly 1 fetch call)
+- Source does not contain setInterval/setTimeout
+
+### What was NOT added
+
+- No UI reconnect button
+- No automatic reconnect on app load
+- No automatic polling loop
+- No artifact hosting/download URLs
+- No backend changes
+- No route changes
+- No worker changes
+- No fake progress/success/artifacts/downloads
+
+### Deferred items
+
+- Reconnect button/UI not added yet
+- Automatic reconnect on app load deferred
+- Automatic polling remains deferred
+- Artifact hosting/download URLs remain deferred
