@@ -324,10 +324,24 @@ JSON file persistence adapter exists (Phase 8.19-B):
 - Sanitized failure/artifact persistence (no paths/URLs/details)
 - .gitignore entries for persistence files
 
+### Persistence Runtime Local Smoke (Phase 8.20-B)
+
+Persistence runtime smoke test exists (Phase 8.20-B):
+- tests/e2e/phase820-persistence-runtime-smoke.spec.ts verifies persistence through real HTTP flow
+- Uses app.listen on ephemeral port + fetch against real routes
+- Does not use Express app.request as HTTP client
+- Verifies POST /exports writes persistence file
+- Verifies recreated app can GET truthful pending status
+- Verifies requestId idempotency survives restart
+- Verifies no path/URL leakage in persisted JSON
+- Worker and route execution remain disabled during smoke
+- No production persistence runtime mode yet
+
 Still deferred:
 - JSON persistence is local/dev only
 - No production DB adapter yet (Postgres, Redis, SQLite)
 - No multi-process locking yet
+- No production persistence runtime mode yet
 - No large-scale query/indexing support yet
 - No artifact hosting/download persistence yet
 - No cancellation yet

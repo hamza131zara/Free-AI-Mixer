@@ -1856,3 +1856,68 @@ Uses Phase 8.18 recovery policy on load:
 - No artifact hosting/download persistence yet.
 - No cancellation yet.
 - No frontend async persistence UX yet.
+
+## Phase 8.20-C — Persistence Runtime Local Smoke Test Docs Update
+
+Status:
+
+- Phase 8.20-A (persistence runtime integration audit) is complete.
+- Phase 8.20-B (persistence runtime local smoke test) is complete and committed.
+- Phase 8.20-C is docs-only (this update).
+- Phase 8.20-D (final sign-off) remains pending.
+
+### Phase 8.20-A finding: persistence adapter is ready for runtime smoke
+
+- JsonFileExportJobRegistry is already wired through createBackendDependencies.
+- createApp already uses createBackendDependencies.
+- Routes already use the registry.
+- GET /exports/:jobId already maps status truthfully.
+- No route/app/server/worker changes are needed.
+- Safe next step: add focused runtime/local smoke test.
+
+### Phase 8.20-B implementation summary
+
+- Added runtime/local smoke test: tests/e2e/phase820-persistence-runtime-smoke.spec.ts.
+- Test uses real HTTP server (app.listen on ephemeral port) + fetch.
+- Test does NOT use Express app.request as HTTP client.
+- Test env setup:
+  - FREE_AI_MIXER_PERSISTENCE_ENABLED=true
+  - FREE_AI_MIXER_PERSISTENCE_FILE_PATH=<test temp file>
+  - FREE_AI_MIXER_ENABLE_WORKER_STARTUP not set (worker disabled)
+  - FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION not set (execution disabled)
+- Test verifies POST /exports creates accepted_job and writes persistence file.
+- Test verifies persisted JSON structure: version, jobs, requestIdToJobId, updatedAt.
+- Test verifies recreated app with same persistence file can GET truthful pending status.
+- Test verifies requestId idempotency survives recreated app.
+- Test verifies persistence disabled by default when env flag missing.
+- Test verifies route execution not triggered during smoke.
+- Test verifies worker lifecycle does not process jobs during smoke.
+- Test verifies recovered rendering job returns truthful pending via recovery policy.
+- Test cleanup: env vars restored, temp files deleted after each test.
+
+### What was NOT added
+
+- No backend implementation changes.
+- No route behavior changes.
+- No worker behavior changes.
+- No app.ts/server.ts changes.
+- No frontend changes.
+- No artifact hosting/download URLs.
+- No local path leakage.
+
+### Phase 8.20 test additions
+
+- Added tests/e2e/phase820-persistence-runtime-smoke.spec.ts (8 tests).
+- Tests use real HTTP flow with fetch against ephemeral local server.
+- Tests verify persistence through createApp + route endpoints.
+- Tests verify no path/URL leakage in persisted JSON.
+- All focused tests pass.
+
+### Deferred items (unchanged scope)
+
+- No production DB adapter yet.
+- No multi-process locking yet.
+- No production persistence runtime mode yet.
+- No artifact hosting/download persistence yet.
+- No frontend async persistence UX yet.
+- No cancellation yet.

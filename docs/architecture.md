@@ -1065,3 +1065,16 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - RequestId idempotency survives restart.
 - Recovery-on-load uses Phase 8.18 policy.
 - Sanitized persistence: no failure.details, no artifact paths/URLs.
+
+### Persistence Runtime Local Smoke (Phase 8.20-B complete)
+
+- Phase 8.20-B added focused runtime/local smoke test.
+- tests/e2e/phase820-persistence-runtime-smoke.spec.ts verifies persistence through real HTTP flow.
+- Test uses app.listen on ephemeral port + fetch against real routes.
+- Does not use Express app.request as HTTP client.
+- Verifies POST /exports creates job and writes persistence file.
+- Verifies recreated app can GET truthful pending status.
+- Verifies requestId idempotency survives restart.
+- Verifies persisted JSON has no path/URL leakage.
+- Worker and route execution disabled during smoke.
+- No production persistence runtime mode yet.
