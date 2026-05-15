@@ -2478,8 +2478,58 @@ Scope:
 
 ### Deferred items
 
-- not-configured provider implementation
+- not-configured provider implementation (completed in Phase 9-J)
 - route access audit/implementation
+- local dev backend stream route
+- production signed URL provider
+- frontend artifact access service
+- frontend download UI
+- auth/authorization for artifact access
+
+---
+
+## Phase 9-J — Not-Configured Artifact Access Provider Implementation
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only implementation
+- no route behavior changes
+- no dependency wiring
+- no storage provider implementation
+
+### Phase 9-J completion summary
+
+- Created `backend/artifacts/notConfiguredArtifactAccessProvider.ts`
+- Added `createNotConfiguredArtifactAccessProvider` factory
+- Factory returns `ArtifactAccessProvider`-compliant object with `getArtifactAccess` method
+- `getArtifactAccess` returns truthful `artifact_access_unavailable` response:
+  - `kind: "artifact_access_unavailable"`
+  - `reason: "artifact_access_not_configured"`
+  - `message: "Artifact access is not configured. A storage provider must be configured before artifacts can be accessed."`
+- Response does NOT include `url` or `access` descriptor
+- Tests added: `tests/e2e/phase9-not-configured-provider.spec.ts` (15 tests)
+
+### What was NOT added
+
+- No route wiring
+- No dependency composition wiring
+- No storage provider implementation
+- No signed URL generation
+- No local file serving
+- No URL in response
+- No access descriptor in response
+- No renderer/harness/runtime imports
+- No fs/path imports
+- No frontend changes
+
+### Deferred items
+
+- route access audit/implementation
+- provider dependency wiring to app/router
 - local dev backend stream route
 - production signed URL provider
 - frontend artifact access service

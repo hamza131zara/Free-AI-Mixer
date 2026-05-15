@@ -148,6 +148,13 @@ Why it matters:
   - Provider is lifecycle-neutral (does not mutate job state)
   - Provider is renderer-neutral (does not import renderer)
   - Provider is route-neutral (does not import routes)
+- Phase 9-J adds not-configured provider implementation:
+  - backend/artifacts/notConfiguredArtifactAccessProvider.ts with createNotConfiguredArtifactAccessProvider
+  - Factory returns truthful artifact_access_unavailable response
+  - Response does not include url or access descriptor
+  - No route wiring yet
+  - No dependency composition yet
+  - No storage provider yet
 
 Target fix phase:
 
