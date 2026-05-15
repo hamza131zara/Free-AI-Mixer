@@ -155,6 +155,16 @@ Why it matters:
   - No route wiring yet
   - No dependency composition yet
   - No storage provider yet
+- Phase 10-B adds artifact access route:
+  - GET /exports/:jobId/artifacts/:artifactId/access
+  - Route validates job exists and is successful
+  - Route validates artifact exists and is ready
+  - Route returns BackendArtifactAccessResponse
+  - Defaults to not-configured provider (truthful "not configured")
+  - No storage provider wired yet
+  - No signed URL generation yet
+  - No local file streaming yet
+  - No download UI yet
 
 Target fix phase:
 

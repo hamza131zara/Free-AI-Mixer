@@ -2528,10 +2528,82 @@ Scope:
 
 ### Deferred items
 
-- route access audit/implementation
+- route access audit/implementation (completed in Phase 10-B)
 - provider dependency wiring to app/router
 - local dev backend stream route
 - production signed URL provider
 - frontend artifact access service
 - frontend download UI
 - auth/authorization for artifact access
+
+---
+
+## Phase 10-B — Artifact Access Route Implementation
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only implementation
+- access route only
+- no storage provider
+- no signed URL generation
+- no file serving
+
+### Phase 10-B completion summary
+
+- Updated `backend/routes/exports.ts`
+- Added new route: `GET /exports/:jobId/artifacts/:artifactId/access`
+- Added optional `artifactAccessProvider?: ArtifactAccessProvider` to `ExportRouterOptions`
+- Route defaults to `createNotConfiguredArtifactAccessProvider()` when no provider injected
+- No app.ts wiring added
+- No dependency composition wiring added
+- Tests added: `tests/e2e/phase10-artifact-access-route.spec.ts` (16 tests)
+
+### Route validation behavior
+
+- Unknown job → `{ kind: "artifact_access_unavailable", reason: "job_not_found" }`
+- Non-successful job → `{ kind: "artifact_access_unavailable", reason: "job_not_successful" }`
+- Unknown artifact → `{ kind: "artifact_access_unavailable", reason: "artifact_not_found" }`
+- Not-ready artifact → `{ kind: "artifact_access_unavailable", reason: "artifact_not_ready" }`
+- Successful ready artifact with default provider → `{ kind: "artifact_access_unavailable", reason: "artifact_access_not_configured" }`
+- Provider errors safely map to `artifact_access_not_configured` (no stack/details leak)
+
+### Provider fallback behavior
+
+- Uses injected provider if provided via `ExportRouterOptions.artifactAccessProvider`
+- Defaults to `createNotConfiguredArtifactAccessProvider()` when not injected
+- Returns truthful "not configured" response, not fake access
+
+### What was NOT added
+
+- No real download/hosting capability
+- No signed URL generation
+- No local file streaming/serving
+- No frontend download UI
+- No app/dependency auto-wiring
+- No storage provider implementation
+
+### Existing routes unchanged
+
+- `POST /exports` — unchanged
+- `GET /exports/:jobId` — unchanged
+- `GET /exports/:jobId/artifacts` — unchanged
+
+### Test updates
+
+- Old Phase 9 regression tests updated to match audited Phase 10 route wiring
+- Phase 9 tests now assert safety boundaries instead of asserting route remains untouched
+
+### Deferred items
+
+- route provider dependency wiring to app/router
+- local dev backend stream provider
+- production signed URL provider
+- frontend artifact access service
+- frontend download UI
+- auth/authorization for artifact access
+- artifact access expiration/revocation
+- storage provider selection
