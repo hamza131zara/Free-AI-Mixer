@@ -2,6 +2,11 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { exportAgent, type ExportAgentStartResult } from "../agents/exportAgent";
 import { pollExportJob } from "../services/exportService";
+import {
+  getExportHandle,
+  saveExportHandle,
+  type PersistedExportHandle,
+} from "../services/exportHandleStorage";
 import type {
   ExportArtifactRef,
   ExportFailure,
@@ -88,6 +93,10 @@ export interface ExportStoreState {
     },
   ) => Promise<ExportTimelineState | undefined>;
   refreshExportStatus: (
+    timelineId: TimelineId,
+    options?: { signal?: AbortSignal },
+  ) => Promise<ExportTimelineState | undefined>;
+  reconnectExport: (
     timelineId: TimelineId,
     options?: { signal?: AbortSignal },
   ) => Promise<ExportTimelineState | undefined>;
@@ -627,6 +636,49 @@ export const useExportStore = create<ExportStoreState>()(
 
         // Return updated state
         return get().jobsByTimelineId[timelineId];
+      },
+      reconnectExport: async (timelineId, options) => {
+        // 1. Load persisted handle from localStorage
+        const persisted = getExportHandle(timelineId);
+        if (!persisted) {
+          return undefined;
+        }
+
+        // 2. Seed minimal ExportTimelineState so refreshExportStatus can run
+        const initialState: ExportTimelineState = {
+          timelineId,
+          requestId: persisted.requestId,
+          lifecycle: "submitted",
+          handle: {
+            provider: "backend_render",
+            requestId: persisted.requestId,
+            jobId: persisted.jobId,
+            status: "submitted",
+          },
+          submittedAt: persisted.submittedAt,
+          lastPolledAt: new Date().toISOString(),
+          resumeState: "none",
+        };
+
+        set((state) => ({
+          jobsByTimelineId: {
+            ...state.jobsByTimelineId,
+            [timelineId]: initialState,
+          },
+        }));
+
+        // 3. Call refreshExportStatus once (single poll, not polling loop)
+        const result = await get().refreshExportStatus(timelineId, options);
+
+        // 4. Update lastCheckedAt in localStorage if refresh succeeded
+        if (result) {
+          saveExportHandle({
+            ...persisted,
+            lastCheckedAt: new Date().toISOString(),
+          });
+        }
+
+        return result;
       },
     }),
     {
