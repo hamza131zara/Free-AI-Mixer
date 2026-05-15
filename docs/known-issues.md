@@ -139,6 +139,15 @@ Why it matters:
   - No signed URL generation yet
   - No download UI yet
   - GET /exports/:jobId/artifacts still returns 501
+- Phase 9-F adds artifact access provider interface boundary:
+  - backend/artifacts/artifactAccessProvider.ts with ArtifactAccessProvider interface
+  - ArtifactAccessRequest includes jobId, artifactId, optional artifact
+  - getArtifactAccess returns Promise<BackendArtifactAccessResponse>
+  - No provider implementation yet
+  - No route wiring yet
+  - Provider is lifecycle-neutral (does not mutate job state)
+  - Provider is renderer-neutral (does not import renderer)
+  - Provider is route-neutral (does not import routes)
 
 Target fix phase:
 

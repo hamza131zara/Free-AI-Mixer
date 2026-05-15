@@ -2412,3 +2412,76 @@ Scope:
 - frontend artifact access service
 - frontend download UI
 - auth/authorization for artifact access
+
+---
+
+## Phase 9-F — Artifact Access Provider Interface Only
+
+Status:
+
+- complete
+
+Scope:
+
+- architecture-safe implementation
+- backend provider interface only
+- contract-boundary implementation only
+- no route behavior changes
+- no storage provider implementation
+
+### Phase 9-F completion summary
+
+- Created `backend/artifacts/artifactAccessProvider.ts`
+- Added `ArtifactAccessRequest` interface:
+  - `jobId: string` — safe identifier only
+  - `artifactId: string` — safe identifier only
+  - `artifact?: BackendArtifactMetadata` — verified metadata from registry, not user input
+- Added `ArtifactAccessProvider` interface with `getArtifactAccess()` method
+- Returns `Promise<BackendArtifactAccessResponse>` (from Phase 9-B contract)
+- Added safety comments:
+  - Must not contain local filesystem paths
+  - Must not contain storage credentials
+  - Must not mutate job lifecycle
+  - Must not call renderer/runtime/harness
+  - Any url in response must be backend-issued through BackendArtifactAccessResponse
+  - Local dev stream and expiring URL implementations are deferred
+- Tests added: `tests/e2e/phase9-artifact-access-provider-boundary.spec.ts` (13 tests)
+
+### What was NOT added
+
+- No provider implementation (not-configured, local dev, production)
+- No route wiring
+- No signed URL generation
+- No local file serving
+- No storageKey added to BackendArtifactMetadata
+- No filePath/localPath/outputPath/absolutePath/filesystemPath fields
+- No downloadUrl
+- No renderer/harness/runtime imports
+- No frontend changes
+
+### Lifecycle-neutral rule
+
+- ArtifactAccessProvider must NOT call registry.markSuccess/markError/transition
+- Provider is access-only, not lifecycle-mutating
+- Registry remains the source of truth for job status
+
+### Renderer-neutral rule
+
+- ArtifactAccessProvider must NOT import backend/renderer files
+- Provider must NOT call renderer adapter, harness, or runtime
+- Renderer produces artifacts; provider serves access
+
+### Route-neutral rule
+
+- ArtifactAccessProvider must NOT import backend/routes files
+- Provider is standalone interface, route integration deferred to later phase
+
+### Deferred items
+
+- not-configured provider implementation
+- route access audit/implementation
+- local dev backend stream route
+- production signed URL provider
+- frontend artifact access service
+- frontend download UI
+- auth/authorization for artifact access
