@@ -190,7 +190,7 @@ const assertClaimable = (record: BackendExportJobRecord): void => {
   }
 };
 
-const canTransition = (
+export const canTransition = (
   from: BackendExportLifecycleStatus,
   to: BackendExportLifecycleStatus,
 ): boolean => allowedTransitions[from].has(to);

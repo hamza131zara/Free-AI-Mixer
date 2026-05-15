@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { exportAgent, type ExportAgentStartResult } from "../agents/exportAgent";
+import { pollExportJob } from "../services/exportService";
 import type {
   ExportArtifactRef,
   ExportFailure,
@@ -85,6 +86,10 @@ export interface ExportStoreState {
       maxTransientFailures?: number;
       pollDelayMs?: number;
     },
+  ) => Promise<ExportTimelineState | undefined>;
+  refreshExportStatus: (
+    timelineId: TimelineId,
+    options?: { signal?: AbortSignal },
   ) => Promise<ExportTimelineState | undefined>;
 }
 
@@ -591,6 +596,37 @@ export const useExportStore = create<ExportStoreState>()(
             },
           }));
         }
+      },
+      refreshExportStatus: async (timelineId, options) => {
+        const state = get();
+        const current = state.jobsByTimelineId[timelineId];
+        if (!current) {
+          return undefined;
+        }
+
+        // Need either a handle with jobId or stored requestId to poll
+        const hasHandleWithJobId = current.handle?.jobId;
+        const hasRequestId = current.requestId;
+
+        if (!hasHandleWithJobId && !hasRequestId) {
+          return current;
+        }
+
+        // Construct a handle for polling - use stored handle or create minimal one
+        const pollHandle: ExportJobHandle = current.handle ?? {
+          provider: "backend_render",
+          requestId: current.requestId,
+          jobId: current.requestId, // Fallback: use requestId as jobId
+          status: "submitted",
+        };
+
+        const pollResult = await pollExportJob(pollHandle, { signal: options?.signal });
+
+        // Apply the poll result to update state
+        get().applyExportPollEvent(timelineId, pollResult);
+
+        // Return updated state
+        return get().jobsByTimelineId[timelineId];
       },
     }),
     {

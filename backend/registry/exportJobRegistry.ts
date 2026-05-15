@@ -66,3 +66,6 @@ export { validateArtifactMetadata } from "./inMemoryExportJobRegistry";
 
 // Re-export InMemoryExportJobRegistry for backwards compatibility
 export { InMemoryExportJobRegistry } from "./inMemoryExportJobRegistry";
+
+// Re-export canTransition for backwards compatibility
+export { canTransition } from "./inMemoryExportJobRegistry";

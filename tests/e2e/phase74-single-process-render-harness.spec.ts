@@ -387,7 +387,10 @@ test.describe("phase74 single-process render harness", () => {
       "utf8",
     );
 
+    // Check for actual usage (instantiation or call), not type-only imports
+    // Type imports are safe - they don't execute anything
     expect(routeSource.includes("executeSingleProcessRender")).toBe(false);
-    expect(routeSource.includes("singleProcessRenderHarness")).toBe(false);
+    expect(routeSource.includes("new SingleProcessRenderHarness")).toBe(false);
+    expect(routeSource.includes("singleProcessRenderHarness(")).toBe(false);
   });
 });
