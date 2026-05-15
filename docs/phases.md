@@ -2354,3 +2354,61 @@ const showReconnectButton =
 - Automatic reconnect on app load deferred
 - Automatic polling remains deferred
 - Artifact hosting/download URLs remain deferred
+
+---
+
+## Phase 9-B — Artifact Access Contract Types Only
+
+Status:
+
+- complete
+
+Scope:
+
+- architecture-safe implementation
+- contract/types only
+- backend contract boundary only
+- no route behavior changes
+- no storage provider implementation
+
+### Phase 9-B completion summary
+
+- Updated `backend/contracts/exportHttpTypes.ts`
+- Added `BackendArtifactAccessKind` type:
+  - `signed_url` — production signed/expiring URL (not implemented)
+  - `backend_stream` — backend route URL for streaming (not implemented)
+  - `local_dev_stream` — local dev backend stream (not implemented)
+- Added `BackendArtifactAccessDescriptor` interface
+- Added `BackendArtifactAccessReadyResponse` type
+- Added `BackendArtifactAccessUnavailableResponse` type with reason enum
+- Added `BackendArtifactAccessResponse` union type
+- Added safety comments:
+  - `url` must only be backend-issued
+  - `url` must never be a local filesystem path
+  - `url` must never be frontend-generated
+  - production `signed_url` must be signed/expiring
+  - `backend_stream`/`local_dev_stream` must use backend route URL, not file path
+- Tests added: `tests/e2e/phase9-artifact-access-contract.spec.ts` (10 tests)
+
+### What was NOT added
+
+- No storage provider implementation
+- No signed URL generation
+- No backend stream route
+- No local dev stream route
+- No download UI
+- No frontend changes
+- No route behavior changes
+- No filePath/localPath/outputPath/absolutePath/filesystemPath fields
+- No downloadUrl field
+- BackendArtifactMetadata remains metadata-only (no url/path fields)
+- GET /exports/:jobId/artifacts still returns 501
+
+### Deferred items
+
+- ArtifactStorageProvider boundary
+- local dev backend stream route
+- production signed URL provider
+- frontend artifact access service
+- frontend download UI
+- auth/authorization for artifact access

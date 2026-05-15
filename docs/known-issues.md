@@ -131,6 +131,14 @@ Why it matters:
 - verified output production remains deferred
 - artifact hosting/signed URL/download capability remains deferred
 - no public download URLs exist yet
+- Phase 9-B adds artifact access contract types only (no hosting implementation):
+  - BackendArtifactAccessKind with signed_url, backend_stream, local_dev_stream
+  - BackendArtifactAccessDescriptor with safety comments
+  - BackendArtifactAccessReadyResponse / BackendArtifactAccessUnavailableResponse
+  - No storage provider implementation yet
+  - No signed URL generation yet
+  - No download UI yet
+  - GET /exports/:jobId/artifacts still returns 501
 
 Target fix phase:
 
