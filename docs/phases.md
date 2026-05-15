@@ -1921,3 +1921,93 @@ Status:
 - No artifact hosting/download persistence yet.
 - No frontend async persistence UX yet.
 - No cancellation yet.
+
+## Phase 8.21-C — Production DB Adapter Strategy Docs Update
+
+Status:
+
+- Phase 8.21-A (production DB adapter strategy audit) is complete.
+- Phase 8.21-B (DB adapter strategy docs) is complete and committed.
+- Phase 8.21-C is docs-only (this update).
+- Phase 8.21-D (final sign-off) remains pending.
+
+### Phase 8.21-A finding: DB adapter requires separate design
+
+- Production DB is not ready for implementation.
+- ExportJobRegistry interface is correct adapter boundary.
+- Future DB adapter must implement ExportJobRegistry directly.
+- DB adapter must NOT delegate lifecycle logic to InMemoryExportJobRegistry.
+- DB adapter must implement lifecycle/state-machine logic transactionally in DB.
+- JSON persistence stays dev/local only for now.
+- Safe next step: document DB adapter strategy without real implementation.
+
+### Recommended production DB direction
+
+- PostgreSQL via PostgresExportJobRegistry implementing ExportJobRegistry directly.
+- SQLite is risky for multi-process concurrency.
+- JSON stays dev-only fallback.
+
+### Recommended future env/config shape
+
+- FREE_AI_MIXER_DB_PROVIDER=json|postgres (default: json)
+- FREE_AI_MIXER_DB_ENABLED=true (enable DB mode)
+- DATABASE_URL (Postgres connection string)
+- FREE_AI_MIXER_DB_POOL_SIZE (optional connection pool config)
+- FREE_AI_MIXER_DB_SSL (optional SSL config)
+
+### Recommended DB schema concepts
+
+- jobs table: jobId (UUID PK), requestId (unique), timelineId, status, attemptCount, claimedByWorkerId, claimExpiresAt, createdAt, updatedAt, completedAt, startedAt, renderingAt, finalizingAt, expiredAt, renderSettings (JSONB), failure (JSONB safe), artifacts (JSONB safe)
+- artifacts table (optional): artifactId, jobId (FK), kind, format, status, sizeBytes, durationMs, createdAt
+- Indexes: requestId (unique), status, claimedByWorkerId, claimExpiresAt
+- No local path/filePath/URL columns
+
+### Recommended transaction/concurrency strategy
+
+- claim() uses SELECT FOR UPDATE to prevent race conditions
+- Status transitions use optimistic locking (WHERE status = expected)
+- claimExpiresAt tracked in DB, not just in-memory
+- Only one worker can claim a job at a time
+- Expired claims recovered via scheduled job or startup recovery
+
+### Recovery strategy for DB mode
+
+- On startup: SELECT jobs WHERE status IN (rendering, finalizing) AND claimExpiresAt < NOW()
+- Transition recovered jobs to submitted, clear claimedByWorkerId, claimExpiresAt
+- Use same Phase 8.18 recovery policy (implemented in SQL)
+
+### RequestId/idempotency for DB
+
+- requestId column has UNIQUE constraint
+- create() uses INSERT ... ON CONFLICT DO UPDATE RETURNING
+- Route-level getByRequestId check remains
+
+### Safety boundaries for DB mode
+
+- failure.details never persisted (only message + code)
+- No path/filePath/URL columns in DB schema
+- Artifacts sanitized before DB write
+- markSuccess only after artifact verification
+- Terminal states protected from accidental mutation
+
+### What was NOT added
+
+- No real DB adapter implementation.
+- No DB packages (Prisma/Drizzle/Supabase/Postgres).
+- No migrations.
+- No DB connections.
+- No schema changes.
+- No JSON-to-DB migration.
+- No production persistence runtime mode.
+- No frontend changes.
+
+### Deferred items (unchanged scope)
+
+- Production DB adapter not implemented yet.
+- No DB packages installed yet.
+- No schema migrations yet.
+- No multi-process locking yet.
+- No production persistence runtime mode yet.
+- No artifact hosting/download persistence yet.
+- No frontend async persistence UX yet.
+- JSON persistence remains dev/local only.

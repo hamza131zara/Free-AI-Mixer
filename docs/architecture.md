@@ -1078,3 +1078,17 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - Verifies persisted JSON has no path/URL leakage.
 - Worker and route execution disabled during smoke.
 - No production persistence runtime mode yet.
+
+### Production DB Adapter Strategy (Phase 8.21-A complete)
+
+- Phase 8.21-A documented production DB adapter strategy.
+- ExportJobRegistry interface is correct DB adapter boundary.
+- Future DB adapter must implement ExportJobRegistry directly.
+- DB adapter must NOT delegate lifecycle to InMemoryExportJobRegistry.
+- DB adapter must implement lifecycle logic transactionally in DB (SELECT FOR UPDATE, optimistic locking).
+- Recommended: PostgreSQL via PostgresExportJobRegistry.
+- Recommended future env: FREE_AI_MIXER_DB_PROVIDER, DATABASE_URL, etc.
+- JSON persistence stays dev/local only.
+- DB schema: jobs table with unique requestId, claimExpiresAt, status transitions.
+- DB must sanitize failure (message/code only) and artifact fields (no paths/URLs).
+- Recovery: SELECT jobs WHERE status IN (rendering, finalizing) AND claimExpiresAt < NOW().

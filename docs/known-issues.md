@@ -337,9 +337,26 @@ Persistence runtime smoke test exists (Phase 8.20-B):
 - Worker and route execution remain disabled during smoke
 - No production persistence runtime mode yet
 
+### Production DB Adapter Strategy (Phase 8.21-A complete)
+
+Production DB adapter strategy documented (Phase 8.21-A):
+- ExportJobRegistry interface is correct DB adapter boundary
+- Future DB adapter must implement ExportJobRegistry directly
+- DB adapter must NOT delegate lifecycle to InMemoryExportJobRegistry
+- DB adapter must implement lifecycle logic transactionally in DB
+- JSON persistence stays dev/local only
+- Recommended: PostgreSQL via PostgresExportJobRegistry
+- Recommended future env: FREE_AI_MIXER_DB_PROVIDER, DATABASE_URL, etc.
+- DB must use SELECT FOR UPDATE for claim() to prevent race conditions
+- DB must use optimistic locking for status transitions
+- DB must sanitize failure/artifact fields before INSERT
+- Recovery on startup: SELECT jobs WHERE status IN (rendering, finalizing) AND claimExpiresAt < NOW()
+
 Still deferred:
 - JSON persistence is local/dev only
 - No production DB adapter yet (Postgres, Redis, SQLite)
+- No DB packages installed yet
+- No schema migrations yet
 - No multi-process locking yet
 - No production persistence runtime mode yet
 - No large-scale query/indexing support yet
