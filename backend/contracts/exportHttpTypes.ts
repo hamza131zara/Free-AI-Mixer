@@ -74,6 +74,59 @@ export interface ExportArtifactsUnavailableResponseBody {
   };
 }
 
+/**
+ * Safe artifact access descriptor for future downloadable artifact access.
+ *
+ * IMPORTANT SAFETY RULES:
+ * - url field must only be backend-issued.
+ * - It must never be a local filesystem path.
+ * - It must never be frontend-generated.
+ * - For signed_url mode, it must be signed/expiring.
+ * - For backend_stream/local_dev_stream, it should be a backend route URL, not a file path.
+ */
+export type BackendArtifactAccessKind =
+  | "signed_url"
+  | "backend_stream"
+  | "local_dev_stream";
+
+export interface BackendArtifactAccessDescriptor {
+  kind: BackendArtifactAccessKind;
+  artifactId: string;
+  jobId: string;
+  /** Backend-issued URL only. Must not be local filesystem path or frontend-generated. */
+  url?: string;
+  method?: "GET";
+  /** ISO timestamp when access expires (for signed_url mode). */
+  expiresAt?: string;
+  contentType?: string;
+  fileName?: string;
+  sizeBytes?: number;
+}
+
+export interface BackendArtifactAccessReadyResponse {
+  kind: "artifact_access_ready";
+  artifact: BackendArtifactMetadata;
+  access: BackendArtifactAccessDescriptor;
+}
+
+export type BackendArtifactAccessUnavailableReason =
+  | "job_not_found"
+  | "job_not_successful"
+  | "artifact_not_found"
+  | "artifact_not_ready"
+  | "artifact_expired"
+  | "artifact_access_not_configured";
+
+export interface BackendArtifactAccessUnavailableResponse {
+  kind: "artifact_access_unavailable";
+  reason: BackendArtifactAccessUnavailableReason;
+  message: string;
+}
+
+export type BackendArtifactAccessResponse =
+  | BackendArtifactAccessReadyResponse
+  | BackendArtifactAccessUnavailableResponse;
+
 export const toJobHandle = (
   record: BackendExportJobRecord,
 ): ExportJobHandle => ({
