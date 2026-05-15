@@ -364,9 +364,9 @@ Still deferred:
 - No cancellation yet
 - Frontend manual refresh boundary exists (Phase 8.22-B); automatic polling loop not implemented yet
 - No retry with backoff, no WebSocket/SSE real-time updates, no background refresh
-- Persisted export handle storage boundary exists (Phase 8.23-B); manual reconnect action added (Phase 8.24-B)
-- No UI reconnect button yet
-- Automatic reconnect on app load deferred
+- Persisted export handle storage boundary exists (Phase 8.23-B); manual reconnect action added (Phase 8.24-B); manual reconnect button added (Phase 8.25-B)
+- No automatic reconnect on app load yet
+- No automatic polling yet
 
 ### Safety reminder
 

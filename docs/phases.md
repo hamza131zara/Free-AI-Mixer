@@ -2266,3 +2266,91 @@ reconnectExport: async (timelineId, options) => {
 - Automatic reconnect on app load deferred
 - Automatic polling remains deferred
 - Artifact hosting/download URLs remain deferred
+
+## Phase 8.25-B — Manual Reconnect UI Button
+
+### What was added
+
+Manual reconnect UI button that dispatches store action only:
+
+- `src/store/exportStore.ts` — added `selectHasPersistedHandle` selector
+- `src/components/TimelineExportPanel.tsx` — added reconnect button
+- `tests/e2e/phase825-reconnect-ui.spec.ts` — 13 focused tests
+
+### selectHasPersistedHandle selector
+
+```typescript
+export const selectHasPersistedHandle = (
+  state: ExportStoreState,
+  timelineId: TimelineId,
+): boolean => {
+  const handle = getExportHandle(timelineId);
+  return !!handle;
+};
+```
+
+Reads from exportHandleStorage — no state mutation, no backend call.
+
+### Button behavior
+
+- Shows "Reconnect export" when:
+  - timelineId exists
+  - persisted handle exists for that timeline
+  - no current export store state exists for that timeline
+  - not currently resolving
+- Shows "Reconnecting..." while resolving
+- Disabled while `isResolvingByTimelineId[timelineId]` is true
+
+### Button code
+
+```tsx
+const showReconnectButton =
+  !!timelineId &&
+  hasPersistedHandle &&
+  !hasExportStateForTimeline &&
+  !isResolving;
+
+{showReconnectButton ? (
+  <button
+    type="button"
+    onClick={() => {
+      if (!timelineId) return;
+      void reconnectExport(timelineId);
+    }}
+    disabled={isResolving}
+  >
+    {isResolving ? "Reconnecting..." : "Reconnect export"}
+  </button>
+) : null}
+```
+
+### Test coverage
+
+`tests/e2e/phase825-reconnect-ui.spec.ts` verifies:
+- Store exposes reconnectExport and selectHasPersistedHandle
+- selectHasPersistedHandle returns true when persisted handle exists
+- selectHasPersistedHandle returns false when no persisted handle exists
+- selectHasPersistedHandle handles corrupt localStorage safely
+- TimelineExportPanel source contains reconnect button copy
+- TimelineExportPanel dispatches reconnectExport from button action
+- TimelineExportPanel does not import storage or service layers directly
+- TimelineExportPanel does not auto-reconnect on mount
+- exportStore source does not contain setInterval/setTimeout polling
+- TimelineExportPanel source does not contain setInterval/setTimeout polling
+- Backend files remain outside Phase 8.25-B scope
+
+### What was NOT added
+
+- No automatic reconnect on app load
+- No automatic polling loop
+- No component-level exportHandleStorage import
+- No component-level exportService import
+- No fake progress/success/artifacts/downloads
+- No download URL UI
+- No backend/route/worker changes
+
+### Deferred items
+
+- Automatic reconnect on app load deferred
+- Automatic polling remains deferred
+- Artifact hosting/download URLs remain deferred
