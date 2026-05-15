@@ -165,6 +165,14 @@ Why it matters:
   - No signed URL generation yet
   - No local file streaming yet
   - No download UI yet
+- Phase 11-B adds internal artifact storage reference:
+  - backend/artifacts/internalArtifactStorageRef.ts with InternalArtifactStorageRef
+  - Internal-only type with filePath, rootPath, jobSegment, directoryPath
+  - Not exported to contracts
+  - Not added to BackendArtifactMetadata
+  - Prerequisite for future local dev stream provider
+  - No provider implementation yet
+  - No stream route yet
 
 Target fix phase:
 

@@ -2600,10 +2600,71 @@ Scope:
 ### Deferred items
 
 - route provider dependency wiring to app/router
-- local dev backend stream provider
+- local dev backend stream provider (prerequisite added in Phase 11-B)
 - production signed URL provider
 - frontend artifact access service
 - frontend download UI
 - auth/authorization for artifact access
 - artifact access expiration/revocation
 - storage provider selection
+
+---
+
+## Phase 11-B — Internal Artifact Storage Reference Boundary
+
+Status:
+
+- complete
+
+Scope:
+
+- internal backend type-only
+- contract-boundary only
+- no provider implementation
+- no route changes
+
+### Phase 11-B completion summary
+
+- Created `backend/artifacts/internalArtifactStorageRef.ts`
+- Added `InternalArtifactStorageRef` interface:
+  - `filePath: string` — absolute file path to artifact
+  - `rootPath: string` — root path for security validation
+  - `jobSegment: string` — job segment identifier
+  - `directoryPath: string` — directory containing artifact
+- Added safety comments documenting internal-only rules:
+  - Must NOT be exported from contracts
+  - Must NOT be returned to frontend
+  - Must NOT be stored in BackendArtifactMetadata
+  - Must NOT be persisted in JSON registry
+- Tests added: `tests/e2e/phase11-internal-artifact-storage-ref.spec.ts` (10 tests)
+
+### Public vs internal artifact data separation
+
+- `BackendArtifactMetadata` remains public-safe (no path fields)
+- `InternalArtifactStorageRef` is internal-only (internal use only)
+- Registry stores only `BackendArtifactMetadata[]`
+- JSON persistence stores only safe metadata
+
+### What was NOT added
+
+- No path fields in BackendArtifactMetadata
+- No storageKey in public metadata
+- No provider implementation
+- No stream route
+- No app/dependency wiring
+
+### Prerequisite for future work
+
+- Local dev stream provider requires InternalArtifactStorageRef to locate files
+- Path-root validation will use this type
+- Stream route will use provider to serve files
+
+### Deferred items
+
+- local dev stream provider implementation
+- backend stream route
+- provider wiring to app/router
+- path-root validation implementation
+- production signed URL provider
+- frontend artifact access service
+- frontend download UI
