@@ -2074,3 +2074,98 @@ const handleRefresh = async () => {
 - Status mapping respects backend contract (pending/success/failure)
 - No fake success/progress before actual backend confirmation
 - Resume state classification happens after status refresh
+
+## Phase 8.23-B — Persisted Export Handle Storage Boundary
+
+### What was added
+
+Minimal versioned frontend storage for export handles:
+
+- `src/services/exportHandleStorage.ts` — export handle storage boundary
+- `tests/e2e/phase823-export-handle-storage.spec.ts` — 15 focused tests
+
+### Storage format
+
+Key: `free-ai-mixer-export-handles`
+
+```typescript
+interface PersistedStore {
+  version: 1;
+  handles: PersistedExportHandle[];
+  updatedAt: string;
+}
+
+interface PersistedExportHandle {
+  timelineId: string;
+  jobId: string;
+  requestId: string;
+  submittedAt: string;
+  lastCheckedAt?: string;
+}
+```
+
+### Safe persisted fields
+
+- `timelineId` — timeline identifier
+- `jobId` — backend job identifier for reconnect
+- `requestId` — request identifier
+- `submittedAt` — submission timestamp
+- `lastCheckedAt` — optional, avoids immediate re-poll
+
+### Fields that must never be persisted
+
+The following are explicitly stripped by the `sanitizeHandle` allowlist:
+
+- local paths, `filePath`, `path`, `url`, `artifactUrl`, `downloadUrl`, `signedUrl`
+- `failure.details`, stack traces, provider credentials
+- raw artifact blobs, backend internals, progress percentages
+
+### Storage helper API
+
+```typescript
+saveExportHandle(handle: PersistedExportHandle): void
+getExportHandle(timelineId: string): PersistedExportHandle | undefined
+getAllExportHandles(): PersistedExportHandle[]
+removeExportHandle(timelineId: string): void
+clearAllExportHandles(): void
+```
+
+### Safety behaviors
+
+- `localStorage` availability checked via `globalThis.localStorage` with try/catch guard
+- Corrupt JSON is handled safely — returns `[]`, clears storage
+- Unknown version is handled safely — returns `[]`, clears storage
+- Missing required fields are ignored — handle not persisted
+- Unsafe extra fields are silently stripped — not rejected
+- All functions are safe-no-op when localStorage unavailable
+
+### Test coverage
+
+`tests/e2e/phase823-export-handle-storage.spec.ts` verifies:
+- Save/get/remove/clear operations
+- Upsert by timelineId
+- Corrupt JSON handling
+- Unknown version handling
+- Missing required fields handling
+- Unsafe fields stripped and not persisted
+- localStorage unavailable handling
+- No polling/download logic in source
+- No backend/component file changes
+
+### What was NOT added
+
+- No automatic reconnect on load yet
+- No UI reconnect button yet
+- No automatic polling loop
+- No React component polling
+- No artifact hosting/download URLs
+- No cancellation logic
+- No production DB adapter
+- No multi-tab coordination
+
+### Deferred items
+
+- Reconnect UX (loading handle + calling refreshExportStatus) not wired yet
+- UI component to trigger reconnect not added yet
+- Automatic polling remains deferred
+- Artifact hosting/download URLs remain deferred
