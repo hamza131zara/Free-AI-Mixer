@@ -3059,12 +3059,77 @@ Scope:
 
 ### Deferred items
 
-- RenderWorker callback wiring (Phase 12-K)
-- Route execution callback wiring (Phase 12-K)
-- Resolver wiring to ref store (Phase 12-K)
-- Provider wiring (Phase 12-K)
-- Env-gated local dev enablement (Phase 12-L)
-- App/server route option wiring (Phase 12-L)
+- RenderWorker callback wiring (Phase 12-O)
+- Route execution callback wiring (Phase 12-O)
+- Resolver wiring to ref store (Phase 12-N - now implemented)
+- Provider wiring (Phase 12-O)
+- Env-gated local dev enablement (Phase 12-P)
+- App/server route option wiring (Phase 12-P)
+- Frontend artifact access service
+- Frontend download UI
+- Production signed URL provider
+- Production storage provider selection
+- Auth/authorization for artifact access
+
+----
+
+## Phase 12-N — Resolver Wiring / Ref Store Query Implementation
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-internal resolver ownership only
+- no app/server/route/provider/env wiring
+- no frontend changes
+
+### Phase 12-N completion summary
+
+- Updated `backend/composition/backendDependencies.ts`
+- Added `artifactStorageRefResolver: ArtifactStorageRefResolver` to `BackendDependencies`
+- Resolver implementation:
+  - Calls `artifactStorageRefStore.get(jobId, artifactId)`
+  - Returns `InternalArtifactStorageRef | undefined`
+  - No filesystem access
+  - No registry inspection
+  - No path validation
+  - Synchronous query
+- Tests added: `tests/e2e/phase12-resolver-wiring.spec.ts` (16 tests)
+
+### Resolver behavior
+
+- Queries in-memory store only
+- Returns undefined for missing refs
+- No path guessing or validation
+- No file existence checks
+- Stream route remains final authority for realpath/root/stat validation
+
+### API behavior
+
+- Unchanged in this phase
+- `createExportRouter` not passed resolver (app.ts unchanged)
+- Stream route returns 501 (not configured) as before
+- Access route returns artifact_access_unavailable as before
+- Provider remains not-configured
+
+### What was NOT added
+
+- No renderWorker callback wiring
+- No route execution callback wiring
+- No app/route resolver injection
+- No provider wiring
+- No env gating
+- No frontend changes
+
+### Deferred items
+
+- RenderWorker callback wiring (Phase 12-O)
+- Route execution callback wiring (Phase 12-O)
+- Provider wiring (Phase 12-O)
+- Env-gated local dev enablement (Phase 12-P)
+- App/server route option wiring (Phase 12-P)
 - Frontend artifact access service
 - Frontend download UI
 - Production signed URL provider

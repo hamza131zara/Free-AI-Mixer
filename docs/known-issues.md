@@ -216,6 +216,14 @@ Why it matters:
   - executeRenderJob accepts optional onVerifiedArtifactRef and passes to harness
   - No app/route/provider/resolver wiring yet - store ready for future wiring
   - Stream route still requires resolver injection (future phase)
+- Phase 12-N adds artifactStorageRefResolver to backendDependencies:
+  - backendDependencies.ts now exposes artifactStorageRefResolver
+  - Resolver calls artifactStorageRefStore.get(jobId, artifactId)
+  - Returns InternalArtifactStorageRef | undefined
+  - No filesystem access, no registry inspection
+  - Resolver NOT injected into createExportRouter (API unchanged)
+  - Stream route still returns 501 until resolver is injected (future phase)
+  - Provider remains not-configured
 
 Target fix phase:
 
