@@ -15,6 +15,7 @@ import {
   type RendererMappedFailure,
 } from "./rendererFailureMapping";
 import type { BackendArtifactMetadata } from "../contracts/exportHttpTypes";
+import type { InternalArtifactStorageRef } from "../artifacts/internalArtifactStorageRef";
 
 export interface RendererAdapterInput {
   snapshot: RenderInputSnapshot;
@@ -45,6 +46,8 @@ export interface SingleProcessRenderHarnessInput {
   artifactId?: string;
   artifactKind?: string;
   abortSignal?: AbortSignal;
+  /** Optional callback for internal artifact storage ref registration (best-effort) */
+  onVerifiedArtifactRef?: (payload: VerifiedArtifactRefPayload) => void;
 }
 
 export type SingleProcessRenderHarnessResult =
@@ -60,6 +63,17 @@ export type SingleProcessRenderHarnessResult =
       status: "error";
       failure: RendererMappedFailure;
     };
+
+/**
+ * Payload for artifact storage ref registration callback.
+ * Internal-only, never returned to frontend.
+ */
+export interface VerifiedArtifactRefPayload {
+  jobId: string;
+  artifactId: string;
+  artifact: BackendArtifactMetadata;
+  storageRef: InternalArtifactStorageRef;
+}
 
 const asExportFailure = (failure: RendererMappedFailure): ExportFailure => ({
   code: failure.code,
@@ -197,6 +211,27 @@ export const executeSingleProcessRender = async (
       code: verification.error.code,
       message: verification.error.message,
     });
+  }
+
+  // BEST-EFFORT: Register internal storage ref (non-blocking)
+  // Only called after successful artifact verification
+  try {
+    if (input.onVerifiedArtifactRef) {
+      const storageRef: InternalArtifactStorageRef = {
+        filePath: resolvedOutputPath.filePath,
+        rootPath: resolvedOutputPath.rootPath,
+        jobSegment: resolvedOutputPath.jobSegment,
+        directoryPath: resolvedOutputPath.directoryPath,
+      };
+      input.onVerifiedArtifactRef({
+        jobId: input.jobId,
+        artifactId: verification.artifact.artifactId,
+        artifact: verification.artifact,
+        storageRef,
+      });
+    }
+  } catch {
+    // Non-blocking - ignore registration failures
   }
 
   try {
