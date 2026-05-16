@@ -21,6 +21,7 @@ import type { RendererAdapter } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
 import type { ArtifactAccessProvider } from "../artifacts/artifactAccessProvider";
 import { createNotConfiguredArtifactAccessProvider } from "../artifacts/notConfiguredArtifactAccessProvider";
+import type { ArtifactStorageRefResolver } from "../artifacts/artifactStorageRefResolver";
 
 const isRouteExecutionEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION === "1";
@@ -87,6 +88,8 @@ export interface ExportRouterOptions {
   rendererAdapter?: RendererAdapter;
   pathPolicy?: RenderOutputPathPolicy;
   artifactAccessProvider?: ArtifactAccessProvider;
+  /** Internal resolver for artifact storage references. Used by stream route. */
+  artifactStorageRefResolver?: ArtifactStorageRefResolver;
 }
 
 export const createExportRouter = (registry: ExportJobRegistry, options?: ExportRouterOptions): Router => {
