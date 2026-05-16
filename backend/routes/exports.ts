@@ -1,5 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import type {
   BackendArtifactAccessResponse,
   BackendArtifactMetadata,
@@ -219,6 +221,163 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
           message: "Artifact access is not configured.",
         });
       }
+    },
+  );
+
+  // Content-Type mapping for artifact formats
+  const formatToContentType = (format: string): string => {
+    switch (format.toLowerCase()) {
+      case "mp4":
+        return "video/mp4";
+      case "webm":
+        return "video/webm";
+      default:
+        return "application/octet-stream";
+    }
+  };
+
+  // Safe filename generation
+  const safeFilename = (artifactId: string, format: string): string => {
+    const sanitizedId = artifactId.replace(/[^a-zA-Z0-9_-]/g, "_") || "artifact";
+    return `${sanitizedId}.${format}`;
+  };
+
+  router.get(
+    "/exports/:jobId/artifacts/:artifactId/stream",
+    async (
+      request: Request<{ jobId: string; artifactId: string }, unknown>,
+      response: Response,
+    ) => {
+      // Check if resolver is configured
+      if (!options?.artifactStorageRefResolver) {
+        response.status(501).json({
+          code: "stream_not_configured",
+          message: "Artifact stream access is not configured.",
+        });
+        return;
+      }
+
+      // Parse jobId
+      const { jobId } = parseJobIdParams(request.params);
+      const artifactId = request.params.artifactId;
+
+      // Get job from registry
+      const record = registry.getById(jobId);
+      if (!record) {
+        response.status(404).json({
+          code: "job_not_found",
+          message: "Export job was not found.",
+        });
+        return;
+      }
+
+      // Check job is successful
+      if (record.status !== "success") {
+        response.status(404).json({
+          code: "job_not_found",
+          message: "Export job was not found.",
+        });
+        return;
+      }
+
+      // Find artifact
+      const artifact = (record.artifacts ?? []).find((a) => a.artifactId === artifactId);
+      if (!artifact) {
+        response.status(404).json({
+          code: "artifact_not_found",
+          message: "Artifact was not found.",
+        });
+        return;
+      }
+
+      // Check artifact is ready
+      if (artifact.status && artifact.status !== "available") {
+        response.status(404).json({
+          code: "artifact_not_found",
+          message: "Artifact was not found.",
+        });
+        return;
+      }
+
+      // Resolve storage ref
+      const storageRef = options.artifactStorageRefResolver.resolve(jobId, artifactId);
+      if (!storageRef) {
+        response.status(404).json({
+          code: "artifact_not_found",
+          message: "Artifact was not found.",
+        });
+        return;
+      }
+
+      // Path safety: resolve real paths
+      let realFilePath: string;
+      let realRootPath: string;
+      try {
+        realRootPath = await fs.realpath(storageRef.rootPath);
+        realFilePath = await fs.realpath(storageRef.filePath);
+      } catch {
+        response.status(500).json({
+          code: "internal_error",
+          message: "Artifact stream failed.",
+        });
+        return;
+      }
+
+      // Validate file is inside root
+      const normalizedFile = path.resolve(realFilePath);
+      const normalizedRoot = path.resolve(realRootPath);
+      const relative = path.relative(normalizedRoot, normalizedFile);
+      const isInsideRoot =
+        relative.length > 0 &&
+        !relative.startsWith("..") &&
+        !path.isAbsolute(relative);
+
+      if (!isInsideRoot) {
+        response.status(403).json({
+          code: "forbidden",
+          message: "Artifact stream access was denied.",
+        });
+        return;
+      }
+
+      // Check file exists and is a file
+      let stat;
+      try {
+        stat = await fs.stat(realFilePath);
+      } catch {
+        response.status(404).json({
+          code: "not_found",
+          message: "Artifact file is not available.",
+        });
+        return;
+      }
+
+      if (!stat.isFile()) {
+        response.status(403).json({
+          code: "forbidden",
+          message: "Artifact stream access was denied.",
+        });
+        return;
+      }
+
+      // Set headers
+      response.setHeader("Content-Type", formatToContentType(artifact.format));
+      response.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${safeFilename(artifactId, artifact.format)}"`,
+      );
+      response.setHeader("Cache-Control", "no-store");
+      response.setHeader("X-Content-Type-Options", "nosniff");
+
+      // Stream file
+      response.sendFile(realFilePath, (err) => {
+        if (err && !response.headersSent) {
+          response.status(500).json({
+            code: "internal_error",
+            message: "Artifact stream failed.",
+          });
+        }
+      });
     },
   );
 

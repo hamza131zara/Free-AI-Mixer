@@ -421,12 +421,35 @@ test.describe("phase11 local dev stream provider", () => {
     expect(source).not.toContain("localDevArtifactAccessProvider");
   });
 
-  test("no stream route added", async () => {
-    const source = await fs.readFile(
-      path.join(process.cwd(), "backend", "routes", "exports.ts"),
-      "utf8",
-    );
+  test("stream route exists after Phase 11-M while provider remains route-neutral", async () => {
+  const providerSource = await fs.readFile(
+    path.join(
+      process.cwd(),
+      "backend",
+      "artifacts",
+      "localDevArtifactAccessProvider.ts",
+    ),
+    "utf8",
+  );
 
-    expect(source).not.toContain("/artifacts/:artifactId/stream");
-  });
+  const routeSource = await fs.readFile(
+    path.join(process.cwd(), "backend", "routes", "exports.ts"),
+    "utf8",
+  );
+
+  // Phase 11-M intentionally added the stream route.
+  expect(routeSource).toContain("/exports/:jobId/artifacts/:artifactId/stream");
+  expect(routeSource).toContain("artifactStorageRefResolver");
+
+  // Provider must remain route-neutral.
+  expect(providerSource).not.toContain("../routes");
+  expect(providerSource).not.toContain("backend/routes");
+  expect(providerSource).not.toContain("createExportRouter");
+
+  // Stream route must remain safe: no static directory serving or signed URL generation.
+  expect(routeSource).not.toContain("express.static");
+  expect(routeSource).not.toContain("getSignedUrl");
+  expect(routeSource).not.toContain("createSigned");
+  expect(routeSource).not.toContain("presign");
+});
 });
