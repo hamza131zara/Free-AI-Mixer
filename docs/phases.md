@@ -2860,3 +2860,65 @@ All error responses use generic codes and messages — no file paths, root paths
 - Frontend download UI
 - Production storage provider selection
 - Artifact access expiration/revocation
+
+----
+
+## Phase 12-B — Internal In-Memory Artifact Storage Ref Store
+
+Status:
+
+- complete
+
+Scope:
+
+- backend internal component only
+- store boundary only
+- no app wiring
+- no provider/resolver wiring
+- no renderer/harness registration
+- no frontend changes
+
+### Phase 12-B completion summary
+
+- Created `backend/artifacts/inMemoryArtifactStorageRefStore.ts`
+- Added `ArtifactStorageRefStore` interface:
+  - `set(jobId, artifactId, ref)` — store internal ref
+  - `get(jobId, artifactId)` — retrieve ref or undefined
+  - `has(jobId, artifactId)` — check existence
+  - `delete(jobId, artifactId?)` — delete single or all for job
+  - `clear()` — clear all refs
+- Added `createInMemoryArtifactStorageRefStore` factory
+- Store maps jobId + artifactId → InternalArtifactStorageRef
+- Store uses private Map storage (Map<string, Map<string, InternalArtifactStorageRef>>)
+- Store is process-memory only (no persistence)
+- Tests added: `tests/e2e/phase12-in-memory-ref-store.spec.ts` (23 tests)
+
+### Store behavior
+
+- Process-memory only (Map-based, no serialization)
+- Starts empty on process start
+- No JSON persistence (local paths never leave process memory)
+- No file existence validation (stream route owns that)
+- No path safety validation (stream route owns that)
+- On process restart: store is cleared, jobs become unavailable for streaming (acceptable)
+
+### What was NOT added
+
+- No app/server wiring
+- No provider/resolver wiring to store
+- No renderer/harness ref registration
+- No route changes (stream route still waits for resolver)
+- No frontend changes
+
+### Deferred items
+
+- Render harness/executeRenderJob ref registration (Phase 12-C)
+- Resolver wiring to ref store (Phase 12-D)
+- Provider wiring (Phase 12-E)
+- Env-gated local dev enablement (Phase 12-F)
+- App/server wiring (Phase 12-F)
+- Frontend artifact access service
+- Frontend download UI
+- Production signed URL provider
+- Production storage provider selection
+- Auth/authorization for artifact access

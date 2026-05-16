@@ -192,6 +192,15 @@ Why it matters:
   - No app/server wiring yet (resolver test-injected only)
   - No production signed URL provider yet
   - No frontend download UI yet
+- Phase 12-B adds internal in-memory artifact storage ref store:
+  - backend/artifacts/inMemoryArtifactStorageRefStore.ts
+  - ArtifactStorageRefStore interface with set/get/has/delete/clear
+  - Maps jobId + artifactId to InternalArtifactStorageRef
+  - Process-memory only (Map-based, no serialization)
+  - Starts empty, no persistence
+  - No file existence/path validation (stream route owns that)
+  - No app/provider/resolver wiring yet
+  - Future: harness registers refs after verification
 
 Target fix phase:
 
