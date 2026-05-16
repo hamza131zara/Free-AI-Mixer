@@ -2,6 +2,7 @@ import {
   executeSingleProcessRender,
   type RendererAdapter,
   type SingleProcessRenderHarnessResult,
+  type VerifiedArtifactRefPayload,
 } from "./singleProcessRenderHarness";
 import type { ExportJobRegistry } from "../registry/exportJobRegistry";
 import type { RenderOutputPathPolicy } from "./outputPathPolicy";
@@ -16,6 +17,8 @@ export interface ExecuteRenderJobInput {
   artifactId?: string;
   artifactKind?: string;
   abortSignal?: AbortSignal;
+  /** Optional callback for internal artifact storage ref registration */
+  onVerifiedArtifactRef?: (payload: VerifiedArtifactRefPayload) => void;
 }
 
 export const executeRenderJob = async (
@@ -31,5 +34,6 @@ export const executeRenderJob = async (
     artifactId: input.artifactId,
     artifactKind: input.artifactKind,
     abortSignal: input.abortSignal,
+    onVerifiedArtifactRef: input.onVerifiedArtifactRef,
   });
 };

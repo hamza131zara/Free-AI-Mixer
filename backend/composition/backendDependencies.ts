@@ -3,13 +3,18 @@ import { InMemoryExportJobRegistry } from "../registry/inMemoryExportJobRegistry
 import { JsonFileExportJobRegistry } from "../registry/jsonFileExportJobRegistry";
 import type { ExportJobRegistry } from "../registry/exportJobRegistry";
 import { createRemotionRendererAdapter } from "../renderer/remotionRendererAdapter";
-import type { RendererAdapter } from "../renderer/singleProcessRenderHarness";
+import type { RendererAdapter, VerifiedArtifactRefPayload } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
+import { createInMemoryArtifactStorageRefStore, type ArtifactStorageRefStore } from "../artifacts/inMemoryArtifactStorageRefStore";
 
 export interface BackendDependencies {
   registry: ExportJobRegistry;
   rendererAdapter: RendererAdapter;
   pathPolicy: RenderOutputPathPolicy;
+  /** Internal artifact storage ref store (process-memory only) */
+  artifactStorageRefStore: ArtifactStorageRefStore;
+  /** Callback to register verified artifact refs after successful render */
+  onVerifiedArtifactRef: (payload: VerifiedArtifactRefPayload) => void;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -39,9 +44,24 @@ export const createBackendDependencies = (): BackendDependencies => {
       })
     : new InMemoryExportJobRegistry();
 
+  // Create internal artifact storage ref store (process-memory only)
+  const artifactStorageRefStore = createInMemoryArtifactStorageRefStore();
+
+  // Callback to register refs in store after successful artifact verification
+  // Best-effort: failures do not block render success
+  const onVerifiedArtifactRef = ({ jobId, artifactId, storageRef }: VerifiedArtifactRefPayload): void => {
+    try {
+      artifactStorageRefStore.set(jobId, artifactId, storageRef);
+    } catch {
+      // Non-blocking - registration failure does not fail render
+    }
+  };
+
   return {
     registry,
     rendererAdapter,
     pathPolicy,
+    artifactStorageRefStore,
+    onVerifiedArtifactRef,
   };
 };
