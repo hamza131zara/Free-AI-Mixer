@@ -181,6 +181,13 @@ Why it matters:
   - No stream route implementation yet
   - No route wiring yet
   - No file serving yet
+- Phase 11-J adds artifact storage ref resolver boundary:
+  - backend/artifacts/artifactStorageRefResolver.ts with ArtifactStorageRefResolver
+  - resolve(jobId, artifactId) returns InternalArtifactStorageRef or undefined
+  - Internal-only, not exported in public contracts
+  - Added optional artifactStorageRefResolver to ExportRouterOptions
+  - Prerequisite for future stream route
+  - No stream route implementation yet
 
 Target fix phase:
 

@@ -2731,9 +2731,61 @@ Returns `artifact_access_unavailable` when:
 
 ### Deferred items
 
-- backend stream route audit/implementation
+- backend stream route audit/implementation (prerequisite added in Phase 11-J)
 - provider wiring to app/router
 - file existence check at stream time
+- production signed URL provider
+- frontend artifact access service
+- frontend download UI
+
+---
+
+## Phase 11-J — Artifact Storage Ref Resolver Boundary
+
+Status:
+
+- complete
+
+Scope:
+
+- internal backend type/interface only
+- resolver boundary only
+- no stream route implementation
+- no file serving
+
+### Phase 11-J completion summary
+
+- Created `backend/artifacts/artifactStorageRefResolver.ts`
+- Added `ArtifactStorageRefResolver` interface:
+  - `resolve(jobId: string, artifactId: string): InternalArtifactStorageRef | undefined`
+- Updated `backend/routes/exports.ts` with optional router option:
+  - `artifactStorageRefResolver?: ArtifactStorageRefResolver`
+- Tests added: `tests/e2e/phase11-artifact-storage-ref-resolver.spec.ts` (14 tests)
+
+### Resolver behavior
+
+- Maps backend-controlled jobId/artifactId to internal storage reference
+- Returns `InternalArtifactStorageRef` or `undefined` if not found
+- Internal-only, never exported in public contracts
+
+### What was NOT added
+
+- No stream route implementation
+- No file serving
+- No fs/path imports in route
+- No app/dependency wiring
+
+### Prerequisite for future work
+
+- Stream route requires `ArtifactStorageRefResolver` to locate files
+- Stream route will use resolver then validate path-root and file existence at stream time
+
+### Deferred items
+
+- backend stream route implementation
+- path safety helper/realpath validation
+- stream-time file existence/stat check
+- provider wiring/env gating
 - production signed URL provider
 - frontend artifact access service
 - frontend download UI
