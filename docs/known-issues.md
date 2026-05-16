@@ -237,9 +237,16 @@ Why it matters:
   - POST /exports/:jobId/execute now passes callback to executeRenderJob
   - Both worker-triggered and route-triggered renders can populate store
   - Route execution remains gated by FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION
-  - Resolver still NOT injected into createExportRouter
+  - Resolver still NOT injected into createExportRouter (superseded by Phase 12-Z)
   - Provider still NOT wired
   - No env gating for local dev stream yet
+- Phase 12-Z adds env-gated artifact resolver route injection:
+  - isLocalDevArtifactStreamEnabled() checks FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1"
+  - artifactStorageRefResolver passed to createExportRouter only when env enabled
+  - Stream route becomes functional only when env enabled
+  - Default behavior remains stream_not_configured / 501
+  - Provider still NOT wired
+  - Auth still not added
 
 Target fix phase:
 

@@ -3288,9 +3288,102 @@ artifactStorageRefStore.set(jobId, artifactId, storageRef)
 
 ### Deferred items
 
-- Resolver route injection (Phase 12-X or later)
+- Resolver route injection (Phase 12-Z - now implemented)
 - Provider wiring (Phase 12-O or later)
-- Env-gated local dev enablement (Phase 12-P or later)
+- Frontend artifact access service
+- Frontend download UI
+- Production signed URL provider
+- Production storage provider selection
+- Auth/authorization for artifact access
+
+## Phase 12-Z — Env-Gated Artifact Resolver Route Injection
+
+Status:
+
+- complete
+
+Scope:
+
+- Wire artifactStorageRefResolver into createExportRouter only when env-gated
+- Default behavior remains disabled (stream route returns 501)
+- No artifactAccessProvider wiring in this phase
+
+### Phase 12-Z completion summary
+
+- Updated `backend/app.ts`:
+  - Added `isLocalDevArtifactStreamEnabled()` helper
+  - Returns `true` only when `FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1"`
+  - Added `exportRouterOptions` variable with conditional resolver injection
+  - `onVerifiedArtifactRef` always passed
+  - `artifactStorageRefResolver` passed only when env enabled
+- Tests added: `tests/e2e/phase12-resolver-route-injection.spec.ts` (18 tests)
+- Updated older Phase 12 tests to reflect Phase 12-Z behavior
+
+### Env-gating behavior
+
+```
+app.ts
+  ↓
+isLocalDevArtifactStreamEnabled() checks FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1"
+  ↓
+exportRouterOptions:
+  - onVerifiedArtifactRef: backendDeps.onVerifiedArtifactRef (always)
+  - artifactStorageRefResolver: backendDeps.artifactStorageRefResolver (conditional)
+  ↓
+createExportRouter(backendDeps.registry, exportRouterOptions)
+  ↓
+Stream route:
+  - If resolver exists: resolves refs from artifactStorageRefStore
+  - If resolver missing: returns 501 stream_not_configured
+```
+
+### Default behavior (env disabled or unset)
+
+- `isLocalDevArtifactStreamEnabled()` returns `false`
+- `exportRouterOptions` does NOT include `artifactStorageRefResolver`
+- Stream route returns: `501 { code: "stream_not_configured", message: "..." }`
+- Access route returns: `artifact_access_unavailable`
+
+### Enabled behavior (FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM=1)
+
+- `isLocalDevArtifactStreamEnabled()` returns `true`
+- `exportRouterOptions` includes `artifactStorageRefResolver`
+- Stream route can resolve refs from `artifactStorageRefStore`
+- Both worker-triggered and route-triggered renders populate the store
+
+### Stream route validation (unchanged)
+
+Stream route remains final authority for path safety:
+
+1. Job exists → 404 (masqueraded)
+2. Job status is "success" → 404 (masqueraded)
+3. Artifact exists → 404
+4. Artifact status is "available" → 404
+5. Resolver returns `InternalArtifactStorageRef` → 404 if missing
+6. `fs.realpath(rootPath)` → 500 on failure
+7. `fs.realpath(filePath)` → 500 on failure
+8. Root containment check (`path.relative`) → 403 if escapes
+9. `fs.stat(filePath).isFile()` → 403 if not file
+10. `sendFile()` called only after all validations pass
+
+### Path leakage prevention
+
+- Error responses use generic codes: `stream_not_configured`, `job_not_found`, `artifact_not_found`, `forbidden`, `internal_error`
+- No `filePath`, `rootPath`, `directoryPath`, `jobSegment` in any error response
+
+### What was NOT added
+
+- No `artifactAccessProvider` wiring (provider remains not-configured)
+- No auth/authorization
+- No production signed URL provider
+- No production storage provider selection
+- No frontend artifact access service
+- No frontend download UI
+- No JSON persistence of local paths
+
+### Deferred items
+
+- Provider wiring (Phase 12-O or later)
 - Frontend artifact access service
 - Frontend download UI
 - Production signed URL provider
