@@ -231,8 +231,15 @@ Why it matters:
   - Successful renders populate artifactStorageRefStore internally
   - Failed renders do NOT register refs (callback not called on failure)
   - Resolver still NOT injected into createExportRouter (API unchanged)
-  - Route execution does not use callback (deferred to future phase)
   - No provider/env/frontend wiring yet
+- Phase 12-V adds route execution callback wiring:
+  - backendDeps.onVerifiedArtifactRef passed to createExportRouter
+  - POST /exports/:jobId/execute now passes callback to executeRenderJob
+  - Both worker-triggered and route-triggered renders can populate store
+  - Route execution remains gated by FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION
+  - Resolver still NOT injected into createExportRouter
+  - Provider still NOT wired
+  - No env gating for local dev stream yet
 
 Target fix phase:
 

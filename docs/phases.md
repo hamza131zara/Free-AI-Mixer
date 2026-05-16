@@ -3060,7 +3060,7 @@ Scope:
 ### Deferred items
 
 - RenderWorker callback wiring (Phase 12-R - now implemented)
-- Route execution callback wiring (Phase 12-O)
+- Route execution callback wiring (Phase 12-V - now implemented)
 - Resolver wiring to ref store (Phase 12-N - now implemented)
 - Provider wiring (Phase 12-O)
 - Env-gated local dev enablement (Phase 12-P)
@@ -3201,10 +3201,96 @@ artifactStorageRefStore.set(jobId, artifactId, storageRef)
 
 ### Deferred items
 
-- Route execution callback wiring (Phase 12-O)
+- Route execution callback wiring (Phase 12-V - now implemented)
 - Provider wiring (Phase 12-O)
 - Env-gated local dev enablement (Phase 12-P)
 - App/server route option wiring (Phase 12-P)
+- Frontend artifact access service
+- Frontend download UI
+- Production signed URL provider
+- Production storage provider selection
+- Auth/authorization for artifact access
+
+## Phase 12-V — Route Execution Callback Wiring
+
+Status:
+
+- complete
+
+Scope:
+
+- Wire onVerifiedArtifactRef callback from POST /exports/:jobId/execute into executeRenderJob
+- app.ts passes backendDeps.onVerifiedArtifactRef to createExportRouter
+- No provider/resolver route injection in this phase
+
+### Phase 12-V completion summary
+
+- Updated `backend/routes/exports.ts`:
+  - Added `onVerifiedArtifactRef?: (payload: VerifiedArtifactRefPayload) => void` to `ExportRouterOptions`
+  - POST /exports/:jobId/execute passes `options?.onVerifiedArtifactRef` to `executeRenderJob`
+- Updated `backend/app.ts`:
+  - Passes `backendDeps.onVerifiedArtifactRef` to `createExportRouter`
+- Tests added: `tests/e2e/phase12-route-execution-callback-wiring.spec.ts` (16 tests)
+- Updated tests in `phase12-harness-ref-registration.spec.ts`, `phase12-in-memory-ref-store.spec.ts`, `phase12-resolver-wiring.spec.ts`, `phase12-store-wiring.spec.ts`, `phase12-worker-callback-wiring.spec.ts` to reflect route execution callback now wired
+
+### Callback flow
+
+```
+backendDeps.onVerifiedArtifactRef (best-effort callback)
+    ↓
+app.ts → createExportRouter({ onVerifiedArtifactRef: backendDeps.onVerifiedArtifactRef })
+    ↓
+POST /exports/:jobId/execute → executeRenderJob({ onVerifiedArtifactRef: options?.onVerifiedArtifactRef })
+    ↓
+singleProcessRenderHarness({ onVerifiedArtifactRef })
+    ↓
+[Render completes successfully]
+    ↓
+Artifact verification succeeds (path safety checks pass)
+    ↓
+onVerifiedArtifactRef(payload) called
+    ↓
+backendDependencies.onVerifiedArtifactRef(payload)
+    ↓
+artifactStorageRefStore.set(jobId, artifactId, storageRef)
+```
+
+### Route execution gating
+
+- POST /exports/:jobId/execute remains dev/test-gated by `FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION`
+- Setting must be "1" to enable route execution
+- Existing timeout and worker limits remain unchanged
+
+### Store population behavior
+
+- **Successful route-triggered renders**: After artifact verification passes, route execution populates `artifactStorageRefStore`
+- **Failed route-triggered renders**: If render fails or verification fails, callback is never called - no ref is registered
+- Both worker-triggered and route-triggered renders use the same callback mechanism
+
+### API behavior (unchanged)
+
+- Stream route (`GET /exports/:jobId/artifacts/:artifactId/stream`) returns 501 (not configured)
+- Access route (`GET /exports/:jobId/artifacts/:artifactId/access`) returns `artifact_access_unavailable`
+- `createExportRouter` is passed `onVerifiedArtifactRef` but NOT `artifactStorageRefResolver` or `artifactAccessProvider`
+- No env gating (`FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM` not added)
+
+### What was NOT added
+
+- No `artifactStorageRefResolver` route injection (resolver exists but not wired to router)
+- No `artifactAccessProvider` wiring (provider remains not-configured)
+- No env-gated local dev stream enablement
+- No frontend artifact access service
+- No frontend download UI
+- No production signed URL provider
+- No production storage provider selection
+- No auth/authorization for artifact access
+- No JSON persistence of local paths
+
+### Deferred items
+
+- Resolver route injection (Phase 12-X or later)
+- Provider wiring (Phase 12-O or later)
+- Env-gated local dev enablement (Phase 12-P or later)
 - Frontend artifact access service
 - Frontend download UI
 - Production signed URL provider
