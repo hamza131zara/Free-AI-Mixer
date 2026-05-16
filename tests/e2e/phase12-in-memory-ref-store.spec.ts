@@ -218,12 +218,15 @@ test.describe("phase12 in-memory artifact storage ref store", () => {
       "utf8",
     );
 
-    // Phase 12-V: app.ts now passes onVerifiedArtifactRef (route execution callback wiring)
-    expect(source).toContain("createExportRouter(backendDeps.registry, { onVerifiedArtifactRef:");
+    // Phase 12-Z: app.ts now uses exportRouterOptions (conditional resolver injection)
+    expect(source).toContain("exportRouterOptions");
+    expect(source).toContain("onVerifiedArtifactRef:");
     // Should not reference the new store directly
     expect(source).not.toContain("inMemoryArtifactStorageRefStore");
-    // Phase 12-V: does NOT pass artifactStorageRefResolver or artifactAccessProvider
-    expect(source).not.toContain("artifactStorageRefResolver");
+    // Phase 12-Z: resolver IS conditionally injected behind isLocalDevArtifactStreamEnabled()
+    expect(source).toContain("artifactStorageRefResolver");
+    expect(source).toContain("isLocalDevArtifactStreamEnabled()");
+    // artifactAccessProvider still NOT passed
     expect(source).not.toContain("artifactAccessProvider");
   });
 

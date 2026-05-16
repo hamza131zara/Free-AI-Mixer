@@ -110,11 +110,13 @@ test.describe("phase12 resolver wiring", () => {
       "utf8",
     );
 
-    // Phase 12-V: app.ts now passes onVerifiedArtifactRef (route execution callback wiring)
-    expect(source).toContain("createExportRouter(backendDeps.registry, { onVerifiedArtifactRef:");
-    // but does NOT pass artifactStorageRefResolver (resolver route injection deferred)
-    expect(source).not.toContain("artifactStorageRefResolver");
-    // also does NOT pass artifactAccessProvider (provider wiring deferred)
+    // Phase 12-Z: app.ts now uses exportRouterOptions (conditional resolver injection)
+    expect(source).toContain("exportRouterOptions");
+    expect(source).toContain("onVerifiedArtifactRef:");
+    // Phase 12-Z: resolver IS conditionally injected behind isLocalDevArtifactStreamEnabled()
+    expect(source).toContain("artifactStorageRefResolver");
+    expect(source).toContain("isLocalDevArtifactStreamEnabled()");
+    // artifactAccessProvider still NOT passed (provider wiring deferred)
     expect(source).not.toContain("artifactAccessProvider");
   });
 

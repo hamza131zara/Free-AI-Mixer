@@ -108,11 +108,13 @@ test.describe("phase12 store wiring", () => {
       "utf8",
     );
 
-    // Phase 12-V: app.ts now passes onVerifiedArtifactRef to createExportRouter
-    expect(source).toContain("createExportRouter(backendDeps.registry, { onVerifiedArtifactRef:");
-    // but does NOT pass artifactAccessProvider or artifactStorageRefResolver (deferred)
+    // Phase 12-Z: app.ts uses exportRouterOptions (conditional resolver injection)
+    expect(source).toContain("exportRouterOptions");
+    // artifactAccessProvider still NOT passed
     expect(source).not.toContain("artifactAccessProvider");
-    expect(source).not.toContain("artifactStorageRefResolver");
+    // Phase 12-Z: resolver IS conditionally injected behind isLocalDevArtifactStreamEnabled()
+    expect(source).toContain("artifactStorageRefResolver");
+    expect(source).toContain("isLocalDevArtifactStreamEnabled()");
   });
 
   test("backend/routes/exports.ts unchanged", async () => {
@@ -156,13 +158,14 @@ test.describe("phase12 store wiring", () => {
 
     // No local dev provider (Phase 12-N adds resolver to deps, not to app/route/provider)
     expect(depsSource).not.toContain("createLocalDevArtifactAccessProvider");
-    // Resolver is in backendDependencies (Phase 12-N) but NOT wired to app/route
-    // So app should not pass resolver to router
+    // Phase 12-Z: resolver IS conditionally injected behind isLocalDevArtifactStreamEnabled()
+    expect(appSource).toContain("artifactStorageRefResolver");
+    expect(appSource).toContain("isLocalDevArtifactStreamEnabled()");
+    // artifactAccessProvider still NOT wired
     expect(appSource).not.toContain("artifactAccessProvider");
-    expect(appSource).not.toContain("artifactStorageRefResolver");
-    // Route options should not have provider/resolver
+    // Route options should not have provider, but resolver option exists (used conditionally)
     expect(routeSource).not.toContain("artifactAccessProvider:");
-    expect(routeSource).not.toContain("artifactStorageRefResolver:");
+    expect(routeSource).toContain("artifactStorageRefResolver?:"); // ExportRouterOptions has it
   });
 
   test("no env gating added", async () => {

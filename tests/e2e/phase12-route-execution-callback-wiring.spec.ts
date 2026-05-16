@@ -52,16 +52,24 @@ test.describe("phase12 route execution callback wiring", () => {
       "utf8",
     );
 
-    expect(source).toContain("createExportRouter(backendDeps.registry, { onVerifiedArtifactRef: backendDeps.onVerifiedArtifactRef })");
+    // Phase 12-Z: uses exportRouterOptions variable instead of inline
+    expect(source).toContain("onVerifiedArtifactRef:");
+    expect(source).toContain("backendDeps.onVerifiedArtifactRef");
+    expect(source).toContain("createExportRouter(backendDeps.registry, exportRouterOptions)");
   });
 
-  test("app.ts does NOT pass artifactStorageRefResolver to createExportRouter", async () => {
+  test("app.ts does NOT pass artifactStorageRefResolver unconditionally", async () => {
     const source = await fs.readFile(
       path.join(process.cwd(), "backend", "app.ts"),
       "utf8",
     );
 
-    expect(source).not.toContain("artifactStorageRefResolver");
+    // Phase 12-Z: resolver is conditional behind isLocalDevArtifactStreamEnabled()
+    expect(source).toContain("isLocalDevArtifactStreamEnabled()");
+    expect(source).toContain("FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM");
+    expect(source).toContain("artifactStorageRefResolver");
+    // But it's conditional, not unconditional
+    expect(source).toContain("...(isLocalDevArtifactStreamEnabled()");
   });
 
   test("app.ts does NOT pass artifactAccessProvider to createExportRouter", async () => {

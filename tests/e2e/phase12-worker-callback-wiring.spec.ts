@@ -87,10 +87,12 @@ test.describe("phase12 worker callback wiring", () => {
       "utf8",
     );
 
-    // Phase 12-V: app.ts now passes onVerifiedArtifactRef (route execution callback wiring)
-    expect(source).toContain("createExportRouter(backendDeps.registry, { onVerifiedArtifactRef:");
-    // but does NOT pass artifactStorageRefResolver (resolver route injection deferred)
-    expect(source).not.toContain("artifactStorageRefResolver");
+    // Phase 12-V: app.ts passes onVerifiedArtifactRef
+    expect(source).toContain("onVerifiedArtifactRef:");
+    // Phase 12-Z: resolver is conditionally injected via exportRouterOptions behind isLocalDevArtifactStreamEnabled()
+    expect(source).toContain("exportRouterOptions");
+    expect(source).toContain("artifactStorageRefResolver");
+    expect(source).toContain("isLocalDevArtifactStreamEnabled()");
   });
 
   test("app.ts does NOT pass artifactAccessProvider to createExportRouter", async () => {
@@ -150,10 +152,14 @@ test.describe("phase12 worker callback wiring", () => {
       "utf8",
     );
 
-    // Resolver exists in backendDependencies but NOT injected into router
-    expect(appSource).not.toContain("artifactStorageRefResolver");
-    // Route ExportRouterOptions may have the field but it's not being injected
-    expect(routeSource).not.toContain("artifactStorageRefResolver:");
+    // Phase 12-Z: resolver IS conditionally injected behind isLocalDevArtifactStreamEnabled()
+    // The correct safety boundary: conditional injection is OK, unconditional is not
+    expect(appSource).toContain("artifactStorageRefResolver");
+    expect(appSource).toContain("isLocalDevArtifactStreamEnabled()");
+    // Route ExportRouterOptions exists but app uses it conditionally
+    expect(routeSource).toContain("artifactStorageRefResolver");
+    // artifactAccessProvider still NOT injected
+    expect(appSource).not.toContain("artifactAccessProvider");
   });
 
   test("no env gating added", async () => {
@@ -166,8 +172,10 @@ test.describe("phase12 worker callback wiring", () => {
       "utf8",
     );
 
+    // Worker files must not mention FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM
     expect(workerSource).not.toContain("FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM");
-    expect(appSource).not.toContain("FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM");
+    // Phase 12-Z: app.ts may have it for local-dev stream gate
+    expect(appSource).toContain("FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM");
   });
 
   test("no frontend changes", async () => {
