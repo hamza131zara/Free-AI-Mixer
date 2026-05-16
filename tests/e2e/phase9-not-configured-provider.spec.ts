@@ -193,37 +193,46 @@ test.describe("phase9 not-configured artifact access provider", () => {
     expect(source).not.toContain("import.meta.url");
   });
 
-  test("backend/routes/exports.ts safety boundaries preserved", async () => {
-    const source = await fs.readFile(
-      path.join(process.cwd(), "backend", "routes", "exports.ts"),
-      "utf8",
-    );
+  test("backend/routes/exports.ts keeps not-configured provider as safe default", async () => {
+  const routeSource = await fs.readFile(
+    path.join(process.cwd(), "backend", "routes", "exports.ts"),
+    "utf8",
+  );
 
-    // Phase 10-B allows the route to use the not-configured provider as a safe default.
-    expect(source).toContain("createNotConfiguredArtifactAccessProvider");
-    expect(source).toContain("ArtifactAccessProvider");
+  const providerSource = await fs.readFile(
+    path.join(
+      process.cwd(),
+      "backend",
+      "artifacts",
+      "notConfiguredArtifactAccessProvider.ts",
+    ),
+    "utf8",
+  );
 
-    const forbiddenTerms = [
-      '"filePath"',
-      '"localPath"',
-      '"outputPath"',
-      '"absolutePath"',
-      '"filesystemPath"',
-      '"storageKey"',
-      '"downloadUrl"',
-      "createSigned",
-      "getSignedUrl",
-      "presign",
-      "createReadStream",
-      "sendFile",
-      "express.static",
-    ];
+  // Phase 10/11 route boundary: default artifact access provider remains not-configured.
+  expect(routeSource).toContain("createNotConfiguredArtifactAccessProvider");
+  expect(routeSource).toContain(
+    "options?.artifactAccessProvider ?? createNotConfiguredArtifactAccessProvider()",
+  );
 
-    for (const term of forbiddenTerms) {
-      expect(source).not.toContain(term);
-    }
-  });
+  // Phase 11-M intentionally added an audited local-dev stream route.
+  expect(routeSource).toContain("/exports/:jobId/artifacts/:artifactId/stream");
+  expect(routeSource).toContain("artifactStorageRefResolver");
 
+  // Not-configured provider itself must remain artifact-neutral and file-serving-free.
+  expect(providerSource).not.toContain("sendFile");
+  expect(providerSource).not.toContain("createReadStream");
+  expect(providerSource).not.toContain("express.static");
+  expect(providerSource).not.toContain("fs.");
+  expect(providerSource).not.toContain("node:fs");
+  expect(providerSource).not.toContain("node:path");
+
+  // No signed URL generation belongs to not-configured/default access behavior.
+  expect(routeSource).not.toContain("getSignedUrl");
+  expect(routeSource).not.toContain("createSigned");
+  expect(routeSource).not.toContain("presign");
+  expect(routeSource).not.toContain("signedUrl");
+});
   test("frontend files remain unchanged", async () => {
     const source = await fs.readFile(
       path.join(process.cwd(), "src", "components", "TimelineExportPanel.tsx"),
