@@ -209,6 +209,13 @@ Why it matters:
   - Harness does not import store (store-implementation-neutral)
   - No store/dependency wiring yet - callback ready for future wiring
   - markSuccess still receives only BackendArtifactMetadata (no path fields)
+- Phase 12-J adds backend store wiring / ref registration callback connection:
+  - backendDependencies.ts owns artifactStorageRefStore (process-memory only)
+  - backendDependencies.ts exposes onVerifiedArtifactRef callback
+  - onVerifiedArtifactRef wraps store.set in try/catch (best-effort)
+  - executeRenderJob accepts optional onVerifiedArtifactRef and passes to harness
+  - No app/route/provider/resolver wiring yet - store ready for future wiring
+  - Stream route still requires resolver injection (future phase)
 
 Target fix phase:
 

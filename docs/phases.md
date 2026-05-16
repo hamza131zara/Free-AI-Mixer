@@ -2980,12 +2980,91 @@ Scope:
 
 ### Deferred items
 
-- Wire callback to in-memory ref store (Phase 12-G)
-- BackendDependencies store ownership (Phase 12-G)
-- Resolver wiring to ref store (Phase 12-H)
-- Provider wiring (Phase 12-H)
-- Env-gated local dev enablement (Phase 12-I)
-- App/server wiring (Phase 12-I)
+- Wire callback to in-memory ref store (Phase 12-J - now implemented)
+- BackendDependencies store ownership (Phase 12-J - now implemented)
+- Resolver wiring to ref store (Phase 12-K)
+- Provider wiring (Phase 12-K)
+- Env-gated local dev enablement (Phase 12-L)
+- App/server wiring (Phase 12-L)
+- Frontend artifact access service
+- Frontend download UI
+- Production signed URL provider
+- Production storage provider selection
+- Auth/authorization for artifact access
+
+----
+
+## Phase 12-J — Backend Store Wiring / Ref Registration Callback Connection
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-internal component only
+- store ownership + callback passthrough
+- no app/server/route/provider/resolver wiring
+- no frontend changes
+
+### Phase 12-J completion summary
+
+- Updated `backend/composition/backendDependencies.ts`
+- Added `artifactStorageRefStore: ArtifactStorageRefStore` to `BackendDependencies`
+- Added `onVerifiedArtifactRef: (payload) => void` to `BackendDependencies`
+- `createBackendDependencies()` creates one in-memory store instance
+- `onVerifiedArtifactRef` callback:
+  - Stores `payload.storageRef` by `jobId` + `artifactId`
+  - Wrapped in try/catch (best-effort, non-blocking)
+  - No logging, no path leakage
+- Updated `backend/renderer/executeRenderJob.ts`
+- Added optional `onVerifiedArtifactRef` to `ExecuteRenderJobInput`
+- `executeRenderJob` passes callback through to `executeSingleProcessRender`
+- Tests added: `tests/e2e/phase12-store-wiring.spec.ts` (17 tests)
+
+### Store ownership behavior
+
+- `backendDependencies.artifactStorageRefStore` is internal-only
+- Process-memory only (Map-based)
+- Created once at `createBackendDependencies()` call
+- Cleared on process restart (acceptable - jobs unavailable)
+- Never exported from public contracts
+
+### Callback passthrough behavior
+
+- `executeRenderJob` accepts optional `onVerifiedArtifactRef`
+- If provided, forwarded to harness
+- If undefined, harness callback is undefined → no registration
+- Caller decides whether to pass callback
+
+### Lifecycle ordering
+
+1. Render executes → verification succeeds
+2. Harness calls `onVerifiedArtifactRef(payload)`
+3. `backendDependencies.onVerifiedArtifactRef` receives payload
+4. `artifactStorageRefStore.set(jobId, artifactId, storageRef)`
+5. `markFinalizing` → `markSuccess`
+6. Stream route later can query store via resolver (future phase)
+
+### What was NOT added
+
+- No renderWorker callback wiring
+- No route execution callback wiring
+- No resolver wiring to store
+- No provider wiring
+- No env gating
+- No app/server wiring
+- No route options injection
+- No frontend changes
+
+### Deferred items
+
+- RenderWorker callback wiring (Phase 12-K)
+- Route execution callback wiring (Phase 12-K)
+- Resolver wiring to ref store (Phase 12-K)
+- Provider wiring (Phase 12-K)
+- Env-gated local dev enablement (Phase 12-L)
+- App/server route option wiring (Phase 12-L)
 - Frontend artifact access service
 - Frontend download UI
 - Production signed URL provider
