@@ -3059,7 +3059,7 @@ Scope:
 
 ### Deferred items
 
-- RenderWorker callback wiring (Phase 12-O)
+- RenderWorker callback wiring (Phase 12-R - now implemented)
 - Route execution callback wiring (Phase 12-O)
 - Resolver wiring to ref store (Phase 12-N - now implemented)
 - Provider wiring (Phase 12-O)
@@ -3114,18 +3114,93 @@ Scope:
 - Access route returns artifact_access_unavailable as before
 - Provider remains not-configured
 
+## Phase 12-R — Worker Callback Wiring
+
+Status:
+
+- complete
+
+Scope:
+
+- Wire onVerifiedArtifactRef callback through render worker lifecycle
+- BackendDependencies provides callback to createRenderWorkerLifecycle
+- No route/provider/env wiring in this phase
+
+### Phase 12-R completion summary
+
+- Updated `backend/app.ts`:
+  - Passes `backendDeps.onVerifiedArtifactRef` to `createRenderWorkerLifecycle`
+- Updated `backend/workers/renderWorker.ts`:
+  - Added `onVerifiedArtifactRef?: (payload: VerifiedArtifactRefPayload) => void` to `RenderWorkerOptions`
+  - Passes callback to `executeRenderJob`
+- Updated `backend/workers/renderWorkerStartup.ts`:
+  - Passes callback through to worker loop via options spread
+- Updated `backend/workers/renderWorkerLifecycle.ts`:
+  - Added `onVerifiedArtifactRef` parameter to `createRenderWorkerLifecycle`
+  - Passes callback to `createRenderWorkerStartup`
+- Tests added: `tests/e2e/phase12-worker-callback-wiring.spec.ts` (16 tests)
+- Updated tests in `phase12-store-wiring.spec.ts` and `phase12-resolver-wiring.spec.ts` to reflect worker callback now exists
+
+### Callback flow
+
+```
+backendDeps.onVerifiedArtifactRef (best-effort callback)
+    ↓
+app.ts → createRenderWorkerLifecycle(onVerifiedArtifactRef)
+    ↓
+createRenderWorkerStartup → createRenderWorkerLoop → drainRenderWorkerOnce
+    ↓
+renderWorker → executeRenderJob
+    ↓
+singleProcessRenderHarness({ onVerifiedArtifactRef })
+    ↓
+[Render completes successfully]
+    ↓
+Artifact verification succeeds (path safety checks pass)
+    ↓
+onVerifiedArtifactRef(payload) called
+    ↓
+backendDependencies.onVerifiedArtifactRef(payload)
+    ↓
+artifactStorageRefStore.set(jobId, artifactId, storageRef)
+```
+
+### Callback characteristics
+
+- **Internal only**: `backendDeps.onVerifiedArtifactRef` is passed only to `createRenderWorkerLifecycle`, not to `createExportRouter`
+- **Post-verification**: Callback fires only after artifact verification succeeds in the harness
+- **Best-effort**: Callback is wrapped in try/catch in backendDependencies - failures are logged but non-blocking
+- **No route wiring**: Route execution does not use this callback (deferred to future phase)
+- **No resolver injection**: `artifactStorageRefResolver` exists in backendDependencies but is not injected into router
+
+### Store population behavior
+
+- **Successful renders**: After artifact verification passes, `artifactStorageRefStore.set(jobId, artifactId, storageRef)` stores the internal storage reference
+- **Failed renders**: If render fails or verification fails, callback is never called - no ref is registered
+- **Process-memory**: Store is in-memory only, not persisted to disk or JSON
+
+### API behavior (unchanged)
+
+- Stream route (`GET /exports/:jobId/artifacts/:artifactId/stream`) returns 501 (not configured)
+- Access route (`GET /exports/:jobId/artifacts/:artifactId/access`) returns `artifact_access_unavailable`
+- `createExportRouter` not passed resolver or provider options
+- No env gating (`FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM` not added)
+
 ### What was NOT added
 
-- No renderWorker callback wiring
-- No route execution callback wiring
-- No app/route resolver injection
-- No provider wiring
-- No env gating
-- No frontend changes
+- No route execution callback wiring (callback stays internal to worker lifecycle)
+- No `createExportRouter` resolver/provider injection (resolver exists but not wired)
+- No local dev artifact access provider
+- No env-gated local dev enablement
+- No frontend artifact access service
+- No frontend download UI
+- No production signed URL provider
+- No production storage provider selection
+- No auth/authorization for artifact access
+- No JSON persistence of local paths
 
 ### Deferred items
 
-- RenderWorker callback wiring (Phase 12-O)
 - Route execution callback wiring (Phase 12-O)
 - Provider wiring (Phase 12-O)
 - Env-gated local dev enablement (Phase 12-P)

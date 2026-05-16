@@ -224,6 +224,15 @@ Why it matters:
   - Resolver NOT injected into createExportRouter (API unchanged)
   - Stream route still returns 501 until resolver is injected (future phase)
   - Provider remains not-configured
+- Phase 12-R adds worker callback wiring:
+  - backendDeps.onVerifiedArtifactRef passed to createRenderWorkerLifecycle
+  - Callback flows through worker startup → loop → worker → executeRenderJob
+  - Callback fires in harness only after artifact verification succeeds
+  - Successful renders populate artifactStorageRefStore internally
+  - Failed renders do NOT register refs (callback not called on failure)
+  - Resolver still NOT injected into createExportRouter (API unchanged)
+  - Route execution does not use callback (deferred to future phase)
+  - No provider/env/frontend wiring yet
 
 Target fix phase:
 
