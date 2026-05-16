@@ -2780,12 +2780,83 @@ Scope:
 - Stream route requires `ArtifactStorageRefResolver` to locate files
 - Stream route will use resolver then validate path-root and file existence at stream time
 
+----
+
+## Phase 11-M — Backend Stream Route Implementation
+
+Status:
+
+- complete
+
+Scope:
+
+- backend route implementation only
+- stream route with path validation
+- no app wiring
+- no frontend changes
+
+### Phase 11-M completion summary
+
+- Updated `backend/routes/exports.ts` with stream route:
+  - Added `import { promises as fs } from "node:fs"` and `import path from "node:path"`
+  - Added `GET /exports/:jobId/artifacts/:artifactId/stream` route handler
+  - Optional `artifactStorageRefResolver` in router options (test-injected only)
+  - 501 if resolver not configured
+  - Job/artifact validation (404 for not found, non-success, not-ready)
+  - Path safety via `fs.realpath` + `path.relative` root containment validation
+  - File existence and `isFile()` check at stream time
+  - Headers: Content-Type (format-based), Content-Disposition (safe filename), Cache-Control no-store, X-Content-Type-Options nosniff
+  - Uses `response.sendFile` for streaming after validation
+- Tests added: `tests/e2e/phase11-stream-route.spec.ts` (19 tests)
+
+### Stream route behavior
+
+**Dependency Injection:**
+- Uses injected `ArtifactStorageRefResolver` to map jobId + artifactId to `InternalArtifactStorageRef`
+- Dependency is test-injected only via router options — no app/server wiring yet
+
+**Validation Pipeline:**
+1. Returns 501 if `artifactStorageRefResolver` not configured
+2. Returns 404 if job not found or status not "success"
+3. Returns 404 if artifact not found or status not "available"
+4. Resolves storage ref via `artifactStorageRefResolver.resolve(jobId, artifactId)`
+5. Calls `fs.realpath()` on both filePath and rootPath to resolve symlinks
+6. Uses `path.relative(rootPath, filePath)` to validate file is inside root
+7. Returns 403 if path escapes root (path traversal or symlink escape attempt)
+8. Calls `fs.stat()` and verifies `stat.isFile()` — returns 404 if missing, 403 if directory
+9. On success: streams file using `response.sendFile()` after all validations pass
+
+**Safe Headers:**
+- Content-Type: based on artifact format (mp4→video/mp4, webm→video/webm, default→application/octet-stream)
+- Content-Disposition: `attachment; filename="<sanitized-artifact-id>.<format>"`
+- Cache-Control: no-store
+- X-Content-Type-Options: nosniff
+
+**Error Response Codes (no local path leakage):**
+- `stream_not_configured` — resolver not injected (501)
+- `job_not_found` — job doesn't exist or not successful (404)
+- `artifact_not_found` — artifact doesn't exist or not available (404)
+- `forbidden` — path traversal or directory accessed (403)
+- `not_found` — file missing on disk (404)
+- `internal_error` — realpath/stat failure (500)
+
+All error responses use generic codes and messages — no file paths, root paths, or storage refs exposed.
+
+### What was NOT added
+
+- No app/dependency wiring (resolver injection via app/server)
+- No static file serving (uses response.sendFile only)
+- No production signed URL generation
+- No frontend artifact access service
+- No frontend download UI
+- No signed/expiring URL provider
+
 ### Deferred items
 
-- backend stream route implementation
-- path safety helper/realpath validation
-- stream-time file existence/stat check
-- provider wiring/env gating
-- production signed URL provider
-- frontend artifact access service
-- frontend download UI
+- App/env provider wiring for stream route (resolver injection at app level)
+- Auth/authorization for artifact access
+- Production signed URL provider (for non-local-dev deployments)
+- Frontend artifact access service
+- Frontend download UI
+- Production storage provider selection
+- Artifact access expiration/revocation

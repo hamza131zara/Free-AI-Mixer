@@ -74,7 +74,7 @@ Current state:
 - server workers are not implemented
 - webhook completion is not implemented
 - remote render cancellation is not implemented
-- downloadable video output is not implemented
+- downloadable video output is not fully implemented (backend stream route exists in Phase 11-M, but frontend download UI deferred)
 - real video rendering is not implemented
 - durable export job persistence is not implemented
 - artifact hosting/signed URLs are not implemented
@@ -170,24 +170,28 @@ Why it matters:
   - Internal-only type with filePath, rootPath, jobSegment, directoryPath
   - Not exported to contracts
   - Not added to BackendArtifactMetadata
-  - Prerequisite for future local dev stream provider
-  - No provider implementation yet
-  - No stream route yet
+  - Prerequisite for local dev stream provider and stream route
 - Phase 11-F adds local dev stream provider:
   - backend/artifacts/localDevArtifactAccessProvider.ts with createLocalDevArtifactAccessProvider
   - LocalDevProviderOptions with injected resolveArtifactStorageRef, streamUrlForArtifact, isPathWithinRoot
   - Returns local_dev_stream access when ref exists, path is safe, URL is safe
   - Rejects file://, Windows paths, path traversal in URLs
-  - No stream route implementation yet
-  - No route wiring yet
-  - No file serving yet
 - Phase 11-J adds artifact storage ref resolver boundary:
   - backend/artifacts/artifactStorageRefResolver.ts with ArtifactStorageRefResolver
   - resolve(jobId, artifactId) returns InternalArtifactStorageRef or undefined
   - Internal-only, not exported in public contracts
   - Added optional artifactStorageRefResolver to ExportRouterOptions
-  - Prerequisite for future stream route
-  - No stream route implementation yet
+- Phase 11-M adds backend stream route:
+  - GET /exports/:jobId/artifacts/:artifactId/stream route in backend/routes/exports.ts
+  - Uses injected ArtifactStorageRefResolver (test-injected only, no app wiring)
+  - Path validation via fs.realpath + path.relative root containment
+  - File existence/isFile check at stream time
+  - Safe headers: Content-Type, Content-Disposition, Cache-Control no-store, X-Content-Type-Options nosniff
+  - Generic error codes: stream_not_configured, job_not_found, artifact_not_found, forbidden, not_found, internal_error
+  - No local path leakage in error responses
+  - No app/server wiring yet (resolver test-injected only)
+  - No production signed URL provider yet
+  - No frontend download UI yet
 
 Target fix phase:
 
@@ -278,7 +282,7 @@ Current state:
 - server workers for export orchestration are not implemented yet
 - webhook completion for export jobs is not implemented yet
 - remote render cancellation is not implemented yet
-- downloadable video output is not implemented yet
+- downloadable video output is not fully implemented (backend stream route exists in Phase 11-M, but frontend download UI deferred)
 
 Why it matters:
 
