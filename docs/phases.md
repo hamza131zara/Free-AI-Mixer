@@ -2912,11 +2912,80 @@ Scope:
 
 ### Deferred items
 
-- Render harness/executeRenderJob ref registration (Phase 12-C)
-- Resolver wiring to ref store (Phase 12-D)
-- Provider wiring (Phase 12-E)
-- Env-gated local dev enablement (Phase 12-F)
-- App/server wiring (Phase 12-F)
+- Render harness ref registration (Phase 12-F - now implemented)
+- Resolver wiring to ref store (Phase 12-G)
+- Provider wiring (Phase 12-H)
+- Env-gated local dev enablement (Phase 12-I)
+- App/server wiring (Phase 12-I)
+- Frontend artifact access service
+- Frontend download UI
+- Production signed URL provider
+- Production storage provider selection
+- Auth/authorization for artifact access
+
+----
+
+## Phase 12-F — Render Harness Verified Artifact Ref Registration Callback
+
+Status:
+
+- complete
+
+Scope:
+
+- backend renderer harness implementation only
+- optional callback injection
+- no store wiring
+- no app/server/provider/resolver wiring
+- no frontend changes
+
+### Phase 12-F completion summary
+
+- Updated `backend/renderer/singleProcessRenderHarness.ts`
+- Added `VerifiedArtifactRefPayload` interface:
+  - `jobId: string`
+  - `artifactId: string` (from verified artifact)
+  - `artifact: BackendArtifactMetadata` (safe public metadata)
+  - `storageRef: InternalArtifactStorageRef` (internal paths)
+- Added optional `onVerifiedArtifactRef` callback to `SingleProcessRenderHarnessInput`
+- Callback is called only after `verifyRenderedArtifact` succeeds
+- InternalArtifactStorageRef constructed from `resolvedOutputPath`:
+  - `filePath`, `rootPath`, `jobSegment`, `directoryPath`
+- Callback wrapped in try/catch (best-effort, non-blocking)
+- Callback failure does not block `markFinalizing` or `markSuccess`
+- Callback is NOT called on: adapter failure, verification failure, render error
+- Harness does not import `inMemoryArtifactStorageRefStore` (store-implementation-neutral)
+- Tests added: `tests/e2e/phase12-harness-ref-registration.spec.ts` (18 tests)
+
+### Callback lifecycle ordering
+
+1. Render executes successfully
+2. Output path resolves
+3. Renderer adapter runs
+4. Artifact verification succeeds (`verification.ok === true`)
+5. **Callback registration** (best-effort)
+6. markFinalizing
+7. markSuccess
+8. Return success result
+
+### What was NOT added
+
+- No store/dependency wiring to harness
+- No resolver/provider wiring to app
+- No app/server changes
+- No route behavior changes
+- No public contract changes
+- No JSON persistence of local paths
+- No file serving changes
+
+### Deferred items
+
+- Wire callback to in-memory ref store (Phase 12-G)
+- BackendDependencies store ownership (Phase 12-G)
+- Resolver wiring to ref store (Phase 12-H)
+- Provider wiring (Phase 12-H)
+- Env-gated local dev enablement (Phase 12-I)
+- App/server wiring (Phase 12-I)
 - Frontend artifact access service
 - Frontend download UI
 - Production signed URL provider

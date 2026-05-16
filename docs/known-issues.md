@@ -200,7 +200,15 @@ Why it matters:
   - Starts empty, no persistence
   - No file existence/path validation (stream route owns that)
   - No app/provider/resolver wiring yet
-  - Future: harness registers refs after verification
+- Phase 12-F adds render harness verified artifact ref registration callback:
+  - singleProcessRenderHarness.ts gets optional onVerifiedArtifactRef callback
+  - VerifiedArtifactRefPayload with jobId, artifactId, artifact, storageRef
+  - Callback called only after verifyRenderedArtifact succeeds
+  - Callback wrapped in try/catch (best-effort, non-blocking)
+  - storageRef constructed from resolvedOutputPath (filePath, rootPath, jobSegment, directoryPath)
+  - Harness does not import store (store-implementation-neutral)
+  - No store/dependency wiring yet - callback ready for future wiring
+  - markSuccess still receives only BackendArtifactMetadata (no path fields)
 
 Target fix phase:
 
