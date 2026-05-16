@@ -1,5 +1,5 @@
 import type { ExportJobRegistry } from "../registry/exportJobRegistry";
-import type { RendererAdapter } from "../renderer/singleProcessRenderHarness";
+import type { RendererAdapter, VerifiedArtifactRefPayload } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
 import { createRenderWorkerStartup, type RenderWorkerStartupController } from "./renderWorkerStartup";
 
@@ -25,11 +25,13 @@ export const createRenderWorkerLifecycle = (
   registry: ExportJobRegistry,
   rendererAdapter: RendererAdapter,
   pathPolicy: RenderOutputPathPolicy,
+  onVerifiedArtifactRef?: (payload: VerifiedArtifactRefPayload) => void,
 ): RenderWorkerLifecycleController => {
   const startupController = createRenderWorkerStartup(
     registry,
     rendererAdapter,
     pathPolicy,
+    { onVerifiedArtifactRef },
   );
 
   let initialized = false;

@@ -12,6 +12,7 @@ export const createApp = (): Express => {
     backendDeps.registry,
     backendDeps.rendererAdapter,
     backendDeps.pathPolicy,
+    backendDeps.onVerifiedArtifactRef,
   );
   lifecycle.init();
   app.locals.renderWorkerLifecycle = lifecycle;

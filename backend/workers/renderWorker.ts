@@ -1,6 +1,6 @@
 import type { ExportJobRegistry } from "../registry/exportJobRegistry";
 import { executeRenderJob } from "../renderer/executeRenderJob";
-import type { RendererAdapter } from "../renderer/singleProcessRenderHarness";
+import type { RendererAdapter, VerifiedArtifactRefPayload } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
 import type {
   BackendExportJobRecord,
@@ -15,6 +15,7 @@ const TERMINAL_STATUSES: BackendExportLifecycleStatus[] = [
 
 export interface RenderWorkerOptions {
   workerId?: string;
+  onVerifiedArtifactRef?: (payload: VerifiedArtifactRefPayload) => void;
 }
 
 export interface RenderWorkerDrainResult {
@@ -62,6 +63,7 @@ export const drainRenderWorkerOnce = async (
         workerId,
         jobId: job.jobId,
         snapshotInput,
+        onVerifiedArtifactRef: options?.onVerifiedArtifactRef,
       });
 
       if (result.ok) {
@@ -115,6 +117,7 @@ const getWorkerPollInterval = (): number => {
 export interface RenderWorkerLoopOptions {
   workerId?: string;
   pollIntervalMs?: number;
+  onVerifiedArtifactRef?: (payload: VerifiedArtifactRefPayload) => void;
 }
 
 export interface RenderWorkerLoopStatus {
@@ -184,7 +187,7 @@ export const createRenderWorkerLoop = (
 
     draining = true;
     try {
-      await drainRenderWorkerOnce(registry, rendererAdapter, pathPolicy, { workerId });
+      await drainRenderWorkerOnce(registry, rendererAdapter, pathPolicy, { workerId, onVerifiedArtifactRef: options?.onVerifiedArtifactRef });
     } catch {
       // Contain errors - do not crash the loop
     } finally {

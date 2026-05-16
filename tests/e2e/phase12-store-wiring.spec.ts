@@ -102,7 +102,7 @@ test.describe("phase12 store wiring", () => {
     expect(source).not.toContain("ArtifactStorageRefStore");
   });
 
-  test("backend/app.ts unchanged: does not pass artifactAccessProvider/artifactStorageRefResolver/onVerifiedArtifactRef into createExportRouter", async () => {
+  test("backend/app.ts does not pass artifactAccessProvider/artifactStorageRefResolver to createExportRouter", async () => {
     const source = await fs.readFile(
       path.join(process.cwd(), "backend", "app.ts"),
       "utf8",
@@ -110,9 +110,14 @@ test.describe("phase12 store wiring", () => {
 
     // createExportRouter should still be called with just registry
     expect(source).toContain("createExportRouter(backendDeps.registry)");
+    // NOT passed to createExportRouter (router)
     expect(source).not.toContain("artifactAccessProvider");
     expect(source).not.toContain("artifactStorageRefResolver");
-    expect(source).not.toContain("onVerifiedArtifactRef");
+    // Phase 12-R: onVerifiedArtifactRef IS passed, but to createRenderWorkerLifecycle, not to router
+    // So the check is about createExportRouter, not app.ts in general
+    const exportRouterCall = source.substring(source.indexOf("createExportRouter"), source.indexOf("createExportRouter") + 100);
+    expect(exportRouterCall).not.toContain("artifactAccessProvider");
+    expect(exportRouterCall).not.toContain("artifactStorageRefResolver");
   });
 
   test("backend/routes/exports.ts unchanged", async () => {
@@ -127,14 +132,15 @@ test.describe("phase12 store wiring", () => {
     expect(source).not.toContain("onVerifiedArtifactRef");
   });
 
-  test("backend/workers/renderWorker.ts unchanged", async () => {
+  test("backend/workers/renderWorker.ts accepts onVerifiedArtifactRef", async () => {
     const source = await fs.readFile(
       path.join(process.cwd(), "backend", "workers", "renderWorker.ts"),
       "utf8",
     );
 
-    // renderWorker does not pass onVerifiedArtifactRef to executeRenderJob
-    expect(source).not.toContain("onVerifiedArtifactRef");
+    // Phase 12-R: renderWorker now accepts callback in options
+    expect(source).toContain("onVerifiedArtifactRef?:");
+    expect(source).toContain("VerifiedArtifactRefPayload");
   });
 
   test("no provider/app/route wiring added", async () => {

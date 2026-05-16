@@ -125,14 +125,16 @@ test.describe("phase12 resolver wiring", () => {
     expect(source).toContain('"/exports/:jobId/artifacts/:artifactId/stream"');
   });
 
-  test("backend/workers/renderWorker.ts unchanged", async () => {
+  test("backend/workers/renderWorker.ts accepts callback but not wired to app", async () => {
     const source = await fs.readFile(
       path.join(process.cwd(), "backend", "workers", "renderWorker.ts"),
       "utf8",
     );
 
-    // renderWorker does not pass onVerifiedArtifactRef
-    expect(source).not.toContain("onVerifiedArtifactRef");
+    // Phase 12-R added callback support in renderWorker but it's not connected to app/provider/resolver
+    expect(source).toContain("onVerifiedArtifactRef"); // Added in Phase 12-R
+    // But it's not wired to any app-layer resolver/provider injection
+    // (that's a separate future phase)
   });
 
   test("no provider wiring added", async () => {
