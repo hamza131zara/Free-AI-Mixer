@@ -137,7 +137,7 @@ test.describe("phase12 store wiring", () => {
     expect(source).not.toContain("onVerifiedArtifactRef");
   });
 
-  test("no provider/resolver wiring added", async () => {
+  test("no provider/app/route wiring added", async () => {
     const depsSource = await fs.readFile(
       path.join(process.cwd(), "backend", "composition", "backendDependencies.ts"),
       "utf8",
@@ -151,11 +151,13 @@ test.describe("phase12 store wiring", () => {
       "utf8",
     );
 
-    // No local dev provider or resolver wired
-    expect(depsSource).not.toContain("localDevArtifactAccessProvider");
-    expect(depsSource).not.toContain("artifactStorageRefResolver");
+    // No local dev provider (Phase 12-N adds resolver to deps, not to app/route/provider)
+    expect(depsSource).not.toContain("createLocalDevArtifactAccessProvider");
+    // Resolver is in backendDependencies (Phase 12-N) but NOT wired to app/route
+    // So app should not pass resolver to router
     expect(appSource).not.toContain("artifactAccessProvider");
     expect(appSource).not.toContain("artifactStorageRefResolver");
+    // Route options should not have provider/resolver
     expect(routeSource).not.toContain("artifactAccessProvider:");
     expect(routeSource).not.toContain("artifactStorageRefResolver:");
   });

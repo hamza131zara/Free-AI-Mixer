@@ -230,10 +230,12 @@ test.describe("phase12 harness ref registration callback", () => {
     expect(exportsSource).toContain('"/exports/:jobId/artifacts/:artifactId/stream"');
     // Verify app.ts unchanged (createExportRouter still doesn't receive provider/resolver options)
     expect(appSource).toContain("createExportRouter(backendDeps.registry)");
-    // Verify backendDependencies has store (Phase 12-J) but not provider/resolver/app wiring
+    // Verify backendDependencies has store and resolver (Phase 12-J/12-N) but not provider/app wiring
     expect(depsSource).toContain("artifactStorageRefStore"); // Phase 12-J added store ownership
-    expect(depsSource).not.toContain("artifactStorageRefResolver"); // No resolver wiring yet
+    expect(depsSource).toContain("artifactStorageRefResolver"); // Phase 12-N added resolver
     expect(depsSource).not.toContain("createLocalDevArtifactAccessProvider"); // No provider wiring yet
+    // Verify app.ts does NOT inject resolver/provider into createExportRouter
+    expect(appSource).not.toContain("artifactStorageRefResolver");
     // Verify frontend unchanged
     expect(frontendSource).not.toContain("onVerifiedArtifactRef");
   });

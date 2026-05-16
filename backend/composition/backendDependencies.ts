@@ -6,6 +6,7 @@ import { createRemotionRendererAdapter } from "../renderer/remotionRendererAdapt
 import type { RendererAdapter, VerifiedArtifactRefPayload } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
 import { createInMemoryArtifactStorageRefStore, type ArtifactStorageRefStore } from "../artifacts/inMemoryArtifactStorageRefStore";
+import type { ArtifactStorageRefResolver } from "../artifacts/artifactStorageRefResolver";
 
 export interface BackendDependencies {
   registry: ExportJobRegistry;
@@ -15,6 +16,8 @@ export interface BackendDependencies {
   artifactStorageRefStore: ArtifactStorageRefStore;
   /** Callback to register verified artifact refs after successful render */
   onVerifiedArtifactRef: (payload: VerifiedArtifactRefPayload) => void;
+  /** Resolver to query artifact storage refs from store */
+  artifactStorageRefResolver: ArtifactStorageRefResolver;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -57,11 +60,17 @@ export const createBackendDependencies = (): BackendDependencies => {
     }
   };
 
+  // Resolver to query artifact storage refs from store
+  const artifactStorageRefResolver: ArtifactStorageRefResolver = {
+    resolve: (jobId, artifactId) => artifactStorageRefStore.get(jobId, artifactId),
+  };
+
   return {
     registry,
     rendererAdapter,
     pathPolicy,
     artifactStorageRefStore,
     onVerifiedArtifactRef,
+    artifactStorageRefResolver,
   };
 };
