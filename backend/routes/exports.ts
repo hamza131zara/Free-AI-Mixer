@@ -19,7 +19,7 @@ import type { ExportJobRegistry } from "../registry/exportJobRegistry";
 import { parseJobIdParams, parseSubmitBody } from "../validation/exportValidation";
 import { toJobHandle } from "../contracts/exportHttpTypes";
 import { executeRenderJob } from "../renderer/executeRenderJob";
-import type { RendererAdapter } from "../renderer/singleProcessRenderHarness";
+import type { RendererAdapter, VerifiedArtifactRefPayload } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
 import type { ArtifactAccessProvider } from "../artifacts/artifactAccessProvider";
 import { createNotConfiguredArtifactAccessProvider } from "../artifacts/notConfiguredArtifactAccessProvider";
@@ -92,6 +92,8 @@ export interface ExportRouterOptions {
   artifactAccessProvider?: ArtifactAccessProvider;
   /** Internal resolver for artifact storage references. Used by stream route. */
   artifactStorageRefResolver?: ArtifactStorageRefResolver;
+  /** Internal callback for ref registration. Used by POST /exports/:jobId/execute. */
+  onVerifiedArtifactRef?: (payload: VerifiedArtifactRefPayload) => void;
 }
 
 export const createExportRouter = (registry: ExportJobRegistry, options?: ExportRouterOptions): Router => {
@@ -442,6 +444,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         workerId: "route-trigger-worker",
         jobId: record.jobId,
         snapshotInput,
+        onVerifiedArtifactRef: options?.onVerifiedArtifactRef,
       });
       const timeoutPromise = wait(timeoutMs).then(() => ({ timedOut: true }));
 

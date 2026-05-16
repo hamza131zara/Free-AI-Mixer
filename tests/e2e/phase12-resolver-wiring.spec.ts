@@ -110,9 +110,12 @@ test.describe("phase12 resolver wiring", () => {
       "utf8",
     );
 
-    // createExportRouter should still be called with just registry
-    expect(source).toContain("createExportRouter(backendDeps.registry)");
+    // Phase 12-V: app.ts now passes onVerifiedArtifactRef (route execution callback wiring)
+    expect(source).toContain("createExportRouter(backendDeps.registry, { onVerifiedArtifactRef:");
+    // but does NOT pass artifactStorageRefResolver (resolver route injection deferred)
     expect(source).not.toContain("artifactStorageRefResolver");
+    // also does NOT pass artifactAccessProvider (provider wiring deferred)
+    expect(source).not.toContain("artifactAccessProvider");
   });
 
   test("backend/routes/exports.ts unchanged", async () => {

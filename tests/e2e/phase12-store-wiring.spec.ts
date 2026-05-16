@@ -108,16 +108,11 @@ test.describe("phase12 store wiring", () => {
       "utf8",
     );
 
-    // createExportRouter should still be called with just registry
-    expect(source).toContain("createExportRouter(backendDeps.registry)");
-    // NOT passed to createExportRouter (router)
+    // Phase 12-V: app.ts now passes onVerifiedArtifactRef to createExportRouter
+    expect(source).toContain("createExportRouter(backendDeps.registry, { onVerifiedArtifactRef:");
+    // but does NOT pass artifactAccessProvider or artifactStorageRefResolver (deferred)
     expect(source).not.toContain("artifactAccessProvider");
     expect(source).not.toContain("artifactStorageRefResolver");
-    // Phase 12-R: onVerifiedArtifactRef IS passed, but to createRenderWorkerLifecycle, not to router
-    // So the check is about createExportRouter, not app.ts in general
-    const exportRouterCall = source.substring(source.indexOf("createExportRouter"), source.indexOf("createExportRouter") + 100);
-    expect(exportRouterCall).not.toContain("artifactAccessProvider");
-    expect(exportRouterCall).not.toContain("artifactStorageRefResolver");
   });
 
   test("backend/routes/exports.ts unchanged", async () => {
@@ -126,10 +121,12 @@ test.describe("phase12 store wiring", () => {
       "utf8",
     );
 
-    // Still has stream route but not wired to store
+    // Still has stream route (not wired to store - resolver injection deferred)
     expect(source).toContain('"/exports/:jobId/artifacts/:artifactId/stream"');
-    // Does not use the callback
-    expect(source).not.toContain("onVerifiedArtifactRef");
+    // Phase 12-V: POST route now uses callback for ref registration
+    expect(source).toContain("onVerifiedArtifactRef: options?.onVerifiedArtifactRef");
+    // Access route still returns artifact_access_unavailable
+    expect(source).toContain('"/exports/:jobId/artifacts/:artifactId/access"');
   });
 
   test("backend/workers/renderWorker.ts accepts onVerifiedArtifactRef", async () => {

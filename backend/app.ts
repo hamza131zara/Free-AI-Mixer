@@ -18,7 +18,7 @@ export const createApp = (): Express => {
   app.locals.renderWorkerLifecycle = lifecycle;
 
   app.use(express.json());
-  app.use(createExportRouter(backendDeps.registry));
+  app.use(createExportRouter(backendDeps.registry, { onVerifiedArtifactRef: backendDeps.onVerifiedArtifactRef }));
   app.use(exportErrorHandler);
 
   return app;

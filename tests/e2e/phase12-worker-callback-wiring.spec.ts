@@ -87,8 +87,9 @@ test.describe("phase12 worker callback wiring", () => {
       "utf8",
     );
 
-    // createExportRouter should still only receive registry
-    expect(source).toContain("createExportRouter(backendDeps.registry)");
+    // Phase 12-V: app.ts now passes onVerifiedArtifactRef (route execution callback wiring)
+    expect(source).toContain("createExportRouter(backendDeps.registry, { onVerifiedArtifactRef:");
+    // but does NOT pass artifactStorageRefResolver (resolver route injection deferred)
     expect(source).not.toContain("artifactStorageRefResolver");
   });
 
@@ -107,12 +108,16 @@ test.describe("phase12 worker callback wiring", () => {
       "utf8",
     );
 
-    // Route should not have onVerifiedArtifactRef in its executeRenderJob call
+    // Phase 12-V: POST route now DOES pass onVerifiedArtifactRef to executeRenderJob
     const executeRenderJobCall = source.indexOf("executeRenderJob({");
     if (executeRenderJobCall > 0) {
       const section = source.substring(executeRenderJobCall, executeRenderJobCall + 300);
-      expect(section).not.toContain("onVerifiedArtifactRef");
+      expect(section).toContain("onVerifiedArtifactRef");
     }
+    // But stream route still uses resolver separately (not wired yet - deferred)
+    expect(source).toContain("options?.artifactStorageRefResolver");
+    // Access route still uses provider (not wired - deferred)
+    expect(source).toContain("artifactAccessProvider");
   });
 
   test("no provider wiring added", async () => {

@@ -218,10 +218,13 @@ test.describe("phase12 in-memory artifact storage ref store", () => {
       "utf8",
     );
 
-    // Should still call createExportRouter with just registry (no options)
-    expect(source).toContain("createExportRouter(backendDeps.registry)");
-    // Should not reference the new store
+    // Phase 12-V: app.ts now passes onVerifiedArtifactRef (route execution callback wiring)
+    expect(source).toContain("createExportRouter(backendDeps.registry, { onVerifiedArtifactRef:");
+    // Should not reference the new store directly
     expect(source).not.toContain("inMemoryArtifactStorageRefStore");
+    // Phase 12-V: does NOT pass artifactStorageRefResolver or artifactAccessProvider
+    expect(source).not.toContain("artifactStorageRefResolver");
+    expect(source).not.toContain("artifactAccessProvider");
   });
 
   test("frontend files unchanged", async () => {
