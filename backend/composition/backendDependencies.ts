@@ -7,6 +7,12 @@ import type { RendererAdapter, VerifiedArtifactRefPayload } from "../renderer/si
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
 import { createInMemoryArtifactStorageRefStore, type ArtifactStorageRefStore } from "../artifacts/inMemoryArtifactStorageRefStore";
 import type { ArtifactStorageRefResolver } from "../artifacts/artifactStorageRefResolver";
+import { readSupabaseConfigFromEnv } from "../config/supabaseConfig";
+import { createSupabaseClientFactory } from "../db/supabaseClientFactory";
+import {
+  createRepositoryComposition,
+  type BackendRepositoryComposition,
+} from "./repositoryComposition";
 
 export interface BackendDependencies {
   registry: ExportJobRegistry;
@@ -18,6 +24,8 @@ export interface BackendDependencies {
   onVerifiedArtifactRef: (payload: VerifiedArtifactRefPayload) => void;
   /** Resolver to query artifact storage refs from store */
   artifactStorageRefResolver: ArtifactStorageRefResolver;
+  /** Internal DB-backed repository composition boundary. Unwired by default. */
+  repositoryComposition: BackendRepositoryComposition;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -30,6 +38,11 @@ const getDefaultRoots = (): { temp: string; output: string } => {
 
 export const createBackendDependencies = (): BackendDependencies => {
   const roots = getDefaultRoots();
+  const supabaseConfig = readSupabaseConfigFromEnv();
+  const repositoryComposition = createRepositoryComposition(
+    supabaseConfig,
+    createSupabaseClientFactory(supabaseConfig),
+  );
 
   const pathPolicy: RenderOutputPathPolicy = {
     roots,
@@ -72,5 +85,6 @@ export const createBackendDependencies = (): BackendDependencies => {
     artifactStorageRefStore,
     onVerifiedArtifactRef,
     artifactStorageRefResolver,
+    repositoryComposition,
   };
 };
