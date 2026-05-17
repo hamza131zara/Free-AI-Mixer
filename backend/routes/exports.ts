@@ -167,7 +167,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       request: Request<{ jobId: string; artifactId: string }, BackendArtifactAccessResponse>,
       response: Response<BackendArtifactAccessResponse>,
     ) => {
-     const { jobId } = parseJobIdParams(request.params);
+     const { jobId } = parseJobIdParams({ jobId: request.params.jobId });
      const { artifactId } = request.params;
       const record = registry.getById(jobId);
 
@@ -260,7 +260,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       }
 
       // Parse jobId
-      const { jobId } = parseJobIdParams(request.params);
+      const { jobId } = parseJobIdParams({ jobId: request.params.jobId });
       const artifactId = request.params.artifactId;
 
       // Get job from registry
