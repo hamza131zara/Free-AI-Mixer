@@ -608,6 +608,33 @@ Why it matters:
   - Frontend download/navigation remains deferred
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 37-B adds local Supabase CLI/Docker readiness boundary only:
+  - Local Supabase CLI/Docker readiness boundary now exists
+  - Readiness boundary is local-only and descriptive/manual-only
+  - Supabase CLI availability remains unverified
+  - Docker readiness remains unverified
+  - Future manual command names are documented but not executed
+  - Actual Supabase CLI execution remains deferred
+  - Actual Docker startup remains deferred
+  - Actual local migration execution remains deferred
+  - Remote and production migration execution remains deferred
+  - `package.json` migration and CLI scripts remain deferred
+  - Route DB integration remains deferred
+  - App startup DB dependency remains deferred
+  - Real database credentials remain deferred
+  - Auth middleware and session/requester extraction remain deferred
+  - Production requester resolver remains deferred
+  - RLS policy implementation remains deferred
+  - BYOK encryption and KMS decisions remain deferred
+  - Provider key persistence remains deferred
+  - Credit ledger persistence and billing remain deferred
+  - Artifact and storage repository adapters remain deferred
+  - Production storage provider remains deferred
+  - Signed URL generation remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

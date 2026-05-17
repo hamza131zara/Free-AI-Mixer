@@ -4406,3 +4406,58 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 37-B - Local Supabase CLI / Docker Readiness Boundary Only
+
+Status:
+
+- complete
+
+Scope:
+
+- local-only CLI and Docker readiness boundary only
+- descriptive manual readiness modeling only
+- no CLI, Docker, or migration execution
+- no route behavior changes
+
+### Phase 37-B completion summary
+
+- Updated `backend/db/migrationWorkflow.ts` with a local-only CLI/Docker readiness boundary
+- Added `localCliDockerReadinessBoundary`
+- Added `getLocalCliDockerReadinessBoundary()`
+- Documented future manual command names only:
+  - `supabase --version`
+  - `supabase status`
+  - `supabase start`
+  - `supabase stop`
+  - `supabase db reset`
+  - `docker --version`
+  - `docker info`
+- CLI readiness remains unverified by default
+- Docker readiness remains unverified by default
+- No process spawning was added
+- No Supabase CLI execution was added
+- No Docker execution was added
+- No migration execution was added
+- No `package.json` scripts were added
+- No remote project link or target default was added
+- No production credentials were added
+- No app startup execution was added
+- No route execution was added
+- No Supabase client factory execution was added
+- No route, auth, requester, frontend, storage, signed URL, billing, or credit runtime wiring was added
+- Phase 31 and Phase 36 regression coverage was updated to allow descriptive manual command text while still blocking execution and process spawning
+- Focused Phase 37, Phase 36, Phase 31, and Phase 30 tests passed
+- Typecheck and build passed before commit
+
+### Safety boundaries
+
+- Local CLI/Docker readiness boundary does not imply verified Supabase CLI availability
+- Local CLI/Docker readiness boundary does not imply verified Docker readiness
+- Local CLI/Docker readiness boundary does not imply executed migrations or successful local validation
+- Future manual commands remain separately audited before use
+- Remote and production migration execution remain deferred
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
