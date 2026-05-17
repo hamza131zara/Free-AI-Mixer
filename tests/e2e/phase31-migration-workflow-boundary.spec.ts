@@ -99,9 +99,15 @@ test.describe("phase31 migration workflow boundary", () => {
     expect(workflowSource).not.toContain("spawn(");
     expect(workflowSource).not.toContain("spawnSync(");
     expect(workflowSource).not.toContain("execSync(");
-    expect(workflowSource).not.toContain("supabase start");
-    expect(workflowSource).not.toContain("supabase stop");
+    expect(workflowSource).not.toContain("execFile(");
+    expect(workflowSource).not.toContain("execFileSync(");
+    expect(workflowSource).not.toContain("execa");
+    expect(workflowSource).toContain('executesMigrations: false');
+    expect(workflowSource).toContain('requiresExplicitManualExecution: true');
+    expect(workflowSource).toContain('spawnsSupabaseCli: false');
+    expect(workflowSource).toContain('spawnsDocker: false');
     expect(workflowSource).not.toContain("supabase db push --linked --yes");
+    expect(workflowSource).not.toContain("SUPABASE_ACCESS_TOKEN");
   });
 
   test("package scripts remain free of migration execution shortcuts", async () => {

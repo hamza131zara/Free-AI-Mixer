@@ -97,9 +97,14 @@ test.describe("phase36 local migration preflight boundary", () => {
     expect(workflowSource).not.toContain("spawn(");
     expect(workflowSource).not.toContain("spawnSync(");
     expect(workflowSource).not.toContain("execSync(");
-    expect(workflowSource).not.toContain("supabase start");
-    expect(workflowSource).not.toContain("supabase db reset --linked");
-    expect(workflowSource).not.toContain("supabase db push --linked --yes");
+    expect(workflowSource).not.toContain("execFile(");
+    expect(workflowSource).not.toContain("execFileSync(");
+    expect(workflowSource).not.toContain("execa");
+    expect(workflowSource).toContain('executesMigrations: false');
+    expect(workflowSource).toContain('spawnsSupabaseCli: false');
+    expect(workflowSource).toContain('manualInvocationOnly: true');
+    expect(workflowSource).toContain('localOnly: true');
+    expect(workflowSource).not.toContain("--linked --yes");
     expect(workflowSource).not.toContain("project-ref");
     expect(workflowSource).not.toContain("SUPABASE_ACCESS_TOKEN");
     expect(workflowSource).not.toContain("FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY");
