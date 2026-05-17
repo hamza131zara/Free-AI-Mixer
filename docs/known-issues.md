@@ -247,6 +247,17 @@ Why it matters:
   - Default behavior remains stream_not_configured / 501
   - Provider still NOT wired
   - Auth still not added
+- Phase 13-B adds env-gated local dev artifact access provider wiring:
+  - createLocalDevArtifactAccessProvider is injected into createExportRouter only when FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1"
+  - artifactStorageRefResolver and artifactAccessProvider now share the same local-dev env gate
+  - Default behavior remains not-configured when env is disabled
+  - Access route can now return a safe local_dev_stream descriptor in explicit local-dev mode only
+  - Descriptor points to backend stream route, not a filesystem path
+  - Stream route remains the final validation authority
+  - No frontend download UI yet
+  - No auth/authorization yet
+  - No production signed URL or storage provider yet
+  - local_dev_stream must not be enabled unconditionally or in production
 
 Target fix phase:
 
@@ -367,6 +378,11 @@ Target fix phase:
 - Verified output production wired into regular lifecycle success path.
 - Route auto-execution (`POST /exports` remains non-executing for renderer runtime).
 - Artifact hosting and public download delivery (signed/download URLs).
+- Frontend artifact access/download UI.
+- Auth/authorization for artifact access.
+- Production storage provider and signed URL provider.
+- Durable artifact storage refs beyond the current local/dev in-memory model.
+- Public download URLs.
 - Real user-media decoding in renderer path.
 - Durable queue/worker/scheduler/database-backed renderer execution flow.
 - Frontend export lifecycle integration with real backend completion.

@@ -3389,3 +3389,52 @@ Stream route remains final authority for path safety:
 - Production signed URL provider
 - Production storage provider selection
 - Auth/authorization for artifact access
+
+## Phase 13-B — Env-Gated Local Dev Artifact Access Provider Wiring
+
+Status:
+
+- complete
+
+Scope:
+
+- backend app wiring only
+- env-gated local-dev artifact access provider injection
+- no route validation changes
+- no frontend changes
+- no public contract changes
+
+### Phase 13-B completion summary
+
+- Updated `backend/app.ts`
+- `createLocalDevArtifactAccessProvider` is injected into `createExportRouter` only when:
+  - `FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1"`
+- `artifactStorageRefResolver` and `artifactAccessProvider` now share the same local-dev env gate
+- `onVerifiedArtifactRef` remains always passed
+- Default behavior remains disabled and not-configured
+
+### Default behavior (env disabled or unset)
+
+- `artifactAccessProvider` is not passed
+- `artifactStorageRefResolver` is not passed
+- access route falls back to `createNotConfiguredArtifactAccessProvider`
+- stream route remains `stream_not_configured`
+
+### Enabled behavior (FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM=1)
+
+- `artifactStorageRefResolver` is injected
+- `artifactAccessProvider` is injected
+- `GET /exports/:jobId/artifacts/:artifactId/access` can return a safe `local_dev_stream` descriptor
+- descriptor URL points to `/exports/:jobId/artifacts/:artifactId/stream`
+- access route returns descriptor metadata only
+- stream route remains the final validation authority
+
+### Safety boundaries
+
+- `local_dev_stream` access is local-dev only and opt-in
+- No local filesystem paths are exposed in API responses
+- No signed URLs were added
+- No production storage provider was added
+- No frontend artifact access or download UI was added
+- No auth/authorization was added
+- This phase does not claim production-ready download behavior
