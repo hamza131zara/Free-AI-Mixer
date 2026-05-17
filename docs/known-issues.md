@@ -283,10 +283,20 @@ Why it matters:
   - Service does not call `/stream` and does not trigger browser download/navigation
   - Unavailable artifact access remains truthful in frontend parsing
   - No frontend download UI exists yet
-  - No `exportStore` access-state integration exists yet
   - No auth/authorization exists yet
   - No signed URL or production storage provider exists yet
   - local_dev_stream remains local-dev-only and must not be treated as production-ready
+- Phase 17-B adds exportStore artifact access state/actions only:
+  - `exportStore` now tracks volatile per-artifact access state/actions
+  - `requestExportArtifactAccess(...)` calls frontend artifact access service only
+  - No direct `/stream` fetch or navigation is performed by the store
+  - Browser download behavior remains deferred
+  - Artifact access descriptors remain volatile and are not persisted
+  - No frontend download UI exists yet
+  - No auth/authorization exists yet
+  - No signed URL or production storage provider exists yet
+  - Public download URLs do not exist yet
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

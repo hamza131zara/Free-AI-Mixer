@@ -3551,3 +3551,41 @@ Scope:
 - No signed URLs were added
 - No production storage provider was added
 - `local_dev_stream` remains local-dev-only and is not treated as production-ready
+
+## Phase 17-B - Export Store Artifact Access State/Actions Only
+
+Status:
+
+- complete
+
+Scope:
+
+- frontend store-layer artifact access orchestration only
+- volatile per-artifact access state only
+- no UI changes
+- no backend changes
+
+### Phase 17-B completion summary
+
+- `src/store/exportStore.ts` now tracks volatile per-artifact access state keyed by `artifactId`
+- Added `requestExportArtifactAccess(timelineId, artifactId, options?)`
+- Added `clearExportArtifactAccess(timelineId, artifactId?)`
+- Added `selectExportArtifactAccess(...)`, `selectExportArtifactAccessStatus(...)`, and `selectExportArtifactAccessError(...)`
+- Store action calls `getExportArtifactAccess(jobId, artifactId)` only
+- Store action does not call `/stream`
+- Store action does not trigger browser download or navigation side effects
+- Ready, unavailable, and failure states remain truthful
+- `AbortError` remains truthful and is rethrown
+- Artifact access state is volatile only and is not persisted
+- Stale artifact access state clears when export result state changes
+- Focused export store tests passed
+
+### Safety boundaries
+
+- No frontend download UI was added
+- No direct `/stream` fetch or navigation was added
+- No backend changes were made
+- No auth/authorization was added
+- No signed URLs were added
+- No production storage provider was added
+- `local_dev_stream` remains local-dev-only and is not treated as production-ready
