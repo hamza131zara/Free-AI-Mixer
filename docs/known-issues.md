@@ -374,6 +374,20 @@ Why it matters:
   - Frontend download/navigation remains deferred
   - `local_dev_fallback` remains compatibility-only and must not be treated as production auth
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 25-B adds account/workspace/ledger/artifact repository boundary only:
+  - Repository interface boundaries now exist
+  - Supabase/Postgres implementation remains deferred
+  - Database schema and migrations remain deferred
+  - Real auth provider integration remains deferred
+  - Auth middleware remains deferred
+  - BYOK encryption/storage remains deferred
+  - Credit ledger persistence and billing remain deferred
+  - Signed URL generation remains deferred
+  - Production storage provider remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

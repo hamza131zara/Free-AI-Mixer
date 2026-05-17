@@ -3831,3 +3831,48 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 25-B - Account / Workspace / Ledger / Artifact Repository Boundary Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend repository boundary only
+- workspace-scoped persistence interfaces only
+- no database implementation
+- no route behavior changes
+
+### Phase 25-B completion summary
+
+- Added consolidated backend repository boundary module in `backend/repositories/repositoryContracts.ts`
+- Added users/accounts repository boundary
+- Added workspace repository boundary
+- Added workspace membership repository boundary
+- Added provider key repository boundary
+- Added credit ledger repository boundary
+- Added artifact record repository boundary
+- Added storage ref/object metadata repository boundary
+- Provider keys remain workspace-scoped
+- Credit ledger entries and mutations remain workspace-scoped
+- Artifact and storage records include workspace/job/artifact ownership
+- Signed URL readiness now exists only as a future boundary shape
+- Focused backend repository boundary tests passed
+- No database implementation was added
+- No Supabase client was added
+- No SQL or migrations were added
+- No auth middleware was added
+- No frontend changes were added
+- No signed URL generation was added
+- No production storage provider was added
+
+### Safety boundaries
+
+- Repository contracts are interface boundaries only and do not imply persistence implementation
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No database persistence, BYOK encryption/storage, billing/credits implementation, or route authorization implementation was added
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
