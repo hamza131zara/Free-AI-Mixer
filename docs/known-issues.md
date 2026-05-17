@@ -337,6 +337,17 @@ Why it matters:
   - Frontend download/navigation remains deferred
   - No signed URL or production storage provider exists yet
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 21-B adds route requester resolver injection / owner-aware authorization behavior only:
+  - Route requester resolver injection now exists
+  - Owner-aware requester-facing route behavior is now testable with injected requester contexts
+  - Not-owned requester-facing route behavior now avoids existence leakage in focused tests
+  - `/stream` resolver/filesystem work is guarded behind owner-aware lookup
+  - Real auth/session/requester extraction remains deferred
+  - Real auth middleware remains deferred
+  - Production route authorization using real requester identity remains deferred
+  - Frontend download/navigation remains deferred
+  - No signed URL or production storage provider exists yet
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

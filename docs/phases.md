@@ -3705,3 +3705,43 @@ Scope:
 - No signed URLs were added
 - No production storage provider was added
 - Local/dev fallback is compatibility-only and must not be mistaken for production auth
+
+## Phase 21-B - Route Requester Resolver Injection / Owner-Aware Authorization Behavior Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend route requester resolver seam only
+- owner-aware requester-facing route behavior only
+- no real auth middleware
+- no frontend changes
+
+### Phase 21-B completion summary
+
+- `createExportRouter(...)` now accepts optional `requesterContextResolver` in `ExportRouterOptions`
+- Default requester resolver remains `resolveExportRequesterContext(...)`, preserving local/dev fallback behavior
+- Added `ExportRequesterContextResolver` type in `backend/requester/exportRequesterContext.ts`
+- Requester-facing route behavior is now injectable and testable with fake requester contexts
+- Routes continue using owner-aware `getByIdForOwner(...)`
+- Not-owned requester-facing behavior now collapses to non-revealing not-found or unavailable behavior:
+  - `GET /exports/:jobId` behaves like job not found
+  - `GET /exports/:jobId/artifacts` behaves like job not found
+  - `/access` returns `artifact_access_unavailable` with `job_not_found` semantics
+  - `/stream` returns `404 job_not_found`
+- `/stream` checks ownership before artifact lookup and before resolver/filesystem work
+- `artifactStorageRefResolver` is not called for not-owned stream requests
+- Focused route authorization boundary tests passed
+- Phase 6.2 source assertion was updated to reflect the requester resolver seam
+
+### Safety boundaries
+
+- No real auth middleware was added
+- No real requester/session/cookie/bearer-token extraction was added
+- No production route authorization using real requester identity was added yet
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
+- Injected fake requester contexts are test-only scaffolding and must not be mistaken for real auth
