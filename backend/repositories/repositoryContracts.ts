@@ -124,29 +124,50 @@ export interface BackendExportJobsRepository {
   ): Promise<BackendExportJobRecord | undefined>;
 }
 
+export interface BackendUserAccountRecord extends BackendUserAccountIdentity {
+  email?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BackendWorkspaceRecord extends BackendWorkspace {
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string;
+}
+
+export interface BackendWorkspaceMembershipRecord {
+  workspaceId: string;
+  userId: string;
+  role: BackendWorkspaceMembership["role"];
+  status: BackendWorkspaceMembership["status"] | "disabled";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface BackendUserAccountRepository {
-  getByUserId(userId: string): Promise<BackendUserAccountIdentity | undefined>;
+  getByUserId(userId: string): Promise<BackendUserAccountRecord | undefined>;
   getByAuthSubject(
     authProvider: BackendUserAccountIdentity["authProvider"],
     authSubject: string,
-  ): Promise<BackendUserAccountIdentity | undefined>;
+  ): Promise<BackendUserAccountRecord | undefined>;
 }
 
 export interface BackendWorkspaceRepository {
   getByWorkspaceId(
     workspaceId: string,
-  ): Promise<BackendWorkspace | undefined>;
-  listForUser(userId: string): Promise<BackendWorkspace[]>;
+  ): Promise<BackendWorkspaceRecord | undefined>;
+  listForUser(userId: string): Promise<BackendWorkspaceRecord[]>;
 }
 
 export interface BackendWorkspaceMembershipRepository {
   getMembership(
     workspaceId: string,
     userId: string,
-  ): Promise<BackendWorkspaceMembership | undefined>;
+  ): Promise<BackendWorkspaceMembershipRecord | undefined>;
   listMembershipsForWorkspace(
     workspaceId: string,
-  ): Promise<BackendWorkspaceMembership[]>;
+  ): Promise<BackendWorkspaceMembershipRecord[]>;
 }
 
 export interface BackendProviderKeyRepository {
