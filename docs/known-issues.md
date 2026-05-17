@@ -443,6 +443,24 @@ Why it matters:
   - `FREE_AI_MIXER_DATABASE_URL` optionality remains a later adapter decision
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 29-B adds Supabase client factory contract boundary only:
+  - Supabase client factory contract boundary now exists
+  - Supabase package installation remains deferred
+  - Real Supabase SDK client runtime remains deferred
+  - DB repository adapter remains deferred
+  - Migration execution remains deferred
+  - Auth middleware and session/requester extraction remain deferred
+  - Production requester resolver remains deferred
+  - RLS policy implementation remains deferred
+  - BYOK encryption and KMS decisions remain deferred
+  - Credit ledger persistence and billing remain deferred
+  - Production storage provider remains deferred
+  - Signed URL generation remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - `sdk_not_installed` future handle must not be treated as a live Supabase client
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

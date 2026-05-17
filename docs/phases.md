@@ -4030,3 +4030,44 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 29-B - Supabase Client Factory Contract Boundary Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only Supabase client factory contract only
+- no SDK install
+- no runtime client creation
+- no route behavior changes
+
+### Phase 29-B completion summary
+
+- Added backend-only Supabase client factory contract boundary in `backend/db/supabaseClientFactory.ts`
+- Added unavailable client result shape
+- Added future admin client handle shape
+- Added client factory result shape
+- Disabled config now maps to truthful unavailable/no-client result
+- Invalid config now maps to truthful unavailable/no-client result
+- Enabled valid config now maps to truthful `sdk_not_installed` future-handle state
+- No live Supabase SDK client was created
+- No `@supabase/supabase-js` package install was added
+- No database connection was added
+- No migration execution was added
+- No database adapter or repository implementation was added
+- No auth middleware or requester integration was added
+- No route, frontend, download, or storage runtime behavior was changed
+- Service-role key is not exposed through the public result shape
+- Focused Supabase client factory tests passed
+
+### Safety boundaries
+
+- Supabase client factory is a contract boundary only and does not imply runtime SDK availability
+- `sdk_not_installed` future-handle state must not be treated as a live Supabase client
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
