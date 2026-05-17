@@ -1,13 +1,14 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { exportAgent, type ExportAgentStartResult } from "../agents/exportAgent";
-import { pollExportJob } from "../services/exportService";
+import { getExportArtifactAccess, pollExportJob } from "../services/exportService";
 import {
   getExportHandle,
   saveExportHandle,
   type PersistedExportHandle,
 } from "../services/exportHandleStorage";
 import type {
+  ExportArtifactAccessDescriptor,
   ExportArtifactRef,
   ExportFailure,
   ExportJobHandle,
@@ -17,6 +18,7 @@ import type {
   ExportRenderSettings,
   ExportTerminalResult,
   TimelineExportRequest,
+  ExportArtifactAccessResult,
 } from "../types/exportJob";
 import type { TimelineId } from "../types/timeline";
 import { useTimelineStore } from "./timelineStore";
@@ -42,6 +44,33 @@ export type ExportResumeState =
   | "expired"
   | "resume_unavailable";
 
+export type ExportArtifactAccessState =
+  | {
+      status: "loading";
+      jobId: string;
+      artifactId: string;
+    }
+  | {
+      status: "ready";
+      jobId: string;
+      artifactId: string;
+      artifact: ExportArtifactRef;
+      access: ExportArtifactAccessDescriptor;
+    }
+  | {
+      status: "unavailable";
+      jobId: string;
+      artifactId: string;
+      reason: Extract<ExportArtifactAccessResult, { kind: "unavailable" }>["reason"];
+      message: string;
+    }
+  | {
+      status: "error";
+      jobId: string;
+      artifactId: string;
+      failure: ExportFailure;
+    };
+
 export interface ExportTimelineState {
   timelineId: TimelineId;
   requestId: string;
@@ -54,6 +83,7 @@ export interface ExportTimelineState {
   lastPolledAt?: string;
   timeoutAt?: string;
   resumeState: ExportResumeState;
+  artifactAccessByArtifactId?: Record<string, ExportArtifactAccessState>;
 }
 
 export interface ExportStoreState {
@@ -100,6 +130,15 @@ export interface ExportStoreState {
     timelineId: TimelineId,
     options?: { signal?: AbortSignal },
   ) => Promise<ExportTimelineState | undefined>;
+  requestExportArtifactAccess: (
+    timelineId: TimelineId,
+    artifactId: string,
+    options?: { signal?: AbortSignal },
+  ) => Promise<ExportArtifactAccessState | undefined>;
+  clearExportArtifactAccess: (
+    timelineId: TimelineId,
+    artifactId?: string,
+  ) => void;
 }
 
 type PersistedExportStoreState = Pick<
@@ -259,6 +298,7 @@ export const useExportStore = create<ExportStoreState>()(
               lastPolledAt: nowIso,
               timeoutAt,
               resumeState: "none",
+              artifactAccessByArtifactId: undefined,
             };
           } else if (result.kind === "success") {
             nextState = {
@@ -275,6 +315,7 @@ export const useExportStore = create<ExportStoreState>()(
               lastPolledAt: nowIso,
               timeoutAt,
               resumeState: "none",
+              artifactAccessByArtifactId: undefined,
             };
           } else {
             nextState = {
@@ -288,6 +329,7 @@ export const useExportStore = create<ExportStoreState>()(
               lastPolledAt: nowIso,
               timeoutAt: result.handle.timeoutAt ?? timeoutAt,
               resumeState: "none",
+              artifactAccessByArtifactId: undefined,
             };
           }
 
@@ -340,6 +382,7 @@ export const useExportStore = create<ExportStoreState>()(
                   handle: undefined,
                   failure: undefined,
                   resumeState: "none",
+                  artifactAccessByArtifactId: undefined,
                   result: {
                     ...pollResult.result,
                     artifacts: pollResult.result.artifacts.map((artifact) => ({
@@ -354,19 +397,20 @@ export const useExportStore = create<ExportStoreState>()(
           return {
             jobsByTimelineId: {
               ...state.jobsByTimelineId,
-              [timelineId]: {
-                ...nextBase,
-                lifecycle:
-                  pollResult.failure.code === "export_job_canceled"
+                [timelineId]: {
+                  ...nextBase,
+                  lifecycle:
+                    pollResult.failure.code === "export_job_canceled"
                     ? "canceled"
                     : pollResult.failure.code === "export_job_expired"
                       ? "expired"
                       : "error",
-                handle: undefined,
-                resumeState: "none",
-                failure: pollResult.failure,
+                  handle: undefined,
+                  resumeState: "none",
+                  artifactAccessByArtifactId: undefined,
+                  failure: pollResult.failure,
+                },
               },
-            },
           };
         });
       },
@@ -534,6 +578,7 @@ export const useExportStore = create<ExportStoreState>()(
                 },
                 lastPolledAt: nowIso,
                 resumeState: "none",
+                artifactAccessByArtifactId: undefined,
               };
             } else {
               const failureCode = resolved.failure.code;
@@ -557,6 +602,7 @@ export const useExportStore = create<ExportStoreState>()(
                     : failureCode === "export_resume_unavailable"
                       ? "resume_unavailable"
                       : "none",
+                artifactAccessByArtifactId: undefined,
               };
             }
 
@@ -589,6 +635,7 @@ export const useExportStore = create<ExportStoreState>()(
             },
             lastPolledAt: new Date().toISOString(),
             resumeState: "none",
+            artifactAccessByArtifactId: undefined,
           };
           set((s) => ({
             jobsByTimelineId: {
@@ -680,6 +727,169 @@ export const useExportStore = create<ExportStoreState>()(
 
         return result;
       },
+      requestExportArtifactAccess: async (timelineId, artifactId, options) => {
+        const current = get().jobsByTimelineId[timelineId];
+        if (!current?.result || current.lifecycle !== "success") {
+          return undefined;
+        }
+
+        const artifact = current.result.artifacts.find(
+          (candidate) => candidate.id === artifactId,
+        );
+        if (!artifact) {
+          return undefined;
+        }
+
+        const jobId = current.result.jobId;
+        const loadingState: ExportArtifactAccessState = {
+          status: "loading",
+          jobId,
+          artifactId,
+        };
+
+        set((state) => ({
+          jobsByTimelineId: {
+            ...state.jobsByTimelineId,
+            [timelineId]: {
+              ...state.jobsByTimelineId[timelineId]!,
+              artifactAccessByArtifactId: {
+                ...state.jobsByTimelineId[timelineId]?.artifactAccessByArtifactId,
+                [artifactId]: loadingState,
+              },
+            },
+          },
+        }));
+
+        try {
+          const result = await getExportArtifactAccess(jobId, artifactId, {
+            signal: options?.signal,
+          });
+
+          let nextState: ExportArtifactAccessState;
+          if (result.kind === "ready") {
+            nextState = {
+              status: "ready",
+              jobId,
+              artifactId,
+              artifact: { ...result.artifact },
+              access: { ...result.access },
+            };
+          } else if (result.kind === "unavailable") {
+            nextState = {
+              status: "unavailable",
+              jobId,
+              artifactId,
+              reason: result.reason,
+              message: result.message,
+            };
+          } else {
+            nextState = {
+              status: "error",
+              jobId,
+              artifactId,
+              failure: result.failure,
+            };
+          }
+
+          set((state) => {
+            const latest = state.jobsByTimelineId[timelineId];
+            if (!latest || latest.result?.jobId !== jobId) {
+              return state;
+            }
+
+            return {
+              jobsByTimelineId: {
+                ...state.jobsByTimelineId,
+                [timelineId]: {
+                  ...latest,
+                  artifactAccessByArtifactId: {
+                    ...latest.artifactAccessByArtifactId,
+                    [artifactId]: nextState,
+                  },
+                },
+              },
+            };
+          });
+
+          return nextState;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            throw error;
+          }
+
+          const errorState: ExportArtifactAccessState = {
+            status: "error",
+            jobId,
+            artifactId,
+            failure: {
+              message: "Export artifact access request failed.",
+              code: "transport_exception",
+              details:
+                error instanceof Error
+                  ? { name: error.name, message: error.message }
+                  : error,
+            },
+          };
+
+          set((state) => {
+            const latest = state.jobsByTimelineId[timelineId];
+            if (!latest || latest.result?.jobId !== jobId) {
+              return state;
+            }
+
+            return {
+              jobsByTimelineId: {
+                ...state.jobsByTimelineId,
+                [timelineId]: {
+                  ...latest,
+                  artifactAccessByArtifactId: {
+                    ...latest.artifactAccessByArtifactId,
+                    [artifactId]: errorState,
+                  },
+                },
+              },
+            };
+          });
+
+          return errorState;
+        }
+      },
+      clearExportArtifactAccess: (timelineId, artifactId) => {
+        set((state) => {
+          const current = state.jobsByTimelineId[timelineId];
+          if (!current?.artifactAccessByArtifactId) {
+            return state;
+          }
+
+          if (!artifactId) {
+            return {
+              jobsByTimelineId: {
+                ...state.jobsByTimelineId,
+                [timelineId]: {
+                  ...current,
+                  artifactAccessByArtifactId: undefined,
+                },
+              },
+            };
+          }
+
+          const nextArtifactAccess = { ...current.artifactAccessByArtifactId };
+          delete nextArtifactAccess[artifactId];
+
+          return {
+            jobsByTimelineId: {
+              ...state.jobsByTimelineId,
+              [timelineId]: {
+                ...current,
+                artifactAccessByArtifactId:
+                  Object.keys(nextArtifactAccess).length > 0
+                    ? nextArtifactAccess
+                    : undefined,
+              },
+            },
+          };
+        });
+      },
     }),
     {
       name: exportStorePersistKey,
@@ -687,7 +897,12 @@ export const useExportStore = create<ExportStoreState>()(
       skipHydration: true,
       storage: createJSONStorage(() => localStorage),
       partialize: (state): PersistedExportStoreState => ({
-        jobsByTimelineId: state.jobsByTimelineId,
+        jobsByTimelineId: Object.fromEntries(
+          Object.entries(state.jobsByTimelineId).map(([timelineId, job]) => [
+            timelineId,
+            sanitizeJob(job),
+          ]),
+        ) as Record<TimelineId, ExportTimelineState>,
         activeExportTimelineId: state.activeExportTimelineId,
       }),
       merge: (persistedState, currentState): ExportStoreState => {
@@ -768,6 +983,29 @@ export const selectExportResumeState = (
   state: ExportStoreState,
   timelineId: TimelineId,
 ): ExportResumeState => state.jobsByTimelineId[timelineId]?.resumeState ?? "none";
+
+export const selectExportArtifactAccess = (
+  state: ExportStoreState,
+  timelineId: TimelineId,
+  artifactId: string,
+): ExportArtifactAccessState | undefined =>
+  state.jobsByTimelineId[timelineId]?.artifactAccessByArtifactId?.[artifactId];
+
+export const selectExportArtifactAccessStatus = (
+  state: ExportStoreState,
+  timelineId: TimelineId,
+  artifactId: string,
+): ExportArtifactAccessState["status"] | "idle" =>
+  selectExportArtifactAccess(state, timelineId, artifactId)?.status ?? "idle";
+
+export const selectExportArtifactAccessError = (
+  state: ExportStoreState,
+  timelineId: TimelineId,
+  artifactId: string,
+): ExportFailure | undefined => {
+  const artifactAccess = selectExportArtifactAccess(state, timelineId, artifactId);
+  return artifactAccess?.status === "error" ? artifactAccess.failure : undefined;
+};
 
 const selectPersistedFallbackByTimelineId = (
   timelineId: TimelineId,
@@ -867,6 +1105,7 @@ const sanitizeJob = (job: ExportTimelineState): ExportTimelineState => ({
   lastPolledAt: job.lastPolledAt,
   timeoutAt: job.timeoutAt,
   resumeState: job.resumeState ?? "none",
+  artifactAccessByArtifactId: undefined,
 });
 
 const isValidHandle = (handle: ExportJobHandle | undefined): handle is ExportJobHandle =>

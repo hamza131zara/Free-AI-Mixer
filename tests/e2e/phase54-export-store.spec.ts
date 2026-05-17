@@ -1,12 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { createJSONStorage } from "zustand/middleware";
-import { exportAgent } from "../../src/agents/exportAgent";
-import type { ExportAgentStartResult } from "../../src/agents/exportAgent";
 import type { ExportRenderSettings } from "../../src/types/exportJob";
 
 type ExportStoreModule = typeof import("../../src/store/exportStore");
 type TimelineStoreModule = typeof import("../../src/store/timelineStore");
 type SceneStoreModule = typeof import("../../src/store/sceneStore");
+type ExportAgentModule = typeof import("../../src/agents/exportAgent");
 
 const exportPersistKey = "free-ai-mixer-exports";
 
@@ -38,6 +37,12 @@ const setUpWindowForStores = (): MemoryStorage => {
     clearTimeout,
     addEventListener: () => undefined,
     removeEventListener: () => undefined,
+    __FREE_AI_MIXER_RUNTIME_CONFIG__: {
+      exportBaseUrl: "https://example.com",
+      exportArtifactsPath: "/exports",
+      exportPollPath: "/exports",
+      exportSubmitPath: "/exports",
+    },
   };
 
   Object.assign(globalThis, {
@@ -46,6 +51,20 @@ const setUpWindowForStores = (): MemoryStorage => {
   });
 
   return storage;
+};
+
+const withMockedFetch = async (
+  callback: () => Promise<void>,
+  implementation: (...args: Parameters<typeof fetch>) => Response | Promise<Response>,
+): Promise<void> => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (...args) => implementation(...args)) as typeof fetch;
+
+  try {
+    await callback();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 };
 
 const createSuccessScene = (id: string): Record<string, unknown> => ({
@@ -120,6 +139,37 @@ const seedTimelineWithClip = async (
     timelineStore: useTimelineStore,
     sceneStore: useSceneStore,
   };
+};
+
+const loadExportAgent = async (): Promise<ExportAgentModule["exportAgent"]> => {
+  const module = (await import("../../src/agents/exportAgent")) as ExportAgentModule;
+  return module.exportAgent;
+};
+
+const seedTerminalSuccessExport = async () => {
+  const seeded = await seedTimelineWithClip();
+  seeded.exportStore.setState({
+    jobsByTimelineId: {
+      [seeded.timelineId]: {
+        timelineId: seeded.timelineId,
+        requestId: "request-success-artifacts",
+        lifecycle: "success",
+        result: {
+          provider: "backend_render",
+          requestId: "request-success-artifacts",
+          jobId: "job-success-artifacts",
+          artifacts: [
+            { id: "artifact-a", bytes: 128 },
+            { id: "artifact-b", bytes: 256 },
+          ],
+        },
+        resumeState: "none",
+      },
+    },
+    activeExportTimelineId: seeded.timelineId,
+  });
+
+  return seeded;
 };
 
 test.describe("Phase 5.4 export store integration", () => {
@@ -232,11 +282,12 @@ test.describe("Phase 5.4 export store integration", () => {
   test("requestExport creates accepted job state and duplicate submit is blocked while in-flight", async () => {
     setUpWindowForStores();
     const { timelineId, exportStore } = await seedTimelineWithClip();
+    const exportAgent = await loadExportAgent();
     let startCalls = 0;
     const originalStart = exportAgent.startExport;
     exportAgent.startExport = async () => {
       startCalls += 1;
-      const accepted: ExportAgentStartResult = {
+      const accepted: Awaited<ReturnType<typeof exportAgent.startExport>> = {
         kind: "accepted_job",
         handle: {
           provider: "backend_render",
@@ -265,6 +316,7 @@ test.describe("Phase 5.4 export store integration", () => {
   test("immediate success is applied directly with artifact refs only", async () => {
     setUpWindowForStores();
     const { timelineId, exportStore } = await seedTimelineWithClip();
+    const exportAgent = await loadExportAgent();
     const originalStart = exportAgent.startExport;
     exportAgent.startExport = async () => ({
       kind: "success",
@@ -290,6 +342,7 @@ test.describe("Phase 5.4 export store integration", () => {
   test("requestExport stores truthful failure result", async () => {
     setUpWindowForStores();
     const { timelineId, exportStore } = await seedTimelineWithClip();
+    const exportAgent = await loadExportAgent();
     const originalStart = exportAgent.startExport;
     exportAgent.startExport = async () => ({
       kind: "failure",
@@ -446,6 +499,7 @@ test.describe("Phase 5.4 export store integration", () => {
     setUpWindowForStores();
     const { timelineId, exportStore, timelineStore, sceneStore } =
       await seedTimelineWithClip();
+    const exportAgent = await loadExportAgent();
     const timelineBefore = JSON.stringify(timelineStore.getState().timelines);
     const sceneBefore = JSON.stringify(sceneStore.getState().scenes);
     const originalStart = exportAgent.startExport;
@@ -471,6 +525,7 @@ test.describe("Phase 5.4 export store integration", () => {
   test("resumeExport polls existing handle and applies terminal success without submit", async () => {
     setUpWindowForStores();
     const { timelineId, exportStore } = await seedTimelineWithClip();
+    const exportAgent = await loadExportAgent();
     let startCalls = 0;
     let pollCalls = 0;
     const originalStart = exportAgent.startExport;
@@ -531,6 +586,7 @@ test.describe("Phase 5.4 export store integration", () => {
   test("resumeExport applies terminal failure truthfully", async () => {
     setUpWindowForStores();
     const { timelineId, exportStore } = await seedTimelineWithClip();
+    const exportAgent = await loadExportAgent();
     const originalPoll = exportAgent.pollExportUntilTerminal;
     exportAgent.pollExportUntilTerminal = async () => ({
       kind: "failure",
@@ -570,6 +626,7 @@ test.describe("Phase 5.4 export store integration", () => {
   test("resumeExport timeout maps to expired and export_poll_timeout", async () => {
     setUpWindowForStores();
     const { timelineId, exportStore } = await seedTimelineWithClip();
+    const exportAgent = await loadExportAgent();
     const originalPoll = exportAgent.pollExportUntilTerminal;
     exportAgent.pollExportUntilTerminal = async () => ({
       kind: "failure",
@@ -609,6 +666,7 @@ test.describe("Phase 5.4 export store integration", () => {
   test("resumeExport duplicate and invalid resume attempts are blocked", async () => {
     setUpWindowForStores();
     const { timelineId, exportStore } = await seedTimelineWithClip();
+    const exportAgent = await loadExportAgent();
     let pollCalls = 0;
     const originalPoll = exportAgent.pollExportUntilTerminal;
     exportAgent.pollExportUntilTerminal = async () => {
@@ -691,6 +749,7 @@ test.describe("Phase 5.4 export store integration", () => {
     setUpWindowForStores();
     const { timelineId, exportStore, timelineStore, sceneStore } =
       await seedTimelineWithClip();
+    const exportAgent = await loadExportAgent();
     const timelineBefore = JSON.stringify(timelineStore.getState().timelines);
     const sceneBefore = JSON.stringify(sceneStore.getState().scenes);
     const originalPoll = exportAgent.pollExportUntilTerminal;
@@ -730,5 +789,269 @@ test.describe("Phase 5.4 export store integration", () => {
     } finally {
       exportAgent.pollExportUntilTerminal = originalPoll;
     }
+  });
+
+  test("requestExportArtifactAccess sets loading state, stores ready descriptor, and never calls /stream", async () => {
+    setUpWindowForStores();
+    const { timelineId, exportStore } = await seedTerminalSuccessExport();
+    const selectors = (await import("../../src/store/exportStore")) as ExportStoreModule;
+
+    let requestedUrl: string | undefined;
+    let releaseFetch!: () => void;
+    const fetchStarted = new Promise<void>((resolve) => {
+      releaseFetch = resolve;
+    });
+
+    await withMockedFetch(async () => {
+      const requestPromise = exportStore
+        .getState()
+        .requestExportArtifactAccess(timelineId, "artifact-a");
+
+      const loadingState = selectors.selectExportArtifactAccess(
+        exportStore.getState(),
+        timelineId,
+        "artifact-a",
+      );
+      expect(loadingState).toMatchObject({
+        status: "loading",
+        artifactId: "artifact-a",
+        jobId: "job-success-artifacts",
+      });
+      expect(
+        selectors.selectExportArtifactAccessStatus(
+          exportStore.getState(),
+          timelineId,
+          "artifact-a",
+        ),
+      ).toBe("loading");
+
+      releaseFetch();
+      const result = await requestPromise;
+
+      expect(requestedUrl).toBe(
+        "https://example.com/exports/job-success-artifacts/artifacts/artifact-a/access",
+      );
+      expect(result).toMatchObject({
+        status: "ready",
+        artifactId: "artifact-a",
+        jobId: "job-success-artifacts",
+        access: {
+          kind: "local_dev_stream",
+          url: "/exports/job-success-artifacts/artifacts/artifact-a/stream",
+        },
+      });
+
+      const stored = selectors.selectExportArtifactAccess(
+        exportStore.getState(),
+        timelineId,
+        "artifact-a",
+      );
+      expect(stored).toMatchObject({
+        status: "ready",
+        artifactId: "artifact-a",
+        jobId: "job-success-artifacts",
+      });
+      if (!stored || stored.status !== "ready") {
+        return;
+      }
+      expect(stored.access.method).toBe("GET");
+    }, async (...args) => {
+      requestedUrl = String(args[0]);
+      expect(requestedUrl).not.toContain("/stream");
+      await fetchStarted;
+      return new Response(
+        JSON.stringify({
+          kind: "artifact_access_ready",
+          artifact: {
+            id: "artifact-a",
+            bytes: 128,
+          },
+          access: {
+            kind: "local_dev_stream",
+            artifactId: "artifact-a",
+            jobId: "job-success-artifacts",
+            url: "/exports/job-success-artifacts/artifacts/artifact-a/stream",
+            method: "GET",
+            sizeBytes: 128,
+          },
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    });
+  });
+
+  test("requestExportArtifactAccess stores unavailable result truthfully and keys state by artifactId", async () => {
+    setUpWindowForStores();
+    const { timelineId, exportStore } = await seedTerminalSuccessExport();
+    const selectors = (await import("../../src/store/exportStore")) as ExportStoreModule;
+
+    await withMockedFetch(async () => {
+      const result = await exportStore
+        .getState()
+        .requestExportArtifactAccess(timelineId, "artifact-b");
+
+      expect(result).toMatchObject({
+        status: "unavailable",
+        artifactId: "artifact-b",
+        jobId: "job-success-artifacts",
+        reason: "artifact_access_not_configured",
+      });
+      expect(
+        selectors.selectExportArtifactAccessStatus(
+          exportStore.getState(),
+          timelineId,
+          "artifact-b",
+        ),
+      ).toBe("unavailable");
+      expect(
+        selectors.selectExportArtifactAccessError(
+          exportStore.getState(),
+          timelineId,
+          "artifact-b",
+        ),
+      ).toBeUndefined();
+    }, async () =>
+      new Response(
+        JSON.stringify({
+          kind: "artifact_access_unavailable",
+          reason: "artifact_access_not_configured",
+          message: "Artifact access is not configured.",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ));
+  });
+
+  test("requestExportArtifactAccess stores failure result as error", async () => {
+    setUpWindowForStores();
+    const { timelineId, exportStore } = await seedTerminalSuccessExport();
+    const selectors = (await import("../../src/store/exportStore")) as ExportStoreModule;
+
+    await withMockedFetch(async () => {
+      const result = await exportStore
+        .getState()
+        .requestExportArtifactAccess(timelineId, "artifact-a");
+
+      expect(result).toMatchObject({
+        status: "error",
+        artifactId: "artifact-a",
+        jobId: "job-success-artifacts",
+        failure: {
+          code: "http_error",
+        },
+      });
+      expect(
+        selectors.selectExportArtifactAccessError(
+          exportStore.getState(),
+          timelineId,
+          "artifact-a",
+        ),
+      ).toMatchObject({
+        code: "http_error",
+      });
+    }, async () =>
+      new Response(JSON.stringify({ message: "bad gateway" }), {
+        status: 502,
+        statusText: "Bad Gateway",
+        headers: { "Content-Type": "application/json" },
+      }));
+  });
+
+  test("requestExportArtifactAccess AbortError is rethrown and does not create fake ready state", async () => {
+    setUpWindowForStores();
+    const { timelineId, exportStore } = await seedTerminalSuccessExport();
+    const selectors = (await import("../../src/store/exportStore")) as ExportStoreModule;
+
+    await withMockedFetch(
+      async () => {
+        await expect(
+          exportStore.getState().requestExportArtifactAccess(timelineId, "artifact-a"),
+        ).rejects.toThrow("Aborted");
+
+        const state = selectors.selectExportArtifactAccess(
+          exportStore.getState(),
+          timelineId,
+          "artifact-a",
+        );
+        expect(state).toMatchObject({
+          status: "loading",
+          artifactId: "artifact-a",
+          jobId: "job-success-artifacts",
+        });
+      },
+      async () => {
+        throw new DOMException("Aborted", "AbortError");
+      },
+    );
+  });
+
+  test("artifact access state clears when a new export submission supersedes old result and is not persisted", async () => {
+    const storage = setUpWindowForStores();
+    const { timelineId, exportStore } = await seedTerminalSuccessExport();
+    const { useExportStore } = (await import(
+      "../../src/store/exportStore"
+    )) as ExportStoreModule;
+    (useExportStore.persist as unknown as {
+      setOptions: (options: { storage: unknown }) => void;
+    }).setOptions({
+      storage: createJSONStorage(() => storage as unknown as Storage),
+    });
+
+    exportStore.setState({
+      jobsByTimelineId: {
+        [timelineId]: {
+          ...exportStore.getState().jobsByTimelineId[timelineId]!,
+          artifactAccessByArtifactId: {
+            "artifact-a": {
+              status: "ready",
+              artifactId: "artifact-a",
+              jobId: "job-success-artifacts",
+              artifact: { id: "artifact-a", bytes: 128 },
+              access: {
+                kind: "local_dev_stream",
+                artifactId: "artifact-a",
+                jobId: "job-success-artifacts",
+                url: "/exports/job-success-artifacts/artifacts/artifact-a/stream",
+                method: "GET",
+              },
+            },
+          },
+        },
+      },
+    });
+
+    exportStore.getState().applyExportSubmissionResult(
+      timelineId,
+      "request-next",
+      {
+        kind: "accepted_job",
+        handle: {
+          provider: "backend_render",
+          requestId: "request-next",
+          jobId: "job-next",
+          status: "submitted",
+        },
+      },
+    );
+
+    expect(
+      exportStore.getState().jobsByTimelineId[timelineId]?.artifactAccessByArtifactId,
+    ).toBeUndefined();
+
+    const raw = storage.getItem(exportPersistKey);
+    expect(raw).toBeTruthy();
+    const parsed = JSON.parse(raw ?? "{}") as {
+      state?: {
+        jobsByTimelineId?: Record<string, { artifactAccessByArtifactId?: unknown }>;
+      };
+    };
+    expect(
+      parsed.state?.jobsByTimelineId?.[timelineId]?.artifactAccessByArtifactId,
+    ).toBeUndefined();
   });
 });
