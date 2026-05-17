@@ -4363,3 +4363,46 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 36-B - Local Supabase Migration Preflight Boundary Only
+
+Status:
+
+- complete
+
+Scope:
+
+- local-only migration preflight boundary only
+- manual validation requirements only
+- no migration execution
+- no route behavior changes
+
+### Phase 36-B completion summary
+
+- Updated `backend/db/migrationWorkflow.ts` with a local-only migration preflight boundary
+- Added `localMigrationPreflightBoundary`
+- Added `getLocalMigrationPreflightBoundary()`
+- Explicitly selected `backend/db/migrations/0001_initial_supabase_postgres_schema.sql`
+- Modeled manual local validation requirements only
+- Added clean git status, local-only mode, no-remote-target, and no-production-credentials safety gates
+- Modeled local-dev-only reset and rollback expectations
+- No Supabase CLI spawning was added
+- No migration execution was added
+- No app startup migration behavior was added
+- No route migration behavior was added
+- No Supabase client factory migration behavior was added
+- No route, auth, requester, frontend, storage, signed URL, billing, or credit runtime wiring was added
+- Preflight boundary does not prove Supabase CLI availability, Docker readiness, or local DB readiness
+- Focused Phase 36, Phase 35, Phase 31, and Phase 30 tests passed
+- Typecheck and build passed before commit
+
+### Safety boundaries
+
+- Local migration preflight boundary does not imply executed migrations or successful local migration validation
+- Local migration preflight boundary is manual-only and local-only
+- Remote and production migration execution remain deferred
+- Route DB integration remains deferred until local migration validation is completed in a later phase
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added

@@ -584,6 +584,30 @@ Why it matters:
   - `POST /exports` and `GET /exports/:jobId` compatibility are covered, but broader route DB integration remains separately audited
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 36-B adds local Supabase migration preflight boundary only:
+  - Local migration preflight boundary now exists
+  - Preflight boundary is local-only and manual-only
+  - Preflight must not be treated as executed migration validation
+  - Supabase CLI availability remains unverified
+  - Docker and local Supabase readiness remain unverified
+  - Actual local migration execution remains deferred
+  - Remote and production migration execution remain deferred
+  - Route DB integration remains deferred
+  - App startup DB dependency remains deferred
+  - Real database credentials remain deferred
+  - Auth middleware and session/requester extraction remain deferred
+  - Production requester resolver remains deferred
+  - RLS policy implementation remains deferred
+  - BYOK encryption and KMS decisions remain deferred
+  - Provider key persistence remains deferred
+  - Credit ledger persistence and billing remain deferred
+  - Artifact and storage repository adapters remain deferred
+  - Production storage provider remains deferred
+  - Signed URL generation remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 
