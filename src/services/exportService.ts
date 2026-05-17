@@ -1,4 +1,6 @@
 import type {
+  ExportArtifactAccessDescriptor,
+  ExportArtifactAccessResult,
   ExportArtifactRef,
   ExportFailure,
   ExportJobHandle,
@@ -103,6 +105,29 @@ const isExportArtifactRef = (value: unknown): value is ExportArtifactRef => {
 
   const artifact = value as Partial<ExportArtifactRef>;
   return typeof artifact.id === "string";
+};
+
+const isExportArtifactAccessDescriptor = (
+  value: unknown,
+): value is ExportArtifactAccessDescriptor => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<ExportArtifactAccessDescriptor>;
+  return (
+    (candidate.kind === "signed_url" ||
+      candidate.kind === "backend_stream" ||
+      candidate.kind === "local_dev_stream") &&
+    typeof candidate.artifactId === "string" &&
+    typeof candidate.jobId === "string" &&
+    (candidate.url === undefined || typeof candidate.url === "string") &&
+    (candidate.method === undefined || candidate.method === "GET") &&
+    (candidate.expiresAt === undefined || typeof candidate.expiresAt === "string") &&
+    (candidate.contentType === undefined || typeof candidate.contentType === "string") &&
+    (candidate.fileName === undefined || typeof candidate.fileName === "string") &&
+    (candidate.sizeBytes === undefined || typeof candidate.sizeBytes === "number")
+  );
 };
 
 const isExportTerminalResult = (value: unknown): value is ExportTerminalResult => {
@@ -287,6 +312,51 @@ const toArtifactsResult = (value: unknown): ExportArtifactInfoResult | undefined
     return {
       kind: "success",
       artifacts: candidate.artifacts,
+    };
+  }
+
+  return undefined;
+};
+
+const toArtifactAccessResult = (
+  value: unknown,
+): Exclude<ExportArtifactAccessResult, { kind: "failure" }> | undefined => {
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
+
+  const candidate = value as {
+    kind?: unknown;
+    artifact?: unknown;
+    access?: unknown;
+    reason?: unknown;
+    message?: unknown;
+  };
+
+  if (
+    candidate.kind === "artifact_access_ready" &&
+    isExportArtifactRef(candidate.artifact) &&
+    isExportArtifactAccessDescriptor(candidate.access)
+  ) {
+    return {
+      kind: "ready",
+      artifact: candidate.artifact,
+      access: candidate.access,
+    };
+  }
+
+  if (
+    candidate.kind === "artifact_access_unavailable" &&
+    typeof candidate.reason === "string" &&
+    typeof candidate.message === "string"
+  ) {
+    return {
+      kind: "unavailable",
+      reason: candidate.reason as Extract<
+        ExportArtifactAccessResult,
+        { kind: "unavailable" }
+      >["reason"],
+      message: candidate.message,
     };
   }
 
@@ -563,6 +633,86 @@ export const getExportArtifactInfo = async (
     return {
       kind: "failure",
       failure: toTransportFailure("Export artifact transport request failed.", error),
+    };
+  }
+};
+
+export const getExportArtifactAccess = async (
+  jobId: string,
+  artifactId: string,
+  options?: ExportServiceRequestOptions,
+): Promise<ExportArtifactAccessResult> => {
+  if (!exportServiceConfig.baseUrl) {
+    return {
+      kind: "failure",
+      failure: toFailure(
+        "Export API base URL is not configured.",
+        "missing_export_api_base_url",
+        {
+          artifactsPath: exportServiceConfig.artifactsPath,
+        },
+      ),
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `${exportServiceConfig.baseUrl}${exportServiceConfig.artifactsPath}/${encodeURIComponent(jobId)}/artifacts/${encodeURIComponent(artifactId)}/access`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        signal: options?.signal,
+      },
+    );
+
+    const body = await readJson(response);
+
+    if (!response.ok) {
+      const backendFailure = toBackendFailure(body);
+      if (backendFailure) {
+        return {
+          kind: "failure",
+          failure: backendFailure,
+        };
+      }
+
+      return {
+        kind: "failure",
+        failure: toFailure(
+          `Export artifact access request failed with status ${response.status}.`,
+          "http_error",
+          {
+            status: response.status,
+            statusText: response.statusText,
+            body,
+          },
+        ),
+      };
+    }
+
+    const result = toArtifactAccessResult(body);
+    if (result) {
+      return result;
+    }
+
+    return {
+      kind: "failure",
+      failure: toFailure(
+        "Export artifact access response payload is invalid.",
+        "invalid_response_payload",
+        { body },
+      ),
+    };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+
+    return {
+      kind: "failure",
+      failure: toTransportFailure("Export artifact access transport request failed.", error),
     };
   }
 };

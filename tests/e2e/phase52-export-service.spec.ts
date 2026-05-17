@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import type { ExportJobHandle, TimelineExportRequest } from "../../src/types/exportJob";
+import type {
+  ExportArtifactAccessResult,
+  ExportJobHandle,
+  TimelineExportRequest,
+} from "../../src/types/exportJob";
 
 const exportRequest: TimelineExportRequest = {
   requestId: "export-request-1",
@@ -19,6 +23,8 @@ const exportHandle: ExportJobHandle = {
   jobId: "job-123",
   status: "rendering",
 };
+
+const artifactAccessUrl = "https://example.com/exports/jobs/job-123/artifacts/artifact-1/access";
 
 type ExportServiceModule = typeof import("../../src/services/exportService");
 
@@ -55,10 +61,10 @@ const jsonResponse = (
 
 const withMockedFetch = async (
   callback: () => Promise<void>,
-  implementation: () => Response | Promise<Response>,
+  implementation: (...args: Parameters<typeof fetch>) => Response | Promise<Response>,
 ): Promise<void> => {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async () => implementation()) as typeof fetch;
+  globalThis.fetch = (async (...args) => implementation(...args)) as typeof fetch;
 
   try {
     await callback();
@@ -358,6 +364,135 @@ test.describe("Phase 5.2 export service contracts", () => {
     });
   });
 
+  test("getExportArtifactAccess returns truthful failure for missing API base URL", async () => {
+    const service = await loadExportService();
+    const result = await service.getExportArtifactAccess("job-123", "artifact-1");
+
+    expect(result).toMatchObject({
+      kind: "failure",
+      failure: {
+        code: "missing_export_api_base_url",
+      },
+    });
+  });
+
+  test("getExportArtifactAccess returns parsed ready local_dev_stream result and never calls /stream", async () => {
+    const service = await loadExportService({
+      exportBaseUrl: "https://example.com",
+      exportArtifactsPath: "/exports/jobs",
+    });
+
+    let requestedUrl: string | undefined;
+    await withMockedFetch(async () => {
+      const result = await service.getExportArtifactAccess("job-123", "artifact-1");
+
+      expect(requestedUrl).toBe(artifactAccessUrl);
+      expect(result.kind).toBe("ready");
+      if (result.kind !== "ready") {
+        return;
+      }
+
+      expect(result.access.kind).toBe("local_dev_stream");
+      expect(result.access.url).toBe("/exports/job-123/artifacts/artifact-1/stream");
+      expect(result.access.method).toBe("GET");
+      expect(result.access.expiresAt).toBeUndefined();
+    }, async (...args) => {
+      requestedUrl = String(args[0]);
+      return jsonResponse({
+        kind: "artifact_access_ready",
+        artifact: {
+          id: "artifact-1",
+          bytes: 128,
+        },
+        access: {
+          kind: "local_dev_stream",
+          artifactId: "artifact-1",
+          jobId: "job-123",
+          url: "/exports/job-123/artifacts/artifact-1/stream",
+          method: "GET",
+          sizeBytes: 128,
+        },
+      });
+    });
+  });
+
+  test("getExportArtifactAccess returns parsed unavailable result", async () => {
+    const service = await loadExportService({
+      exportBaseUrl: "https://example.com",
+      exportArtifactsPath: "/exports/jobs",
+    });
+
+    await withMockedFetch(async () => {
+      const result = await service.getExportArtifactAccess("job-123", "artifact-1");
+
+      expect(result).toEqual<ExportArtifactAccessResult>({
+        kind: "unavailable",
+        reason: "artifact_access_not_configured",
+        message: "Artifact access is not configured.",
+      });
+    }, () =>
+      jsonResponse({
+        kind: "artifact_access_unavailable",
+        reason: "artifact_access_not_configured",
+        message: "Artifact access is not configured.",
+      }),
+    );
+  });
+
+  test("getExportArtifactAccess returns truthful failure for non-OK HTTP and invalid payload", async () => {
+    const service = await loadExportService({
+      exportBaseUrl: "https://example.com",
+      exportArtifactsPath: "/exports/jobs",
+    });
+
+    await withMockedFetch(async () => {
+      const httpFailure = await service.getExportArtifactAccess("job-123", "artifact-1");
+      expect(httpFailure).toMatchObject({
+        kind: "failure",
+        failure: {
+          code: "http_error",
+        },
+      });
+    }, () =>
+      jsonResponse(
+        {
+          message: "upstream access error",
+        },
+        502,
+        "Bad Gateway",
+      ),
+    );
+
+    await withMockedFetch(async () => {
+      const invalidPayloadFailure = await service.getExportArtifactAccess("job-123", "artifact-1");
+      expect(invalidPayloadFailure).toMatchObject({
+        kind: "failure",
+        failure: {
+          code: "invalid_response_payload",
+        },
+      });
+    }, () => jsonResponse({ ok: true }));
+  });
+
+  test("getExportArtifactAccess maps thrown network failure to transport_exception", async () => {
+    const service = await loadExportService({
+      exportBaseUrl: "https://example.com",
+      exportArtifactsPath: "/exports/jobs",
+    });
+
+    await withMockedFetch(async () => {
+      const result = await service.getExportArtifactAccess("job-123", "artifact-1");
+      expect(result).toMatchObject({
+        kind: "failure",
+        failure: {
+          code: "transport_exception",
+        },
+      });
+    }, async () => {
+      throw new Error("artifact access offline");
+    });
+  });
+
   test("AbortError is surfaced truthfully and never converted to fake success", async () => {
     const service = await loadExportService({
       exportBaseUrl: "https://example.com",
@@ -392,6 +527,19 @@ test.describe("Phase 5.2 export service contracts", () => {
       async () => {
         await expect(
           service.getExportArtifactInfo(exportHandle),
+        ).rejects.toMatchObject({
+          name: "AbortError",
+        });
+      },
+      async () => {
+        throw new DOMException("Aborted", "AbortError");
+      },
+    );
+
+    await withMockedFetch(
+      async () => {
+        await expect(
+          service.getExportArtifactAccess("job-123", "artifact-1"),
         ).rejects.toMatchObject({
           name: "AbortError",
         });

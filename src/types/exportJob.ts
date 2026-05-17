@@ -34,6 +34,51 @@ export interface ExportArtifactRef {
   metadata?: unknown;
 }
 
+export type ExportArtifactAccessKind =
+  | "signed_url"
+  | "backend_stream"
+  | "local_dev_stream";
+
+export interface ExportArtifactAccessDescriptor {
+  kind: ExportArtifactAccessKind;
+  artifactId: string;
+  jobId: string;
+  url?: string;
+  method?: "GET";
+  expiresAt?: string;
+  contentType?: string;
+  fileName?: string;
+  sizeBytes?: number;
+}
+
+export interface ExportArtifactAccessReady {
+  kind: "ready";
+  artifact: ExportArtifactRef;
+  access: ExportArtifactAccessDescriptor;
+}
+
+export interface ExportArtifactAccessUnavailable {
+  kind: "unavailable";
+  reason:
+    | "job_not_found"
+    | "job_not_successful"
+    | "artifact_not_found"
+    | "artifact_not_ready"
+    | "artifact_expired"
+    | "artifact_access_not_configured";
+  message: string;
+}
+
+export interface ExportArtifactAccessFailure {
+  kind: "failure";
+  failure: ExportFailure;
+}
+
+export type ExportArtifactAccessResult =
+  | ExportArtifactAccessReady
+  | ExportArtifactAccessUnavailable
+  | ExportArtifactAccessFailure;
+
 export interface ExportFailure {
   message: string;
   code?: string;
