@@ -1,0 +1,174 @@
+import type {
+  BackendArtifactAccessOwnership,
+  BackendArtifactStorageMetadataOwnership,
+  BackendUserAccountIdentity,
+  BackendWorkspace,
+  BackendWorkspaceCreditLedgerEntry,
+  BackendWorkspaceMembership,
+  BackendWorkspaceProviderKeyOwnership,
+} from "../auth/accountContracts";
+
+export type BackendProviderKeyStatus = "active" | "rotated" | "disabled";
+
+export interface BackendEncryptedSecretPayload {
+  encryptedPayload: string;
+  keyVersion: string;
+  algorithm: string;
+}
+
+export interface BackendProviderKeyRecord
+  extends BackendWorkspaceProviderKeyOwnership {
+  encryptedSecret: BackendEncryptedSecretPayload;
+  status: BackendProviderKeyStatus;
+  rotatedAt?: string;
+  disabledAt?: string;
+}
+
+export type BackendCreditLedgerEntryKind =
+  BackendWorkspaceCreditLedgerEntry["entryKind"];
+
+export interface BackendCreditLedgerReserveInput {
+  workspaceId: string;
+  ownerId: string;
+  amount: number;
+  reason: string;
+  jobId?: string;
+}
+
+export interface BackendCreditLedgerChargeInput {
+  workspaceId: string;
+  ownerId: string;
+  amount: number;
+  reason: string;
+  reservationEntryId?: string;
+  jobId?: string;
+}
+
+export interface BackendCreditLedgerRefundInput {
+  workspaceId: string;
+  ownerId: string;
+  amount: number;
+  reason: string;
+  chargeEntryId?: string;
+  jobId?: string;
+}
+
+export interface BackendCreditLedgerGrantInput {
+  workspaceId: string;
+  ownerId: string;
+  amount: number;
+  reason: string;
+}
+
+export interface BackendCreditLedgerAdjustmentInput {
+  workspaceId: string;
+  ownerId: string;
+  amountDelta: number;
+  reason: string;
+}
+
+export type BackendCreditLedgerMutationInput =
+  | { entryKind: "reserve"; input: BackendCreditLedgerReserveInput }
+  | { entryKind: "charge"; input: BackendCreditLedgerChargeInput }
+  | { entryKind: "refund"; input: BackendCreditLedgerRefundInput }
+  | { entryKind: "grant"; input: BackendCreditLedgerGrantInput }
+  | { entryKind: "adjustment"; input: BackendCreditLedgerAdjustmentInput };
+
+export interface BackendArtifactRecord extends BackendArtifactAccessOwnership {
+  format: string;
+  kind: string;
+  status: "available" | "missing" | "pending";
+  createdAt: string;
+  sizeBytes?: number;
+}
+
+export type BackendStorageProvider =
+  | "supabase_storage"
+  | "s3"
+  | "r2"
+  | "local_dev";
+
+export interface BackendArtifactStorageRefRecord
+  extends BackendArtifactStorageMetadataOwnership {
+  storageProvider: BackendStorageProvider;
+  objectKey: string;
+  bucketName?: string;
+  contentType?: string;
+  byteLength?: number;
+}
+
+export type BackendSignedUrlReadiness =
+  | "not_configured"
+  | "requires_authorization"
+  | "ready";
+
+export interface BackendArtifactAccessReadinessRecord
+  extends BackendArtifactAccessOwnership {
+  signedUrlReadiness: BackendSignedUrlReadiness;
+}
+
+export interface BackendUserAccountRepository {
+  getByUserId(userId: string): Promise<BackendUserAccountIdentity | undefined>;
+  getByAuthSubject(
+    authProvider: BackendUserAccountIdentity["authProvider"],
+    authSubject: string,
+  ): Promise<BackendUserAccountIdentity | undefined>;
+}
+
+export interface BackendWorkspaceRepository {
+  getByWorkspaceId(
+    workspaceId: string,
+  ): Promise<BackendWorkspace | undefined>;
+  listForUser(userId: string): Promise<BackendWorkspace[]>;
+}
+
+export interface BackendWorkspaceMembershipRepository {
+  getMembership(
+    workspaceId: string,
+    userId: string,
+  ): Promise<BackendWorkspaceMembership | undefined>;
+  listMembershipsForWorkspace(
+    workspaceId: string,
+  ): Promise<BackendWorkspaceMembership[]>;
+}
+
+export interface BackendProviderKeyRepository {
+  getByProviderKeyId(
+    providerKeyId: string,
+  ): Promise<BackendProviderKeyRecord | undefined>;
+  listForWorkspace(workspaceId: string): Promise<BackendProviderKeyRecord[]>;
+}
+
+export interface BackendCreditLedgerRepository {
+  recordEntry(
+    mutation: BackendCreditLedgerMutationInput,
+  ): Promise<BackendWorkspaceCreditLedgerEntry>;
+  listForWorkspace(
+    workspaceId: string,
+  ): Promise<BackendWorkspaceCreditLedgerEntry[]>;
+}
+
+export interface BackendArtifactRecordRepository {
+  getArtifactRecord(
+    workspaceId: string,
+    jobId: string,
+    artifactId: string,
+  ): Promise<BackendArtifactRecord | undefined>;
+  listArtifactRecordsForJob(
+    workspaceId: string,
+    jobId: string,
+  ): Promise<BackendArtifactRecord[]>;
+}
+
+export interface BackendArtifactStorageRefRepository {
+  getStorageRef(
+    workspaceId: string,
+    jobId: string,
+    artifactId: string,
+  ): Promise<BackendArtifactStorageRefRecord | undefined>;
+  getAccessReadiness(
+    workspaceId: string,
+    jobId: string,
+    artifactId: string,
+  ): Promise<BackendArtifactAccessReadinessRecord | undefined>;
+}
