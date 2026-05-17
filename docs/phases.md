@@ -3932,3 +3932,55 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 27-B - Migration Folder Structure / Initial SQL Migration Draft Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend migration draft structure only
+- migration-style SQL planning only
+- no runtime database implementation
+- no route behavior changes
+
+### Phase 27-B completion summary
+
+- Added migration folder structure under `backend/db/migrations/`
+- Added initial migration-style SQL draft file `backend/db/migrations/0001_initial_supabase_postgres_schema.sql`
+- Added focused migration draft text coverage in `tests/e2e/phase27-migration-draft.spec.ts`
+- Migration draft includes the following tables:
+  - `app_users`
+  - `workspaces`
+  - `workspace_memberships`
+  - `export_jobs`
+  - `artifact_records`
+  - `storage_refs`
+  - `provider_keys`
+  - `credit_ledger`
+- Ownership and idempotency constraints from the Phase 26 schema draft were preserved
+- `provider_keys` preserve encrypted payload placeholder only and no plaintext secret fields
+- `credit_ledger` preserves append-only reserve/charge/refund/grant/adjustment semantics
+- Artifact and storage separation remains preserved
+- No local filesystem path columns were added
+- No durable signed URL column was added
+- Migration remains draft-only and was not executed
+- Supabase CLI and package setup remain deferred
+- Supabase client runtime remains deferred
+- Database adapter and repository implementation remain deferred
+- Auth middleware remains deferred
+- RLS policies remain deferred
+- Frontend download or navigation behavior remains unchanged
+- Focused migration draft tests passed
+
+### Safety boundaries
+
+- Migration SQL is a repository draft only and does not imply executed or live database persistence
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- `app_users` to `auth.users` identity mapping remains undecided
+- `export_jobs` may need later lifecycle and worker-claim parity expansion
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added

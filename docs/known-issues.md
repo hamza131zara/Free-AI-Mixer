@@ -406,6 +406,25 @@ Why it matters:
   - `export_jobs` lifecycle and worker-claim parity may need later expansion
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 27-B adds migration folder structure and initial SQL migration draft only:
+  - Initial migration-style SQL draft now exists under `backend/db/migrations`
+  - Migration has not been executed
+  - Supabase CLI and package installation remain deferred
+  - Supabase client runtime remains deferred
+  - DB repository adapter remains deferred
+  - Real auth provider integration remains deferred
+  - Auth middleware and session/requester extraction remain deferred
+  - RLS policy implementation remains deferred
+  - BYOK encryption and KMS decisions remain deferred
+  - Credit ledger persistence and billing remain deferred
+  - Production storage provider remains deferred
+  - Signed URL generation remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - `app_users` to `auth.users` mapping decision remains deferred
+  - `export_jobs` lifecycle and worker-claim parity may need later expansion
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 
