@@ -12,6 +12,7 @@ import type {
   BackendArtifactMetadata,
   BackendExportJobRecord,
   BackendExportLifecycleStatus,
+  BackendExportJobOwnerScope,
 } from "../contracts/exportHttpTypes";
 import type { ExportFailure } from "../../src/types/exportJob";
 
@@ -157,8 +158,18 @@ export class JsonFileExportJobRegistry implements ExportJobRegistry {
     return this.innerRegistry.getById(jobId);
   }
 
-  getByRequestId(requestId: string): BackendExportJobRecord | undefined {
-    return this.innerRegistry.getByRequestId(requestId);
+  getByIdForOwner(
+    jobId: string,
+    ownerScope: BackendExportJobOwnerScope,
+  ): BackendExportJobRecord | undefined {
+    return this.innerRegistry.getByIdForOwner(jobId, ownerScope);
+  }
+
+  getByRequestId(
+    requestId: string,
+    ownerScope?: BackendExportJobOwnerScope,
+  ): BackendExportJobRecord | undefined {
+    return this.innerRegistry.getByRequestId(requestId, ownerScope);
   }
 
   getByStatus(status: BackendExportLifecycleStatus): BackendExportJobRecord[] {

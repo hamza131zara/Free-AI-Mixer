@@ -1,8 +1,15 @@
 import { expect, test } from "@playwright/test";
+import { promises as fs } from "node:fs";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import path from "node:path";
 import { createApp } from "../../backend/app";
 import { InMemoryExportJobRegistry } from "../../backend/registry/exportJobRegistry";
+import {
+  createLocalDevFallbackExportRequesterContext,
+  isLocalDevFallbackExportRequesterContext,
+  resolveExportRequesterContext,
+} from "../../backend/requester/exportRequesterContext";
 
 const createRequest = (requestId: string) => ({
   requestId,
@@ -131,6 +138,21 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
     expect(registry.getById(record.jobId)?.workspaceId).toBe("workspace-a");
   });
 
+  test("local-dev fallback requester context is explicit and non-production", async () => {
+    const fallbackContext = createLocalDevFallbackExportRequesterContext();
+    const resolvedContext = resolveExportRequesterContext({} as never);
+
+    expect(fallbackContext.ownerId).toBe("local-dev-owner");
+    expect(fallbackContext.workspaceId).toBe("local-dev-workspace");
+    expect(fallbackContext.authMode).toBe("local_dev_fallback");
+    expect(isLocalDevFallbackExportRequesterContext(fallbackContext)).toBe(true);
+
+    expect(resolvedContext.ownerId).toBe("local-dev-owner");
+    expect(resolvedContext.workspaceId).toBe("local-dev-workspace");
+    expect(resolvedContext.authMode).toBe("local_dev_fallback");
+    expect(isLocalDevFallbackExportRequesterContext(resolvedContext)).toBe(true);
+  });
+
   test("in-memory registry scopes requestId lookup by owner and workspace", async () => {
     const registry = new InMemoryExportJobRegistry();
 
@@ -178,6 +200,37 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
         workspaceId: "workspace-c",
       }),
     ).toBeUndefined();
+  });
+
+  test("requester-aware getByIdForOwner is scoped while ownership-blind getById remains available", async () => {
+    const registry = new InMemoryExportJobRegistry();
+
+    const ownerScopedRecord = registry.create({
+      requestId: "request-phase62-owner-lookup",
+      timelineId: "timeline-phase62-owner-lookup",
+      ownerId: "owner-a",
+      workspaceId: "workspace-a",
+      renderSettings: {
+        format: "mp4",
+        resolution: "1080p",
+        fps: 30,
+        quality: "standard",
+      },
+    });
+
+    expect(
+      registry.getByIdForOwner(ownerScopedRecord.jobId, {
+        ownerId: "owner-a",
+        workspaceId: "workspace-a",
+      })?.jobId,
+    ).toBe(ownerScopedRecord.jobId);
+    expect(
+      registry.getByIdForOwner(ownerScopedRecord.jobId, {
+        ownerId: "owner-b",
+        workspaceId: "workspace-b",
+      }),
+    ).toBeUndefined();
+    expect(registry.getById(ownerScopedRecord.jobId)?.jobId).toBe(ownerScopedRecord.jobId);
   });
 
   test("route-level requestId idempotency remains stable for the default owner scope", async () => {
@@ -245,5 +298,19 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
     expect(body).not.toHaveProperty("downloadUrl");
     expect(body).not.toHaveProperty("url");
     expect(body).not.toHaveProperty("filePath");
+  });
+
+  test("route source keeps fallback requester resolution without real auth middleware", async () => {
+    const source = await fs.readFile(
+      path.join(process.cwd(), "backend", "routes", "exports.ts"),
+      "utf8",
+    );
+
+    expect(source).toContain("resolveExportRequesterContext(request)");
+    expect(source).toContain("registry.getByIdForOwner");
+    expect(source).not.toContain("Authorization");
+    expect(source).not.toContain("Bearer ");
+    expect(source).not.toContain("req.session");
+    expect(source).not.toContain("request.session");
   });
 });

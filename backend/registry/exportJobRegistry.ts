@@ -20,6 +20,10 @@ export interface CreateExportJobInput {
 export interface ExportJobRegistry {
   create(input: CreateExportJobInput): BackendExportJobRecord;
   getById(jobId: string): BackendExportJobRecord | undefined;
+  getByIdForOwner(
+    jobId: string,
+    ownerScope: BackendExportJobOwnerScope,
+  ): BackendExportJobRecord | undefined;
   getByRequestId(
     requestId: string,
     ownerScope?: BackendExportJobOwnerScope,

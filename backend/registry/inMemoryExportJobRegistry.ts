@@ -227,6 +227,17 @@ const toRequestScopeKey = (
   return `${resolved.ownerId}::${resolved.workspaceId}::${requestId}`;
 };
 
+const normalizeSeededRecord = (
+  record: BackendExportJobRecord,
+): BackendExportJobRecord => {
+  const ownerScope = resolveOwnerScope(record);
+  return {
+    ...record,
+    ownerId: ownerScope.ownerId,
+    workspaceId: ownerScope.workspaceId,
+  };
+};
+
 export interface InMemoryExportJobRegistrySeed {
   jobs?: BackendExportJobRecord[];
   requestIdToJobId?: Record<string, string>;
@@ -244,7 +255,8 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     if (options?.seed) {
       const { jobs, requestIdToJobId } = options.seed;
       if (jobs) {
-        for (const record of jobs) {
+        for (const seededRecord of jobs) {
+          const record = normalizeSeededRecord(seededRecord);
           this.jobsById.set(record.jobId, record);
           // Only seed requestId mapping for non-terminal jobs
           if (!isTerminalStatus(record.status)) {
@@ -260,7 +272,10 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
           // Only seed if job exists and is non-terminal
           const job = this.jobsById.get(jobId);
           if (job && !isTerminalStatus(job.status)) {
-            this.jobIdByRequestId.set(requestId, jobId);
+            this.jobIdByRequestId.set(
+              toRequestScopeKey(requestId, job),
+              jobId,
+            );
           }
         }
       }
@@ -296,6 +311,22 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
 
   getById(jobId: string): BackendExportJobRecord | undefined {
     return this.jobsById.get(jobId);
+  }
+
+  getByIdForOwner(
+    jobId: string,
+    ownerScope: BackendExportJobOwnerScope,
+  ): BackendExportJobRecord | undefined {
+    const record = this.jobsById.get(jobId);
+    if (!record) {
+      return undefined;
+    }
+
+    const resolvedOwnerScope = resolveOwnerScope(ownerScope);
+    return record.ownerId === resolvedOwnerScope.ownerId &&
+        record.workspaceId === resolvedOwnerScope.workspaceId
+      ? record
+      : undefined;
   }
 
   getByRequestId(

@@ -24,6 +24,7 @@ import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
 import type { ArtifactAccessProvider } from "../artifacts/artifactAccessProvider";
 import { createNotConfiguredArtifactAccessProvider } from "../artifacts/notConfiguredArtifactAccessProvider";
 import type { ArtifactStorageRefResolver } from "../artifacts/artifactStorageRefResolver";
+import { resolveExportRequesterContext } from "../requester/exportRequesterContext";
 
 const isRouteExecutionEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION === "1";
@@ -109,13 +110,16 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       response: Response<ExportSubmitResponseBody>,
     ) => {
       const body = parseSubmitBody(request.body);
-      const existingRecord = registry.getByRequestId(body.requestId);
+      const requesterContext = resolveExportRequesterContext(request);
+      const existingRecord = registry.getByRequestId(body.requestId, requesterContext);
       const record =
         existingRecord ??
         registry.create({
           requestId: body.requestId,
           timelineId: body.timelineId,
           renderSettings: body.renderSettings,
+          ownerId: requesterContext.ownerId,
+          workspaceId: requesterContext.workspaceId,
         });
 
       response.status(202).json({
@@ -131,8 +135,9 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       request: Request<{ jobId: string }, ExportPollResponseBody>,
       response: Response<ExportPollResponseBody>,
     ) => {
+      const requesterContext = resolveExportRequesterContext(request);
       const { jobId } = parseJobIdParams(request.params);
-      const record = registry.getById(jobId);
+      const record = registry.getByIdForOwner(jobId, requesterContext);
       if (!record) {
         throw exportJobNotFound(jobId);
       }
@@ -148,8 +153,9 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       request: Request<{ jobId: string }, ExportArtifactsUnavailableResponseBody>,
       response: Response<ExportArtifactsUnavailableResponseBody>,
     ) => {
+      const requesterContext = resolveExportRequesterContext(request);
       const { jobId } = parseJobIdParams(request.params);
-      const record = registry.getById(jobId);
+      const record = registry.getByIdForOwner(jobId, requesterContext);
       if (!record) {
         throw exportJobNotFound(jobId);
       }
@@ -167,9 +173,10 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       request: Request<{ jobId: string; artifactId: string }, BackendArtifactAccessResponse>,
       response: Response<BackendArtifactAccessResponse>,
     ) => {
+     const requesterContext = resolveExportRequesterContext(request);
      const { jobId } = parseJobIdParams({ jobId: request.params.jobId });
      const { artifactId } = request.params;
-      const record = registry.getById(jobId);
+      const record = registry.getByIdForOwner(jobId, requesterContext);
 
       if (!record) {
         response.json({
@@ -250,6 +257,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       request: Request<{ jobId: string; artifactId: string }, unknown>,
       response: Response,
     ) => {
+      const requesterContext = resolveExportRequesterContext(request);
       // Check if resolver is configured
       if (!options?.artifactStorageRefResolver) {
         response.status(501).json({
@@ -264,7 +272,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       const artifactId = request.params.artifactId;
 
       // Get job from registry
-      const record = registry.getById(jobId);
+      const record = registry.getByIdForOwner(jobId, requesterContext);
       if (!record) {
         response.status(404).json({
           code: "job_not_found",
@@ -389,6 +397,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       request: Request<{ jobId: string }, unknown, unknown>,
       response: Response,
     ) => {
+      const requesterContext = resolveExportRequesterContext(request);
       if (!isRouteExecutionEnabled()) {
         response.status(503).json({
           code: "route_execution_disabled",
@@ -398,7 +407,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       }
 
       const { jobId } = parseJobIdParams(request.params);
-      const record = registry.getById(jobId);
+      const record = registry.getByIdForOwner(jobId, requesterContext);
       if (!record) {
         throw exportJobNotFound(jobId);
       }
