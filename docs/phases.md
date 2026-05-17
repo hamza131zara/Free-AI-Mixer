@@ -3514,3 +3514,40 @@ Scope:
 - No signed URLs were added
 - No production storage provider was added
 - This phase does not claim production-ready download behavior
+
+## Phase 16-B - Frontend Artifact Access Service Only
+
+Status:
+
+- complete
+
+Scope:
+
+- frontend service-layer artifact access only
+- frontend-local typed parsing only
+- no UI changes
+- no store integration
+- no backend changes
+
+### Phase 16-B completion summary
+
+- Added frontend artifact access service function `getExportArtifactAccess(jobId, artifactId, options?)`
+- Implemented in `src/services/exportService.ts`
+- Service calls `GET /exports/:jobId/artifacts/:artifactId/access` only
+- Service does not call `/stream`
+- Service does not trigger browser download or navigation side effects
+- Added frontend-local typed result model in `src/types/exportJob.ts`
+- `artifact_access_unavailable` remains truthful and is not converted into ready state
+- Invalid payloads, non-OK HTTP responses, and transport exceptions are handled truthfully
+- Focused mocked-fetch export service tests passed
+
+### Safety boundaries
+
+- No frontend download UI was added
+- No `TimelineExportPanel` changes were made
+- No `exportStore` integration was added
+- No direct `/stream` fetch or navigation was added
+- No auth/authorization was added
+- No signed URLs were added
+- No production storage provider was added
+- `local_dev_stream` remains local-dev-only and is not treated as production-ready
