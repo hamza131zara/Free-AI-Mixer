@@ -3660,3 +3660,48 @@ Scope:
 - No signed URLs were added
 - No production storage provider was added
 - `local_dev_stream` remains local-dev-only and is not treated as production-ready
+
+## Phase 20-B - Internal Requester Context Boundary Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend internal requester boundary only
+- explicit local/dev fallback requester context only
+- no auth middleware
+- no route authorization enforcement
+
+### Phase 20-B completion summary
+
+- Added internal requester context boundary in `backend/requester/exportRequesterContext.ts`
+- Added `ExportRequesterContext`
+- Added explicit local/dev fallback requester context helpers:
+  - `createLocalDevFallbackExportRequesterContext()`
+  - `resolveExportRequesterContext(request)`
+  - `isLocalDevFallbackExportRequesterContext(...)`
+- Local/dev fallback currently returns:
+  - `ownerId: "local-dev-owner"`
+  - `workspaceId: "local-dev-workspace"`
+  - `authMode: "local_dev_fallback"`
+- Added owner-aware registry lookup `getByIdForOwner(jobId, ownerScope)`
+- `JsonFileExportJobRegistry` now also supports `getByIdForOwner(...)`
+- Ownership-blind `getById(jobId)` remains available for internal and worker flows
+- Requester-facing routes now resolve fallback requester context internally
+- `POST /exports` scopes `getByRequestId(...)` and `create(...)` through the fallback requester context
+- `GET /exports/:jobId`, `/artifacts`, `/access`, `/stream`, and `/execute` now use `getByIdForOwner(...)` with fallback requester context
+- Current unauthenticated route behavior remains preserved
+- Focused tests, typecheck, and build passed
+
+### Safety boundaries
+
+- Requester context remains internal-only and is not part of public frontend/backend HTTP contracts
+- No auth middleware was added
+- No real requester/session/cookie/bearer-token extraction was added
+- No route authorization enforcement was added
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
+- Local/dev fallback is compatibility-only and must not be mistaken for production auth

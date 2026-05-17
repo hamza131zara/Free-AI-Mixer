@@ -324,6 +324,19 @@ Why it matters:
   - No signed URL or production storage provider exists yet
   - Default local/dev owner scope must not be mistaken for production auth
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 20-B adds internal requester context boundary only:
+  - Internal requester context boundary now exists
+  - Default local/dev requester fallback now exists
+  - Default local/dev fallback is not production auth
+  - Requester-facing routes now resolve fallback requester context internally
+  - `getByIdForOwner(...)` now exists for owner-aware requester-facing lookup
+  - Ownership-blind `getById(...)` remains for internal/worker flows
+  - Real auth/session/requester extraction remains deferred
+  - Route authorization enforcement remains deferred
+  - Artifact `/access` and `/stream` ownership checks remain deferred as real auth enforcement
+  - Frontend download/navigation remains deferred
+  - No signed URL or production storage provider exists yet
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 
