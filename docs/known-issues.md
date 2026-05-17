@@ -541,6 +541,28 @@ Why it matters:
   - Membership status naming between `suspended` and `disabled` needs later normalization
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 34-B adds backend repository composition boundary only:
+  - Repository composition boundary now exists
+  - Repository composition is disabled by default
+  - DB-backed composition is env/config-gated and lazy only
+  - Composition availability must not be treated as active persistence or DB readiness
+  - Route DB integration remains deferred
+  - App startup DB dependency remains deferred
+  - Migration execution remains deferred
+  - Real database credentials remain deferred
+  - Auth middleware and session/requester extraction remain deferred
+  - Production requester resolver remains deferred
+  - RLS policy implementation remains deferred
+  - BYOK encryption and KMS decisions remain deferred
+  - Provider key persistence remains deferred
+  - Credit ledger persistence and billing remain deferred
+  - Artifact and storage repository adapters remain deferred
+  - Production storage provider remains deferred
+  - Signed URL generation remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

@@ -4277,3 +4277,48 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 34-B - Backend Repository Composition Boundary Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only repository composition boundary only
+- disabled-by-default DB-backed composition selection only
+- no route behavior changes
+- no startup DB dependency
+
+### Phase 34-B completion summary
+
+- Added backend-only repository composition boundary in `backend/composition/repositoryComposition.ts`
+- Updated `backend/composition/backendDependencies.ts` to expose internal `repositoryComposition`
+- Composition is disabled by default
+- DB-backed composition is selected only when Supabase config is explicitly enabled and valid
+- Available DB-backed composition exposes lazy repository factory functions only
+- Disabled or invalid config does not claim DB readiness
+- No live database was required
+- No real credentials were required
+- No migration execution was added
+- No route wiring was added
+- No app startup runtime DB dependency was added
+- No auth or requester wiring was added
+- No frontend changes were added
+- No storage, signed URL, provider key, billing, or credit runtime behavior was added
+- Existing runtime behavior remains unchanged
+- Focused Phase 34, Phase 33, Phase 32, and Phase 30 tests passed
+- Typecheck and build passed before commit
+
+### Safety boundaries
+
+- Repository composition boundary does not imply active persistence or live DB readiness
+- Available DB-backed composition only means lazy adapter selection is possible
+- Route DB integration remains deferred
+- App startup DB dependency remains deferred
+- Migration execution remains deferred
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
