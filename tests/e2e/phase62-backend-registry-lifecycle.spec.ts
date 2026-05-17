@@ -306,7 +306,11 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
       "utf8",
     );
 
-    expect(source).toContain("resolveExportRequesterContext(request)");
+    expect(source).toContain("requesterContextResolver");
+    expect(source).toContain(
+      "options?.requesterContextResolver ?? resolveExportRequesterContext",
+    );
+    expect(source).toContain("requesterContextResolver(request)");
     expect(source).toContain("registry.getByIdForOwner");
     expect(source).not.toContain("Authorization");
     expect(source).not.toContain("Bearer ");

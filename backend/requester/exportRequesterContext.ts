@@ -7,6 +7,10 @@ export interface ExportRequesterContext extends BackendExportJobOwnerScope {
   authMode: ExportRequesterAuthMode;
 }
 
+export type ExportRequesterContextResolver = (
+  request: Request<any, any, any, any, any>,
+) => ExportRequesterContext;
+
 const localDevFallbackRequesterContext: ExportRequesterContext = {
   ownerId: "local-dev-owner",
   workspaceId: "local-dev-workspace",
@@ -18,9 +22,9 @@ export const createLocalDevFallbackExportRequesterContext =
     ...localDevFallbackRequesterContext,
   });
 
-export const resolveExportRequesterContext = (
-  _request: Request<any, any, any, any, any>,
-): ExportRequesterContext => createLocalDevFallbackExportRequesterContext();
+export const resolveExportRequesterContext: ExportRequesterContextResolver = (
+  _request,
+) => createLocalDevFallbackExportRequesterContext();
 
 export const isLocalDevFallbackExportRequesterContext = (
   requesterContext: ExportRequesterContext,

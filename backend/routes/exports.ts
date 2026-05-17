@@ -24,7 +24,10 @@ import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
 import type { ArtifactAccessProvider } from "../artifacts/artifactAccessProvider";
 import { createNotConfiguredArtifactAccessProvider } from "../artifacts/notConfiguredArtifactAccessProvider";
 import type { ArtifactStorageRefResolver } from "../artifacts/artifactStorageRefResolver";
-import { resolveExportRequesterContext } from "../requester/exportRequesterContext";
+import {
+  resolveExportRequesterContext,
+  type ExportRequesterContextResolver,
+} from "../requester/exportRequesterContext";
 
 const isRouteExecutionEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION === "1";
@@ -91,6 +94,7 @@ export interface ExportRouterOptions {
   rendererAdapter?: RendererAdapter;
   pathPolicy?: RenderOutputPathPolicy;
   artifactAccessProvider?: ArtifactAccessProvider;
+  requesterContextResolver?: ExportRequesterContextResolver;
   /** Internal resolver for artifact storage references. Used by stream route. */
   artifactStorageRefResolver?: ArtifactStorageRefResolver;
   /** Internal callback for ref registration. Used by POST /exports/:jobId/execute. */
@@ -102,6 +106,8 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
   // Artifact access provider: use injected or default to not-configured
   const artifactAccessProvider = options?.artifactAccessProvider ?? createNotConfiguredArtifactAccessProvider();
+  const requesterContextResolver =
+    options?.requesterContextResolver ?? resolveExportRequesterContext;
 
   router.post(
     "/exports",
@@ -110,7 +116,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       response: Response<ExportSubmitResponseBody>,
     ) => {
       const body = parseSubmitBody(request.body);
-      const requesterContext = resolveExportRequesterContext(request);
+      const requesterContext = requesterContextResolver(request);
       const existingRecord = registry.getByRequestId(body.requestId, requesterContext);
       const record =
         existingRecord ??
@@ -135,7 +141,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       request: Request<{ jobId: string }, ExportPollResponseBody>,
       response: Response<ExportPollResponseBody>,
     ) => {
-      const requesterContext = resolveExportRequesterContext(request);
+      const requesterContext = requesterContextResolver(request);
       const { jobId } = parseJobIdParams(request.params);
       const record = registry.getByIdForOwner(jobId, requesterContext);
       if (!record) {
@@ -153,7 +159,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       request: Request<{ jobId: string }, ExportArtifactsUnavailableResponseBody>,
       response: Response<ExportArtifactsUnavailableResponseBody>,
     ) => {
-      const requesterContext = resolveExportRequesterContext(request);
+      const requesterContext = requesterContextResolver(request);
       const { jobId } = parseJobIdParams(request.params);
       const record = registry.getByIdForOwner(jobId, requesterContext);
       if (!record) {
@@ -173,7 +179,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       request: Request<{ jobId: string; artifactId: string }, BackendArtifactAccessResponse>,
       response: Response<BackendArtifactAccessResponse>,
     ) => {
-     const requesterContext = resolveExportRequesterContext(request);
+     const requesterContext = requesterContextResolver(request);
      const { jobId } = parseJobIdParams({ jobId: request.params.jobId });
      const { artifactId } = request.params;
       const record = registry.getByIdForOwner(jobId, requesterContext);
@@ -257,7 +263,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       request: Request<{ jobId: string; artifactId: string }, unknown>,
       response: Response,
     ) => {
-      const requesterContext = resolveExportRequesterContext(request);
+      const requesterContext = requesterContextResolver(request);
       // Check if resolver is configured
       if (!options?.artifactStorageRefResolver) {
         response.status(501).json({
@@ -397,7 +403,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       request: Request<{ jobId: string }, unknown, unknown>,
       response: Response,
     ) => {
-      const requesterContext = resolveExportRequesterContext(request);
+      const requesterContext = requesterContextResolver(request);
       if (!isRouteExecutionEnabled()) {
         response.status(503).json({
           code: "route_execution_disabled",
