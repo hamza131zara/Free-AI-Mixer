@@ -3477,3 +3477,40 @@ Scope:
 - No frontend artifact access or download UI was added
 - No auth/authorization was added
 - No real file streaming success case was added in this phase
+
+## Phase 15-B â€” Positive Local Dev Artifact Stream File Smoke
+
+Status:
+
+- complete
+
+Scope:
+
+- backend stream behavior smoke only
+- positive local-dev file streaming coverage
+- no frontend changes
+- no public contract changes
+
+### Phase 15-B completion summary
+
+- Added focused backend smoke coverage in `tests/e2e/phase15-positive-local-dev-stream-smoke.spec.ts`
+- Smoke uses `createExportRouter` directly
+- Test seeds `InMemoryExportJobRegistry` with one terminal-success job and one available `mp4` artifact
+- Test creates a real temp root directory under OS temp and a real temp file inside a safe job segment directory
+- Injected `artifactStorageRefResolver` returns a real `InternalArtifactStorageRef`
+- `GET /exports/:jobId/artifacts/:artifactId/stream` now has positive smoke coverage for successful file-byte delivery
+- Response header coverage verifies:
+  - `Content-Type` includes `video/mp4`
+  - `Content-Disposition` includes attachment
+  - `Cache-Control` is `no-store`
+  - `X-Content-Type-Options` is `nosniff`
+- No Remotion or renderer runtime is involved
+
+### Safety boundaries
+
+- Stream route validation path remains in use for the positive smoke
+- No frontend artifact access or download UI was added
+- No auth/authorization was added
+- No signed URLs were added
+- No production storage provider was added
+- This phase does not claim production-ready download behavior

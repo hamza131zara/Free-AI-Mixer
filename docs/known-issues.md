@@ -269,6 +269,14 @@ Why it matters:
   - Strict schema remains preserved; validation was not loosened
   - Positive real file stream/download smoke remains deferred
   - local_dev_stream must not be enabled unconditionally or in production
+- Phase 15-B adds positive local-dev artifact stream file smoke:
+  - Positive real temp-file stream smoke now exists at createExportRouter level
+  - `/stream` success with real file bytes is now verified in local-dev backend coverage
+  - Response headers are verified for `video/mp4`, attachment disposition, `no-store`, and `nosniff`
+  - No frontend download UI exists yet
+  - No auth/authorization exists yet
+  - No signed URL or production storage provider exists yet
+  - local_dev_stream remains local-dev-only and must not be enabled unconditionally or in production
 
 Target fix phase:
 
@@ -394,7 +402,6 @@ Target fix phase:
 - Production storage provider and signed URL provider.
 - Durable artifact storage refs beyond the current local/dev in-memory model.
 - Public download URLs.
-- Positive real file stream/download smoke beyond descriptor-level local-dev coverage.
 - Real user-media decoding in renderer path.
 - Durable queue/worker/scheduler/database-backed renderer execution flow.
 - Frontend export lifecycle integration with real backend completion.
