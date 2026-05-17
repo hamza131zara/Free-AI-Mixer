@@ -3876,3 +3876,59 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 26-B - Supabase / Postgres SQL Schema Draft Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend SQL schema draft only
+- Postgres/Supabase naming and constraint planning only
+- no runtime database implementation
+- no route behavior changes
+
+### Phase 26-B completion summary
+
+- Added SQL schema draft file `backend/db/schema/phase26-initial-supabase-postgres-schema.sql`
+- Added focused schema text coverage in `tests/e2e/phase26-schema-draft.spec.ts`
+- Draft includes the following tables:
+  - `app_users`
+  - `workspaces`
+  - `workspace_memberships`
+  - `export_jobs`
+  - `artifact_records`
+  - `storage_refs`
+  - `provider_keys`
+  - `credit_ledger`
+- `app_users` includes unique auth provider/subject mapping
+- `workspaces` include `created_by_user_id` ownership
+- `workspace_memberships` include explicit owner/admin/editor/viewer role constraints and active/invited/disabled status constraints
+- `export_jobs` include workspace/owner/request idempotency and ownership alignment
+- `artifact_records` remain separate from `export_jobs`
+- `storage_refs` remain separate from `artifact_records`
+- `provider_keys` include encrypted payload placeholder only and no plaintext secret fields
+- `credit_ledger` uses an append-only reserve/charge/refund/grant/adjustment shape with partial idempotency indexing
+- No local filesystem path columns were added
+- No durable signed URL columns were added
+- Schema remains draft-only and was not executed
+- No Supabase client or package install was added
+- No database adapter or repository implementation was added
+- No auth middleware was added
+- No frontend changes were added
+- No signed URL generation was added
+- No production storage provider was added
+- Focused schema draft tests passed
+
+### Safety boundaries
+
+- SQL schema is a draft boundary only and does not imply live database persistence
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- `app_users` to `auth.users` identity mapping remains undecided
+- `export_jobs` may need later lifecycle and worker-claim parity expansion
+- RLS policies remain deferred
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added

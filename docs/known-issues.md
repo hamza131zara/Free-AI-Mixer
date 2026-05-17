@@ -388,6 +388,24 @@ Why it matters:
   - Frontend download/navigation remains deferred
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 26-B adds Supabase/Postgres SQL schema draft only:
+  - Initial Supabase/Postgres SQL schema draft now exists
+  - Schema has not been executed as a migration
+  - Supabase client and package installation remain deferred
+  - Supabase/Postgres repository adapter remains deferred
+  - Real auth provider integration remains deferred
+  - Auth middleware and session/requester extraction remain deferred
+  - RLS policy implementation remains deferred
+  - BYOK encryption and KMS decisions remain deferred
+  - Credit ledger persistence and billing remain deferred
+  - Production storage provider remains deferred
+  - Signed URL generation remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - `app_users` to `auth.users` mapping decision remains deferred
+  - `export_jobs` lifecycle and worker-claim parity may need later expansion
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 
