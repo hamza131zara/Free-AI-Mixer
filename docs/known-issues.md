@@ -297,6 +297,20 @@ Why it matters:
   - No signed URL or production storage provider exists yet
   - Public download URLs do not exist yet
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 18-B adds frontend artifact access UI boundary only:
+  - Frontend artifact access UI boundary now exists
+  - UI dispatches `exportStore` artifact access action only
+  - UI renders truthful loading/ready/unavailable/error access states
+  - `local_dev_stream` is shown only as local-dev access state
+  - Actual download/navigation behavior remains deferred
+  - Direct `/stream` fetch or navigation remains deferred
+  - Browser download behavior remains deferred
+  - No auth/authorization exists yet
+  - No signed URL or production storage provider exists yet
+  - Public download URLs do not exist yet
+  - Artifact access descriptors remain volatile and are not persisted
+  - UI tests using `vite preview` require a fresh build before verification
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

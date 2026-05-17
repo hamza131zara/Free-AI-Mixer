@@ -3589,3 +3589,40 @@ Scope:
 - No signed URLs were added
 - No production storage provider was added
 - `local_dev_stream` remains local-dev-only and is not treated as production-ready
+
+## Phase 18-B - Frontend Artifact Access UI Boundary Only
+
+Status:
+
+- complete
+
+Scope:
+
+- frontend artifact access UI boundary only
+- store-dispatch rendering only
+- no download/navigation behavior
+- no backend changes
+
+### Phase 18-B completion summary
+
+- `TimelineExportPanel` now renders per-artifact artifact access UI
+- Added `Check artifact access` control per artifact
+- UI dispatches `requestExportArtifactAccess(timelineId, artifactId)` through `exportStore` only
+- UI renders loading, ready, unavailable, and error states truthfully
+- `local_dev_stream` is shown only as local-dev access state
+- Component does not call services directly
+- Component does not construct `/stream` URLs
+- No browser download or navigation behavior was added
+- No `Download` wording was added
+- Focused UI tests passed
+- Focused Phase 5.5 UI verification requires a fresh build first because `vite preview` serves `dist`
+
+### Safety boundaries
+
+- No direct `/stream` fetch or navigation was added
+- No `window.open`, `location.href`, or anchor-click download behavior was added
+- No backend changes were made
+- No auth/authorization was added
+- No signed URLs were added
+- No production storage provider was added
+- `local_dev_stream` remains local-dev-only and is not treated as production-ready
