@@ -1,3 +1,4 @@
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
   EnabledValidSupabaseConfig,
   SupabaseConfig,
@@ -7,8 +8,7 @@ import { getPublicSupabaseConfig } from "../config/supabaseConfig";
 
 export type SupabaseClientUnavailableReason =
   | "disabled"
-  | "invalid_config"
-  | "sdk_not_installed";
+  | "invalid_config";
 
 export interface SupabaseClientUnavailable {
   kind: "supabase_client_unavailable";
@@ -21,15 +21,16 @@ export interface SupabaseClientUnavailable {
 
 export interface SupabaseAdminClientHandle {
   kind: "supabase_admin_client_handle";
-  runtime: "sdk_not_installed";
+  runtime: "sdk_installed";
   projectUrl: string;
+  client: SupabaseClient;
 }
 
 export interface SupabaseClientFactory {
   kind: "supabase_client_factory";
   enabled: true;
   valid: true;
-  runtime: "sdk_not_installed";
+  runtime: "sdk_installed";
   createAdminClientHandle: () => SupabaseAdminClientHandle;
   publicConfig: SupabasePublicConfig;
 }
@@ -54,8 +55,15 @@ const createAdminClientHandle = (
   config: EnabledValidSupabaseConfig,
 ): SupabaseAdminClientHandle => ({
   kind: "supabase_admin_client_handle",
-  runtime: "sdk_not_installed",
+  runtime: "sdk_installed",
   projectUrl: config.projectUrl,
+  client: createClient(config.projectUrl, config.serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  }),
 });
 
 export const createSupabaseClientFactory = (
@@ -73,7 +81,7 @@ export const createSupabaseClientFactory = (
     kind: "supabase_client_factory",
     enabled: true,
     valid: true,
-    runtime: "sdk_not_installed",
+    runtime: "sdk_installed",
     createAdminClientHandle: () => createAdminClientHandle(config),
     publicConfig: getPublicSupabaseConfig(config),
   };

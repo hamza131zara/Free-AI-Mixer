@@ -13,7 +13,32 @@ const configSourcePath = path.join(
   "config",
   "supabaseConfig.ts",
 );
+const routeRoot = path.join(process.cwd(), "backend", "routes");
+const frontendRoot = path.join(process.cwd(), "src");
+const repositoryRoot = path.join(process.cwd(), "backend", "repositories");
+const authRoot = path.join(process.cwd(), "backend", "auth");
+const requesterRoot = path.join(process.cwd(), "backend", "requester");
 const packageJsonPath = path.join(process.cwd(), "package.json");
+
+const getAllFileContents = async (rootPath: string): Promise<string[]> => {
+  const entries = await fs.readdir(rootPath, { withFileTypes: true });
+  const nested = await Promise.all(
+    entries.map(async (entry) => {
+      const fullPath = path.join(rootPath, entry.name);
+      if (entry.isDirectory()) {
+        return getAllFileContents(fullPath);
+      }
+
+      if (!entry.isFile()) {
+        return [] as string[];
+      }
+
+      return [await fs.readFile(fullPath, "utf8")];
+    }),
+  );
+
+  return nested.flat();
+};
 
 test.describe("phase28 supabase config boundary", () => {
   test("returns disabled config when env is missing", () => {
@@ -98,16 +123,17 @@ test.describe("phase28 supabase config boundary", () => {
     );
   });
 
-  test("no supabase dependency exists in package json", async () => {
-    const packageJson = await fs.readFile(packageJsonPath, "utf8");
-
-    expect(packageJson).not.toContain("@supabase/supabase-js");
-    expect(packageJson).not.toContain("\"supabase\"");
-  });
-
-  test("config boundary does not introduce route frontend or runtime db behavior", async () => {
+  test("config boundary stays dependency-free and isolated after sdk install", async () => {
     const source = await fs.readFile(configSourcePath, "utf8");
+    const packageJson = await fs.readFile(packageJsonPath, "utf8");
+    const routeSources = await getAllFileContents(routeRoot);
+    const frontendSources = await getAllFileContents(frontendRoot);
+    const repositorySources = await getAllFileContents(repositoryRoot);
+    const authSources = await getAllFileContents(authRoot);
+    const requesterSources = await getAllFileContents(requesterRoot);
 
+    expect(packageJson).toContain("@supabase/supabase-js");
+    expect(source).not.toContain("@supabase/supabase-js");
     expect(source).not.toContain("createClient(");
     expect(source).not.toContain("fetch(");
     expect(source).not.toContain("Router");
@@ -115,5 +141,15 @@ test.describe("phase28 supabase config boundary", () => {
     expect(source).not.toContain("express");
     expect(source).not.toContain("migrate(");
     expect(source).not.toContain("signed_url");
+    expect(routeSources.join("\n")).not.toContain("@supabase/supabase-js");
+    expect(routeSources.join("\n")).not.toContain("supabaseClientFactory");
+    expect(frontendSources.join("\n")).not.toContain("@supabase/supabase-js");
+    expect(frontendSources.join("\n")).not.toContain("supabaseClientFactory");
+    expect(repositorySources.join("\n")).not.toContain("@supabase/supabase-js");
+    expect(repositorySources.join("\n")).not.toContain("supabaseClientFactory");
+    expect(authSources.join("\n")).not.toContain("@supabase/supabase-js");
+    expect(authSources.join("\n")).not.toContain("supabaseClientFactory");
+    expect(requesterSources.join("\n")).not.toContain("@supabase/supabase-js");
+    expect(requesterSources.join("\n")).not.toContain("supabaseClientFactory");
   });
 });

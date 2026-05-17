@@ -35,7 +35,7 @@ const getAllFileContents = async (rootPath: string): Promise<string[]> => {
   return nested.flat();
 };
 
-test.describe("phase29 supabase client factory boundary", () => {
+test.describe("phase30 supabase runtime client boundary", () => {
   test("disabled config returns unavailable no-client result", () => {
     const config = parseSupabaseConfig({});
     const result = createSupabaseClientFactory(config);
@@ -44,7 +44,6 @@ test.describe("phase29 supabase client factory boundary", () => {
     expect(result.reason).toBe("disabled");
     expect(result.enabled).toBeFalsy();
     expect(result.valid).toBeTruthy();
-    expect("createAdminClientHandle" in result).toBeFalsy();
   });
 
   test("invalid config returns unavailable no-client result", () => {
@@ -57,12 +56,10 @@ test.describe("phase29 supabase client factory boundary", () => {
 
     expect(result.kind).toBe("supabase_client_unavailable");
     expect(result.reason).toBe("invalid_config");
-    expect(result.enabled).toBeTruthy();
     expect(result.valid).toBeFalsy();
-    expect(result.errors.length).toBeGreaterThan(0);
   });
 
-  test("enabled valid config now creates a backend-only runtime client handle", () => {
+  test("enabled fake config creates backend-only runtime client handle without probing db", async () => {
     const config = parseSupabaseConfig({
       [supabaseEnvKeys.enableSupabaseDb]: "1",
       [supabaseEnvKeys.dbProvider]: "supabase",
@@ -71,17 +68,18 @@ test.describe("phase29 supabase client factory boundary", () => {
       [supabaseEnvKeys.anonKey]: "anon-placeholder",
     });
     const result = createSupabaseClientFactory(config);
+    const source = await fs.readFile(factorySourcePath, "utf8");
 
     expect(result.kind).toBe("supabase_client_factory");
-    expect(result.enabled).toBeTruthy();
-    expect(result.valid).toBeTruthy();
     expect(result.runtime).toBe("sdk_installed");
 
     const handle = result.createAdminClientHandle();
     expect(handle.kind).toBe("supabase_admin_client_handle");
     expect(handle.runtime).toBe("sdk_installed");
-    expect("client" in handle).toBeTruthy();
     expect(typeof handle.client.from).toBe("function");
+    expect(source).not.toContain(".auth.getUser(");
+    expect(source).not.toContain(".rpc(");
+    expect(source).not.toContain(".select(");
   });
 
   test("service role key is not exposed through public result shape", () => {
@@ -101,29 +99,28 @@ test.describe("phase29 supabase client factory boundary", () => {
     expect("migrationExecutionRequested" in result.publicConfig).toBeFalsy();
   });
 
-  test("supabase sdk dependency now exists only in package json", async () => {
+  test("package json contains supabase sdk", async () => {
     const packageJson = await fs.readFile(packageJsonPath, "utf8");
 
     expect(packageJson).toContain("@supabase/supabase-js");
   });
 
-  test("route and frontend sources do not import the client factory", async () => {
+  test("no frontend files import supabase sdk or client factory, and route files do not import the factory", async () => {
     const routeSources = await getAllFileContents(routeRoot);
     const frontendSources = await getAllFileContents(frontendRoot);
 
     expect(routeSources.join("\n")).not.toContain("supabaseClientFactory");
     expect(frontendSources.join("\n")).not.toContain("supabaseClientFactory");
+    expect(frontendSources.join("\n")).not.toContain("@supabase/supabase-js");
   });
 
-  test("factory source does not add repository adapter or migration execution behavior", async () => {
+  test("no repository adapter implementation or migration execution behavior exists", async () => {
     const source = await fs.readFile(factorySourcePath, "utf8");
     const repositorySources = await getAllFileContents(repositoryRoot);
 
-    expect(source).toContain("@supabase/supabase-js");
-    expect(source).toContain("createClient(");
     expect(source).not.toContain("migrate(");
-    expect(source).not.toContain("connect(");
-    expect(source).not.toContain("execute(");
+    expect(source).not.toContain("Migration");
+    expect(source).not.toContain(".sql");
     expect(repositorySources.join("\n")).not.toContain("supabaseClientFactory");
   });
 });

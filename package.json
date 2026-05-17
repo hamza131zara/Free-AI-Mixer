@@ -40,6 +40,7 @@
   "dependencies": {
     "@remotion/bundler": "^4.0.459",
     "@remotion/renderer": "^4.0.459",
+    "@supabase/supabase-js": "^2.105.4",
     "express": "^4.21.2",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
