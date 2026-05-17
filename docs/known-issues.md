@@ -461,6 +461,26 @@ Why it matters:
   - `sdk_not_installed` future handle must not be treated as a live Supabase client
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 30-B adds backend-only Supabase runtime client boundary:
+  - `@supabase/supabase-js` is now installed
+  - Backend-only Supabase runtime client factory boundary now exists
+  - Real SDK client handle exists only inside backend boundary
+  - Client creation must not be treated as DB readiness
+  - Migration execution remains deferred
+  - DB repository adapter remains deferred
+  - Auth middleware and session/requester extraction remain deferred
+  - Production requester resolver remains deferred
+  - RLS policy implementation remains deferred
+  - BYOK encryption and KMS decisions remain deferred
+  - Credit ledger persistence and billing remain deferred
+  - Production storage provider remains deferred
+  - Signed URL generation remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - Frontend must not import `@supabase/supabase-js` yet
+  - Routes, repositories, auth, and requester boundaries must not import the Supabase client factory until later audited phases
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

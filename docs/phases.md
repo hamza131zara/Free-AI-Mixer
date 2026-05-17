@@ -4071,3 +4071,47 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 30-B - Install `@supabase/supabase-js` / Backend-Only Runtime Client Factory Boundary
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only Supabase runtime client boundary only
+- SDK install only
+- no adapters or auth wiring
+- no route behavior changes
+
+### Phase 30-B completion summary
+
+- Installed `@supabase/supabase-js`
+- Updated `package.json` and `package-lock.json`
+- Upgraded `backend/db/supabaseClientFactory.ts` from placeholder-only contract behavior to a backend-only runtime client boundary
+- Disabled config still returns truthful unavailable/no-client result
+- Invalid config still returns truthful unavailable/no-client result
+- Enabled valid config now returns truthful `sdk_installed` factory state
+- Backend-only admin SDK client handle can now be created
+- No anon/browser/public client was added
+- No DB probe or connection-readiness claim was added
+- No migration execution was added
+- No database adapter or repository implementation was added
+- No auth middleware or requester integration was added
+- No route, frontend, download, or storage runtime behavior was changed
+- Service-role key is not exposed through the public result shape
+- Phase 28 regression coverage was updated to remain Phase-30-aware after SDK install
+- Focused Phase 30, Phase 29, and Phase 28 tests passed
+- Typecheck and build passed before commit
+
+### Safety boundaries
+
+- Runtime SDK client boundary does not imply database persistence readiness
+- Runtime SDK client boundary does not imply migration readiness
+- Runtime SDK client boundary does not imply auth/requester readiness
+- Runtime SDK client boundary does not imply storage or signed URL readiness
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
