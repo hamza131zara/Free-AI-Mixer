@@ -1,3 +1,4 @@
+import { pathToFileURL } from "node:url";
 import { createApp } from "./app";
 import { createGracefulShutdown, type GracefulShutdownController } from "./lifecycle/gracefulShutdown";
 
@@ -65,4 +66,13 @@ export const startServer = (options: StartServerOptions = {}): StartServerContro
     cleanupSignalHandlers,
   };
 };
+
+// Direct-run guard: start server when executed directly (e.g., tsx backend/server.ts)
+const isDirectRun =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isDirectRun) {
+  startServer();
+}
 
