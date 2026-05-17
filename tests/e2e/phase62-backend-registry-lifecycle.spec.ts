@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { createApp } from "../../backend/app";
+import { InMemoryExportJobRegistry } from "../../backend/registry/exportJobRegistry";
 
 const createRequest = (requestId: string) => ({
   requestId,
@@ -108,6 +109,99 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
     expect(secondBody.handle.jobId).not.toBe(firstBody.handle.jobId);
   });
 
+  test("in-memory registry stores explicit owner scope on job creation", async () => {
+    const registry = new InMemoryExportJobRegistry();
+
+    const record = registry.create({
+      requestId: "request-phase62-owned",
+      timelineId: "timeline-phase62-owned",
+      ownerId: "owner-a",
+      workspaceId: "workspace-a",
+      renderSettings: {
+        format: "mp4",
+        resolution: "1080p",
+        fps: 30,
+        quality: "standard",
+      },
+    });
+
+    expect(record.ownerId).toBe("owner-a");
+    expect(record.workspaceId).toBe("workspace-a");
+    expect(registry.getById(record.jobId)?.ownerId).toBe("owner-a");
+    expect(registry.getById(record.jobId)?.workspaceId).toBe("workspace-a");
+  });
+
+  test("in-memory registry scopes requestId lookup by owner and workspace", async () => {
+    const registry = new InMemoryExportJobRegistry();
+
+    const ownerA = registry.create({
+      requestId: "request-phase62-shared",
+      timelineId: "timeline-owner-a",
+      ownerId: "owner-a",
+      workspaceId: "workspace-a",
+      renderSettings: {
+        format: "mp4",
+        resolution: "1080p",
+        fps: 30,
+        quality: "standard",
+      },
+    });
+    const ownerB = registry.create({
+      requestId: "request-phase62-shared",
+      timelineId: "timeline-owner-b",
+      ownerId: "owner-b",
+      workspaceId: "workspace-b",
+      renderSettings: {
+        format: "mp4",
+        resolution: "1080p",
+        fps: 30,
+        quality: "standard",
+      },
+    });
+
+    expect(ownerB.jobId).not.toBe(ownerA.jobId);
+    expect(
+      registry.getByRequestId("request-phase62-shared", {
+        ownerId: "owner-a",
+        workspaceId: "workspace-a",
+      })?.jobId,
+    ).toBe(ownerA.jobId);
+    expect(
+      registry.getByRequestId("request-phase62-shared", {
+        ownerId: "owner-b",
+        workspaceId: "workspace-b",
+      })?.jobId,
+    ).toBe(ownerB.jobId);
+    expect(
+      registry.getByRequestId("request-phase62-shared", {
+        ownerId: "owner-c",
+        workspaceId: "workspace-c",
+      }),
+    ).toBeUndefined();
+  });
+
+  test("route-level requestId idempotency remains stable for the default owner scope", async () => {
+    const firstResponse = await fetch(`${baseUrl}/exports`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(createRequest("request-phase62-default-owner")),
+    });
+    const firstBody = (await firstResponse.json()) as {
+      handle: { jobId: string };
+    };
+
+    const secondResponse = await fetch(`${baseUrl}/exports`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(createRequest("request-phase62-default-owner")),
+    });
+    const secondBody = (await secondResponse.json()) as {
+      handle: { jobId: string };
+    };
+
+    expect(secondBody.handle.jobId).toBe(firstBody.handle.jobId);
+  });
+
   test("GET /exports/:jobId stays truthful pending with no fake success/progress/artifacts", async () => {
     const createdResponse = await fetch(`${baseUrl}/exports`, {
       method: "POST",
@@ -149,5 +243,7 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
     expect(body.code).toBe("export_artifacts_unavailable");
     expect(body).not.toHaveProperty("artifacts");
     expect(body).not.toHaveProperty("downloadUrl");
+    expect(body).not.toHaveProperty("url");
+    expect(body).not.toHaveProperty("filePath");
   });
 });

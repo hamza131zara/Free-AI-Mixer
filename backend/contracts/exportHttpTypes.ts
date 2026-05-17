@@ -22,6 +22,11 @@ export type BackendExportLifecycleStatus =
   | BackendExportInFlightStatus
   | BackendExportTerminalStatus;
 
+export interface BackendExportJobOwnerScope {
+  ownerId: string;
+  workspaceId: string;
+}
+
 export type BackendArtifactStatus =
   | "unavailable"
   | "pending_verification"
@@ -44,6 +49,8 @@ export interface BackendExportJobRecord {
   jobId: string;
   requestId: string;
   timelineId: string;
+  ownerId: string;
+  workspaceId: string;
   status: BackendExportLifecycleStatus;
   attemptCount: number;
   claimedByWorkerId?: string;

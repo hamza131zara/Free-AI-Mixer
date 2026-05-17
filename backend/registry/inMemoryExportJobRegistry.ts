@@ -7,6 +7,7 @@ import type {
   BackendArtifactStatus,
   BackendExportJobRecord,
   BackendExportLifecycleStatus,
+  BackendExportJobOwnerScope,
 } from "../contracts/exportHttpTypes";
 import type {
   CreateExportJobInput,
@@ -200,6 +201,32 @@ const createJobId = (): string =>
     ? crypto.randomUUID()
     : `job_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
+const defaultOwnerScope: BackendExportJobOwnerScope = {
+  ownerId: "local-dev-owner",
+  workspaceId: "local-dev-workspace",
+};
+
+const resolveOwnerScope = (
+  scope?: Partial<BackendExportJobOwnerScope>,
+): BackendExportJobOwnerScope => ({
+  ownerId:
+    typeof scope?.ownerId === "string" && scope.ownerId.trim().length > 0
+      ? scope.ownerId
+      : defaultOwnerScope.ownerId,
+  workspaceId:
+    typeof scope?.workspaceId === "string" && scope.workspaceId.trim().length > 0
+      ? scope.workspaceId
+      : defaultOwnerScope.workspaceId,
+});
+
+const toRequestScopeKey = (
+  requestId: string,
+  scope?: Partial<BackendExportJobOwnerScope>,
+): string => {
+  const resolved = resolveOwnerScope(scope);
+  return `${resolved.ownerId}::${resolved.workspaceId}::${requestId}`;
+};
+
 export interface InMemoryExportJobRegistrySeed {
   jobs?: BackendExportJobRecord[];
   requestIdToJobId?: Record<string, string>;
@@ -221,7 +248,10 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
           this.jobsById.set(record.jobId, record);
           // Only seed requestId mapping for non-terminal jobs
           if (!isTerminalStatus(record.status)) {
-            this.jobIdByRequestId.set(record.requestId, record.jobId);
+            this.jobIdByRequestId.set(
+              toRequestScopeKey(record.requestId, record),
+              record.jobId,
+            );
           }
         }
       }
@@ -241,11 +271,14 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     const now = new Date().toISOString();
     const jobId = createJobId();
     const status: BackendExportLifecycleStatus = "submitted";
+    const ownerScope = resolveOwnerScope(input);
 
     const record: BackendExportJobRecord = {
       jobId,
       requestId: input.requestId,
       timelineId: input.timelineId,
+      ownerId: ownerScope.ownerId,
+      workspaceId: ownerScope.workspaceId,
       status,
       attemptCount: 0,
       createdAt: now,
@@ -254,7 +287,10 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     };
 
     this.jobsById.set(jobId, record);
-    this.jobIdByRequestId.set(record.requestId, record.jobId);
+    this.jobIdByRequestId.set(
+      toRequestScopeKey(record.requestId, ownerScope),
+      record.jobId,
+    );
     return record;
   }
 
@@ -262,8 +298,13 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     return this.jobsById.get(jobId);
   }
 
-  getByRequestId(requestId: string): BackendExportJobRecord | undefined {
-    const existingJobId = this.jobIdByRequestId.get(requestId);
+  getByRequestId(
+    requestId: string,
+    ownerScope?: BackendExportJobOwnerScope,
+  ): BackendExportJobRecord | undefined {
+    const existingJobId = this.jobIdByRequestId.get(
+      toRequestScopeKey(requestId, ownerScope),
+    );
     if (!existingJobId) {
       return undefined;
     }

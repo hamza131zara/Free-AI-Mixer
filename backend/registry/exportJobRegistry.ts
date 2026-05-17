@@ -6,18 +6,24 @@ import type {
   BackendArtifactMetadata,
   BackendExportJobRecord,
   BackendExportLifecycleStatus,
+  BackendExportJobOwnerScope,
 } from "../contracts/exportHttpTypes";
 
 export interface CreateExportJobInput {
   requestId: string;
   timelineId: string;
   renderSettings: ExportRenderSettings;
+  ownerId?: string;
+  workspaceId?: string;
 }
 
 export interface ExportJobRegistry {
   create(input: CreateExportJobInput): BackendExportJobRecord;
   getById(jobId: string): BackendExportJobRecord | undefined;
-  getByRequestId(requestId: string): BackendExportJobRecord | undefined;
+  getByRequestId(
+    requestId: string,
+    ownerScope?: BackendExportJobOwnerScope,
+  ): BackendExportJobRecord | undefined;
   getByStatus(status: BackendExportLifecycleStatus): BackendExportJobRecord[];
   claim(
     jobId: string,
@@ -60,6 +66,7 @@ export class ExportJobTransitionError extends Error {
 }
 
 export type { BackendArtifactMetadata };
+export type { BackendExportJobOwnerScope };
 
 // Re-export validateArtifactMetadata from implementation for external use
 export { validateArtifactMetadata } from "./inMemoryExportJobRegistry";
