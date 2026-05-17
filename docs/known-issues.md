@@ -500,6 +500,26 @@ Why it matters:
   - Real migration execution must remain manual and separately audited
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 32-B adds first export_jobs repository adapter boundary only:
+  - First export_jobs repository adapter boundary now exists
+  - Adapter is unwired and must not be treated as active persistence
+  - DB repository wiring remains deferred
+  - Migration execution remains deferred
+  - Real database credentials remain deferred
+  - Route DB integration remains deferred
+  - Auth middleware and session/requester extraction remain deferred
+  - Production requester resolver remains deferred
+  - RLS policy implementation remains deferred
+  - BYOK encryption and KMS decisions remain deferred
+  - Credit ledger persistence and billing remain deferred
+  - Artifact and storage repository adapters remain deferred
+  - Production storage provider remains deferred
+  - Signed URL generation remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - `export_jobs` lifecycle and worker-claim parity may need later schema and adapter refinement
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

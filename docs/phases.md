@@ -4158,3 +4158,56 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 32-B - Export Jobs Repository Adapter Only, Unwired
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only export_jobs repository adapter only
+- unwired Supabase/Postgres adapter boundary only
+- fake-client testing only
+- no route behavior changes
+
+### Phase 32-B completion summary
+
+- Added unwired backend-only export_jobs repository adapter in `backend/repositories/supabaseExportJobsRepository.ts`
+- Added and updated repository contract seam for export job persistence alignment
+- Adapter accepts an injected Supabase-like client dependency shape
+- Focused tests use fake and mocked client behavior only
+- Mapping and ownership semantics are preserved for:
+  - `jobId`
+  - `requestId`
+  - `ownerId`
+  - `workspaceId`
+  - `timelineId`
+  - `status`
+  - `attemptCount`
+  - `renderSettings`
+  - failure code/message fields
+  - available timestamps
+- Request idempotency scope is preserved using `workspaceId + ownerId + requestId`
+- No live database was required
+- No real credentials were required
+- No migration execution was added
+- No route or app startup wiring was added
+- No auth or requester wiring was added
+- No frontend changes were added
+- No artifact, storage, billing, or credit runtime behavior was added
+- TypeScript failure-field mismatch was fixed by aligning export job failure mapping with the current failure contract and not inventing `failure.retryable`
+- Focused Phase 32, Phase 31, Phase 30, and Phase 25 tests passed
+- Typecheck and build passed before commit
+
+### Safety boundaries
+
+- Export jobs repository adapter is unwired and must not be treated as active database persistence
+- Adapter boundary does not imply executed migrations or live database readiness
+- In-memory and JSON-backed runtime behavior remain the active default
+- `export_jobs` lifecycle and worker-claim parity may need later schema or adapter refinement
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
