@@ -11,6 +11,14 @@ const migrationPath = path.join(
 );
 
 const packageJsonPath = path.join(process.cwd(), "package.json");
+const appSourcePath = path.join(process.cwd(), "backend", "app.ts");
+const routeSourcePath = path.join(process.cwd(), "backend", "routes", "exports.ts");
+const clientFactorySourcePath = path.join(
+  process.cwd(),
+  "backend",
+  "db",
+  "supabaseClientFactory.ts",
+);
 
 const readMigration = async (): Promise<string> =>
   fs.readFile(migrationPath, "utf8");
@@ -83,14 +91,30 @@ test.describe("phase27 migration draft", () => {
     expect(migration).not.toContain("signed_url varchar");
   });
 
-  test("does not add supabase dependency expectations or runtime code", async () => {
-    const migration = await readMigration();
-    const packageJson = await fs.readFile(packageJsonPath, "utf8");
+  test("stays phase30-aware and keeps migration safety separate from runtime code", async () => {
+    const [migration, packageJson, appSource, routeSource, clientFactorySource] =
+      await Promise.all([
+        readMigration(),
+        fs.readFile(packageJsonPath, "utf8"),
+        fs.readFile(appSourcePath, "utf8"),
+        fs.readFile(routeSourcePath, "utf8"),
+        fs.readFile(clientFactorySourcePath, "utf8"),
+      ]);
 
     expect(migration).not.toContain("createClient(");
     expect(migration).not.toContain("Authorization");
     expect(migration).not.toContain("window.");
-    expect(packageJson).not.toContain("@supabase/supabase-js");
-    expect(packageJson).not.toContain("\"supabase\"");
+    expect(migration).not.toContain("fetch(");
+    expect(migration).not.toContain("@supabase/supabase-js");
+    expect(packageJson).toContain("@supabase/supabase-js");
+    expect(packageJson).not.toContain("\"supabase migration\"");
+    expect(packageJson).not.toContain("\"supabase db push\"");
+    expect(packageJson).not.toContain("\"supabase db reset\"");
+    expect(appSource).not.toContain("migrate(");
+    expect(appSource).not.toContain("supabase db push");
+    expect(routeSource).not.toContain("migrate(");
+    expect(routeSource).not.toContain("supabase db push");
+    expect(clientFactorySource).not.toContain("migrate(");
+    expect(clientFactorySource).not.toContain("supabase db push");
   });
 });
