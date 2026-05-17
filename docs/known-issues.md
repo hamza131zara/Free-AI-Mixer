@@ -481,6 +481,25 @@ Why it matters:
   - Routes, repositories, auth, and requester boundaries must not import the Supabase client factory until later audited phases
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 31-B adds migration command / script boundary only:
+  - Migration workflow boundary now exists
+  - Migration command names are reserved and described only
+  - No migrations have been executed
+  - Supabase CLI execution remains deferred
+  - `package.json` migration scripts remain deferred
+  - DB repository adapter remains deferred
+  - Auth middleware and session/requester extraction remain deferred
+  - Production requester resolver remains deferred
+  - RLS policy implementation remains deferred
+  - BYOK encryption and KMS decisions remain deferred
+  - Credit ledger persistence and billing remain deferred
+  - Production storage provider remains deferred
+  - Signed URL generation remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - Real migration execution must remain manual and separately audited
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

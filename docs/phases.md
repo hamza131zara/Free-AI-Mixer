@@ -4115,3 +4115,46 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 31-B - Migration Command / Script Boundary Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only migration workflow boundary only
+- future command naming and safety rules only
+- no migration execution
+- no route behavior changes
+
+### Phase 31-B completion summary
+
+- Added backend-only migration workflow boundary in `backend/db/migrationWorkflow.ts`
+- Reserved and described future manual local migration command naming
+- Reserved and described future manual remote migration command naming
+- Workflow boundary is explicitly non-executing
+- No `package.json` migration scripts were added
+- No Supabase CLI execution was added
+- No migration execution was added
+- No real credentials or project refs were added
+- No app startup migration behavior was added
+- No route migration behavior was added
+- No Supabase client factory migration behavior was added
+- No database adapter or repository implementation was added
+- No auth middleware or requester integration was added
+- No route, frontend, download, or storage runtime behavior was changed
+- Phase 27 regression coverage was updated to remain Phase-30/31-aware after SDK install
+- Focused Phase 31, Phase 30, Phase 29, Phase 28, and Phase 27 tests passed
+- Typecheck and build passed before commit
+
+### Safety boundaries
+
+- Migration workflow boundary does not imply executed migrations or an active CLI workflow
+- Real migration execution remains manual-only and deferred to a separately audited phase
+- Reserved local and remote migration command names must not be treated as active scripts yet
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
