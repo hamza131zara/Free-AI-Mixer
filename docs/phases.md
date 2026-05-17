@@ -3626,3 +3626,37 @@ Scope:
 - No signed URLs were added
 - No production storage provider was added
 - `local_dev_stream` remains local-dev-only and is not treated as production-ready
+
+## Phase 19-C - Export Job Ownership Contract Boundary
+
+Status:
+
+- complete
+
+Scope:
+
+- backend export job ownership boundary only
+- registry idempotency scoping only
+- no auth middleware
+- no frontend changes
+
+### Phase 19-C completion summary
+
+- Added explicit export job ownership boundary
+- Backend export job records now include `ownerId` and `workspaceId`
+- Registry create boundary now accepts optional owner scope
+- Registry requestId idempotency is now owner/workspace-aware
+- `getByRequestId(...)` now supports owner scope
+- In-memory registry stores and returns ownership metadata
+- The same requestId can resolve independently across different owner/workspace scopes
+- Current route behavior remains preserved through a default local/dev owner scope
+- Focused backend registry lifecycle tests passed
+
+### Safety boundaries
+
+- No auth middleware was added
+- No route authorization enforcement was added
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
+- `local_dev_stream` remains local-dev-only and is not treated as production-ready

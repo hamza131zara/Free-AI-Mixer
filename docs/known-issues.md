@@ -311,6 +311,19 @@ Why it matters:
   - Artifact access descriptors remain volatile and are not persisted
   - UI tests using `vite preview` require a fresh build before verification
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 19-C adds export job ownership contract boundary only:
+  - Export job ownership boundary now exists
+  - Backend export job records now include `ownerId` and `workspaceId`
+  - Registry requestId idempotency is now owner/workspace-aware
+  - In-memory registry stores and returns ownership metadata
+  - Same requestId can resolve independently across different owner/workspace scopes
+  - Actual auth/session/requester identity is still deferred
+  - Route authorization enforcement is still deferred
+  - Artifact `/access` and `/stream` ownership checks are still deferred
+  - Frontend download/navigation remains deferred
+  - No signed URL or production storage provider exists yet
+  - Default local/dev owner scope must not be mistaken for production auth
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 
