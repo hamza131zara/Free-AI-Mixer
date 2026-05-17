@@ -425,6 +425,24 @@ Why it matters:
   - `export_jobs` lifecycle and worker-claim parity may need later expansion
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 28-B adds Supabase environment/config contract boundary only:
+  - Supabase config boundary now exists
+  - Supabase package installation remains deferred
+  - Supabase client runtime remains deferred
+  - Migration execution remains deferred
+  - DB repository adapter remains deferred
+  - Auth middleware and session/requester extraction remain deferred
+  - Production requester resolver remains deferred
+  - RLS policy implementation remains deferred
+  - BYOK encryption and KMS decisions remain deferred
+  - Credit ledger persistence and billing remain deferred
+  - Production storage provider remains deferred
+  - Signed URL generation remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - `FREE_AI_MIXER_DATABASE_URL` optionality remains a later adapter decision
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

@@ -3984,3 +3984,49 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 28-B - Supabase Environment / Config Contract Boundary Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only Supabase config boundary only
+- dependency-free env/config parsing only
+- no runtime Supabase client
+- no route behavior changes
+
+### Phase 28-B completion summary
+
+- Added backend-only dependency-free Supabase config boundary in `backend/config/supabaseConfig.ts`
+- Added explicit Supabase env key constants
+- Added pure `parseSupabaseConfig(env)` parser
+- Added `readSupabaseConfigFromEnv()` wrapper
+- Added public/frontend-safe projection helper
+- Config is disabled by default when env is missing
+- Disabled mode does not throw and does not imply fake DB enablement
+- Database mode only becomes valid when `FREE_AI_MIXER_ENABLE_SUPABASE_DB === "1"`
+- Enabled database mode requires backend-only values when active
+- `FREE_AI_MIXER_DB_PROVIDER` must be `supabase` when database mode is enabled
+- Service-role key remains backend-only
+- Public projection excludes service-role key, database URL, migration flags, and backend secrets
+- VITE-style service-role exposure is rejected as invalid
+- No Supabase package install was added
+- No runtime Supabase client was added
+- No migration execution was added
+- No database adapter was added
+- No auth middleware was added
+- No route, frontend, download, or storage runtime behavior was changed
+- Focused Supabase config tests passed
+- Typecheck and build passed after the narrowing fix
+
+### Safety boundaries
+
+- Supabase config is a contract boundary only and does not imply live database runtime
+- `FREE_AI_MIXER_DATABASE_URL` remains optional pending later adapter decisions
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
