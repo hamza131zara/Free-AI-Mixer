@@ -7,6 +7,10 @@ import type {
   BackendWorkspaceMembership,
   BackendWorkspaceProviderKeyOwnership,
 } from "../auth/accountContracts";
+import type {
+  BackendExportJobOwnerScope,
+  BackendExportJobRecord,
+} from "../contracts/exportHttpTypes";
 
 export type BackendProviderKeyStatus = "active" | "rotated" | "disabled";
 
@@ -105,6 +109,19 @@ export type BackendSignedUrlReadiness =
 export interface BackendArtifactAccessReadinessRecord
   extends BackendArtifactAccessOwnership {
   signedUrlReadiness: BackendSignedUrlReadiness;
+}
+
+export interface BackendExportJobIdempotencyScope
+  extends BackendExportJobOwnerScope {
+  requestId: string;
+}
+
+export interface BackendExportJobsRepository {
+  upsertJob(record: BackendExportJobRecord): Promise<BackendExportJobRecord>;
+  getByJobId(jobId: string): Promise<BackendExportJobRecord | undefined>;
+  getByIdempotencyScope(
+    scope: BackendExportJobIdempotencyScope,
+  ): Promise<BackendExportJobRecord | undefined>;
 }
 
 export interface BackendUserAccountRepository {
