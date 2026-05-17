@@ -4322,3 +4322,44 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 35-B - Test-Only Route / Repository Integration Harness
+
+Status:
+
+- complete
+
+Scope:
+
+- test-only route/repository compatibility proof only
+- no production route DB wiring
+- no app startup DB dependency
+- no route behavior changes
+
+### Phase 35-B completion summary
+
+- Added focused test-only route/repository integration harness in `tests/e2e/phase35-route-repository-harness.spec.ts`
+- No production source code was changed
+- No production route behavior was changed
+- Current `POST /exports` behavior is preserved
+- Current `GET /exports/:jobId` behavior is preserved
+- Fake repository-shaped harness remains test-only
+- No production route DB wiring was added
+- No app startup DB dependency was added
+- No migration execution was added
+- No real database credentials were required
+- No auth, requester, frontend, storage, signed URL, billing, or credit runtime wiring was added
+- Focused Phase 35, Phase 34, Phase 32, and Phase 10 tests passed
+- Typecheck and build passed before commit
+
+### Safety boundaries
+
+- Test-only route/repository harness does not imply production route DB integration
+- Routes still use existing local and in-memory runtime behavior
+- DB adapters remain unwired from production routes
+- Migrations remain unexecuted and deferred
+- `POST /exports` and `GET /exports/:jobId` are the only route semantics covered by this harness
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
