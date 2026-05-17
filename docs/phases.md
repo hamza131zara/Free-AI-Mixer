@@ -3787,3 +3787,47 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 24-A - Account / Workspace / Auth Contract Boundary Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only account/workspace/auth contract boundary only
+- future ownership/security contract shapes only
+- no auth middleware
+- no route behavior changes
+
+### Phase 24-A completion summary
+
+- Added backend-only account/workspace/auth contract boundary in `backend/auth/accountContracts.ts`
+- Added minimal future-safe contracts for user/account identity, workspace, workspace membership, and workspace roles
+- Explicit workspace roles are now modeled as:
+  - `owner`
+  - `admin`
+  - `editor`
+  - `viewer`
+- Added authenticated requester identity mapping contract boundaries
+- Provider key ownership contract is workspace-scoped
+- Credit ledger ownership contract is workspace-scoped
+- Artifact access and artifact storage metadata ownership contracts include workspace/job ownership
+- Focused backend account/workspace/auth contract tests passed
+- No real auth middleware was added
+- No real session/cookie/bearer-token parsing was added
+- No frontend auth UI was added
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
+
+### Safety boundaries
+
+- Account/workspace/auth contracts are boundary definitions only and do not imply implemented accounts or persistence
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No real requester identity extraction exists yet
+- No billing/credits, BYOK encryption/storage, or route authorization implementation was added
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added

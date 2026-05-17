@@ -359,6 +359,21 @@ Why it matters:
   - No signed URL or production storage provider exists yet
   - `local_dev_fallback` remains compatibility-only and must not be treated as production auth
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 24-A adds account/workspace/auth contract boundary only:
+  - Account/workspace/auth contract boundary now exists
+  - Workspace roles are now explicitly modeled
+  - Provider key, credit ledger, artifact access, and storage metadata ownership contracts now exist
+  - Real auth provider selection remains deferred
+  - Real auth/session/cookie/bearer-token extraction remains deferred
+  - Real auth middleware remains deferred
+  - Database persistence/schema implementation remains deferred
+  - BYOK encryption/storage implementation remains deferred
+  - Billing/credits implementation remains deferred
+  - Production signed URL/storage provider remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 
