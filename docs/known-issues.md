@@ -520,6 +520,27 @@ Why it matters:
   - `export_jobs` lifecycle and worker-claim parity may need later schema and adapter refinement
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 33-B adds account/workspace/membership repository adapter boundary only:
+  - Account/workspace/membership repository adapter boundary now exists
+  - Adapter is unwired and must not be treated as active account/workspace persistence
+  - DB repository wiring remains deferred
+  - Migration execution remains deferred
+  - Real database credentials remain deferred
+  - Route DB integration remains deferred
+  - Auth middleware and session/requester extraction remain deferred
+  - Production requester resolver remains deferred
+  - RLS policy implementation remains deferred
+  - BYOK encryption and KMS decisions remain deferred
+  - Provider key persistence remains deferred
+  - Credit ledger persistence and billing remain deferred
+  - Artifact and storage repository adapters remain deferred
+  - Production storage provider remains deferred
+  - Signed URL generation remains deferred
+  - Frontend auth UI remains deferred
+  - Frontend download/navigation remains deferred
+  - Membership status naming between `suspended` and `disabled` needs later normalization
+  - `local_dev_fallback` remains compatibility-only
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 

@@ -4211,3 +4211,69 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 33-B - Account / Workspace / Membership Repository Adapters Only, Unwired
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only account/workspace/membership repository adapters only
+- unwired Supabase/Postgres adapter boundary only
+- fake-client testing only
+- no route behavior changes
+
+### Phase 33-B completion summary
+
+- Added unwired backend-only account/workspace/membership repository adapter in `backend/repositories/supabaseAccountWorkspaceRepository.ts`
+- Added and updated repository contract seam for account/workspace persistence alignment
+- Adapter accepts an injected Supabase-like client dependency shape
+- Focused tests use fake and mocked client behavior only
+- `app_users` mapping is preserved for:
+  - `id`
+  - `auth_provider` / `authProvider`
+  - `auth_subject` / `authSubject`
+  - `email`
+  - `created_at` / `createdAt`
+  - `updated_at` / `updatedAt`
+- `workspaces` mapping is preserved for:
+  - `id`
+  - `name`
+  - `created_by_user_id` / `createdByUserId`
+  - `created_at` / `createdAt`
+  - `updated_at` / `updatedAt`
+  - `deleted_at` / `deletedAt`
+- `workspace_memberships` mapping is preserved for:
+  - `workspace_id` / `workspaceId`
+  - `user_id` / `userId`
+  - `role`
+  - `status`
+  - `created_at` / `createdAt`
+  - `updated_at` / `updatedAt`
+- Membership lookup scope is preserved using `workspaceId + userId`
+- Workspace ownership semantics are preserved through `createdByUserId`
+- No live database was required
+- No real credentials were required
+- No migration execution was added
+- No route or app startup wiring was added
+- No auth or requester wiring was added
+- No frontend changes were added
+- No provider key persistence was added
+- No artifact, storage, billing, or credit runtime behavior was added
+- Membership status naming risk remains for later normalization between `suspended` and `disabled`
+- Focused Phase 33, Phase 32, Phase 30, and Phase 25 tests passed
+- Typecheck and build passed before commit
+
+### Safety boundaries
+
+- Account/workspace/membership repository adapters are unwired and must not be treated as active persistence
+- Adapter boundary does not imply executed migrations or live database readiness
+- In-memory and JSON-backed runtime behavior remain the active default
+- Auth middleware and production requester resolver remain deferred
+- Membership status naming between `suspended` and `disabled` still needs later normalization at schema or contract level
+- `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
