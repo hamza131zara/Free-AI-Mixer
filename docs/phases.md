@@ -3745,3 +3745,45 @@ Scope:
 - No signed URLs were added
 - No production storage provider was added
 - Injected fake requester contexts are test-only scaffolding and must not be mistaken for real auth
+
+## Phase 22-B - Authenticated Requester Context Mode / Interface Boundary Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend requester auth-mode boundary only
+- future-safe requester context types only
+- no real auth extraction
+- no route behavior changes
+
+### Phase 22-B completion summary
+
+- `ExportRequesterContext` is now a future-safe auth-mode boundary
+- Supported requester auth modes now include:
+  - `local_dev_fallback`
+  - `authenticated_session`
+  - `authenticated_token`
+- Authenticated session/token requester contexts can now be represented as internal types
+- `local_dev_fallback` remains explicit and compatibility-only
+- Default requester resolver still returns `local_dev_fallback`
+- Added requester context helpers/types in `backend/requester/exportRequesterContext.ts` for authenticated session/token context construction and type narrowing
+- No real auth/session/cookie/bearer-token extraction was added
+- No auth middleware was added
+- No route behavior was changed
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added
+- Focused requester context boundary tests passed
+
+### Safety boundaries
+
+- Authenticated session/token requester modes are type/interface boundaries only
+- `local_dev_fallback` remains explicit and must not be treated as production auth
+- No real requester identity extraction exists yet
+- No real route authorization using authenticated requester identity exists yet
+- No frontend download or navigation behavior was added
+- No signed URLs were added
+- No production storage provider was added

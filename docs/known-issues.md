@@ -348,6 +348,17 @@ Why it matters:
   - Frontend download/navigation remains deferred
   - No signed URL or production storage provider exists yet
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 22-B adds authenticated requester context mode/interface boundary only:
+  - Authenticated requester context mode boundary now exists
+  - `authenticated_session` and `authenticated_token` are type/interface boundaries only
+  - Real auth/session/cookie/bearer-token extraction remains deferred
+  - Real auth middleware remains deferred
+  - Production requester identity remains deferred
+  - Route authorization with real requester identity remains deferred
+  - Frontend download/navigation remains deferred
+  - No signed URL or production storage provider exists yet
+  - `local_dev_fallback` remains compatibility-only and must not be treated as production auth
+  - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
 
 Target fix phase:
 
