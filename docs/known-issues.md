@@ -258,6 +258,17 @@ Why it matters:
   - No auth/authorization yet
   - No production signed URL or storage provider yet
   - local_dev_stream must not be enabled unconditionally or in production
+- Phase 14-B adds backend local-dev artifact access behavior smoke:
+  - createExportRouter-level smoke coverage now exists
+  - Disabled `/access` behavior is verified as `artifact_access_unavailable` / `artifact_access_not_configured`
+  - Disabled `/stream` behavior is verified as `501 stream_not_configured`
+  - Enabled `/access` behavior is verified as safe `local_dev_stream` descriptor access only
+  - Descriptor JSON does not expose local filesystem paths
+  - Stream route remains the final validation authority
+  - Artifact route strict param parsing bug is fixed by parsing only `jobId` into the strict jobId parser
+  - Strict schema remains preserved; validation was not loosened
+  - Positive real file stream/download smoke remains deferred
+  - local_dev_stream must not be enabled unconditionally or in production
 
 Target fix phase:
 
@@ -383,6 +394,7 @@ Target fix phase:
 - Production storage provider and signed URL provider.
 - Durable artifact storage refs beyond the current local/dev in-memory model.
 - Public download URLs.
+- Positive real file stream/download smoke beyond descriptor-level local-dev coverage.
 - Real user-media decoding in renderer path.
 - Durable queue/worker/scheduler/database-backed renderer execution flow.
 - Frontend export lifecycle integration with real backend completion.

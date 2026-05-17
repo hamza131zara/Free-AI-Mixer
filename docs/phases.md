@@ -3438,3 +3438,42 @@ Scope:
 - No frontend artifact access or download UI was added
 - No auth/authorization was added
 - This phase does not claim production-ready download behavior
+
+## Phase 14-B — Artifact Route Param Validation Fix / Local Dev Access Behavior Smoke
+
+Status:
+
+- complete
+
+Scope:
+
+- backend route behavior smoke only
+- artifact route param validation fix
+- no frontend changes
+- no public contract changes
+
+### Phase 14-B completion summary
+
+- Added focused backend behavior smoke coverage in `tests/e2e/phase14-local-dev-artifact-access-behavior-smoke.spec.ts`
+- Smoke uses `createExportRouter` directly
+- Disabled behavior is verified:
+  - `/access` remains `artifact_access_unavailable` / `artifact_access_not_configured`
+  - `/stream` remains `501 stream_not_configured`
+- Enabled behavior is verified:
+  - `/access` can return a safe `local_dev_stream` descriptor
+  - descriptor points to backend stream route
+  - descriptor does not expose local filesystem paths
+- Stream route remains the final validation authority
+- Fixed artifact route param validation by parsing only `jobId` into the strict `jobId` parser for:
+  - `GET /exports/:jobId/artifacts/:artifactId/access`
+  - `GET /exports/:jobId/artifacts/:artifactId/stream`
+- Strict schema remains preserved; validation was not loosened
+
+### Safety boundaries
+
+- No local filesystem paths are exposed in descriptor JSON
+- No signed URLs were added
+- No production storage provider was added
+- No frontend artifact access or download UI was added
+- No auth/authorization was added
+- No real file streaming success case was added in this phase
