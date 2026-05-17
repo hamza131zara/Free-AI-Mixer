@@ -1,8 +1,10 @@
 import express, { type Express } from "express";
+import path from "node:path";
 import { exportErrorHandler } from "./errors/exportErrors";
 import { createExportRouter } from "./routes/exports";
 import { createBackendDependencies } from "./composition/backendDependencies";
 import { createRenderWorkerLifecycle } from "./workers/renderWorkerLifecycle";
+import { createLocalDevArtifactAccessProvider } from "./artifacts/localDevArtifactAccessProvider";
 
 const isLocalDevArtifactStreamEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1";
@@ -23,10 +25,48 @@ export const createApp = (): Express => {
   const exportRouterOptions: {
     onVerifiedArtifactRef: typeof backendDeps.onVerifiedArtifactRef;
     artifactStorageRefResolver?: typeof backendDeps.artifactStorageRefResolver;
+    artifactAccessProvider?: ReturnType<typeof createLocalDevArtifactAccessProvider>;
   } = {
     onVerifiedArtifactRef: backendDeps.onVerifiedArtifactRef,
     ...(isLocalDevArtifactStreamEnabled()
-      ? { artifactStorageRefResolver: backendDeps.artifactStorageRefResolver }
+      ? {
+        artifactStorageRefResolver: backendDeps.artifactStorageRefResolver,
+        artifactAccessProvider: createLocalDevArtifactAccessProvider({
+          resolveArtifactStorageRef: (request) =>
+            backendDeps.artifactStorageRefResolver.resolve(
+              request.jobId,
+              request.artifactId,
+            ),
+          streamUrlForArtifact: (request) =>
+            `/exports/${encodeURIComponent(request.jobId)}/artifacts/${encodeURIComponent(request.artifactId)}/stream`,
+          isPathWithinRoot: (ref) => {
+            const normalizedRoot = path.resolve(ref.rootPath);
+            const normalizedFile = path.resolve(ref.filePath);
+            const normalizedDirectory = path.resolve(ref.directoryPath);
+            const fileRelative = path.relative(normalizedRoot, normalizedFile);
+            const directoryRelative = path.relative(normalizedRoot, normalizedDirectory);
+
+            if (
+              fileRelative.length === 0 ||
+              fileRelative.startsWith("..") ||
+              path.isAbsolute(fileRelative)
+            ) {
+              return false;
+            }
+
+            if (
+              directoryRelative.length === 0 ||
+              directoryRelative.startsWith("..") ||
+              path.isAbsolute(directoryRelative)
+            ) {
+              return false;
+            }
+
+            return normalizedDirectory
+              === path.resolve(normalizedRoot, ref.jobSegment);
+          },
+        }),
+      }
       : {}),
   };
 

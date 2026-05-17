@@ -58,17 +58,23 @@ test.describe("phase12 resolver route injection", () => {
       "utf8",
     );
 
-    // The conditional pattern passes resolver when env enabled
-    expect(source).toContain("{ artifactStorageRefResolver: backendDeps.artifactStorageRefResolver }");
+    expect(source).toContain("isLocalDevArtifactStreamEnabled()");
+    expect(source).toContain("artifactStorageRefResolver: backendDeps.artifactStorageRefResolver");
   });
 
-  test("app.ts does NOT pass artifactAccessProvider", async () => {
+  test("app.ts only passes artifactAccessProvider inside the local-dev env gate", async () => {
     const source = await fs.readFile(
       path.join(process.cwd(), "backend", "app.ts"),
       "utf8",
     );
 
-    expect(source).not.toContain("artifactAccessProvider");
+    const conditionalIndex = source.indexOf("...(isLocalDevArtifactStreamEnabled()");
+    const providerAssignmentIndex = source.indexOf(
+      "artifactAccessProvider: createLocalDevArtifactAccessProvider({",
+    );
+
+    expect(conditionalIndex).toBeGreaterThanOrEqual(0);
+    expect(providerAssignmentIndex).toBeGreaterThan(conditionalIndex);
   });
 
   test("backend/routes/exports.ts remains unchanged for stream validation behavior", async () => {
