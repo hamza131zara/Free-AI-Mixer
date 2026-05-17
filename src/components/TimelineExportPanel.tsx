@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import {
+  type ExportArtifactAccessState,
   selectExportCanSubmit,
   selectEffectiveExportLifecycleByTimelineId,
   selectEffectiveExportResumeStateByTimelineId,
@@ -26,6 +27,9 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
     (state) => state.activeExportTimelineId,
   );
   const requestExport = useExportStore((state) => state.requestExport);
+  const requestExportArtifactAccess = useExportStore(
+    (state) => state.requestExportArtifactAccess,
+  );
   const resumeExport = useExportStore((state) => state.resumeExport);
   const clearExportState = useExportStore((state) => state.clearExportState);
   const hasExportStateForTimeline = useExportStore((state) =>
@@ -59,6 +63,11 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
     resolvedTimelineId
       ? selectExportResultArtifacts(state, resolvedTimelineId)
       : emptyArtifacts,
+  );
+  const artifactAccessByArtifactId = useExportStore((state) =>
+    resolvedTimelineId
+      ? state.jobsByTimelineId[resolvedTimelineId]?.artifactAccessByArtifactId
+      : undefined,
   );
   const isSubmitting = useExportStore((state) =>
     resolvedTimelineId ? !!state.isSubmittingByTimelineId[resolvedTimelineId] : false,
@@ -218,6 +227,29 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
                 ) : (
                   <span>artifact reference available.</span>
                 )}
+                {resolvedTimelineId ? (
+                  <div data-testid={`timeline-export-artifact-access-${artifact.id}`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void requestExportArtifactAccess(
+                          resolvedTimelineId,
+                          artifact.id,
+                        );
+                      }}
+                      disabled={
+                        artifactAccessByArtifactId?.[artifact.id]?.status === "loading"
+                      }
+                    >
+                      {artifactAccessByArtifactId?.[artifact.id]?.status === "loading"
+                        ? "Checking access..."
+                        : "Check artifact access"}
+                    </button>
+                    <ArtifactAccessStatus
+                      accessState={artifactAccessByArtifactId?.[artifact.id]}
+                    />
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -232,3 +264,38 @@ const terminalLifecycle = (lifecycle: string | undefined): boolean =>
   lifecycle === "error" ||
   lifecycle === "canceled" ||
   lifecycle === "expired";
+
+interface ArtifactAccessStatusProps {
+  accessState: ExportArtifactAccessState | undefined;
+}
+
+function ArtifactAccessStatus({ accessState }: ArtifactAccessStatusProps) {
+  if (!accessState) {
+    return <p>No access check requested yet.</p>;
+  }
+
+  if (accessState.status === "loading") {
+    return <p>Checking backend artifact access.</p>;
+  }
+
+  if (accessState.status === "ready") {
+    return (
+      <p>
+        {accessState.access.kind === "local_dev_stream"
+          ? "Local dev stream available."
+          : "Artifact access is available."}
+      </p>
+    );
+  }
+
+  if (accessState.status === "unavailable") {
+    return <p>{accessState.message}</p>;
+  }
+
+  return (
+    <p>
+      {accessState.failure.code ? `${accessState.failure.code}: ` : ""}
+      {accessState.failure.message}
+    </p>
+  );
+}

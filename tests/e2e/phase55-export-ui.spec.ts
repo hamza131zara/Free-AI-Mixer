@@ -13,6 +13,7 @@ type RuntimeConfigSeed = {
   exportBaseUrl: string;
   exportSubmitPath?: string;
   exportPollPath?: string;
+  exportArtifactsPath?: string;
 };
 
 const seedRuntimeConfig = async (
@@ -95,6 +96,103 @@ const seedExportStore = async (page: Page, state: unknown): Promise<void> => {
         version: 1,
       }),
     },
+  );
+};
+
+const seedSuccessfulExportWithArtifacts = async (
+  page: Page,
+  timelineId: string,
+  sceneId: string,
+) => {
+  await seedSceneStore(page, [
+    createScene({
+      id: sceneId,
+      lifecycle: "success",
+      payload: {
+        prompt: "Scene A",
+        style: "cinematic",
+        duration: 8,
+      },
+      progress: 100,
+      result: {
+        image: "https://example.com/a.png",
+        variations: ["https://example.com/a-var.png"],
+      },
+    }),
+  ]);
+
+  await seedTimelineStore(page, timelineId, sceneId);
+  await seedExportStore(page, {
+    jobsByTimelineId: {
+      [timelineId]: {
+        timelineId,
+        requestId: "request-success-artifacts",
+        lifecycle: "success",
+        result: {
+          provider: "backend_render",
+          requestId: "request-success-artifacts",
+          jobId: "job-success-artifacts",
+          artifacts: [
+            { id: "artifact-a", bytes: 128 },
+            { id: "artifact-b", bytes: 256 },
+          ],
+        },
+        resumeState: "none",
+      },
+    },
+    activeExportTimelineId: timelineId,
+  });
+};
+
+const createSuccessfulExportThroughUi = async (
+  page: Page,
+  submitUrl = "http://127.0.0.1:4173/exports/jobs",
+): Promise<void> => {
+  await seedSceneStore(page, [
+    createScene({
+      id: "success-scene-a",
+      lifecycle: "success",
+      payload: {
+        prompt: "Scene A",
+        style: "cinematic",
+        duration: 8,
+      },
+      progress: 100,
+      result: {
+        image: "https://example.com/a.png",
+        variations: ["https://example.com/a-var.png"],
+      },
+    }),
+  ]);
+
+  await gotoAppWithDiagnostics(page);
+  await page.getByRole("button", { name: "Create Timeline" }).click();
+  await page
+    .getByRole("button", {
+      name: "Add scene success-scene-a to timeline",
+    })
+    .click();
+  await page.route(submitUrl, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        kind: "immediate_success",
+        result: {
+          provider: "backend_render",
+          requestId: "request-success-artifacts",
+          jobId: "job-success-artifacts",
+          artifacts: [
+            { id: "artifact-a", bytes: 128 },
+            { id: "artifact-b", bytes: 256 },
+          ],
+        },
+      }),
+    });
+  });
+  await page.getByRole("button", { name: "Request export" }).click();
+  await expect(page.getByTestId("timeline-export-artifacts")).toContainText(
+    "artifact-a",
   );
 };
 
@@ -481,6 +579,159 @@ test.describe("Phase 5.5 export UI status/actions", () => {
     await expect(page.getByTestId("timeline-export-failure")).toContainText(
       "http_error",
     );
+  });
+
+  test("artifact access button dispatches store action, shows loading, and renders ready local-dev state without stream navigation", async ({
+    page,
+  }) => {
+    let accessCalls = 0;
+    let streamCalls = 0;
+    let releaseAccess!: () => void;
+    const accessStarted = new Promise<void>((resolve) => {
+      releaseAccess = resolve;
+    });
+
+    await seedRuntimeConfig(page, {
+      exportBaseUrl: "http://127.0.0.1:4173",
+      exportSubmitPath: "/exports/jobs",
+      exportArtifactsPath: "/exports",
+    });
+    await page.route(
+      "http://127.0.0.1:4173/exports/job-success-artifacts/artifacts/artifact-a/access",
+      async (route) => {
+        accessCalls += 1;
+        await accessStarted;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            kind: "artifact_access_ready",
+            artifact: {
+              id: "artifact-a",
+              bytes: 128,
+            },
+            access: {
+              kind: "local_dev_stream",
+              artifactId: "artifact-a",
+              jobId: "job-success-artifacts",
+              url: "/exports/job-success-artifacts/artifacts/artifact-a/stream",
+              method: "GET",
+            },
+          }),
+        });
+      },
+    );
+    await page.route("**/stream", async (route) => {
+      streamCalls += 1;
+      await route.abort();
+    });
+
+    await createSuccessfulExportThroughUi(page);
+
+    const accessRegion = page.getByTestId(
+      "timeline-export-artifact-access-artifact-a",
+    );
+    await expect(accessRegion).toContainText("No access check requested yet.");
+
+    await accessRegion.getByRole("button", { name: "Check artifact access" }).click();
+    await expect(accessRegion).toContainText("Checking backend artifact access.");
+
+    releaseAccess();
+
+    await expect(accessRegion).toContainText("Local dev stream available.");
+    await expect(
+      accessRegion.getByRole("button", { name: "Check artifact access" }),
+    ).toBeVisible();
+    await expect(accessRegion.getByRole("link")).toHaveCount(0);
+
+    expect(accessCalls).toBe(1);
+    expect(streamCalls).toBe(0);
+  });
+
+  test("artifact access unavailable state renders truthfully without stream navigation", async ({
+    page,
+  }) => {
+    let streamCalls = 0;
+
+    await seedRuntimeConfig(page, {
+      exportBaseUrl: "http://127.0.0.1:4173",
+      exportSubmitPath: "/exports/jobs",
+      exportArtifactsPath: "/exports",
+    });
+
+    await page.route(
+      "http://127.0.0.1:4173/exports/job-success-artifacts/artifacts/artifact-b/access",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            kind: "artifact_access_unavailable",
+            reason: "artifact_access_not_configured",
+            message: "Artifact access is not configured.",
+          }),
+        });
+      },
+    );
+    await page.route("**/stream", async (route) => {
+      streamCalls += 1;
+      await route.abort();
+    });
+
+    await createSuccessfulExportThroughUi(page);
+
+    const accessRegion = page.getByTestId(
+      "timeline-export-artifact-access-artifact-b",
+    );
+    await accessRegion.getByRole("button", { name: "Check artifact access" }).click();
+
+    await expect(accessRegion).toContainText("Artifact access is not configured.");
+    await expect(accessRegion.getByRole("link")).toHaveCount(0);
+    expect(streamCalls).toBe(0);
+  });
+
+  test("artifact access error state renders truthfully without stream navigation", async ({
+    page,
+  }) => {
+    let streamCalls = 0;
+
+    await seedRuntimeConfig(page, {
+      exportBaseUrl: "http://127.0.0.1:4173",
+      exportSubmitPath: "/exports/jobs",
+      exportArtifactsPath: "/exports",
+    });
+
+    await page.route(
+      "http://127.0.0.1:4173/exports/job-success-artifacts/artifacts/artifact-a/access",
+      async (route) => {
+        await route.fulfill({
+          status: 502,
+          statusText: "Bad Gateway",
+          contentType: "application/json",
+          body: JSON.stringify({
+            message: "upstream access error",
+          }),
+        });
+      },
+    );
+    await page.route("**/stream", async (route) => {
+      streamCalls += 1;
+      await route.abort();
+    });
+
+    await createSuccessfulExportThroughUi(page);
+
+    const accessRegion = page.getByTestId(
+      "timeline-export-artifact-access-artifact-a",
+    );
+    await accessRegion.getByRole("button", { name: "Check artifact access" }).click();
+
+    await expect(accessRegion).toContainText("http_error");
+    await expect(accessRegion).toContainText(
+      "Export artifact access request failed with status 502.",
+    );
+    await expect(accessRegion.getByRole("link")).toHaveCount(0);
+    expect(streamCalls).toBe(0);
   });
 
   test("resume_needed label renders truthfully", async ({ page }) => {
