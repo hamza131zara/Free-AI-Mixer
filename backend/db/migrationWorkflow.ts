@@ -19,6 +19,22 @@ export interface MigrationWorkflowBoundary {
   commands: readonly MigrationWorkflowCommandDescriptor[];
 }
 
+export interface LocalMigrationPreflightBoundary {
+  kind: "local_migration_preflight_boundary";
+  localOnly: true;
+  remoteOrProductionDeferred: true;
+  manualInvocationOnly: true;
+  executesMigrations: false;
+  spawnsSupabaseCli: false;
+  requiresCleanGitStatus: true;
+  requiresExplicitMigrationFileSelection: true;
+  requiresNoRemoteProjectLink: true;
+  requiresNoProductionCredentials: true;
+  resetOrRollbackScope: "local_dev_only";
+  migrationFilePath: "backend/db/migrations/0001_initial_supabase_postgres_schema.sql";
+  intendedValidationMode: "manual_local_supabase_only";
+}
+
 const migrationWorkflowCommands: readonly MigrationWorkflowCommandDescriptor[] = [
   {
     name: "db:migrate:local:manual",
@@ -54,5 +70,24 @@ export const migrationWorkflowBoundary: MigrationWorkflowBoundary = {
   commands: migrationWorkflowCommands,
 };
 
+export const localMigrationPreflightBoundary: LocalMigrationPreflightBoundary = {
+  kind: "local_migration_preflight_boundary",
+  localOnly: true,
+  remoteOrProductionDeferred: true,
+  manualInvocationOnly: true,
+  executesMigrations: false,
+  spawnsSupabaseCli: false,
+  requiresCleanGitStatus: true,
+  requiresExplicitMigrationFileSelection: true,
+  requiresNoRemoteProjectLink: true,
+  requiresNoProductionCredentials: true,
+  resetOrRollbackScope: "local_dev_only",
+  migrationFilePath: "backend/db/migrations/0001_initial_supabase_postgres_schema.sql",
+  intendedValidationMode: "manual_local_supabase_only",
+};
+
 export const getMigrationWorkflowBoundary = (): MigrationWorkflowBoundary =>
   migrationWorkflowBoundary;
+
+export const getLocalMigrationPreflightBoundary =
+  (): LocalMigrationPreflightBoundary => localMigrationPreflightBoundary;
