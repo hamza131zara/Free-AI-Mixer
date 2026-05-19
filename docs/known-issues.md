@@ -780,6 +780,38 @@ Why it matters:
   - Provider-key persistence/runtime remains deferred
   - Credit ledger runtime remains deferred
   - Artifact/storage runtime and signed URLs remain deferred
+- Phase 45-A audit confirmed runtime DB wiring is still unsafe:
+  - `repositoryComposition` exists
+  - `createBackendDependencies()` exposes `repositoryComposition`
+  - export routes/workers still use `ExportJobRegistry`
+  - `SupabaseExportJobsRepository` is not a drop-in replacement for `ExportJobRegistry`
+  - runtime route DB wiring remains deferred
+- Phase 45-B adds repository composition runtime boundary coverage:
+  - `tests/e2e/phase45-repository-composition-runtime-boundary.spec.ts` now exists
+  - Default backend dependency creation stays offline/in-memory when Supabase env is absent
+  - `readSupabaseConfigFromEnv()` resolves disabled/valid with Supabase env cleared
+  - `createBackendDependencies()` returns disabled `repositoryComposition` and an in-memory registry boundary
+  - `createRepositoryComposition()` remains disabled without Supabase env
+  - `createApp()` succeeds with no Supabase env vars and no runtime DB requirement
+  - Source inspection confirms:
+    - routes still receive `registry`
+    - no `SupabaseExportJobsRepository` import in route/app wiring
+    - no `SupabaseAccountWorkspaceRepository` import in route/app wiring
+    - no `repositoryComposition` route wiring
+    - worker lifecycle still depends on `ExportJobRegistry`
+  - Source inspection confirms:
+    - no service-role env logging
+    - no Supabase CLI command usage
+  - repositoryComposition runtime boundary is now guarded by tests
+  - Route DB wiring remains deferred
+  - Supabase repository composition is not connected to export routes
+  - Export routes/workers still use `ExportJobRegistry`
+  - Runtime DB persistence remains deferred
+  - Auth/requester/RLS enforcement remains deferred
+  - Frontend Supabase client remains absent
+  - Provider-key persistence/runtime remains deferred
+  - Credit ledger runtime remains deferred
+  - Artifact/storage runtime and signed URLs remain deferred
 
 ### Local Supabase Docker Startup Still Blocked
 
@@ -791,6 +823,7 @@ Current state:
 - remote Supabase connection smoke now works when explicit opt-in env vars are provided
 - remote Supabase account/workspace repository read-only smoke now works when explicit opt-in env vars are provided
 - remote `SupabaseExportJobsRepository` smoke now works when explicit opt-in env vars are provided
+- repositoryComposition runtime boundary is now guarded by tests while route DB wiring remains deferred
 
 Why it matters:
 

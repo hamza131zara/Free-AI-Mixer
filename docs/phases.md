@@ -4842,3 +4842,75 @@ Scope:
 - Manual opt-in remote export jobs repository smoke success validates controlled repository write/read/update/exact-id cleanup only
 - Manual opt-in remote export jobs repository smoke success does not imply auth, requester, or RLS enforcement is active
 - Manual opt-in remote export jobs repository smoke success does not imply local Supabase Docker readiness
+
+## Phase 45-A - Repository Composition Runtime DB Wiring Audit Only
+
+Status:
+
+- complete
+
+Scope:
+
+- audit only for repository composition and runtime dependency boundaries
+- no route DB wiring
+- no runtime DB persistence activation
+- no Supabase CLI or local Docker usage
+
+### Phase 45-A audit summary
+
+- Confirmed `repositoryComposition` already exists as a backend-only boundary
+- Confirmed `createBackendDependencies()` already exposes `repositoryComposition`
+- Confirmed routes and workers still use `ExportJobRegistry`
+- Confirmed `SupabaseExportJobsRepository` is not a drop-in replacement for `ExportJobRegistry`
+- Confirmed runtime route DB wiring is not safe yet
+- Confirmed safest next step is test-only proof that repository composition remains isolated from route/runtime behavior
+
+### Safety boundaries
+
+- Repository composition audit does not imply route DB wiring is active
+- Repository composition audit does not imply runtime DB persistence is active
+- Repository composition audit does not imply auth, requester, or RLS enforcement is active
+- Repository composition audit does not imply local Supabase Docker readiness
+
+## Phase 45-B - Repository Composition Runtime Boundary Test Only
+
+Status:
+
+- complete
+
+Scope:
+
+- test-only repository composition runtime boundary verification
+- default offline/in-memory behavior verification only
+- no route DB wiring
+- no runtime DB persistence activation
+
+### Phase 45-B completion summary
+
+- Added `tests/e2e/phase45-repository-composition-runtime-boundary.spec.ts`
+- Test proves default backend dependency creation stays offline/in-memory when Supabase env is absent
+- Test proves `readSupabaseConfigFromEnv()` resolves `enabled=false` and `valid=true` when Supabase env is cleared
+- Test proves `createBackendDependencies()` returns:
+  - disabled `repositoryComposition`
+  - in-memory registry boundary
+- Test proves `createRepositoryComposition()` remains disabled without Supabase env
+- Test proves `createApp()` succeeds with no Supabase env vars and no runtime DB requirement
+- Source inspection proves:
+  - routes still receive `registry`
+  - no `SupabaseExportJobsRepository` import in route/app wiring
+  - no `SupabaseAccountWorkspaceRepository` import in route/app wiring
+  - no `repositoryComposition` route wiring
+  - worker lifecycle still depends on `ExportJobRegistry`
+- Source inspection proves:
+  - no service-role env logging
+  - no Supabase CLI command usage
+- Focused Phase 45 runtime boundary test passed
+- Typecheck and build passed
+
+### Safety boundaries
+
+- Repository composition runtime boundary coverage does not imply route DB wiring is active
+- Repository composition runtime boundary coverage does not imply repository composition runtime DB wiring is active
+- Repository composition runtime boundary coverage does not imply runtime DB persistence is active
+- Repository composition runtime boundary coverage does not imply auth, requester, or RLS enforcement is active
+- Default app startup remains offline/in-memory unless a later phase explicitly wires runtime DB behavior
