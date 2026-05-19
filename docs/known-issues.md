@@ -738,6 +738,48 @@ Why it matters:
   - Provider-key persistence/runtime remains deferred
   - Credit ledger runtime remains deferred
   - Artifact/storage runtime and signed URLs remain deferred
+- Phase 44-B adds opt-in remote export jobs repository smoke only:
+  - `tests/e2e/phase44-remote-export-jobs-repository-smoke.spec.ts` now exists
+  - Smoke test is backend-only and skipped by default
+  - Opt-in requires:
+    - `FREE_AI_MIXER_RUN_REMOTE_EXPORT_JOBS_REPOSITORY_SMOKE=1`
+    - `FREE_AI_MIXER_ENABLE_SUPABASE_DB=1`
+    - `FREE_AI_MIXER_DB_PROVIDER=supabase`
+    - `FREE_AI_MIXER_SUPABASE_URL`
+    - `FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY`
+  - Smoke test uses existing backend config and client factory boundaries only
+  - Smoke test instantiates `SupabaseExportJobsRepository` directly
+  - Smoke test inserts prerequisite `app_users` and `workspaces` rows directly through the admin client
+  - Smoke test calls `upsertJob`, `getByJobId`, and `getByIdempotencyScope`
+  - Smoke test validates update/conflict behavior with the same idempotency scope
+  - Smoke test cleans up by exact ids only:
+    - `export_jobs` first
+    - `workspaces` second
+    - `app_users` third
+  - Smoke test does not use routes, app startup, `backendDependencies`, or `repositoryComposition`
+  - Smoke test does not use anon or publishable key
+  - Smoke test does not use Supabase CLI
+  - First real remote run failed only because equivalent UTC timestamps were returned as `+00:00` instead of `Z`
+  - Phase 44-B fix updated timestamp assertions to compare semantically by normalized UTC value
+  - Exact assertions remained for `jobId`, `requestId`, `timelineId`, `ownerId`, `workspaceId`, `status`, and `attemptCount`
+- Phase 44-C adds manual remote export jobs repository smoke success:
+  - Remote `SupabaseExportJobsRepository` smoke succeeded when opt-in env vars were provided locally
+  - Manual smoke result was `2 passed`
+  - Env vars and secrets were cleared after the test
+  - `git status` was clean after the test
+  - No service-role key was committed
+  - No `.env` changes were made
+  - No local Supabase Docker was used
+  - No `supabase link`, `supabase db push`, `supabase db reset`, or `supabase migration up` was run
+  - This validates controlled remote write/read/update/exact-id cleanup for export jobs repository only
+  - This does NOT mean production DB integration is active
+  - Route DB wiring remains deferred
+  - repositoryComposition runtime DB wiring remains deferred
+  - Auth/requester/RLS enforcement remains deferred
+  - Frontend Supabase client remains absent
+  - Provider-key persistence/runtime remains deferred
+  - Credit ledger runtime remains deferred
+  - Artifact/storage runtime and signed URLs remain deferred
 
 ### Local Supabase Docker Startup Still Blocked
 
@@ -748,6 +790,7 @@ Current state:
 - remote SQL validation succeeded without using local Supabase Docker
 - remote Supabase connection smoke now works when explicit opt-in env vars are provided
 - remote Supabase account/workspace repository read-only smoke now works when explicit opt-in env vars are provided
+- remote `SupabaseExportJobsRepository` smoke now works when explicit opt-in env vars are provided
 
 Why it matters:
 
