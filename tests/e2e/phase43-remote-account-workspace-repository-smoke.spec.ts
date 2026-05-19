@@ -83,8 +83,8 @@ test.describe("phase43 remote account/workspace repository smoke", () => {
     expect(source).toContain("readSupabaseConfigFromEnv");
     expect(source).toContain("createSupabaseClientFactory");
     expect(source).toContain("SupabaseAccountWorkspaceRepository");
-    expect(source).toContain('phase43_missing_user_${runSuffix}');
-    expect(source).toContain('phase43_missing_workspace_${runSuffix}');
+    expect(source).toContain("00000000-0000-4000-8000-000000043001");
+    expect(source).toContain("00000000-0000-4000-8000-000000043002");
     expect(source).toContain('phase43_missing_auth_subject_${runSuffix}');
 
     expect(source).not.toContain(forbiddenAnonEnvUsage);
@@ -129,8 +129,8 @@ test.describe("phase43 remote account/workspace repository smoke", () => {
     );
 
     const runSuffix = `${Date.now()}`;
-    const missingUserId = `phase43_missing_user_${runSuffix}`;
-    const missingWorkspaceId = `phase43_missing_workspace_${runSuffix}`;
+    const missingUserId = "00000000-0000-4000-8000-000000043001";
+    const missingWorkspaceId = "00000000-0000-4000-8000-000000043002";
     const missingAuthSubject = `phase43_missing_auth_subject_${runSuffix}`;
 
     try {
