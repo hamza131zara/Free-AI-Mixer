@@ -89,8 +89,26 @@ const buildForbiddenCliPattern = (segment: string): string =>
   ["supabase", " ", segment].join("");
 
 test.describe("phase46 supabase export job registry boundary", () => {
-  test("adapter boundary imports offline and every registry method fails closed", async () => {
+  test("adapter boundary imports offline, preserves read-only mappings, and keeps lifecycle methods fail closed", async () => {
     await withUnsetEnv(SUPABASE_ENV_KEYS, async () => {
+      const readOnlyRecord = {
+        jobId: "job-1",
+        requestId: "request-1",
+        timelineId: "timeline-1",
+        ownerId: "owner-1",
+        workspaceId: "workspace-1",
+        status: "submitted" as const,
+        attemptCount: 0,
+        createdAt: "2026-05-19T16:30:40.071Z",
+        updatedAt: "2026-05-19T16:30:40.071Z",
+        renderSettings: {
+          format: "mp4" as const,
+          resolution: "720p" as const,
+          fps: 24,
+          quality: "draft" as const,
+        },
+      };
+
       expect(supabaseExportJobRegistryBoundary.kind).toBe(
         "supabase_export_job_registry_boundary",
       );
@@ -106,16 +124,39 @@ test.describe("phase46 supabase export job registry boundary", () => {
 
       const registry = new SupabaseExportJobRegistry({
         dependencies: {
-          jobsRepository: { kind: "test_jobs_repository" },
+          jobsRepository: {
+            getByJobId: (jobId: string) =>
+              jobId === readOnlyRecord.jobId ? readOnlyRecord : undefined,
+            getByIdempotencyScope: (scope: {
+              ownerId: string;
+              workspaceId: string;
+              requestId: string;
+            }) =>
+              scope.ownerId === readOnlyRecord.ownerId &&
+                scope.workspaceId === readOnlyRecord.workspaceId &&
+                scope.requestId === readOnlyRecord.requestId
+                ? readOnlyRecord
+                : undefined,
+          },
           accountWorkspaceRepository: { kind: "test_account_workspace_repository" },
         },
       });
       const createdRegistry = createSupabaseExportJobRegistry();
 
       expect(registry.kind).toBe("supabase_export_job_registry");
-      expect(registry.dependencies?.jobsRepository).toEqual({
-        kind: "test_jobs_repository",
-      });
+      expect(registry.getById(readOnlyRecord.jobId)).toEqual(readOnlyRecord);
+      expect(
+        registry.getByIdForOwner(readOnlyRecord.jobId, {
+          ownerId: readOnlyRecord.ownerId,
+          workspaceId: readOnlyRecord.workspaceId,
+        }),
+      ).toEqual(readOnlyRecord);
+      expect(
+        registry.getByRequestId(readOnlyRecord.requestId, {
+          ownerId: readOnlyRecord.ownerId,
+          workspaceId: readOnlyRecord.workspaceId,
+        }),
+      ).toEqual(readOnlyRecord);
       expect(createdRegistry).toBeTruthy();
 
       const expectedErrorPattern =
@@ -133,19 +174,9 @@ test.describe("phase46 supabase export job registry boundary", () => {
           },
         }),
       ).toThrow(expectedErrorPattern);
-      expect(() => registry.getById("job-1")).toThrow(expectedErrorPattern);
-      expect(() =>
-        registry.getByIdForOwner("job-1", {
-          ownerId: "owner-1",
-          workspaceId: "workspace-1",
-        }),
-      ).toThrow(expectedErrorPattern);
-      expect(() =>
-        registry.getByRequestId("request-1", {
-          ownerId: "owner-1",
-          workspaceId: "workspace-1",
-        }),
-      ).toThrow(expectedErrorPattern);
+      expect(() => registry.getByRequestId("request-1")).toThrow(
+        /getByRequestId requires ownerScope/,
+      );
       expect(() => registry.getByStatus("submitted")).toThrow(expectedErrorPattern);
       expect(() => registry.claim("job-1", "worker-1")).toThrow(expectedErrorPattern);
       expect(() => registry.markRendering("job-1", "worker-1")).toThrow(expectedErrorPattern);
