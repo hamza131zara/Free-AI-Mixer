@@ -4639,3 +4639,97 @@ Scope:
 - Manual opt-in remote smoke success does not imply repository adapter remote write/read behavior is validated
 - Manual opt-in remote smoke success does not imply auth, requester, or RLS enforcement is active
 - Manual opt-in remote smoke success does not imply local Supabase Docker readiness
+
+## Phase 43-B - Opt-In Remote Account/Workspace Repository Smoke Test Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only remote repository adapter smoke only
+- read-only adapter validation only
+- opt-in test execution only
+- no runtime route or app wiring
+
+### Phase 43-B completion summary
+
+- Added `tests/e2e/phase43-remote-account-workspace-repository-smoke.spec.ts`
+- Smoke test is backend-only and imports existing boundaries only:
+  - `backend/config/supabaseConfig.ts`
+  - `backend/db/supabaseClientFactory.ts`
+  - `backend/repositories/supabaseAccountWorkspaceRepository.ts`
+- Smoke test is skipped by default unless `FREE_AI_MIXER_RUN_REMOTE_ACCOUNT_WORKSPACE_REPOSITORY_SMOKE=1`
+- Opt-in smoke requires:
+  - `FREE_AI_MIXER_RUN_REMOTE_ACCOUNT_WORKSPACE_REPOSITORY_SMOKE=1`
+  - `FREE_AI_MIXER_ENABLE_SUPABASE_DB=1`
+  - `FREE_AI_MIXER_DB_PROVIDER=supabase`
+  - `FREE_AI_MIXER_SUPABASE_URL`
+  - `FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY`
+- Smoke test creates backend-only service-role client through the existing client factory
+- Smoke test instantiates `SupabaseAccountWorkspaceRepository` directly
+- Smoke test does not use `SupabaseExportJobsRepository`
+- Smoke test does not use `repositoryComposition`
+- Smoke test does not wire routes, app runtime, or backend dependency composition
+- Smoke test is read-only only and does not insert, update, delete, upsert, or call RPC
+- Smoke test does not use anon or publishable key
+- Initial real remote attempt proved remote Supabase was reached, but failed because synthetic ids were non-UUID strings against UUID columns
+- Phase 43-B fix updated missing ids to UUID-shaped nonexistent values:
+  - `00000000-0000-4000-8000-000000043001`
+  - `00000000-0000-4000-8000-000000043002`
+- Synthetic auth subject remained text-only
+- Focused Phase 43 test passed in default mode by skipping the live remote path
+- Typecheck and build passed
+
+### Safety boundaries
+
+- Opt-in remote account/workspace repository smoke does not imply production DB integration is active
+- Opt-in remote account/workspace repository smoke does not imply route DB integration is active
+- Opt-in remote account/workspace repository smoke does not imply repository write/read/delete cleanup behavior is validated
+- Opt-in remote account/workspace repository smoke does not imply `SupabaseExportJobsRepository` remote behavior is validated
+- Opt-in remote account/workspace repository smoke does not imply auth, requester, or RLS enforcement is active
+- Service-role key remains backend-only and must not be exposed to frontend or committed files
+- Remote repository smoke remains optional and must not be required for normal local or CI test runs
+
+## Phase 43-C - Manual Opt-In Remote Account/Workspace Repository Smoke Success
+
+Status:
+
+- complete
+
+Scope:
+
+- manual backend-only remote repository smoke execution only
+- read-only adapter validation only
+- local shell env usage only
+- no runtime route or app wiring
+
+### Phase 43-C completion summary
+
+- User set required env vars locally in PowerShell only
+- Ran:
+  - `npm run test:e2e -- tests/e2e/phase43-remote-account-workspace-repository-smoke.spec.ts`
+- Result:
+  - `2 passed`
+- Opt-in smoke successfully connected through the existing backend config and client factory boundaries
+- Read-only repository calls against `SupabaseAccountWorkspaceRepository` succeeded using UUID-shaped nonexistent ids for UUID columns
+- Env vars and secrets were cleared after the manual smoke
+- `git status` was clean after the manual smoke
+- No service-role key was committed
+- No `.env` or `.env.example` changes were made
+- No local Supabase Docker was used
+- No `supabase link`, `supabase db push`, `supabase db reset`, or `supabase migration up` was run
+- No app runtime DB persistence was activated
+- No route DB wiring was added
+- No repository composition runtime wiring was added
+- No auth, RLS, requester, frontend, storage, or signed URL runtime behavior was added
+
+### Safety boundaries
+
+- Manual opt-in remote account/workspace repository smoke success does not imply production DB integration is active
+- Manual opt-in remote account/workspace repository smoke success does not imply route DB integration is active
+- Manual opt-in remote account/workspace repository smoke success does not imply repository write/read/delete cleanup behavior is validated
+- Manual opt-in remote account/workspace repository smoke success does not imply `SupabaseExportJobsRepository` remote behavior is validated
+- Manual opt-in remote account/workspace repository smoke success does not imply auth, requester, or RLS enforcement is active
+- Manual opt-in remote account/workspace repository smoke success does not imply local Supabase Docker readiness

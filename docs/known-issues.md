@@ -701,6 +701,43 @@ Why it matters:
   - Auth/requester/RLS enforcement remains deferred
   - Frontend Supabase client remains absent
   - Provider-key persistence, credit ledger runtime, artifact/storage runtime, and signed URLs remain deferred
+- Phase 43-B adds opt-in remote account/workspace repository smoke only:
+  - `tests/e2e/phase43-remote-account-workspace-repository-smoke.spec.ts` now exists
+  - Smoke test is backend-only, read-only, and skipped by default
+  - Opt-in requires:
+    - `FREE_AI_MIXER_RUN_REMOTE_ACCOUNT_WORKSPACE_REPOSITORY_SMOKE=1`
+    - `FREE_AI_MIXER_ENABLE_SUPABASE_DB=1`
+    - `FREE_AI_MIXER_DB_PROVIDER=supabase`
+    - `FREE_AI_MIXER_SUPABASE_URL`
+    - `FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY`
+  - Smoke test uses existing backend config and client factory boundaries only
+  - Smoke test instantiates `SupabaseAccountWorkspaceRepository` directly
+  - Smoke test does not use `SupabaseExportJobsRepository`
+  - Smoke test does not use `repositoryComposition`
+  - Smoke test does not insert, update, delete, upsert, or call RPC
+  - Initial real remote attempt failed because synthetic ids were non-UUID strings for UUID columns
+  - Phase 43-B fix updated missing UUID-column ids to:
+    - `00000000-0000-4000-8000-000000043001`
+    - `00000000-0000-4000-8000-000000043002`
+  - Synthetic auth subject remained text-only
+- Phase 43-C adds manual remote account/workspace repository smoke success:
+  - Remote Supabase account/workspace repository read-only smoke succeeded when opt-in env vars were provided locally
+  - Manual smoke result was `2 passed`
+  - Env vars and secrets were cleared after the test
+  - `git status` was clean after the test
+  - No service-role key was committed
+  - No `.env` changes were made
+  - No local Supabase Docker was used
+  - No `supabase link`, `supabase db push`, `supabase db reset`, or `supabase migration up` was run
+  - This does NOT mean production DB integration is active
+  - Route DB wiring remains deferred
+  - `SupabaseExportJobsRepository` remote smoke remains deferred
+  - Repository write/read/delete cleanup smoke remains deferred
+  - Auth/requester/RLS enforcement remains deferred
+  - Frontend Supabase client remains absent
+  - Provider-key persistence/runtime remains deferred
+  - Credit ledger runtime remains deferred
+  - Artifact/storage runtime and signed URLs remain deferred
 
 ### Local Supabase Docker Startup Still Blocked
 
@@ -710,6 +747,7 @@ Current state:
 - previous failures point to a Realtime/container startup issue rather than Free AI Mixer runtime code
 - remote SQL validation succeeded without using local Supabase Docker
 - remote Supabase connection smoke now works when explicit opt-in env vars are provided
+- remote Supabase account/workspace repository read-only smoke now works when explicit opt-in env vars are provided
 
 Why it matters:
 
