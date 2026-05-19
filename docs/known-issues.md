@@ -635,6 +635,60 @@ Why it matters:
   - Frontend download/navigation remains deferred
   - `local_dev_fallback` remains compatibility-only
   - `local_dev_stream` remains local-dev-only and must not be treated as production-ready
+- Phase 41-D adds contract-aligned SQL hardening only:
+  - `export_jobs_status_check` now exists in the SQL drafts using backend lifecycle statuses only:
+    - `queued`
+    - `submitted`
+    - `rendering`
+    - `finalizing`
+    - `success`
+    - `error`
+    - `expired`
+  - `artifact_records` now uses composite primary key `(job_id, artifact_id)` in the SQL drafts
+  - No runtime DB wiring was added
+  - No Supabase CLI execution was added
+  - No auth/requester/RLS/runtime/storage/signed URL integration was added
+  - Deferred hardening remains deferred:
+    - `artifact_record_id`
+    - `gen_random_uuid()` / `pgcrypto`
+    - artifact status/kind/format checks
+    - `credit_ledger.amount_delta bigint`
+    - storage object uniqueness
+    - `updated_at` triggers
+- Phase 41-E adds remote SQL Editor validation only:
+  - Remote SQL validation succeeded in a fresh Supabase cloud project using the Dashboard SQL Editor
+  - 8 expected public tables were created
+  - Constraint verification confirmed `export_jobs_status_check` and `artifact_records_pkey`
+  - Results tab confirmed DDL success even if Explain may show syntax errors for `CREATE TABLE`
+  - No local Supabase Docker was used
+  - No `supabase link`, `supabase db push`, `supabase db reset`, or `supabase migration up` was run
+  - This does NOT mean production DB integration is active
+  - Route DB integration remains deferred
+  - Auth/requester/RLS enforcement remains deferred
+  - Supabase CLI migration workflow remains deferred
+  - Local Supabase Docker remains deferred
+  - Provider-key encryption runtime remains deferred
+  - Artifact status/kind/format checks remain deferred
+  - `updated_at` triggers remain deferred
+  - storage object uniqueness remains deferred
+  - `credit_ledger.amount_delta bigint` remains deferred
+
+### Local Supabase Docker Startup Still Blocked
+
+Current state:
+
+- local Supabase Docker startup remains blocked on this Windows environment
+- previous failures point to a Realtime/container startup issue rather than Free AI Mixer runtime code
+- remote SQL validation succeeded without using local Supabase Docker
+
+Why it matters:
+
+- local Docker-based Supabase validation cannot currently be treated as a reliable path on this machine
+- remote SQL Editor validation confirms schema execution only and does not activate runtime DB integration
+
+Target fix phase:
+
+- later local environment troubleshooting phase, separate from runtime integration and separate from remote SQL validation
 
 Target fix phase:
 

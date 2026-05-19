@@ -4461,3 +4461,95 @@ Scope:
 - No frontend download or navigation behavior was added
 - No signed URLs were added
 - No production storage provider was added
+
+## Phase 41-D - Contract-Aligned SQL Hardening Only
+
+Status:
+
+- complete
+
+Scope:
+
+- SQL-only hardening for existing Supabase/Postgres draft files only
+- no runtime code changes
+- no Supabase CLI execution
+- no route or app wiring
+
+### Phase 41-D completion summary
+
+- Updated `backend/db/migrations/0001_initial_supabase_postgres_schema.sql`
+- Updated `backend/db/schema/phase26-initial-supabase-postgres-schema.sql`
+- Added `export_jobs_status_check` using existing backend lifecycle statuses only:
+  - `queued`
+  - `submitted`
+  - `rendering`
+  - `finalizing`
+  - `success`
+  - `error`
+  - `expired`
+- Changed `artifact_records` identity from unique-only to composite primary key:
+  - `primary key (job_id, artifact_id)`
+- Added focused source-inspection coverage in `tests/e2e/phase41-sql-contract-hardening.spec.ts`
+- Focused Phase 41 SQL contract hardening test passed
+- Typecheck and build passed
+- No Supabase CLI commands were run
+- No local Supabase Docker was used
+- No remote project link was added
+- No migration execution was added
+- No runtime DB wiring was added
+- No auth, RLS, requester, frontend, storage, or signed URL runtime behavior was added
+
+### Safety boundaries
+
+- Contract-aligned SQL hardening does not imply active database integration
+- Contract-aligned SQL hardening does not imply local Supabase Docker readiness
+- Contract-aligned SQL hardening does not imply remote migration workflow readiness
+- Artifact status, kind, and format checks remain deferred
+- `artifact_record_id`, `gen_random_uuid()`, and `pgcrypto` remain deferred
+- `credit_ledger.amount_delta bigint` remains deferred
+- `storage_refs` object uniqueness hardening remains deferred
+- `updated_at` trigger automation remains deferred
+
+## Phase 41-E - Remote SQL Editor Validation Only
+
+Status:
+
+- complete
+
+Scope:
+
+- fresh remote Supabase cloud project validation only
+- Supabase Dashboard SQL Editor only
+- no Supabase CLI link/push/reset/migration workflow
+- no runtime integration changes
+
+### Phase 41-E completion summary
+
+- Used `backend/db/migrations/0001_initial_supabase_postgres_schema.sql` as the remote validation source of truth
+- Ran SQL manually in a fresh Supabase cloud project via the Dashboard SQL Editor
+- Verified 8 expected public tables were created:
+  - `app_users`
+  - `workspaces`
+  - `workspace_memberships`
+  - `export_jobs`
+  - `artifact_records`
+  - `storage_refs`
+  - `provider_keys`
+  - `credit_ledger`
+- Constraint verification returned 34 rows
+- Verified `export_jobs_status_check` exists
+- Verified `artifact_records_pkey` exists
+- Supabase SQL Editor Results confirmed DDL success
+- SQL Editor Explain tab may show syntax errors for DDL, but Results plus verification queries confirmed successful execution
+- No local Supabase Docker was used
+- No `supabase link`, `supabase db push`, `supabase db reset`, or `supabase migration up` was run
+- No app runtime DB wiring was added
+- No auth, RLS, requester, frontend, storage, or signed URL runtime behavior was added
+
+### Safety boundaries
+
+- Remote SQL Editor validation does not imply production DB integration is active
+- Remote SQL Editor validation does not imply route DB integration is active
+- Remote SQL Editor validation does not imply auth, requester, or RLS enforcement is active
+- Remote SQL Editor validation does not imply Supabase CLI migration workflow readiness
+- Remote SQL Editor validation does not imply local Supabase Docker readiness
