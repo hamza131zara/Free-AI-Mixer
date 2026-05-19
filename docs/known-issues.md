@@ -812,6 +812,49 @@ Why it matters:
   - Provider-key persistence/runtime remains deferred
   - Credit ledger runtime remains deferred
   - Artifact/storage runtime and signed URLs remain deferred
+- Phase 46-A audit confirmed a real registry adapter is still required:
+  - export routes/workers depend on `ExportJobRegistry`
+  - `SupabaseExportJobsRepository` is not a drop-in replacement for runtime registry behavior
+  - runtime DB wiring is not safe yet
+  - a Supabase-backed `ExportJobRegistry` adapter boundary is required before route/worker integration
+- Phase 46-B adds a fail-closed `SupabaseExportJobRegistry` boundary:
+  - `backend/registry/supabaseExportJobRegistry.ts` now exists
+  - `tests/e2e/phase46-supabase-export-job-registry-boundary.spec.ts` now exists
+  - `SupabaseExportJobRegistry` adapter boundary now exists but is fail-closed and not wired
+  - `createSupabaseExportJobRegistry(...)` now exists
+  - `supabaseExportJobRegistryBoundary` metadata now exists
+  - boundary is constructor-injected
+  - boundary does not create a DB client at import time
+  - boundary does not require env vars at import time
+  - every `ExportJobRegistry` method currently throws a clear not-wired error instead of returning fake success
+  - boundary metadata preserves required future behavior:
+    - lifecycle/state-machine preservation
+    - owner/workspace/requestId idempotency
+    - worker claim/TTL semantics
+    - conditional transitions
+    - artifact sanitization
+    - failure sanitization
+  - tests prove:
+    - offline import with Supabase env cleared
+    - no env/runtime DB dependency at import time
+    - no routes/app/server/composition imports
+    - no Supabase CLI usage
+    - no service-role env logging
+    - no `createClient(...)`
+    - no config/env reads at import time
+    - app/routes/workers are still not wired to `SupabaseExportJobRegistry`
+    - routes still use `registry`
+    - workers still use `ExportJobRegistry`
+  - Runtime route DB wiring remains deferred
+  - Worker DB wiring remains deferred
+  - SupabaseExportJobsRepository remains repository-level only, not route registry runtime
+  - Full Supabase-backed `ExportJobRegistry` implementation remains deferred
+  - Atomic claim/TTL/concurrency behavior remains deferred
+  - Auth/RLS/requester enforcement remains deferred
+  - Frontend Supabase client remains absent
+  - Provider-key persistence/runtime remains deferred
+  - Credit ledger runtime remains deferred
+  - Artifact/storage runtime and signed URLs remain deferred
 
 ### Local Supabase Docker Startup Still Blocked
 
@@ -824,6 +867,7 @@ Current state:
 - remote Supabase account/workspace repository read-only smoke now works when explicit opt-in env vars are provided
 - remote `SupabaseExportJobsRepository` smoke now works when explicit opt-in env vars are provided
 - repositoryComposition runtime boundary is now guarded by tests while route DB wiring remains deferred
+- `SupabaseExportJobRegistry` boundary now exists but remains fail-closed and not wired while local Docker Supabase remains deferred
 
 Why it matters:
 

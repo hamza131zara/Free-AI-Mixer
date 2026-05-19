@@ -4914,3 +4914,88 @@ Scope:
 - Repository composition runtime boundary coverage does not imply runtime DB persistence is active
 - Repository composition runtime boundary coverage does not imply auth, requester, or RLS enforcement is active
 - Default app startup remains offline/in-memory unless a later phase explicitly wires runtime DB behavior
+
+## Phase 46-A - ExportJobRegistry Persistence Adapter Audit Only
+
+Status:
+
+- complete
+
+Scope:
+
+- audit only for future Supabase-backed `ExportJobRegistry` adapter boundary
+- no route DB wiring
+- no worker DB wiring
+- no runtime DB persistence activation
+
+### Phase 46-A audit summary
+
+- Confirmed export routes and workers depend on `ExportJobRegistry`
+- Confirmed `SupabaseExportJobsRepository` is not a drop-in replacement for `ExportJobRegistry`
+- Confirmed runtime DB wiring is not safe yet
+- Confirmed a Supabase-backed `ExportJobRegistry` adapter boundary is required before any route/worker integration
+
+### Safety boundaries
+
+- ExportJobRegistry adapter audit does not imply route DB wiring is active
+- ExportJobRegistry adapter audit does not imply worker DB wiring is active
+- ExportJobRegistry adapter audit does not imply runtime DB persistence is active
+- ExportJobRegistry adapter audit does not imply auth, requester, or RLS enforcement is active
+
+## Phase 46-B - Supabase ExportJobRegistry Adapter Boundary Test Only
+
+Status:
+
+- complete
+
+Scope:
+
+- adapter boundary scaffold only
+- focused offline/import-safe boundary verification only
+- no route DB wiring
+- no worker DB wiring
+- no runtime DB persistence activation
+
+### Phase 46-B completion summary
+
+- Added `backend/registry/supabaseExportJobRegistry.ts`
+- Added `tests/e2e/phase46-supabase-export-job-registry-boundary.spec.ts`
+- Added `SupabaseExportJobRegistry` as a future adapter boundary
+- Added `createSupabaseExportJobRegistry(...)`
+- Added `supabaseExportJobRegistryBoundary` metadata
+- Boundary is constructor-injected
+- Boundary does not create a DB client at import time
+- Boundary does not require env vars at import time
+- Boundary is fail-closed:
+  - `ExportJobRegistry` methods throw clear not-wired errors instead of faking lifecycle behavior
+- Boundary metadata preserves required future behavior:
+  - lifecycle/state-machine preservation
+  - owner/workspace/requestId idempotency
+  - worker claim/TTL semantics
+  - conditional transitions
+  - artifact sanitization
+  - failure sanitization
+- Tests prove:
+  - adapter module imports offline with Supabase env vars cleared
+  - no env/runtime DB dependency is created at import time
+  - boundary metadata is present and `wired: false`
+  - every registry method fails closed instead of returning fake success
+  - source inspection proves:
+    - no routes/app/server/composition imports
+    - no Supabase CLI command usage
+    - no service-role env logging
+    - no `createClient(...)`
+    - no config/env reads at import time
+  - source inspection proves app/routes/workers are still not wired to `SupabaseExportJobRegistry`
+  - routes still use `registry`
+  - workers still use `ExportJobRegistry`
+- Focused Phase 46 adapter boundary test passed
+- Typecheck and build passed
+
+### Safety boundaries
+
+- SupabaseExportJobRegistry boundary coverage does not imply route DB wiring is active
+- SupabaseExportJobRegistry boundary coverage does not imply worker DB wiring is active
+- SupabaseExportJobRegistry boundary coverage does not imply runtime DB persistence is active
+- SupabaseExportJobRegistry boundary exists but remains fail-closed and not wired
+- Auth, requester, and RLS enforcement remain deferred
