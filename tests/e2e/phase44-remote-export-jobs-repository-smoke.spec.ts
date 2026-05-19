@@ -84,6 +84,17 @@ const buildForbiddenBroadCleanupPattern = (methodName: string): string =>
 
 const isoNow = (): string => new Date().toISOString();
 
+const normalizeUtcTimestamp = (value: string): string =>
+  new Date(value).toISOString();
+
+const expectEquivalentUtcTimestamp = (
+  actual: string | undefined,
+  expected: string,
+): void => {
+  expect(actual).toBeTruthy();
+  expect(normalizeUtcTimestamp(actual as string)).toBe(normalizeUtcTimestamp(expected));
+};
+
 const createExportJobRecord = (
   jobId: string,
   requestId: string,
@@ -283,6 +294,8 @@ test.describe("phase44 remote export jobs repository smoke", () => {
         attemptCount: 0,
         renderSettings: initialRecord.renderSettings,
       });
+      expectEquivalentUtcTimestamp(recordByJobId?.createdAt, initialRecord.createdAt);
+      expectEquivalentUtcTimestamp(recordByJobId?.updatedAt, initialRecord.updatedAt);
 
       const recordByScope = await repository.getByIdempotencyScope({
         workspaceId,
@@ -298,6 +311,8 @@ test.describe("phase44 remote export jobs repository smoke", () => {
         status: "submitted",
         attemptCount: 0,
       });
+      expectEquivalentUtcTimestamp(recordByScope?.createdAt, initialRecord.createdAt);
+      expectEquivalentUtcTimestamp(recordByScope?.updatedAt, initialRecord.updatedAt);
 
       const updatedRecord = createExportJobRecord(
         jobId,
@@ -326,8 +341,10 @@ test.describe("phase44 remote export jobs repository smoke", () => {
         workspaceId,
         status: "rendering",
         attemptCount: 1,
-        startedAt,
       });
+      expectEquivalentUtcTimestamp(updatedByScope?.createdAt, updatedRecord.createdAt);
+      expectEquivalentUtcTimestamp(updatedByScope?.updatedAt, updatedRecord.updatedAt);
+      expectEquivalentUtcTimestamp(updatedByScope?.startedAt, startedAt);
     } catch (error) {
       runtimeFailure = sanitizeSupabaseErrorMessage(error);
     } finally {
