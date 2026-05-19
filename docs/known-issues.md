@@ -855,6 +855,43 @@ Why it matters:
   - Provider-key persistence/runtime remains deferred
   - Credit ledger runtime remains deferred
   - Artifact/storage runtime and signed URLs remain deferred
+- Phase 47-A audit confirmed safe first adapter work is read-only only:
+  - `SupabaseExportJobRegistry` can safely implement:
+    - `getById`
+    - `getByIdForOwner`
+    - `getByRequestId` only when `ownerScope` is provided
+  - Mutating/lifecycle methods must remain fail-closed:
+    - `create`
+    - `getByStatus`
+    - `claim`
+    - `markRendering`
+    - `markFinalizing`
+    - `markSuccess`
+    - `markError`
+    - `transition`
+  - No route/worker/runtime DB wiring is safe in this phase
+  - No remote DB calls are required in default tests
+- Phase 47-B adds read-only `SupabaseExportJobRegistry` method mappings:
+  - `backend/registry/supabaseExportJobRegistry.ts` now has read-only mappings only
+  - `tests/e2e/phase47-supabase-export-job-registry-method-mapping.spec.ts` now exists
+  - `getById(jobId)` delegates to `jobsRepository.getByJobId(jobId)`
+  - `getByIdForOwner(jobId, ownerScope)` reads by `jobId` and returns only when `ownerId` and `workspaceId` match
+  - `getByRequestId(requestId, ownerScope?)` delegates to `jobsRepository.getByIdempotencyScope(...)` only when `ownerScope` exists
+  - missing `ownerScope` for `getByRequestId` fails closed
+  - mutating/lifecycle registry methods remain fail-closed
+  - source inspection proves app/routes/workers are still not wired to `SupabaseExportJobRegistry`
+  - focused Phase 47 method mapping test passed with typecheck and build
+  - Route DB wiring remains deferred
+  - Worker DB wiring remains deferred
+  - Runtime DB persistence remains deferred
+  - Atomic claim/TTL/concurrency behavior remains deferred
+  - Conditional lifecycle transitions remain deferred
+  - Artifact/failure persistence fidelity remains deferred
+  - Auth/RLS/requester enforcement remains deferred
+  - Frontend Supabase client remains absent
+  - Provider-key persistence/runtime remains deferred
+  - Credit ledger runtime remains deferred
+  - Artifact/storage runtime and signed URLs remain deferred
 
 ### Local Supabase Docker Startup Still Blocked
 
@@ -867,7 +904,7 @@ Current state:
 - remote Supabase account/workspace repository read-only smoke now works when explicit opt-in env vars are provided
 - remote `SupabaseExportJobsRepository` smoke now works when explicit opt-in env vars are provided
 - repositoryComposition runtime boundary is now guarded by tests while route DB wiring remains deferred
-- `SupabaseExportJobRegistry` boundary now exists but remains fail-closed and not wired while local Docker Supabase remains deferred
+- `SupabaseExportJobRegistry` now has read-only mappings only while mutating/lifecycle methods remain fail-closed and local Docker Supabase remains deferred
 
 Why it matters:
 

@@ -4999,3 +4999,94 @@ Scope:
 - SupabaseExportJobRegistry boundary coverage does not imply runtime DB persistence is active
 - SupabaseExportJobRegistry boundary exists but remains fail-closed and not wired
 - Auth, requester, and RLS enforcement remain deferred
+
+## Phase 47-A - Supabase ExportJobRegistry Adapter Implementation Audit Only
+
+Status:
+
+- complete
+
+Scope:
+
+- audit only for safe read-only `SupabaseExportJobRegistry` method mapping
+- no route DB wiring
+- no worker DB wiring
+- no runtime DB persistence activation
+
+### Phase 47-A audit summary
+
+- Confirmed `SupabaseExportJobRegistry` can safely implement read-only mappings first
+- Confirmed safe first methods are:
+  - `getById`
+  - `getByIdForOwner`
+  - `getByRequestId` only when `ownerScope` is provided
+- Confirmed mutating/lifecycle methods must remain fail-closed:
+  - `create`
+  - `getByStatus`
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+  - `transition`
+- Confirmed no route/worker/runtime DB wiring is safe in this phase
+- Confirmed no remote DB calls should be required in default tests
+
+### Safety boundaries
+
+- ExportJobRegistry read-only audit does not imply route DB wiring is active
+- ExportJobRegistry read-only audit does not imply worker DB wiring is active
+- ExportJobRegistry read-only audit does not imply runtime DB persistence is active
+- ExportJobRegistry read-only audit does not imply auth, requester, or RLS enforcement is active
+
+## Phase 47-B - Supabase ExportJobRegistry Read-Only Method Mapping
+
+Status:
+
+- complete
+
+Scope:
+
+- read-only adapter mapping only
+- focused offline fake-repository verification only
+- no route DB wiring
+- no worker DB wiring
+- no runtime DB persistence activation
+
+### Phase 47-B completion summary
+
+- Updated `backend/registry/supabaseExportJobRegistry.ts`
+- Added `tests/e2e/phase47-supabase-export-job-registry-method-mapping.spec.ts`
+- `getById(jobId)` now delegates to `jobsRepository.getByJobId(jobId)`
+- `getByIdForOwner(jobId, ownerScope)` now:
+  - reads by `jobId`
+  - returns the job only when `ownerId` and `workspaceId` match `ownerScope`
+  - returns `undefined` on ownership mismatch
+- `getByRequestId(requestId, ownerScope?)` now:
+  - delegates to `jobsRepository.getByIdempotencyScope(...)` only when `ownerScope` exists
+  - fails closed when `ownerScope` is missing
+- Mutating/lifecycle methods remain fail-closed:
+  - `create`
+  - `getByStatus`
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+  - `transition`
+- Adapter remains constructor-injected and import-safe
+- Adapter still does not create a DB client at import time
+- Adapter still does not read env vars at import time
+- Adapter still does not log service-role keys
+- Adapter still does not use Supabase CLI
+- Source inspection proves app/routes/workers are not wired to `SupabaseExportJobRegistry`
+- Focused Phase 47 method mapping test passed
+- Typecheck and build passed
+
+### Safety boundaries
+
+- SupabaseExportJobRegistry read-only mapping does not imply route DB wiring is active
+- SupabaseExportJobRegistry read-only mapping does not imply worker DB wiring is active
+- SupabaseExportJobRegistry read-only mapping does not imply runtime DB persistence is active
+- SupabaseExportJobRegistry now has read-only mappings only; lifecycle mutation behavior remains deferred
+- Auth, requester, and RLS enforcement remain deferred
