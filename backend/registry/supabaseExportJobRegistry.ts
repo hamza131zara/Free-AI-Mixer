@@ -10,8 +10,19 @@ import type {
   ExportJobTransitionOptions,
 } from "./exportJobRegistry";
 
+type MaybePromise<T> = T | Promise<T>;
+
+export interface SupabaseExportJobRegistryReadRepository {
+  getByJobId(jobId: string): MaybePromise<BackendExportJobRecord | undefined>;
+  getByIdempotencyScope(scope: {
+    ownerId: string;
+    workspaceId: string;
+    requestId: string;
+  }): MaybePromise<BackendExportJobRecord | undefined>;
+}
+
 export interface SupabaseExportJobRegistryDependencies {
-  jobsRepository?: unknown;
+  jobsRepository?: SupabaseExportJobRegistryReadRepository;
   accountWorkspaceRepository?: unknown;
 }
 
@@ -35,26 +46,63 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
     return this.options.dependencies;
   }
 
+  private getJobsRepository(): SupabaseExportJobRegistryReadRepository {
+    const jobsRepository = this.options.dependencies?.jobsRepository;
+    if (!jobsRepository) {
+      throw this.createNotWiredError(
+        "jobsRepository dependency is required for read-only method mapping.",
+      );
+    }
+
+    return jobsRepository;
+  }
+
   create(_input: CreateExportJobInput): BackendExportJobRecord {
     throw this.createNotWiredError("create");
   }
 
-  getById(_jobId: string): BackendExportJobRecord | undefined {
-    throw this.createNotWiredError("getById");
+  getById(jobId: string): BackendExportJobRecord | undefined {
+    const jobsRepository = this.getJobsRepository();
+    return this.readRequiredSync(
+      jobsRepository.getByJobId(jobId),
+      "getById",
+    );
   }
 
   getByIdForOwner(
-    _jobId: string,
-    _ownerScope: BackendExportJobOwnerScope,
+    jobId: string,
+    ownerScope: BackendExportJobOwnerScope,
   ): BackendExportJobRecord | undefined {
-    throw this.createNotWiredError("getByIdForOwner");
+    const record = this.getById(jobId);
+    if (!record) {
+      return undefined;
+    }
+
+    return record.ownerId === ownerScope.ownerId &&
+        record.workspaceId === ownerScope.workspaceId
+      ? record
+      : undefined;
   }
 
   getByRequestId(
-    _requestId: string,
-    _ownerScope?: BackendExportJobOwnerScope,
+    requestId: string,
+    ownerScope?: BackendExportJobOwnerScope,
   ): BackendExportJobRecord | undefined {
-    throw this.createNotWiredError("getByRequestId");
+    if (!ownerScope) {
+      throw this.createNotWiredError(
+        "getByRequestId requires ownerScope until local default-scope semantics are safely mirrored.",
+      );
+    }
+
+    const jobsRepository = this.getJobsRepository();
+    return this.readRequiredSync(
+      jobsRepository.getByIdempotencyScope({
+        ownerId: ownerScope.ownerId,
+        workspaceId: ownerScope.workspaceId,
+        requestId,
+      }),
+      "getByRequestId",
+    );
   }
 
   getByStatus(_status: BackendExportLifecycleStatus): BackendExportJobRecord[] {
@@ -106,7 +154,22 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
       `${SUPABASE_EXPORT_JOB_REGISTRY_NOT_WIRED_MESSAGE} Required behavior remains deferred: lifecycle/state-machine preservation, owner/workspace/requestId idempotency, worker claim/TTL semantics, conditional transitions, artifact sanitization, and failure sanitization. Method: ${methodName}.`,
     );
   }
+
+  private readRequiredSync<T>(
+    result: MaybePromise<T>,
+    methodName: string,
+  ): T {
+    if (result && typeof result === "object" && "then" in result) {
+      throw this.createNotWiredError(
+        `${methodName} received an async repository dependency. The current ExportJobRegistry contract is synchronous, so async-backed runtime DB reads remain deferred.`,
+      );
+    }
+
+    return result;
+  }
 }
+
+export type { MaybePromise };
 
 export const createSupabaseExportJobRegistry = (
   options?: SupabaseExportJobRegistryOptions,
