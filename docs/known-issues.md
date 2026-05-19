@@ -892,6 +892,30 @@ Why it matters:
   - Provider-key persistence/runtime remains deferred
   - Credit ledger runtime remains deferred
   - Artifact/storage runtime and signed URLs remain deferred
+- Phase 48-A audit confirmed the registry async/runtime mismatch remains a hard boundary:
+  - `ExportJobRegistry` is synchronous today
+  - `SupabaseExportJobsRepository` is async and Promise-based
+  - routes call registry methods synchronously
+  - workers/render harness call registry lifecycle methods synchronously
+  - `SupabaseExportJobRegistry` must not fake sync behavior around async DB calls
+  - runtime route/worker DB wiring is not safe yet
+  - a full async registry refactor would affect routes, workers, harness, registry implementations, and many tests
+- Phase 48-B adds async boundary test coverage:
+  - `tests/e2e/phase48-export-job-registry-async-boundary.spec.ts` now exists
+  - ExportJobRegistry async boundary is now guarded by tests
+  - Runtime route DB wiring remains deferred
+  - Worker DB wiring remains deferred
+  - Runtime DB persistence remains deferred
+  - Full async registry contract refactor remains deferred
+  - SupabaseExportJobRegistry must not fake sync behavior over async DB calls
+  - Atomic claim/TTL/concurrency behavior remains deferred
+  - Conditional lifecycle transitions remain deferred
+  - Artifact/failure persistence fidelity remains deferred
+  - Auth/RLS/requester enforcement remains deferred
+  - Frontend Supabase client remains absent
+  - Provider-key persistence/runtime remains deferred
+  - Credit ledger runtime remains deferred
+  - Artifact/storage runtime and signed URLs remain deferred
 
 ### Local Supabase Docker Startup Still Blocked
 
@@ -904,7 +928,7 @@ Current state:
 - remote Supabase account/workspace repository read-only smoke now works when explicit opt-in env vars are provided
 - remote `SupabaseExportJobsRepository` smoke now works when explicit opt-in env vars are provided
 - repositoryComposition runtime boundary is now guarded by tests while route DB wiring remains deferred
-- `SupabaseExportJobRegistry` now has read-only mappings only while mutating/lifecycle methods remain fail-closed and local Docker Supabase remains deferred
+- `SupabaseExportJobRegistry` now has read-only mappings only, and the sync/async boundary is guarded by tests while mutating/lifecycle methods remain fail-closed and local Docker Supabase remains deferred
 
 Why it matters:
 

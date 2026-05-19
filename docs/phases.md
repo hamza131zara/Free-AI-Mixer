@@ -5090,3 +5090,79 @@ Scope:
 - SupabaseExportJobRegistry read-only mapping does not imply runtime DB persistence is active
 - SupabaseExportJobRegistry now has read-only mappings only; lifecycle mutation behavior remains deferred
 - Auth, requester, and RLS enforcement remain deferred
+
+## Phase 48-A - Supabase Registry Async/Runtime Wiring Audit Only
+
+Status:
+
+- complete
+
+Scope:
+
+- audit only for sync/async registry boundary before any runtime Supabase wiring
+- no route DB wiring
+- no worker DB wiring
+- no runtime DB persistence activation
+
+### Phase 48-A audit summary
+
+- Confirmed `ExportJobRegistry` is fully synchronous today
+- Confirmed `SupabaseExportJobsRepository` is async and Promise-based
+- Confirmed routes call registry methods synchronously
+- Confirmed workers and render harness call registry lifecycle methods synchronously
+- Confirmed `SupabaseExportJobRegistry` guards the mismatch and must not fake sync behavior around async DB calls
+- Confirmed runtime route/worker DB wiring is not safe yet
+- Confirmed a real async registry refactor would affect routes, workers, harness, registry implementations, and many tests
+
+### Safety boundaries
+
+- Async registry audit does not imply route DB wiring is active
+- Async registry audit does not imply worker DB wiring is active
+- Async registry audit does not imply runtime DB persistence is active
+- Async registry audit does not imply auth, requester, or RLS enforcement is active
+
+## Phase 48-B - ExportJobRegistry Async Boundary Test Only
+
+Status:
+
+- complete
+
+Scope:
+
+- test-only source-inspection coverage only
+- no route DB wiring
+- no worker DB wiring
+- no runtime DB persistence activation
+
+### Phase 48-B completion summary
+
+- Added `tests/e2e/phase48-export-job-registry-async-boundary.spec.ts`
+- Verified `ExportJobRegistry` method signatures remain synchronous
+- Verified `SupabaseExportJobsRepository` methods are async and Promise-based
+- Verified `SupabaseExportJobRegistry` has a fail-closed guard for Promise-backed repository results
+- Verified `backend/routes/exports.ts` still calls registry methods synchronously
+- Verified `backend/workers/renderWorker.ts` still assumes synchronous `getByStatus`
+- Verified `backend/renderer/singleProcessRenderHarness.ts` still assumes synchronous:
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+- Verified app/routes/workers are not wired to `SupabaseExportJobRegistry`
+- Verified no route DB wiring exists
+- Verified no worker DB wiring exists
+- Verified no fake sync wrapper around async Supabase calls exists
+- Verified no remote env requirement exists
+- Verified no Supabase CLI usage exists
+- Verified no service-role key logging exists
+- Focused Phase 48 async boundary test passed
+- Typecheck and build passed
+
+### Safety boundaries
+
+- ExportJobRegistry async boundary coverage does not imply route DB wiring is active
+- ExportJobRegistry async boundary coverage does not imply worker DB wiring is active
+- ExportJobRegistry async boundary coverage does not imply runtime DB persistence is active
+- Full async registry contract refactor remains deferred
+- SupabaseExportJobRegistry must not fake sync behavior over async DB calls
+- Auth, requester, and RLS enforcement remain deferred
