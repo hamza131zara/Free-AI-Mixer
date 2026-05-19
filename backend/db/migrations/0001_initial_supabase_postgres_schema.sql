@@ -66,6 +66,8 @@ create table if not exists export_jobs (
   finalized_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  constraint export_jobs_status_check
+    check (status in ('queued', 'submitted', 'rendering', 'finalizing', 'success', 'error', 'expired')),
   constraint export_jobs_workspace_owner_request_unique
     unique (workspace_id, owner_id, request_id)
 );
@@ -90,7 +92,7 @@ create table if not exists artifact_records (
   duration_ms integer,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint artifact_records_job_artifact_unique unique (job_id, artifact_id)
+  constraint artifact_records_pkey primary key (job_id, artifact_id)
 );
 
 create index if not exists artifact_records_workspace_job_idx
