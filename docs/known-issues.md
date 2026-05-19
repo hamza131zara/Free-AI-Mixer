@@ -672,6 +672,35 @@ Why it matters:
   - `updated_at` triggers remain deferred
   - storage object uniqueness remains deferred
   - `credit_ledger.amount_delta bigint` remains deferred
+- Phase 42-B adds opt-in remote Supabase connection smoke only:
+  - `tests/e2e/phase42-remote-supabase-connection-smoke.spec.ts` now exists
+  - Smoke test is backend-only, read-only, and skipped by default
+  - Opt-in requires:
+    - `FREE_AI_MIXER_RUN_REMOTE_SUPABASE_SMOKE=1`
+    - `FREE_AI_MIXER_ENABLE_SUPABASE_DB=1`
+    - `FREE_AI_MIXER_DB_PROVIDER=supabase`
+    - `FREE_AI_MIXER_SUPABASE_URL`
+    - `FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY`
+  - Smoke test uses existing backend config and client factory boundaries only
+  - Smoke test queries `app_users` using `select("id").limit(1)`
+  - Smoke test does not use anon key
+  - Smoke test does not insert, update, delete, upsert, or call RPC
+  - Smoke test does not call repository adapters
+  - Smoke test does not wire routes, app runtime, or backend dependency composition
+- Phase 42-C adds manual remote smoke success:
+  - Remote Supabase connection smoke succeeded when opt-in env vars were provided locally
+  - Manual smoke result was `2 passed`
+  - Env vars and secrets were cleared after the test
+  - No service-role key was committed
+  - No `.env` changes were made
+  - No local Supabase Docker was used
+  - No `supabase link`, `supabase db push`, `supabase db reset`, or `supabase migration up` was run
+  - This does NOT mean production DB integration is active
+  - Route DB integration remains deferred
+  - Repository remote write/read adapter tests remain deferred
+  - Auth/requester/RLS enforcement remains deferred
+  - Frontend Supabase client remains absent
+  - Provider-key persistence, credit ledger runtime, artifact/storage runtime, and signed URLs remain deferred
 
 ### Local Supabase Docker Startup Still Blocked
 
@@ -680,6 +709,7 @@ Current state:
 - local Supabase Docker startup remains blocked on this Windows environment
 - previous failures point to a Realtime/container startup issue rather than Free AI Mixer runtime code
 - remote SQL validation succeeded without using local Supabase Docker
+- remote Supabase connection smoke now works when explicit opt-in env vars are provided
 
 Why it matters:
 

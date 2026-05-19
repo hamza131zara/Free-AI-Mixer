@@ -4553,3 +4553,89 @@ Scope:
 - Remote SQL Editor validation does not imply auth, requester, or RLS enforcement is active
 - Remote SQL Editor validation does not imply Supabase CLI migration workflow readiness
 - Remote SQL Editor validation does not imply local Supabase Docker readiness
+
+## Phase 42-B - Opt-In Remote Supabase Connection Smoke Test Only
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only remote Supabase connection smoke test only
+- read-only query validation only
+- opt-in test execution only
+- no runtime route or app wiring
+
+### Phase 42-B completion summary
+
+- Added `tests/e2e/phase42-remote-supabase-connection-smoke.spec.ts`
+- Smoke test is backend-only and imports existing boundaries only:
+  - `backend/config/supabaseConfig.ts`
+  - `backend/db/supabaseClientFactory.ts`
+- Smoke test is skipped by default unless `FREE_AI_MIXER_RUN_REMOTE_SUPABASE_SMOKE=1`
+- Opt-in smoke requires:
+  - `FREE_AI_MIXER_RUN_REMOTE_SUPABASE_SMOKE=1`
+  - `FREE_AI_MIXER_ENABLE_SUPABASE_DB=1`
+  - `FREE_AI_MIXER_DB_PROVIDER=supabase`
+  - `FREE_AI_MIXER_SUPABASE_URL`
+  - `FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY`
+- Smoke test uses backend-only service-role client creation through the existing client factory
+- Smoke test runs read-only query validation against `app_users` only:
+  - `select("id").limit(1)`
+- Successful empty result is treated as success
+- Smoke test does not use anon key
+- Smoke test does not call repository adapters
+- Smoke test does not insert, update, delete, upsert, or call RPC
+- Smoke test does not wire routes, app runtime, or backend dependency composition
+- Focused Phase 42 smoke test passed in default mode by skipping the live remote path
+- Typecheck and build passed
+
+### Safety boundaries
+
+- Opt-in remote connection smoke does not imply production DB integration is active
+- Opt-in remote connection smoke does not imply route DB integration is active
+- Opt-in remote connection smoke does not imply repository adapter runtime validation is complete
+- Opt-in remote connection smoke does not imply auth, requester, or RLS enforcement is active
+- Service-role key remains backend-only and must not be exposed to frontend or committed files
+- Remote smoke remains optional and must not be required for normal local or CI test runs
+
+## Phase 42-C - Manual Opt-In Remote Supabase Connection Smoke Success
+
+Status:
+
+- complete
+
+Scope:
+
+- manual backend-only remote smoke execution only
+- read-only remote query validation only
+- local shell env usage only
+- no runtime route or app wiring
+
+### Phase 42-C completion summary
+
+- User set required env vars locally in PowerShell only
+- Ran:
+  - `npm run test:e2e -- tests/e2e/phase42-remote-supabase-connection-smoke.spec.ts`
+- Result:
+  - `2 passed`
+- Opt-in smoke successfully connected through the existing backend config and client factory boundaries
+- Smoke query against `app_users` succeeded in read-only mode
+- Env vars and secrets were cleared after the manual smoke
+- No service-role key was committed
+- No `.env` or `.env.example` changes were made
+- No local Supabase Docker was used
+- No `supabase link`, `supabase db push`, `supabase db reset`, or `supabase migration up` was run
+- No app runtime DB persistence was activated
+- No route DB wiring was added
+- No repository adapter runtime wiring was added
+- No auth, RLS, requester, frontend, storage, or signed URL runtime behavior was added
+
+### Safety boundaries
+
+- Manual opt-in remote smoke success does not imply production DB integration is active
+- Manual opt-in remote smoke success does not imply route DB integration is active
+- Manual opt-in remote smoke success does not imply repository adapter remote write/read behavior is validated
+- Manual opt-in remote smoke success does not imply auth, requester, or RLS enforcement is active
+- Manual opt-in remote smoke success does not imply local Supabase Docker readiness
