@@ -1195,6 +1195,7 @@ Still deferred:
 - Routes, worker loop, and render harness now await registry methods locally without enabling DB persistence.
 - `SupabaseExportJobRegistry` read methods are awaitable, but Supabase runtime DB wiring still remains deferred.
 - `SupabaseExportJobRegistry.create(...)` adapter support now exists, but Supabase runtime DB wiring still remains deferred.
+- Supabase runtime read/create wiring still remains deferred because the current app uses one shared registry across submit, read, execute, and artifact routes.
 - Repository-level `createIfAbsent(...)` now exists and backs the adapter create path without activating runtime DB persistence.
 - Supabase lifecycle and mutating registry methods still remain fail-closed.
 - `getByStatus` and any real `listByStatus` repository support still remain deferred.
@@ -1203,6 +1204,7 @@ Still deferred:
 - Artifact and failure DB lifecycle fidelity for a real Supabase-backed registry still remains deferred.
 - Route DB wiring remains deferred.
 - Worker DB wiring remains deferred.
+- Execute route DB-backed lifecycle remains deferred.
 - Runtime DB persistence remains deferred.
 - Auth, requester, and RLS enforcement remain deferred.
 - Remote Supabase tests remain opt-in only.

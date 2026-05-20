@@ -5415,3 +5415,56 @@ Scope:
 - Route and worker DB wiring remain deferred
 - `getByStatus` and any real `listByStatus` support remain deferred
 - Claim/lease behavior and lifecycle DB transitions remain deferred
+
+## Phase 53-B - Supabase Runtime Registry Read/Create Boundary Guard
+
+Status:
+
+- complete
+
+Scope:
+
+- runtime boundary guard only
+- no Supabase runtime registry wiring
+- no route DB wiring
+- no worker DB wiring
+- no app or composition activation changes
+- no runtime DB persistence activation
+
+### Phase 53-B completion summary
+
+- Added `tests/e2e/phase53-supabase-runtime-registry-read-create-boundary.spec.ts`
+- Confirmed `createBackendDependencies()` still instantiates a local registry by default
+- Confirmed `repositoryComposition` availability does not imply runtime registry wiring
+- Confirmed `createExportRouter(...)` still receives one shared registry for:
+  - submit routes
+  - read routes
+  - execute route
+  - artifact routes
+- Confirmed execute flow still depends on blocked lifecycle methods in `SupabaseExportJobRegistry`:
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+- Confirmed worker draining still depends on `getByStatus("submitted")`
+- Confirmed no app or runtime `SupabaseExportJobRegistry` wiring exists
+- Confirmed no remote env is required
+- Confirmed no Supabase CLI usage or service-role key logging exists in inspected paths
+- No runtime wiring was added
+
+### Verification
+
+- `phase53`: 2 passed
+- `phase52`: 2 passed
+- `phase50`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Supabase runtime registry read/create wiring remains deferred
+- Route and worker DB wiring remain deferred
+- Execute route DB-backed lifecycle remains deferred
+- `getByStatus` and any real `listByStatus` support remain deferred
+- Claim/lease behavior and lifecycle DB transitions remain deferred
