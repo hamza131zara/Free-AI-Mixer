@@ -5297,3 +5297,56 @@ Scope:
 - Unsafe broad `upsertJob` create behavior remains blocked
 - No route, worker, or app dependency wiring to `SupabaseExportJobRegistry` was added
 - Supabase runtime DB wiring remains deferred
+
+## Phase 51-B - Supabase Export Jobs createIfAbsent Repository Primitive
+
+Status:
+
+- complete
+
+Scope:
+
+- repository-only create/idempotency primitive
+- no registry create implementation
+- no runtime DB wiring
+- no route DB wiring
+- no worker DB wiring
+- no app or composition wiring
+- no schema or migration changes
+
+### Phase 51-B completion summary
+
+- Added repository-level `createIfAbsent(...)` primitive to `BackendExportJobsRepository`
+- Added `BackendExportJobCreateIfAbsentResult` union with truthful result states:
+  - `created`
+  - `existing`
+  - `conflict`
+- Added conflict reasons:
+  - `job_id_mismatch`
+  - `non_create_safe_difference`
+- Implemented `SupabaseExportJobsRepository.createIfAbsent(...)`
+- Confirmed `createIfAbsent(...)` tries a direct insert first
+- Confirmed broad `upsertJob(...)` semantics are not reused as create success
+- Confirmed first insert returns `created`
+- Confirmed same idempotency scope with the same logical create payload returns `existing`
+- Confirmed same scope with a different `jobId` returns `conflict: job_id_mismatch`
+- Confirmed same scope with incompatible create-time fields returns `conflict: non_create_safe_difference`
+- Confirmed unrelated DB errors still throw
+- No `SupabaseExportJobRegistry.create(...)` implementation was added
+- No runtime DB wiring was added
+- No route, worker, app, or composition wiring was added
+- No schema or migration changes were made
+
+### Verification
+
+- `phase51`: 2 passed
+- `phase50`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Repository-level `createIfAbsent(...)` does not imply `SupabaseExportJobRegistry.create(...)` is wired
+- Repository-level `createIfAbsent(...)` does not imply runtime DB persistence is active
+- Route and worker DB wiring remain deferred
+- `getByStatus`, claim/lease behavior, and lifecycle DB transitions remain deferred
