@@ -14,6 +14,11 @@ import {
   createRepositoryComposition,
   type BackendRepositoryComposition,
 } from "./repositoryComposition";
+import {
+  drainRenderWorkerOnce,
+  type RenderWorkerDrainResult,
+  type RenderWorkerOptions,
+} from "../workers/renderWorker";
 
 export interface BackendDependencies {
   registry: ExportJobRegistry;
@@ -96,3 +101,18 @@ export const createBackendDependencies = (): BackendDependencies => {
     repositoryComposition,
   };
 };
+
+export const drainBackendWorkerOnce = async (
+  dependencies: BackendDependencies = createBackendDependencies(),
+  options?: RenderWorkerOptions,
+): Promise<RenderWorkerDrainResult> =>
+  drainRenderWorkerOnce(
+    dependencies.registry,
+    dependencies.rendererAdapter,
+    dependencies.pathPolicy,
+    {
+      ...options,
+      onVerifiedArtifactRef:
+        options?.onVerifiedArtifactRef ?? dependencies.onVerifiedArtifactRef,
+    },
+  );

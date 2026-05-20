@@ -6351,3 +6351,56 @@ Scope:
 - Worker DB wiring still is not activated as an automatic loop
 - Generic `transition(...)` remains deferred
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 71 - Manual Worker Drain Runtime Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- smallest safe manual worker drain runtime boundary/helper
+- `drainRenderWorkerOnce(...)` composed through backend runtime dependencies
+- no route/API endpoint
+- no automatic worker loop startup
+- worker startup and loop remain separately env-gated
+- generic `transition(...)` remains unused/deferred
+- no signed/download/storage URL behavior
+
+### Phase 71 completion summary
+
+- Added the smallest safe manual worker drain runtime helper
+- Implemented `drainBackendWorkerOnce(...)` at the backend dependency composition boundary
+- Proved manual drain can use injected/backend dependency registry/runtime composition directly
+- Proved manual drain does not require worker loop startup
+- Proved manual drain continues to use only supported lifecycle methods:
+  - `getByStatus`
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+- Proved worker startup and worker loop env gates remain separate
+- Proved no route/API endpoint was added
+- Proved no app/server rollout was added
+- Proved no Supabase CLI usage or service-role logging exists
+- Proved no signed/download/storage URL behavior exists
+- Proved no remote env is required
+
+### Verification
+
+- `phase71`: 2 passed
+- `phase70`: 2 passed
+- `phase69`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Manual worker drain runtime helper now exists
+- No automatic worker loop startup was added
+- No route/API endpoint was added
+- Worker loop remains env-gated
+- Remote Supabase worker smoke remains deferred
+- Signed/download/storage URL behavior remains deferred
