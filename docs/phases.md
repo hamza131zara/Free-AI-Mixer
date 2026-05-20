@@ -5707,3 +5707,56 @@ Scope:
 - `SupabaseExportJobRegistry.claim(...)` remains fail-closed
 - Worker/runtime DB wiring remains deferred
 - Lifecycle DB transitions remain deferred
+
+## Phase 59-B - SupabaseExportJobRegistry claim Adapter Implementation
+
+Status:
+
+- complete
+
+Scope:
+
+- adapter-level `SupabaseExportJobRegistry.claim(...)` only
+- delegation to repository-level `claimIfAvailable(...)`
+- no worker, route, app, or composition wiring
+- no repository, DB, or schema changes
+- no runtime DB activation
+
+### Phase 59-B completion summary
+
+- Implemented `SupabaseExportJobRegistry.claim(...)` adapter support
+- Delegated claim behavior to `jobsRepository.claimIfAvailable(...)`
+- Confirmed claim passes through:
+  - `jobId`
+  - `workerId`
+  - `claimTtlMs`
+- Confirmed result mapping:
+  - `claimed -> result.record`
+  - `not_found -> throw ExportJobTransitionError`
+  - `not_claimable -> throw ExportJobTransitionError`
+  - `already_claimed -> throw ExportJobTransitionError`
+- Confirmed failed claims now use `ExportJobTransitionError` rather than fake records or undefined results
+- Confirmed blocked lifecycle methods still remain fail-closed:
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+  - `transition`
+- Updated focused boundary expectations so existing claim/lease repository coverage reflects adapter claim support
+- Confirmed no worker, route, app, or composition wiring was added
+- Confirmed no repository, DB, schema, or frontend changes were made in this phase
+
+### Verification
+
+- `phase59`: 2 passed
+- `phase58`: 2 passed
+- `phase56`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- `SupabaseExportJobRegistry.claim(...)` adapter support now exists without enabling worker/runtime DB wiring
+- Worker/runtime DB wiring remains deferred
+- Lifecycle `markRendering` / `markFinalizing` / `markSuccess` / `markError` support remains deferred
+- `transition(...)` remains deferred
