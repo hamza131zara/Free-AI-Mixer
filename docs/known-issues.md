@@ -1188,3 +1188,18 @@ Still deferred:
 - Harness opt-in test coverage does not mean production renderer rollout is complete.
 - Internal trigger availability does not mean route execution is enabled or production rollout is complete.
 - Dev/test-gated route trigger (`POST /exports/:jobId/execute`) is now available behind `FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION=1` but still requires env flag and executor configuration; it is not production-ready auto-execution.
+
+### Async Registry Foundation / Runtime DB Deferrals
+
+- Async `ExportJobRegistry` foundation now exists across the local runtime boundary.
+- Routes, worker loop, and render harness now await registry methods locally without enabling DB persistence.
+- `SupabaseExportJobRegistry` read methods are awaitable, but Supabase runtime DB wiring still remains deferred.
+- Supabase lifecycle and mutating registry methods still remain fail-closed.
+- Atomic DB lifecycle mutation behavior remains deferred.
+- Claim and lease semantics for a real Supabase-backed registry remain deferred.
+- Route DB wiring remains deferred.
+- Worker DB wiring remains deferred.
+- Runtime DB persistence remains deferred.
+- Auth, requester, and RLS enforcement remain deferred.
+- Remote Supabase tests remain opt-in only.
+- Local Supabase Docker remains deferred on this Windows environment.

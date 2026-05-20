@@ -5166,3 +5166,82 @@ Scope:
 - Full async registry contract refactor remains deferred
 - SupabaseExportJobRegistry must not fake sync behavior over async DB calls
 - Auth, requester, and RLS enforcement remain deferred
+
+## Phase 49-B - ExportJobRegistry Async Contract Refactor
+
+Status:
+
+- complete
+
+Scope:
+
+- async registry contract refactor only
+- no Supabase runtime wiring
+- no route DB wiring
+- no worker DB wiring
+- no runtime DB persistence activation
+
+### Phase 49-B completion summary
+
+- Converted `ExportJobRegistry` from synchronous methods to Promise-based async methods:
+  - `create`
+  - `getById`
+  - `getByIdForOwner`
+  - `getByRequestId`
+  - `getByStatus`
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+  - `transition`
+- Updated `InMemoryExportJobRegistry` to implement the async contract while preserving lifecycle and state-machine behavior exactly
+- Updated `JsonFileExportJobRegistry` to implement the async contract while preserving current persistence behavior
+- Updated `SupabaseExportJobRegistry` to implement the async contract
+- Confirmed awaitable Supabase read-only methods:
+  - `getById`
+  - `getByIdForOwner`
+  - owner-scoped `getByRequestId`
+- Confirmed Supabase lifecycle and mutating methods remain fail-closed:
+  - `create`
+  - `getByStatus`
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+  - `transition`
+- Updated `backend/routes/exports.ts` to await registry methods in:
+  - `POST /exports`
+  - `GET /exports/:jobId`
+  - `GET /exports/:jobId/artifacts`
+  - `GET /exports/:jobId/artifacts/:artifactId/access`
+  - `GET /exports/:jobId/artifacts/:artifactId/stream`
+  - `POST /exports/:jobId/execute`
+- Updated `backend/workers/renderWorker.ts` to await `registry.getByStatus("submitted")`
+- Updated `backend/renderer/singleProcessRenderHarness.ts` to await lifecycle registry methods
+- Updated `mapAndMarkError(...)` to async as required by async `markError(...)`
+- No Supabase route wiring was added
+- No Supabase worker wiring was added
+- No runtime DB persistence was activated
+- No app, composition, repository, DB, frontend, or env changes were required
+
+### Verification
+
+- `phase46`: 2 passed
+- `phase47`: 2 passed
+- `phase48`: 1 passed
+- `phase62`: 10 passed
+- `phase66`: 7 passed
+- `phase68`: 11 passed
+- `phase74`: 8 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Async registry contract refactor does not imply Supabase runtime DB wiring is active
+- Async registry contract refactor does not imply route DB wiring is active
+- Async registry contract refactor does not imply worker DB wiring is active
+- Async registry contract refactor does not imply runtime DB persistence is active
+- Supabase lifecycle mutation behavior remains deferred until atomic DB behavior exists
