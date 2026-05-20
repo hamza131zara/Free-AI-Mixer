@@ -76,6 +76,9 @@ const toExportJobRow = (record: BackendExportJobRecord): ExportJobRow => ({
   workspace_id: record.workspaceId,
   status: record.status,
   attempt_count: record.attemptCount,
+  claimed_by_worker_id: record.claimedByWorkerId ?? null,
+  claim_expires_at: record.claimExpiresAt ?? null,
+  row_version: 0,
   render_settings: record.renderSettings,
   failure_code: record.failure?.code ?? null,
   failure_message: record.failure?.message ?? null,
@@ -101,8 +104,15 @@ class FakeExportJobsTableQuery implements ExportJobsTableQuery<ExportJobRow> {
     return this;
   }
 
-  eq(column: string, value: string): ExportJobsTableQuery<ExportJobRow> {
+  eq(
+    column: string,
+    value: string | number | boolean | null,
+  ): ExportJobsTableQuery<ExportJobRow> {
     this.filters.set(column, value);
+    return this;
+  }
+
+  update(_values: Partial<ExportJobRow>): ExportJobsTableQuery<ExportJobRow> {
     return this;
   }
 

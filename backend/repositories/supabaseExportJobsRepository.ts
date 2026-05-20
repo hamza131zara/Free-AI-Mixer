@@ -4,6 +4,8 @@ import type {
 } from "../contracts/exportHttpTypes";
 import type {
   BackendExportJobCreateIfAbsentResult,
+  BackendExportJobClaimInput,
+  BackendExportJobClaimResult,
   BackendExportJobIdempotencyScope,
   BackendExportJobsRepository,
 } from "./repositoryContracts";
@@ -15,12 +17,13 @@ export interface ExportJobsTableQueryResult<Row> {
 
 export interface ExportJobsTableQuery<Row> {
   select(columns: string): ExportJobsTableQuery<Row>;
-  eq(column: string, value: string): ExportJobsTableQuery<Row>;
+  eq(column: string, value: string | number | boolean | null): ExportJobsTableQuery<Row>;
   order(
     column: string,
     options: { ascending: boolean },
   ): ExportJobsTableQuery<Row>;
   limit(count: number): ExportJobsTableQuery<Row>;
+  update(values: Partial<Row>): ExportJobsTableQuery<Row>;
   maybeSingle(): Promise<ExportJobsTableQueryResult<Row>>;
   then<TResult1 = ExportJobsTableQueryResult<Row>, TResult2 = never>(
     onfulfilled?:
@@ -49,6 +52,9 @@ export interface ExportJobRow {
   workspace_id: string;
   status: BackendExportJobRecord["status"];
   attempt_count: number;
+  claimed_by_worker_id: string | null;
+  claim_expires_at: string | null;
+  row_version: number;
   render_settings: BackendExportJobRecord["renderSettings"];
   failure_code: string | null;
   failure_message: string | null;
@@ -68,6 +74,9 @@ const exportJobSelectColumns = [
   "workspace_id",
   "status",
   "attempt_count",
+  "claimed_by_worker_id",
+  "claim_expires_at",
+  "row_version",
   "render_settings",
   "failure_code",
   "failure_message",
@@ -87,6 +96,9 @@ const toExportJobRow = (record: BackendExportJobRecord): ExportJobRow => ({
   workspace_id: record.workspaceId,
   status: record.status,
   attempt_count: record.attemptCount,
+  claimed_by_worker_id: record.claimedByWorkerId ?? null,
+  claim_expires_at: record.claimExpiresAt ?? null,
+  row_version: 0,
   render_settings: record.renderSettings,
   failure_code: record.failure?.code ?? null,
   failure_message: record.failure?.message ?? null,
@@ -106,6 +118,10 @@ const fromExportJobRow = (row: ExportJobRow): BackendExportJobRecord => ({
   workspaceId: row.workspace_id,
   status: row.status,
   attemptCount: row.attempt_count,
+  ...(row.claimed_by_worker_id
+    ? { claimedByWorkerId: row.claimed_by_worker_id }
+    : {}),
+  ...(row.claim_expires_at ? { claimExpiresAt: row.claim_expires_at } : {}),
   renderSettings: row.render_settings,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -185,6 +201,46 @@ const areCreateSafeEquivalent = (
   JSON.stringify(existing.renderSettings) ===
     JSON.stringify(incoming.renderSettings);
 
+const isTerminalStatus = (
+  status: BackendExportLifecycleStatus,
+): boolean =>
+  status === "success" || status === "error" || status === "expired";
+
+const isClaimActiveAt = (row: ExportJobRow, now: string): boolean => {
+  if (!row.claimed_by_worker_id) {
+    return false;
+  }
+
+  if (!row.claim_expires_at) {
+    return true;
+  }
+
+  return Date.parse(row.claim_expires_at) > Date.parse(now);
+};
+
+const getClaimExpiresAt = (
+  now: string,
+  claimTtlMs?: number,
+): string | null =>
+  typeof claimTtlMs === "number" && claimTtlMs > 0
+    ? new Date(Date.parse(now) + claimTtlMs).toISOString()
+    : null;
+
+const getSingleRawRow = async (
+  query: ExportJobsTableQuery<ExportJobRow>,
+): Promise<ExportJobRow | undefined> => {
+  const result = await query.maybeSingle();
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+
+  if (!result.data || Array.isArray(result.data)) {
+    return undefined;
+  }
+
+  return result.data;
+};
+
 export class SupabaseExportJobsRepository
   implements BackendExportJobsRepository
 {
@@ -254,6 +310,94 @@ export class SupabaseExportJobsRepository
     }
 
     return record;
+  }
+
+  async claimIfAvailable(
+    input: BackendExportJobClaimInput,
+  ): Promise<BackendExportJobClaimResult> {
+    const now = input.now ?? new Date().toISOString();
+    const current = await getSingleRawRow(
+      this.client
+        .from("export_jobs")
+        .select(exportJobSelectColumns)
+        .eq("job_id", input.jobId),
+    );
+
+    if (!current) {
+      return { kind: "not_found" };
+    }
+
+    if (current.status !== "submitted") {
+      return {
+        kind: "not_claimable",
+        reason: isTerminalStatus(current.status)
+          ? "terminal"
+          : "status_not_submitted",
+      };
+    }
+
+    if (isClaimActiveAt(current, now)) {
+      return {
+        kind: "already_claimed",
+        existingRecord: fromExportJobRow(current),
+      };
+    }
+
+    const updatedRow = await getSingleRawRow(
+      this.client
+        .from("export_jobs")
+        .update({
+          claimed_by_worker_id: input.workerId,
+          claim_expires_at: getClaimExpiresAt(now, input.claimTtlMs),
+          attempt_count: current.attempt_count + 1,
+          started_at: current.started_at ?? now,
+          updated_at: now,
+          row_version: current.row_version + 1,
+        })
+        .eq("job_id", input.jobId)
+        .eq("status", "submitted")
+        .eq("row_version", current.row_version)
+        .select(exportJobSelectColumns),
+    );
+
+    if (updatedRow) {
+      return {
+        kind: "claimed",
+        record: fromExportJobRow(updatedRow),
+      };
+    }
+
+    const reloaded = await getSingleRawRow(
+      this.client
+        .from("export_jobs")
+        .select(exportJobSelectColumns)
+        .eq("job_id", input.jobId),
+    );
+
+    if (!reloaded) {
+      return { kind: "not_found" };
+    }
+
+    if (reloaded.status !== "submitted") {
+      return {
+        kind: "not_claimable",
+        reason: isTerminalStatus(reloaded.status)
+          ? "terminal"
+          : "status_not_submitted",
+      };
+    }
+
+    if (isClaimActiveAt(reloaded, now)) {
+      return {
+        kind: "already_claimed",
+        existingRecord: fromExportJobRow(reloaded),
+      };
+    }
+
+    return {
+      kind: "not_claimable",
+      reason: "status_not_submitted",
+    };
   }
 
   async getByJobId(jobId: string): Promise<BackendExportJobRecord | undefined> {

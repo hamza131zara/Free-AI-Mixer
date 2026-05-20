@@ -202,9 +202,9 @@ test.describe("phase56 supabase worker claim lease boundary", () => {
     expect(schemaSource).toContain("claim_expires_at timestamptz");
     expect(schemaSource).toContain("row_version bigint not null default 0");
 
-    expect(repositoryContractsSource).not.toContain("claimIfAvailable");
-    expect(repositoryContractsSource).not.toContain("claimedByWorkerId");
-    expect(repositoryContractsSource).not.toContain("claimExpiresAt");
+    expect(repositoryContractsSource).toContain("BackendExportJobClaimInput");
+expect(repositoryContractsSource).toContain("BackendExportJobClaimResult");
+expect(repositoryContractsSource).toContain("claimIfAvailable(");
 
     expect(renderWorkerSource).toContain('await registry.getByStatus("submitted")');
     expect(renderWorkerSource).not.toContain("SupabaseExportJobRegistry");

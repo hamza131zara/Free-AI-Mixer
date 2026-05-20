@@ -152,7 +152,7 @@ test.describe("phase57 supabase claim lease schema boundary", () => {
     });
   });
 
-  test("source proves claim lease schema fields exist while claim implementation and runtime wiring remain deferred", async () => {
+  test("source proves claim lease schema fields and repository claim support exist while registry claim implementation and runtime wiring remain deferred", async () => {
     const [
       specSource,
       migrationSchemaSource,
@@ -221,12 +221,13 @@ test.describe("phase57 supabase claim lease schema boundary", () => {
     expect(registrySource).toContain("worker claim/TTL semantics");
     expect(registrySource).not.toContain("claimIfAvailable");
 
-    expect(repositoryContractsSource).not.toContain("claimIfAvailable");
-    expect(repositoryContractsSource).not.toContain("claim(");
-    expect(repositorySource).not.toContain("claimIfAvailable");
-    expect(repositorySource).not.toContain("claimed_by_worker_id");
-    expect(repositorySource).not.toContain("claim_expires_at");
-    expect(repositorySource).not.toContain("row_version");
+    expect(repositoryContractsSource).toContain("BackendExportJobClaimInput");
+    expect(repositoryContractsSource).toContain("BackendExportJobClaimResult");
+    expect(repositoryContractsSource).toContain("claimIfAvailable(");
+    expect(repositorySource).toContain("async claimIfAvailable(");
+    expect(repositorySource).toContain("claimed_by_worker_id");
+    expect(repositorySource).toContain("claim_expires_at");
+    expect(repositorySource).toContain("row_version");
 
     expect(renderWorkerSource).toContain('await registry.getByStatus("submitted")');
     expect(renderWorkerSource).not.toContain("SupabaseExportJobRegistry");

@@ -126,10 +126,26 @@ export type BackendExportJobCreateIfAbsentResult =
       existingRecord: BackendExportJobRecord;
     };
 
+export interface BackendExportJobClaimInput {
+  jobId: string;
+  workerId: string;
+  claimTtlMs?: number;
+  now?: string;
+}
+
+export type BackendExportJobClaimResult =
+  | { kind: "claimed"; record: BackendExportJobRecord }
+  | { kind: "not_found" }
+  | { kind: "not_claimable"; reason: "terminal" | "status_not_submitted" }
+  | { kind: "already_claimed"; existingRecord: BackendExportJobRecord };
+
 export interface BackendExportJobsRepository {
   createIfAbsent(
     record: BackendExportJobRecord,
   ): Promise<BackendExportJobCreateIfAbsentResult>;
+  claimIfAvailable(
+    input: BackendExportJobClaimInput,
+  ): Promise<BackendExportJobClaimResult>;
   listByStatus(
     status: BackendExportLifecycleStatus,
     options?: { limit?: number },
