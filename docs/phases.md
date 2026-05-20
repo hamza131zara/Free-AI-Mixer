@@ -5760,3 +5760,70 @@ Scope:
 - Worker/runtime DB wiring remains deferred
 - Lifecycle `markRendering` / `markFinalizing` / `markSuccess` / `markError` support remains deferred
 - `transition(...)` remains deferred
+
+## Phase 60-B - Supabase Export Jobs transitionIfOwned Repository Primitive
+
+Status:
+
+- complete
+
+Scope:
+
+- repository-level `transitionIfOwned(...)` primitive only
+- no registry lifecycle implementation
+- no worker, route, app, or composition wiring
+- no schema or migration changes
+- no success/artifact persistence
+- no runtime DB activation
+
+### Phase 60-B completion summary
+
+- Added repository-level `transitionIfOwned(...)` primitive
+- Added `BackendExportJobTransitionInput`
+- Added `BackendExportJobTransitionResult`
+- Implemented `transitionIfOwned(...)` in `SupabaseExportJobsRepository`
+- Confirmed successful transition requires:
+  - row exists
+  - `claimed_by_worker_id` matches `workerId`
+  - `claim_expires_at` is null or greater than `now`
+  - current status matches `expectedCurrentStatus`
+  - `row_version` matches via conditional update
+- Confirmed successful transition updates:
+  - `status`
+  - `updated_at`
+  - `row_version`
+- Confirmed supported transitions:
+  - `submitted -> rendering`
+  - `rendering -> finalizing`
+  - `rendering -> error`
+  - `finalizing -> error`
+- Confirmed transition-specific field behavior:
+  - `submitted -> rendering` sets `started_at` if missing
+  - `rendering -> finalizing` sets `finalized_at`
+  - error transitions persist `failure_code` and `failure_message`
+- Confirmed result behavior includes:
+  - `transitioned`
+  - `not_found`
+  - `not_owned`
+  - `claim_expired`
+  - `not_transitionable`
+  - `version_conflict`
+- Confirmed no `markSuccess` or artifact persistence behavior was added
+- Confirmed no registry lifecycle implementation was added
+- Confirmed no worker, route, app, or composition wiring was added
+- Confirmed no schema or migration changes were made in this phase
+
+### Verification
+
+- `phase60`: 2 passed
+- `phase59`: 2 passed
+- `phase58`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Repository lifecycle transition support now exists without enabling runtime lifecycle wiring
+- `SupabaseExportJobRegistry.markRendering(...)` / `markFinalizing(...)` / `markError(...)` remain deferred
+- `markSuccess(...)` and artifact persistence remain deferred
+- Worker/runtime DB wiring remains deferred

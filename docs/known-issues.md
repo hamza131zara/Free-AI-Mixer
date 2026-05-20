@@ -1207,6 +1207,7 @@ Still deferred:
   - `row_version`
 - Actual DB migration/application of claim/lease schema support remains deferred.
 - Repository-level `claimIfAvailable(...)` now exists.
+- Repository-level `transitionIfOwned(...)` now exists.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
 - Failed claim mapping now routes through `ExportJobTransitionError`, but this does not imply worker readiness.
 - `getByStatus` support does not imply worker readiness.
@@ -1216,6 +1217,8 @@ Still deferred:
 - App and composition wiring remain deferred.
 - Worker DB wiring remains deferred.
 - Lifecycle `markRendering` / `markFinalizing` / `markSuccess` / `markError` runtime DB support remains deferred.
+- `SupabaseExportJobRegistry.markRendering(...)` / `markFinalizing(...)` / `markError(...)` still remain deferred/fail-closed.
+- `markSuccess(...)` and artifact persistence still remain deferred.
 - `transition(...)` runtime DB support remains deferred.
 - Execute route DB-backed lifecycle remains deferred.
 - Runtime DB persistence remains deferred.
