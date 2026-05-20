@@ -6140,3 +6140,58 @@ Scope:
 - Generic `transition(...)` remains deferred
 - Worker DB wiring remains deferred
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 67-B - Supabase Route Runtime Offline Smoke
+
+Status:
+
+- complete
+
+Scope:
+
+- offline route runtime smoke using `createExportRouter(...)` with injected fake registry
+- `POST /exports` submit/idempotency coverage
+- `GET /exports/:jobId` owner-scoped read/not-found coverage
+- execute route gate/error-path coverage
+- async not-found route bug fix
+- no worker wiring
+- no signed/download/storage URL behavior
+- no fake success/artifacts
+
+### Phase 67-B completion summary
+
+- Added offline route runtime smoke coverage using `createExportRouter(...)` with injected fake registry
+- Covered `POST /exports`:
+  - `getByRequestId(...)`
+  - `create(...)`
+  - accepted handle response
+  - idempotent existing-record response
+- Covered `GET /exports/:jobId`:
+  - `getByIdForOwner(...)`
+  - pending/terminal mapped response behavior
+  - not-found JSON response behavior
+- Covered `POST /exports/:jobId/execute`:
+  - `503` when `FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION` is not enabled
+  - `501` when enabled but renderer/path policy dependencies are absent
+- Found and fixed a real route-boundary bug:
+  - `GET /exports/:jobId` now forwards async `ExportApiError` to Express error handling with `next(error)`
+- Confirmed no worker wiring was added
+- Confirmed no Supabase CLI/local/remote DB was used
+- Confirmed no signed URLs, download URLs, storage objects, or `storage_refs` behavior was added
+- Confirmed no fake success/artifacts were added
+
+### Verification
+
+- `phase67`: 2 passed
+- `phase66`: 2 passed
+- `phase65`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Offline route runtime smoke coverage now exists
+- `GET /exports/:jobId` async not-found handling is now fixed
+- Worker DB wiring remains deferred
+- Execute success-path smoke remains deferred
+- Signed/download/storage URL behavior remains deferred

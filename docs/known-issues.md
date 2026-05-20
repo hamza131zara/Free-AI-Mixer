@@ -1214,6 +1214,8 @@ Still deferred:
 - Offline runtime registry local-config smoke coverage now exists.
 - Invalid/incomplete enabled Supabase env fallback is now explicitly covered.
 - Offline route execution readiness boundary coverage now exists.
+- Offline route runtime smoke coverage now exists.
+- `GET /exports/:jobId` async not-found handling is now fixed.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
 - `SupabaseExportJobRegistry.markRendering(...)`, `markFinalizing(...)`, and `markError(...)` adapter support now exists, but this still does not make the worker loop runtime-ready.
 - `SupabaseExportJobRegistry.markSuccess(...)` adapter support now exists.
@@ -1226,6 +1228,7 @@ Still deferred:
 - App and composition wiring remain deferred.
 - Worker DB wiring remains deferred.
 - Route execution gating still remains separate from runtime registry selection.
+- Execute success-path smoke remains deferred.
 - Lifecycle `markRendering` / `markFinalizing` / `markSuccess` / `markError` runtime DB support remains deferred.
 - Generic `transition(...)` still remains deferred/fail-closed.
 - Signed URLs, download URLs, storage objects, and `storage_refs` runtime persistence still remain deferred.
