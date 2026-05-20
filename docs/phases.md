@@ -5648,3 +5648,62 @@ Scope:
 - Repository claim primitive remains deferred
 - `SupabaseExportJobRegistry.claim(...)` remains fail-closed
 - Worker/runtime DB wiring remains deferred
+
+## Phase 58-B - Supabase Export Jobs claimIfAvailable Repository Primitive
+
+Status:
+
+- complete
+
+Scope:
+
+- repository-level `claimIfAvailable(...)` primitive only
+- no registry claim implementation
+- no worker, route, app, or composition wiring
+- no schema or migration changes
+- no runtime DB activation
+
+### Phase 58-B completion summary
+
+- Added repository-level `claimIfAvailable(...)` primitive
+- Added `BackendExportJobClaimInput`
+- Added `BackendExportJobClaimResult`
+- Implemented `claimIfAvailable(...)` in `SupabaseExportJobsRepository`
+- Confirmed claim only succeeds for submitted jobs
+- Confirmed claim succeeds for:
+  - unclaimed submitted jobs
+  - expired lease on submitted jobs
+- Confirmed truthful non-success results:
+  - `already_claimed`
+  - `not_found`
+  - `not_claimable`
+- Confirmed successful claim updates:
+  - `claimed_by_worker_id`
+  - `claim_expires_at`
+  - `attempt_count`
+  - `started_at`
+  - `updated_at`
+  - `row_version`
+- Confirmed conditional update behavior uses:
+  - `job_id`
+  - `status = submitted`
+  - `row_version`
+- Updated the stale Phase 57 boundary guard so it reflects repository claim support now exists
+- Confirmed no `SupabaseExportJobRegistry.claim(...)` implementation was added
+- Confirmed no worker, route, app, or composition wiring was added
+- Confirmed no schema or migration changes were made in this phase
+
+### Verification
+
+- `phase58`: 2 passed
+- `phase57`: 2 passed
+- `phase56`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Repository claim support now exists without enabling runtime DB claim behavior
+- `SupabaseExportJobRegistry.claim(...)` remains fail-closed
+- Worker/runtime DB wiring remains deferred
+- Lifecycle DB transitions remain deferred

@@ -1206,13 +1206,14 @@ Still deferred:
   - `claim_expires_at`
   - `row_version`
 - Actual DB migration/application of claim/lease schema support remains deferred.
+- Repository-level `claimIfAvailable(...)` now exists.
 - Claim and lease runtime behavior remain deferred for a real Supabase-backed registry.
-- Repository claim primitive remains deferred.
 - `SupabaseExportJobRegistry.claim(...)` remains fail-closed.
 - `getByStatus` support does not imply worker readiness.
 - Lifecycle DB transition semantics for a real Supabase-backed registry remain deferred.
 - Artifact and failure DB lifecycle fidelity for a real Supabase-backed registry still remains deferred.
 - Route DB wiring remains deferred.
+- App and composition wiring remain deferred.
 - Worker DB wiring remains deferred.
 - Execute route DB-backed lifecycle remains deferred.
 - Runtime DB persistence remains deferred.
