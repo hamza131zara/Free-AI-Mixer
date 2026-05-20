@@ -6297,3 +6297,57 @@ Scope:
 - Worker loop remains separately env-gated
 - Worker DB wiring remains deferred
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 70-B - Supabase Worker Manual Drain Boundary
+
+Status:
+
+- complete
+
+Scope:
+
+- manual worker drain boundary
+- `drainRenderWorkerOnce(...)` can use injected registry/runtime dependencies
+- manual drain does not require worker loop startup
+- worker startup and loop env gates remain separate
+- supported worker lifecycle method surface
+- generic `transition(...)` remains unused/deferred
+- Supabase registry selection remains separate from manual worker activation
+- no signed/download/storage URL behavior
+- no remote env required
+
+### Phase 70-B completion summary
+
+- Added manual worker drain boundary coverage
+- Proved `drainRenderWorkerOnce(...)` can consume injected registry/runtime dependencies directly
+- Proved manual drain path does not require worker loop startup
+- Proved worker startup and worker loop env gates remain separate
+- Proved manual drain uses only supported lifecycle methods:
+  - `getByStatus`
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+- Proved generic `transition(...)` remains unused
+- Proved Supabase registry selection remains separate from manual worker activation
+- Proved no Supabase CLI usage or service-role logging exists
+- Proved no signed/download/storage URL behavior exists
+- Proved no remote env is required
+- Confirmed no runtime/backend source files changed
+
+### Verification
+
+- `phase70`: 2 passed
+- `phase69`: 2 passed
+- `phase68`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Manual worker drain boundary coverage now exists
+- Worker loop startup remains deferred and env-gated
+- Worker DB wiring still is not activated as an automatic loop
+- Generic `transition(...)` remains deferred
+- Signed/download/storage URL behavior remains deferred

@@ -1218,6 +1218,7 @@ Still deferred:
 - `GET /exports/:jobId` async not-found handling is now fixed.
 - Offline worker runtime smoke coverage now exists.
 - Worker startup gating boundary coverage now exists.
+- Manual worker drain boundary coverage now exists.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
 - `SupabaseExportJobRegistry.markRendering(...)`, `markFinalizing(...)`, and `markError(...)` adapter support now exists, but this still does not make the worker loop runtime-ready.
 - `SupabaseExportJobRegistry.markSuccess(...)` adapter support now exists.
@@ -1231,6 +1232,7 @@ Still deferred:
 - Worker DB wiring remains deferred.
 - Worker startup still remains env-gated.
 - Worker loop activation still remains deferred and env-gated.
+- Worker DB wiring still is not activated as an automatic loop.
 - Route execution gating still remains separate from runtime registry selection.
 - Execute success-path smoke remains deferred.
 - Lifecycle `markRendering` / `markFinalizing` / `markSuccess` / `markError` runtime DB support remains deferred.
