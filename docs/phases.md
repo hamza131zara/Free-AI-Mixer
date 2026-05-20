@@ -5942,3 +5942,57 @@ Scope:
 - Artifact metadata persistence now exists at the repository layer only
 - `SupabaseExportJobRegistry.markSuccess(...)` remains deferred
 - Worker/runtime DB wiring remains deferred
+
+## Phase 63-B - SupabaseExportJobRegistry markSuccess Adapter Implementation
+
+Status:
+
+- complete
+
+Scope:
+
+- adapter-level `markSuccess(...)` implementation only
+- artifact metadata validation at the adapter boundary
+- delegation to `jobsRepository.markSuccessIfOwned(...)`
+- no generic `transition(...)` implementation
+- no worker, route, app, or composition wiring
+- no repository, DB, schema, or frontend changes
+- no signed/download/storage URL behavior
+- no runtime DB activation
+
+### Phase 63-B completion summary
+
+- Implemented `SupabaseExportJobRegistry.markSuccess(...)` adapter-level only
+- Confirmed `markSuccess(...)` validates each unknown artifact with `validateArtifactMetadata(jobId, artifact)`
+- Confirmed `markSuccess(...)` delegates to `jobsRepository.markSuccessIfOwned(...)`
+- Confirmed `markSuccess(...)` passes through:
+  - `jobId`
+  - `workerId`
+  - validated artifacts
+- Confirmed `markSuccessIfOwned(...)` result mapping:
+  - `succeeded -> result.record`
+  - `not_found -> throw ExportJobTransitionError`
+  - `not_owned -> throw ExportJobTransitionError`
+  - `claim_expired -> throw ExportJobTransitionError`
+  - `not_transitionable -> throw ExportJobTransitionError`
+  - `version_conflict -> throw ExportJobTransitionError`
+- Confirmed unsafe artifact fields like `path` are rejected before repository delegation
+- Confirmed no signed URLs, download URLs, storage objects, or `storage_refs` behavior was added
+- Confirmed generic `transition(...)` remains fail-closed
+- Confirmed no worker, route, app, or composition wiring was added
+- Confirmed no repository, DB, schema, or frontend changes were made in this phase
+
+### Verification
+
+- `phase63`: 2 passed
+- `phase62`: 2 passed
+- `phase61`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- `markSuccess(...)` adapter support now exists without enabling runtime wiring
+- Artifact metadata validation now exists at the adapter boundary
+- Generic `transition(...)` remains deferred
+- Worker/runtime DB wiring remains deferred

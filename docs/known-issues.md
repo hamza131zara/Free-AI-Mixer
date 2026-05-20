@@ -1212,6 +1212,8 @@ Still deferred:
 - Repository-level `artifact_records` metadata persistence now exists using safe backend artifact metadata only.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
 - `SupabaseExportJobRegistry.markRendering(...)`, `markFinalizing(...)`, and `markError(...)` adapter support now exists, but this still does not make the worker loop runtime-ready.
+- `SupabaseExportJobRegistry.markSuccess(...)` adapter support now exists.
+- Artifact metadata validation now exists at the adapter boundary before repository success persistence.
 - Failed claim mapping now routes through `ExportJobTransitionError`, but this does not imply worker readiness.
 - `getByStatus` support does not imply worker readiness.
 - Lifecycle DB transition semantics for a real Supabase-backed registry remain deferred.
@@ -1220,7 +1222,7 @@ Still deferred:
 - App and composition wiring remain deferred.
 - Worker DB wiring remains deferred.
 - Lifecycle `markRendering` / `markFinalizing` / `markSuccess` / `markError` runtime DB support remains deferred.
-- `SupabaseExportJobRegistry.markSuccess(...)` still remains deferred/fail-closed.
+- Generic `transition(...)` still remains deferred/fail-closed.
 - Signed URLs, download URLs, storage objects, and `storage_refs` runtime persistence still remain deferred.
 - `transition(...)` runtime DB support remains deferred.
 - Execute route DB-backed lifecycle remains deferred.
