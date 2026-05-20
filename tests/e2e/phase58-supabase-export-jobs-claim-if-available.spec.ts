@@ -395,7 +395,7 @@ test.describe("phase58 supabase export jobs claimIfAvailable", () => {
     expect(stats.upsertCalls).toBe(0);
   });
 
-  test("source documents repository-only claim support with no registry or runtime wiring", async () => {
+  test("source documents repository claim support while registry claim remains adapter-only and runtime wiring stays deferred", async () => {
     const [
       specSource,
       repositorySource,
@@ -447,8 +447,10 @@ test.describe("phase58 supabase export jobs claimIfAvailable", () => {
     expect(repositorySource).not.toContain(forbiddenSupabaseLink);
     expect(repositorySource).not.toContain(forbiddenSupabaseDb);
 
-    expect(registrySource).toContain('throw this.createNotWiredError("claim")');
-    expect(registrySource).not.toContain("claimIfAvailable");
+    expect(registrySource).toContain("async claim(");
+    expect(registrySource).toContain("claimIfAvailable");
+    expect(registrySource).toContain("ExportJobTransitionError");
+    expect(registrySource).toContain('throw this.createNotWiredError("markRendering")');
     expect(backendDependenciesSource).not.toContain("SupabaseExportJobRegistry");
     expect(appSource).not.toContain("SupabaseExportJobRegistry");
     expect(renderWorkerSource).not.toContain("SupabaseExportJobRegistry");

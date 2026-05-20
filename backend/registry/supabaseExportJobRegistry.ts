@@ -3,13 +3,17 @@ import type {
   BackendExportLifecycleStatus,
   BackendExportJobOwnerScope,
 } from "../contracts/exportHttpTypes";
-import type { BackendExportJobCreateIfAbsentResult } from "../repositories/repositoryContracts";
+import type {
+  BackendExportJobClaimResult,
+  BackendExportJobCreateIfAbsentResult,
+} from "../repositories/repositoryContracts";
 import type {
   CreateExportJobInput,
   ExportJobClaimOptions,
   ExportJobRegistry,
   ExportJobTransitionOptions,
 } from "./exportJobRegistry";
+import { ExportJobTransitionError as ExportJobTransitionErrorClass } from "./exportJobRegistry";
 
 type MaybePromise<T> = T | Promise<T>;
 
@@ -17,6 +21,11 @@ export interface SupabaseExportJobRegistryReadRepository {
   createIfAbsent(
     record: BackendExportJobRecord,
   ): MaybePromise<BackendExportJobCreateIfAbsentResult>;
+  claimIfAvailable(input: {
+    jobId: string;
+    workerId: string;
+    claimTtlMs?: number;
+  }): MaybePromise<BackendExportJobClaimResult>;
   listByStatus(
     status: BackendExportLifecycleStatus,
   ): MaybePromise<BackendExportJobRecord[]>;
@@ -175,11 +184,25 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
   }
 
   async claim(
-    _jobId: string,
-    _workerId: string,
-    _options?: ExportJobClaimOptions,
+    jobId: string,
+    workerId: string,
+    options?: ExportJobClaimOptions,
   ): Promise<BackendExportJobRecord> {
-    throw this.createNotWiredError("claim");
+    const jobsRepository = this.getJobsRepository();
+    const result = await this.readRequiredAsync(
+      jobsRepository.claimIfAvailable({
+        jobId,
+        workerId,
+        claimTtlMs: options?.claimTtlMs,
+      }),
+      "claim",
+    );
+
+    if (result.kind === "claimed") {
+      return result.record;
+    }
+
+    throw this.createClaimTransitionError(jobId, result);
   }
 
   async markRendering(
@@ -231,6 +254,29 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
     methodName: string,
   ): Promise<T> {
     return await result;
+  }
+
+  private createClaimTransitionError(
+    jobId: string,
+    result: Exclude<BackendExportJobClaimResult, { kind: "claimed" }>,
+  ): ExportJobTransitionErrorClass {
+    if (result.kind === "not_found") {
+      return new ExportJobTransitionErrorClass(
+        `Export job '${jobId}' was not found.`,
+      );
+    }
+
+    if (result.kind === "already_claimed") {
+      return new ExportJobTransitionErrorClass(
+        `Export job '${jobId}' is already claimed by another worker.`,
+      );
+    }
+
+    return new ExportJobTransitionErrorClass(
+      result.reason === "terminal"
+        ? `Export job '${jobId}' is terminal and cannot be claimed.`
+        : `Export job '${jobId}' is not in submitted status and cannot be claimed.`,
+    );
   }
 }
 

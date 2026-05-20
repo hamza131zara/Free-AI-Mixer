@@ -119,12 +119,16 @@ const buildForbiddenCliPattern = (segment: string): string =>
   ["supabase", " ", segment].join("");
 
 test.describe("phase56 supabase worker claim lease boundary", () => {
-  test("claim remains fail-closed and no fake claim success exists without lease schema support", async () => {
+  test("claim uses repository claim support while worker/runtime wiring still remains deferred", async () => {
     await withUnsetEnv(SUPABASE_ENV_KEYS, async () => {
       const fakeRepository: SupabaseExportJobRegistryReadRepository = {
         createIfAbsent: async (record) => ({
           kind: "created",
           record,
+        }),
+        claimIfAvailable: async () => ({
+          kind: "not_claimable",
+          reason: "status_not_submitted",
         }),
         listByStatus: async () => [],
         getByJobId: async () => undefined,
@@ -137,12 +141,11 @@ test.describe("phase56 supabase worker claim lease boundary", () => {
         },
       });
 
-      const expectedErrorPattern =
-        /SupabaseExportJobRegistry is a boundary scaffold only and is not wired for runtime DB persistence yet\./;
-
       await expect(
         registry.claim("job-phase56", "worker-phase56", { claimTtlMs: 30000 }),
-      ).rejects.toThrow(expectedErrorPattern);
+      ).rejects.toThrow(
+        /Export job 'job-phase56' is not in submitted status and cannot be claimed\./,
+      );
     });
   });
 
@@ -185,11 +188,11 @@ test.describe("phase56 supabase worker claim lease boundary", () => {
     expect(exportJobRegistrySource).toContain("claim(");
 
     expect(registrySource).toContain("async claim(");
-    expect(registrySource).toContain('throw this.createNotWiredError("claim")');
+    expect(registrySource).toContain("claimIfAvailable");
+    expect(registrySource).toContain("ExportJobTransitionError");
     expect(registrySource).toContain("worker claim/TTL semantics");
     expect(registrySource).not.toContain("claimed_by_worker_id");
     expect(registrySource).not.toContain("claim_expires_at");
-    expect(registrySource).not.toContain("claimIfAvailable");
     expect(registrySource).not.toContain("createClient(");
     expect(registrySource).not.toContain("readSupabaseConfigFromEnv");
     expect(registrySource).not.toContain(forbiddenSecretLogging);
