@@ -6195,3 +6195,53 @@ Scope:
 - Worker DB wiring remains deferred
 - Execute success-path smoke remains deferred
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 68-B - Supabase Worker Runtime Offline Smoke
+
+Status:
+
+- complete
+
+Scope:
+
+- offline worker runtime smoke around `drainRenderWorkerOnce(...)`
+- deterministic job order coverage
+- terminal skip coverage
+- truthful success/failure/skip counts
+- supported lifecycle/harness method usage only
+- generic `transition(...)` remains unused/deferred
+- worker loop env gate remains inert unless enabled
+- worker gating remains separate from registry selection
+- no signed/download/storage URL behavior
+
+### Phase 68-B completion summary
+
+- Added offline worker runtime smoke coverage around `drainRenderWorkerOnce(...)`
+- Proved `drainRenderWorkerOnce(...)` calls `getByStatus("submitted")`
+- Proved jobs are attempted in deterministic returned order
+- Proved terminal jobs are skipped defensively if present
+- Proved success/failure/skip counts are tracked truthfully
+- Proved the worker path uses supported lifecycle/harness methods only
+- Proved generic `transition(...)` is not used
+- Proved `FREE_AI_MIXER_ENABLE_WORKER_LOOP !== "1"` keeps the loop inert
+- Proved worker gating remains separate from runtime registry selection
+- Proved no Supabase CLI usage or service-role logging exists
+- Proved no signed/download/storage URL behavior exists
+- Proved no route/app/server rollout is implied
+- Confirmed no runtime/backend source files changed
+
+### Verification
+
+- `phase68`: 2 passed
+- `phase67`: 2 passed
+- `phase66`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Offline worker runtime smoke coverage now exists
+- Worker DB wiring remains deferred
+- Worker loop activation remains deferred and env-gated
+- Generic `transition(...)` remains deferred
+- Signed/download/storage URL behavior remains deferred
