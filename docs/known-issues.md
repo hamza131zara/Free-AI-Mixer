@@ -1201,7 +1201,12 @@ Still deferred:
 - Supabase lifecycle and mutating registry methods still remain fail-closed.
 - Runtime `getByStatus` support does not mean worker readiness, and any worker-facing `listByStatus` wiring still remains deferred.
 - Atomic DB lifecycle mutation behavior remains deferred.
-- Claim, lease, and lifecycle DB transition semantics for a real Supabase-backed registry remain deferred.
+- Claim and lease behavior remain deferred for a real Supabase-backed registry.
+- `claimed_by_worker_id` remains deferred.
+- `claim_expires_at` remains deferred.
+- `SupabaseExportJobRegistry.claim(...)` remains fail-closed.
+- `getByStatus` support does not imply worker readiness.
+- Lifecycle DB transition semantics for a real Supabase-backed registry remain deferred.
 - Artifact and failure DB lifecycle fidelity for a real Supabase-backed registry still remains deferred.
 - Route DB wiring remains deferred.
 - Worker DB wiring remains deferred.

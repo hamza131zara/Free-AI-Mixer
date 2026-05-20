@@ -5557,3 +5557,46 @@ Scope:
 - `SupabaseExportJobRegistry.getByStatus(...)` adapter support does not imply worker readiness
 - Worker DB wiring remains deferred
 - Claim/lease behavior and lifecycle DB transitions remain deferred
+
+## Phase 56-B - Supabase Worker Claim/Lease Boundary Guard
+
+Status:
+
+- complete
+
+Scope:
+
+- focused Supabase worker claim/lease boundary guard only
+- no worker, route, app, or composition wiring
+- no claim implementation
+- no schema or migration changes
+- no repository changes
+
+### Phase 56-B completion summary
+
+- Added focused Supabase worker claim/lease boundary guard coverage
+- Confirmed `SupabaseExportJobRegistry.claim(...)` remains fail-closed
+- Confirmed `claimed_by_worker_id` remains missing and deferred
+- Confirmed `claim_expires_at` remains missing and deferred
+- Confirmed worker execution still requires truthful claim ownership through the render harness
+- Confirmed no worker DB wiring exists
+- Confirmed no route, app, or composition wiring exists
+- Confirmed no schema or migration claim fields were added
+- Confirmed no fake claim success exists
+- Confirmed no Supabase CLI usage or service-role key logging exists in inspected paths
+
+### Verification
+
+- `phase56`: 2 passed
+- `phase55`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Claim/lease behavior remains deferred for real Supabase-backed worker execution
+- Missing schema fields still block truthful claim support:
+  - `claimed_by_worker_id`
+  - `claim_expires_at`
+- Worker DB wiring remains deferred
+- Route, app, and composition DB wiring remain deferred
