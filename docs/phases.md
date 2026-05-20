@@ -6245,3 +6245,55 @@ Scope:
 - Worker loop activation remains deferred and env-gated
 - Generic `transition(...)` remains deferred
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 69-B - Supabase Worker Startup Gating Boundary
+
+Status:
+
+- complete
+
+Scope:
+
+- worker startup gating boundary
+- `createApp()` / `renderWorkerLifecycle` does not imply worker activation
+- worker startup env gate behavior
+- worker loop env gate behavior
+- worker gating remains separate from Supabase registry selection
+- no hardwired Supabase worker rollout
+- supported worker method surface
+- no signed/download/storage URL behavior
+
+### Phase 69-B completion summary
+
+- Added worker startup gating boundary coverage
+- Proved `createApp()` builds `renderWorkerLifecycle` without implying worker activation
+- Proved `FREE_AI_MIXER_ENABLE_WORKER_STARTUP !== "1"` keeps worker startup inert
+- Proved `FREE_AI_MIXER_ENABLE_WORKER_STARTUP === "1"` with `FREE_AI_MIXER_ENABLE_WORKER_LOOP !== "1"` keeps the loop inert
+- Proved worker gating remains separate from Supabase registry selection
+- Proved app/server source does not hardwire Supabase worker rollout
+- Proved the worker path still uses only supported methods:
+  - `getByStatus`
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+- Proved no Supabase CLI usage or service-role logging exists
+- Proved no signed/download/storage URL behavior exists
+- Confirmed no runtime/backend source files changed
+
+### Verification
+
+- `phase69`: 2 passed
+- `phase68`: 2 passed
+- `phase67`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Worker startup gating boundary coverage now exists
+- Worker startup remains env-gated
+- Worker loop remains separately env-gated
+- Worker DB wiring remains deferred
+- Signed/download/storage URL behavior remains deferred
