@@ -6039,7 +6039,51 @@ Scope:
 
 ### Safety boundaries
 
-- Env-gated `SupabaseExportJobRegistry` runtime selection now exists in `backendDependencies`
-- Worker DB wiring remains deferred
-- Route execution gating remains separate
+- Env-gated runtime registry selection now exists without enabling worker DB wiring
+- Route execution gating remains separate from runtime registry selection
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 65-B - Supabase Runtime Registry Local Config Smoke
+
+Status:
+
+- complete
+
+Scope:
+
+- focused offline runtime registry local-config smoke coverage
+- default local registry selection coverage
+- invalid/incomplete Supabase env fallback coverage
+- valid enabled Supabase config selection coverage without remote DB calls
+- no worker activation
+- route execution gating remains separate
+- no signed/download/storage URL behavior
+- no runtime/backend source changes
+
+### Phase 65-B completion summary
+
+- Added focused offline local-config smoke coverage
+- Proved default/no Supabase env keeps local registry selection
+- Proved enabled but invalid/incomplete Supabase env falls back safely to local registry
+- Proved invalid enabled config yields `repository_composition_disabled` with `reason: "invalid_config"`
+- Proved valid enabled Supabase config selects `SupabaseExportJobRegistry` without remote DB calls
+- Proved no worker activation was added
+- Proved route execution gating remains separate
+- Proved no signed URLs, download URLs, storage objects, or `storage_refs` behavior was introduced
+- Proved no Supabase CLI usage or service-role logging exists
+- Confirmed no runtime/backend source files changed
+
+### Verification
+
+- `phase65`: 2 passed
+- `phase64`: 2 passed
+- `phase53`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Offline config smoke coverage now exists without enabling remote Supabase smoke
+- Invalid Supabase env fallback is now explicitly covered
+- Worker DB wiring remains deferred
+- Route execution gating remains separate from runtime registry selection

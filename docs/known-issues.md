@@ -1211,6 +1211,8 @@ Still deferred:
 - Repository-level `markSuccessIfOwned(...)` now exists.
 - Repository-level `artifact_records` metadata persistence now exists using safe backend artifact metadata only.
 - Env-gated `SupabaseExportJobRegistry` runtime selection now exists in `backendDependencies`.
+- Offline runtime registry local-config smoke coverage now exists.
+- Invalid/incomplete enabled Supabase env fallback is now explicitly covered.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
 - `SupabaseExportJobRegistry.markRendering(...)`, `markFinalizing(...)`, and `markError(...)` adapter support now exists, but this still does not make the worker loop runtime-ready.
 - `SupabaseExportJobRegistry.markSuccess(...)` adapter support now exists.
