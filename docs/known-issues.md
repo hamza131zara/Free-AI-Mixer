@@ -1213,6 +1213,7 @@ Still deferred:
 - Env-gated `SupabaseExportJobRegistry` runtime selection now exists in `backendDependencies`.
 - Offline runtime registry local-config smoke coverage now exists.
 - Invalid/incomplete enabled Supabase env fallback is now explicitly covered.
+- Offline route execution readiness boundary coverage now exists.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
 - `SupabaseExportJobRegistry.markRendering(...)`, `markFinalizing(...)`, and `markError(...)` adapter support now exists, but this still does not make the worker loop runtime-ready.
 - `SupabaseExportJobRegistry.markSuccess(...)` adapter support now exists.

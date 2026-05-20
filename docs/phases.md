@@ -6087,3 +6087,56 @@ Scope:
 - Invalid Supabase env fallback is now explicitly covered
 - Worker DB wiring remains deferred
 - Route execution gating remains separate from runtime registry selection
+
+## Phase 66-B - Supabase Route Execution Readiness Boundary
+
+Status:
+
+- complete
+
+Scope:
+
+- offline Supabase route execution readiness boundary coverage
+- `POST /exports` read/create method coverage
+- `GET /exports/:jobId` owner-scoped read coverage
+- execute route env-gate coverage
+- render harness supported lifecycle method coverage
+- generic `transition(...)` remains unused/deferred
+- worker DB wiring remains deferred
+- no signed/download/storage URL behavior
+- no runtime/backend source changes
+
+### Phase 66-B completion summary
+
+- Added offline route execution readiness boundary coverage
+- Proved `POST /exports` uses `getByRequestId(...)` and `create(...)`
+- Proved `GET /exports/:jobId` uses `getByIdForOwner(...)`
+- Proved `POST /exports/:jobId/execute` still checks `FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION === "1"`
+- Proved render harness only uses explicit supported lifecycle methods:
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+- Proved execute path does not use generic `transition(...)`
+- Proved worker loop gating remains separate
+- Proved worker DB wiring is not activated
+- Proved no signed URLs, download URLs, storage objects, or `storage_refs` behavior is introduced
+- Proved no Supabase CLI usage or service-role logging exists
+- Confirmed no runtime/backend source files changed
+
+### Verification
+
+- `phase66`: 2 passed
+- `phase65`: 2 passed
+- `phase64`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Route execution readiness boundary coverage now exists
+- Execute route gating remains separate from runtime registry selection
+- Generic `transition(...)` remains deferred
+- Worker DB wiring remains deferred
+- Signed/download/storage URL behavior remains deferred
