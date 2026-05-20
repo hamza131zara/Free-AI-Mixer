@@ -7,6 +7,8 @@ import type {
   BackendExportJobClaimInput,
   BackendExportJobClaimResult,
   BackendExportJobIdempotencyScope,
+  BackendExportJobTransitionInput,
+  BackendExportJobTransitionResult,
   BackendExportJobsRepository,
 } from "./repositoryContracts";
 
@@ -218,6 +220,27 @@ const isClaimActiveAt = (row: ExportJobRow, now: string): boolean => {
   return Date.parse(row.claim_expires_at) > Date.parse(now);
 };
 
+const isClaimExpiredAt = (row: ExportJobRow, now: string): boolean =>
+  Boolean(row.claimed_by_worker_id) && !isClaimActiveAt(row, now);
+
+const supportedOwnedTransitions: Readonly<Record<
+  BackendExportLifecycleStatus,
+  ReadonlySet<BackendExportLifecycleStatus>
+>> = {
+  queued: new Set(),
+  submitted: new Set(["rendering", "error"]),
+  rendering: new Set(["finalizing", "error"]),
+  finalizing: new Set(["error"]),
+  success: new Set(),
+  error: new Set(),
+  expired: new Set(),
+};
+
+const canTransitionIfOwned = (
+  from: BackendExportLifecycleStatus,
+  to: BackendExportLifecycleStatus,
+): boolean => supportedOwnedTransitions[from].has(to);
+
 const getClaimExpiresAt = (
   now: string,
   claimTtlMs?: number,
@@ -239,6 +262,44 @@ const getSingleRawRow = async (
   }
 
   return result.data;
+};
+
+const buildTransitionUpdate = (
+  current: ExportJobRow,
+  input: BackendExportJobTransitionInput,
+  now: string,
+): Partial<ExportJobRow> => {
+  const nextValues: Partial<ExportJobRow> = {
+    status: input.nextStatus,
+    updated_at: now,
+    row_version: current.row_version + 1,
+  };
+
+  if (input.expectedCurrentStatus === "submitted" && input.nextStatus === "rendering") {
+    nextValues.started_at = current.started_at ?? now;
+    nextValues.failure_code = null;
+    nextValues.failure_message = null;
+    nextValues.failure_retryable = null;
+    return nextValues;
+  }
+
+  if (input.expectedCurrentStatus === "rendering" && input.nextStatus === "finalizing") {
+    nextValues.finalized_at = current.finalized_at ?? now;
+    nextValues.failure_code = null;
+    nextValues.failure_message = null;
+    nextValues.failure_retryable = null;
+    return nextValues;
+  }
+
+  if (input.nextStatus === "error") {
+    nextValues.failure_code = input.failureCode ?? "error";
+    nextValues.failure_message =
+      input.failureMessage ?? "Export job failed.";
+    nextValues.failure_retryable = null;
+    nextValues.finalized_at = current.finalized_at ?? now;
+  }
+
+  return nextValues;
 };
 
 export class SupabaseExportJobsRepository
@@ -397,6 +458,98 @@ export class SupabaseExportJobsRepository
     return {
       kind: "not_claimable",
       reason: "status_not_submitted",
+    };
+  }
+
+  async transitionIfOwned(
+    input: BackendExportJobTransitionInput,
+  ): Promise<BackendExportJobTransitionResult> {
+    const now = input.now ?? new Date().toISOString();
+    const current = await getSingleRawRow(
+      this.client
+        .from("export_jobs")
+        .select(exportJobSelectColumns)
+        .eq("job_id", input.jobId),
+    );
+
+    if (!current) {
+      return { kind: "not_found" };
+    }
+
+    if (current.claimed_by_worker_id !== input.workerId) {
+      return { kind: "not_owned" };
+    }
+
+    if (isClaimExpiredAt(current, now)) {
+      return { kind: "claim_expired" };
+    }
+
+    if (current.status !== input.expectedCurrentStatus) {
+      return {
+        kind: "not_transitionable",
+        reason: isTerminalStatus(current.status)
+          ? "terminal"
+          : "status_mismatch",
+      };
+    }
+
+    if (!canTransitionIfOwned(input.expectedCurrentStatus, input.nextStatus)) {
+      return {
+        kind: "not_transitionable",
+        reason: "invalid_transition",
+      };
+    }
+
+    const updatedRow = await getSingleRawRow(
+      this.client
+        .from("export_jobs")
+        .update(buildTransitionUpdate(current, input, now))
+        .eq("job_id", input.jobId)
+        .eq("status", input.expectedCurrentStatus)
+        .eq("claimed_by_worker_id", input.workerId)
+        .eq("claim_expires_at", current.claim_expires_at)
+        .eq("row_version", current.row_version)
+        .select(exportJobSelectColumns),
+    );
+
+    if (updatedRow) {
+      return {
+        kind: "transitioned",
+        record: fromExportJobRow(updatedRow),
+      };
+    }
+
+    const reloaded = await getSingleRawRow(
+      this.client
+        .from("export_jobs")
+        .select(exportJobSelectColumns)
+        .eq("job_id", input.jobId),
+    );
+
+    if (!reloaded) {
+      return { kind: "not_found" };
+    }
+
+    if (reloaded.claimed_by_worker_id !== input.workerId) {
+      return { kind: "not_owned" };
+    }
+
+    if (isClaimExpiredAt(reloaded, now)) {
+      return { kind: "claim_expired" };
+    }
+
+    if (reloaded.status !== input.expectedCurrentStatus) {
+      return {
+        kind: "not_transitionable",
+        reason: isTerminalStatus(reloaded.status)
+          ? "terminal"
+          : "status_mismatch",
+      };
+    }
+
+    return {
+      kind: "version_conflict",
+      existingRecord: fromExportJobRow(reloaded),
     };
   }
 

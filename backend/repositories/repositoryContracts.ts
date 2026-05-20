@@ -139,6 +139,27 @@ export type BackendExportJobClaimResult =
   | { kind: "not_claimable"; reason: "terminal" | "status_not_submitted" }
   | { kind: "already_claimed"; existingRecord: BackendExportJobRecord };
 
+export interface BackendExportJobTransitionInput {
+  jobId: string;
+  workerId: string;
+  expectedCurrentStatus: BackendExportLifecycleStatus;
+  nextStatus: BackendExportLifecycleStatus;
+  now?: string;
+  failureCode?: string;
+  failureMessage?: string;
+}
+
+export type BackendExportJobTransitionResult =
+  | { kind: "transitioned"; record: BackendExportJobRecord }
+  | { kind: "not_found" }
+  | { kind: "not_owned" }
+  | { kind: "claim_expired" }
+  | {
+      kind: "not_transitionable";
+      reason: "terminal" | "status_mismatch" | "invalid_transition";
+    }
+  | { kind: "version_conflict"; existingRecord: BackendExportJobRecord };
+
 export interface BackendExportJobsRepository {
   createIfAbsent(
     record: BackendExportJobRecord,
@@ -146,6 +167,9 @@ export interface BackendExportJobsRepository {
   claimIfAvailable(
     input: BackendExportJobClaimInput,
   ): Promise<BackendExportJobClaimResult>;
+  transitionIfOwned(
+    input: BackendExportJobTransitionInput,
+  ): Promise<BackendExportJobTransitionResult>;
   listByStatus(
     status: BackendExportLifecycleStatus,
     options?: { limit?: number },
