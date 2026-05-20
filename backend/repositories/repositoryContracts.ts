@@ -9,6 +9,7 @@ import type {
 } from "../auth/accountContracts";
 import type {
   BackendExportJobOwnerScope,
+  BackendExportLifecycleStatus,
   BackendExportJobRecord,
 } from "../contracts/exportHttpTypes";
 
@@ -129,6 +130,10 @@ export interface BackendExportJobsRepository {
   createIfAbsent(
     record: BackendExportJobRecord,
   ): Promise<BackendExportJobCreateIfAbsentResult>;
+  listByStatus(
+    status: BackendExportLifecycleStatus,
+    options?: { limit?: number },
+  ): Promise<BackendExportJobRecord[]>;
   upsertJob(record: BackendExportJobRecord): Promise<BackendExportJobRecord>;
   getByJobId(jobId: string): Promise<BackendExportJobRecord | undefined>;
   getByIdempotencyScope(

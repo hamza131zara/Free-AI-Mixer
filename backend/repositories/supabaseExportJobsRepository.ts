@@ -1,4 +1,7 @@
-import type { BackendExportJobRecord } from "../contracts/exportHttpTypes";
+import type {
+  BackendExportJobRecord,
+  BackendExportLifecycleStatus,
+} from "../contracts/exportHttpTypes";
 import type {
   BackendExportJobCreateIfAbsentResult,
   BackendExportJobIdempotencyScope,
@@ -13,7 +16,20 @@ export interface ExportJobsTableQueryResult<Row> {
 export interface ExportJobsTableQuery<Row> {
   select(columns: string): ExportJobsTableQuery<Row>;
   eq(column: string, value: string): ExportJobsTableQuery<Row>;
+  order(
+    column: string,
+    options: { ascending: boolean },
+  ): ExportJobsTableQuery<Row>;
+  limit(count: number): ExportJobsTableQuery<Row>;
   maybeSingle(): Promise<ExportJobsTableQueryResult<Row>>;
+  then<TResult1 = ExportJobsTableQueryResult<Row>, TResult2 = never>(
+    onfulfilled?:
+      | ((value: ExportJobsTableQueryResult<Row>) => TResult1 | PromiseLike<TResult1>)
+      | null,
+    onrejected?:
+      | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+      | null,
+  ): Promise<TResult1 | TResult2>;
   insert(values: Row): Promise<ExportJobsTableQueryResult<Row>>;
   upsert(
     values: Row,
@@ -121,6 +137,21 @@ const getSingleRow = async (
   }
 
   return fromExportJobRow(result.data);
+};
+
+const getManyRows = async (
+  query: ExportJobsTableQuery<ExportJobRow>,
+): Promise<BackendExportJobRecord[]> => {
+  const result = await query;
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+
+  if (!Array.isArray(result.data) || result.data.length === 0) {
+    return [];
+  }
+
+  return result.data.map(fromExportJobRow);
 };
 
 const isUniqueConstraintViolation = (
@@ -245,6 +276,25 @@ export class SupabaseExportJobsRepository
         .eq("owner_id", scope.ownerId)
         .eq("request_id", scope.requestId),
     );
+  }
+
+  async listByStatus(
+    status: BackendExportLifecycleStatus,
+    options?: { limit?: number },
+  ): Promise<BackendExportJobRecord[]> {
+    let query = this.client
+      .from("export_jobs")
+      .select(exportJobSelectColumns)
+      .eq("status", status)
+      .order("submitted_at", { ascending: true })
+      .order("created_at", { ascending: true })
+      .order("job_id", { ascending: true });
+
+    if (typeof options?.limit === "number") {
+      query = query.limit(options.limit);
+    }
+
+    return getManyRows(query);
   }
 }
 
