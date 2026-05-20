@@ -5468,3 +5468,47 @@ Scope:
 - Execute route DB-backed lifecycle remains deferred
 - `getByStatus` and any real `listByStatus` support remain deferred
 - Claim/lease behavior and lifecycle DB transitions remain deferred
+
+## Phase 54-B - Supabase Export Jobs listByStatus Repository Primitive
+
+Status:
+
+- complete
+
+Scope:
+
+- repository-level `listByStatus(...)` primitive only
+- optional limit support
+- no registry `getByStatus(...)` implementation
+- no worker, route, app, or composition wiring
+- no claim/lease or lifecycle DB behavior
+- no schema or migration changes
+
+### Phase 54-B completion summary
+
+- Added repository-level `listByStatus(status, options?)` primitive to `BackendExportJobsRepository`
+- Added optional `limit` support
+- Implemented `SupabaseExportJobsRepository.listByStatus(...)`
+- Confirmed it filters by `status`
+- Confirmed deterministic ordering:
+  - `submitted_at asc`
+  - `created_at asc`
+  - `job_id asc`
+- Confirmed full `BackendExportJobRecord[]` reconstruction
+- Confirmed repository-only scope was preserved
+- No `SupabaseExportJobRegistry.getByStatus(...)` implementation was added
+- No worker, route, app, or composition wiring was added
+- No claim/lease or lifecycle DB behavior was added
+- No schema or migration changes were made
+
+### Verification
+
+- `phase54`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Repository-level `listByStatus(...)` does not imply runtime worker DB wiring is active
+- `SupabaseExportJobRegistry.getByStatus(...)` remains deferred
+- Claim/lease behavior and lifecycle DB transitions remain deferred
