@@ -6404,3 +6404,50 @@ Scope:
 - Worker loop remains env-gated
 - Remote Supabase worker smoke remains deferred
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 72 - Execute Success-Path Offline Smoke Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- offline execute success-path smoke using fake renderer/runtime dependencies
+- supported route/harness success lifecycle path
+- truthful verified artifact metadata
+- no automatic worker loop startup
+- no route/API endpoint changes
+- no signed/download/storage URL behavior
+
+### Phase 72 completion summary
+
+- Added offline execute success-path smoke coverage using fake/injected renderer dependencies only
+- Exercised the supported route/harness success lifecycle path fully offline
+- Verified lifecycle order:
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+- Verified success response and persisted state use truthful verified artifact metadata from the real file-backed verification path
+- Verified no fake download URL, signed URL, stream URL, or storage URL appears
+- Verified generic `transition(...)` remains unused
+- Verified no remote Supabase is required
+- Verified no worker loop startup is required
+- Verified no route/API endpoint was added
+
+### Verification
+
+- `phase72`: 2 passed
+- `phase71`: 2 passed
+- `phase67`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Execute success-path offline smoke coverage now exists
+- Truthful verified artifact metadata is now covered on the execute success path
+- No automatic worker loop startup was added
+- Remote Supabase smoke remains deferred
+- Signed/download/storage URL behavior remains deferred
