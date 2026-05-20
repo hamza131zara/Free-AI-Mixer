@@ -282,7 +282,7 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     }
   }
 
-  create(input: CreateExportJobInput): BackendExportJobRecord {
+  async create(input: CreateExportJobInput): Promise<BackendExportJobRecord> {
     const now = new Date().toISOString();
     const jobId = createJobId();
     const status: BackendExportLifecycleStatus = "submitted";
@@ -309,14 +309,14 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     return record;
   }
 
-  getById(jobId: string): BackendExportJobRecord | undefined {
+  async getById(jobId: string): Promise<BackendExportJobRecord | undefined> {
     return this.jobsById.get(jobId);
   }
 
-  getByIdForOwner(
+  async getByIdForOwner(
     jobId: string,
     ownerScope: BackendExportJobOwnerScope,
-  ): BackendExportJobRecord | undefined {
+  ): Promise<BackendExportJobRecord | undefined> {
     const record = this.jobsById.get(jobId);
     if (!record) {
       return undefined;
@@ -329,10 +329,10 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
       : undefined;
   }
 
-  getByRequestId(
+  async getByRequestId(
     requestId: string,
     ownerScope?: BackendExportJobOwnerScope,
-  ): BackendExportJobRecord | undefined {
+  ): Promise<BackendExportJobRecord | undefined> {
     const existingJobId = this.jobIdByRequestId.get(
       toRequestScopeKey(requestId, ownerScope),
     );
@@ -343,17 +343,19 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     return this.jobsById.get(existingJobId);
   }
 
-  getByStatus(status: BackendExportLifecycleStatus): BackendExportJobRecord[] {
+  async getByStatus(
+    status: BackendExportLifecycleStatus,
+  ): Promise<BackendExportJobRecord[]> {
     return Array.from(this.jobsById.values()).filter(
       (job) => job.status === status,
     );
   }
 
-  claim(
+  async claim(
     jobId: string,
     workerId: string,
     options?: ExportJobClaimOptions,
-  ): BackendExportJobRecord {
+  ): Promise<BackendExportJobRecord> {
     const existing = this.requireExistingJob(jobId);
     const normalizedWorkerId = readWorkerId(workerId);
     assertClaimable(existing);
@@ -385,39 +387,45 @@ export class InMemoryExportJobRegistry implements ExportJobRegistry {
     return nextRecord;
   }
 
-  markRendering(jobId: string, workerId: string): BackendExportJobRecord {
+  async markRendering(
+    jobId: string,
+    workerId: string,
+  ): Promise<BackendExportJobRecord> {
     this.assertWorkerOwnsClaim(jobId, workerId);
     return this.transition(jobId, "rendering");
   }
 
-  markFinalizing(jobId: string, workerId: string): BackendExportJobRecord {
+  async markFinalizing(
+    jobId: string,
+    workerId: string,
+  ): Promise<BackendExportJobRecord> {
     this.assertWorkerOwnsClaim(jobId, workerId);
     return this.transition(jobId, "finalizing");
   }
 
-  markSuccess(
+  async markSuccess(
     jobId: string,
     workerId: string,
     artifacts: unknown[],
-  ): BackendExportJobRecord {
+  ): Promise<BackendExportJobRecord> {
     this.assertWorkerOwnsClaim(jobId, workerId);
     return this.transition(jobId, "success", { artifacts });
   }
 
-  markError(
+  async markError(
     jobId: string,
     workerId: string,
     failure: ExportFailure,
-  ): BackendExportJobRecord {
+  ): Promise<BackendExportJobRecord> {
     this.assertWorkerOwnsClaim(jobId, workerId);
     return this.transition(jobId, "error", { failure });
   }
 
-  transition(
+  async transition(
     jobId: string,
     nextStatus: BackendExportLifecycleStatus,
     options?: ExportJobTransitionOptions,
-  ): BackendExportJobRecord {
+  ): Promise<BackendExportJobRecord> {
     const existing = this.jobsById.get(jobId);
     if (!existing) {
       throw new ExportJobTransitionError(`Export job '${jobId}' was not found.`);

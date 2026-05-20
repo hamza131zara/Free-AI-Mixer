@@ -61,13 +61,8 @@ const buildForbiddenSecretLoggingPattern = (): string =>
 const buildForbiddenCliPattern = (segment: string): string =>
   ["supabase", " ", segment].join("");
 
-const expectNoPromiseReturn = (source: string, signature: string): void => {
-  expect(source).toContain(signature);
-  expect(source).not.toContain(`${signature}: Promise<`);
-};
-
 test.describe("phase48 export job registry async boundary", () => {
-  test("source proves registry is sync, supabase repository is async, and runtime wiring remains deferred", async () => {
+  test("source proves registry is async, repository is async, and runtime wiring remains deferred", async () => {
     const [
       registryContractSource,
       supabaseRegistrySource,
@@ -93,27 +88,24 @@ test.describe("phase48 export job registry async boundary", () => {
     const forbiddenSupabaseLink = buildForbiddenCliPattern("link");
     const forbiddenSupabaseDb = buildForbiddenCliPattern("db ");
 
-    expectNoPromiseReturn(
-      registryContractSource,
-      "create(input: CreateExportJobInput): BackendExportJobRecord;",
+    expect(registryContractSource).toContain(
+      "create(input: CreateExportJobInput): Promise<BackendExportJobRecord>;",
     );
-    expectNoPromiseReturn(
-      registryContractSource,
-      "getById(jobId: string): BackendExportJobRecord | undefined;",
+    expect(registryContractSource).toContain(
+      "getById(jobId: string): Promise<BackendExportJobRecord | undefined>;",
     );
-    expectNoPromiseReturn(
-      registryContractSource,
-      "getByStatus(status: BackendExportLifecycleStatus): BackendExportJobRecord[];",
+    expect(registryContractSource).toContain(
+      "getByStatus(status: BackendExportLifecycleStatus): Promise<BackendExportJobRecord[]>;",
     );
-    expectNoPromiseReturn(
-      registryContractSource,
-      "markRendering(jobId: string, workerId: string): BackendExportJobRecord;",
+    expect(registryContractSource).toContain(
+      "markRendering(jobId: string, workerId: string): Promise<BackendExportJobRecord>;",
     );
-    expectNoPromiseReturn(
-      registryContractSource,
+    expect(registryContractSource).toContain(
       "transition(",
     );
-    expect(registryContractSource).not.toContain("Promise<BackendExportJobRecord");
+    expect(registryContractSource).toContain(
+      "): Promise<BackendExportJobRecord>;",
+    );
 
     expect(supabaseRepositorySource).toContain(
       "async upsertJob(record: BackendExportJobRecord): Promise<BackendExportJobRecord>",
@@ -129,14 +121,10 @@ test.describe("phase48 export job registry async boundary", () => {
     );
 
     expect(supabaseRegistrySource).toContain("type MaybePromise<T> = T | Promise<T>;");
-    expect(supabaseRegistrySource).toContain(
-      'if (result && typeof result === "object" && "then" in result)',
-    );
-    expect(supabaseRegistrySource).toContain(
-      "received an async repository dependency",
-    );
-    expect(supabaseRegistrySource).not.toContain("await jobsRepository");
-    expect(supabaseRegistrySource).not.toContain("await this.getJobsRepository");
+    expect(supabaseRegistrySource).toContain("private async readRequiredAsync");
+    expect(supabaseRegistrySource).toContain("await this.getById(jobId)");
+    expect(supabaseRegistrySource).toContain("jobsRepository.getByJobId(jobId)");
+    expect(supabaseRegistrySource).toContain("jobsRepository.getByIdempotencyScope({");
     expect(supabaseRegistrySource).not.toContain("createClient(");
     expect(supabaseRegistrySource).not.toContain("readSupabaseConfigFromEnv");
     expect(supabaseRegistrySource).not.toContain(forbiddenSecretLogging);
@@ -145,43 +133,43 @@ test.describe("phase48 export job registry async boundary", () => {
     expect(supabaseRegistrySource).not.toContain(forbiddenSupabaseDb);
 
     expect(exportsRouteSource).toContain(
-      "const existingRecord = registry.getByRequestId(body.requestId, requesterContext);",
+      "const existingRecord = await registry.getByRequestId(body.requestId, requesterContext);",
     );
     expect(exportsRouteSource).toContain(
-      "const record = registry.getByIdForOwner(jobId, requesterContext);",
+      "const record = await registry.getByIdForOwner(jobId, requesterContext);",
     );
-    expect(exportsRouteSource).not.toContain("await registry.getByRequestId");
-    expect(exportsRouteSource).not.toContain("await registry.getByIdForOwner");
+    expect(exportsRouteSource).toContain("await registry.getByRequestId");
+    expect(exportsRouteSource).toContain("await registry.getByIdForOwner");
     expect(exportsRouteSource).not.toContain("SupabaseExportJobRegistry");
     expect(exportsRouteSource).not.toContain("repositoryComposition");
 
     expect(renderWorkerSource).toContain(
-      'const submittedJobs = registry.getByStatus("submitted");',
+      'const submittedJobs = await registry.getByStatus("submitted");',
     );
-    expect(renderWorkerSource).not.toContain("await registry.getByStatus");
+    expect(renderWorkerSource).toContain("await registry.getByStatus");
     expect(renderWorkerSource).not.toContain("SupabaseExportJobRegistry");
     expect(renderWorkerSource).not.toContain("repositoryComposition");
 
     expect(renderHarnessSource).toContain(
-      "input.registry.claim(input.jobId, input.workerId);",
+      "await input.registry.claim(input.jobId, input.workerId);",
     );
     expect(renderHarnessSource).toContain(
-      "input.registry.markRendering(input.jobId, input.workerId);",
+      "await input.registry.markRendering(input.jobId, input.workerId);",
     );
     expect(renderHarnessSource).toContain(
-      "input.registry.markFinalizing(input.jobId, input.workerId);",
+      "await input.registry.markFinalizing(input.jobId, input.workerId);",
     );
     expect(renderHarnessSource).toContain(
-      "input.registry.markSuccess(input.jobId, input.workerId, [verification.artifact]);",
+      "await input.registry.markSuccess(",
     );
     expect(renderHarnessSource).toContain(
-      "input.registry.markError(input.jobId, input.workerId, asExportFailure(mapped));",
+      "await input.registry.markError(input.jobId, input.workerId, asExportFailure(mapped));",
     );
-    expect(renderHarnessSource).not.toContain("await input.registry.claim");
-    expect(renderHarnessSource).not.toContain("await input.registry.markRendering");
-    expect(renderHarnessSource).not.toContain("await input.registry.markFinalizing");
-    expect(renderHarnessSource).not.toContain("await input.registry.markSuccess");
-    expect(renderHarnessSource).not.toContain("await input.registry.markError");
+    expect(renderHarnessSource).toContain("await input.registry.claim");
+    expect(renderHarnessSource).toContain("await input.registry.markRendering");
+    expect(renderHarnessSource).toContain("await input.registry.markFinalizing");
+    expect(renderHarnessSource).toContain("await input.registry.markSuccess");
+    expect(renderHarnessSource).toContain("await input.registry.markError");
 
     expect(appSource).toContain(
       "createExportRouter(backendDeps.registry, exportRouterOptions)",

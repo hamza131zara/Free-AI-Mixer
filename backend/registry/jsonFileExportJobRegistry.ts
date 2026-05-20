@@ -148,66 +148,90 @@ export class JsonFileExportJobRegistry implements ExportJobRegistry {
 
   // Delegated ExportJobRegistry methods
 
-  create(input: CreateExportJobInput): BackendExportJobRecord {
-    const record = this.innerRegistry.create(input);
+  async create(input: CreateExportJobInput): Promise<BackendExportJobRecord> {
+    const record = await this.innerRegistry.create(input);
     this.persist();
     return record;
   }
 
-  getById(jobId: string): BackendExportJobRecord | undefined {
+  async getById(jobId: string): Promise<BackendExportJobRecord | undefined> {
     return this.innerRegistry.getById(jobId);
   }
 
   getByIdForOwner(
     jobId: string,
     ownerScope: BackendExportJobOwnerScope,
-  ): BackendExportJobRecord | undefined {
+  ): Promise<BackendExportJobRecord | undefined> {
     return this.innerRegistry.getByIdForOwner(jobId, ownerScope);
   }
 
   getByRequestId(
     requestId: string,
     ownerScope?: BackendExportJobOwnerScope,
-  ): BackendExportJobRecord | undefined {
+  ): Promise<BackendExportJobRecord | undefined> {
     return this.innerRegistry.getByRequestId(requestId, ownerScope);
   }
 
-  getByStatus(status: BackendExportLifecycleStatus): BackendExportJobRecord[] {
+  async getByStatus(
+    status: BackendExportLifecycleStatus,
+  ): Promise<BackendExportJobRecord[]> {
     return this.innerRegistry.getByStatus(status);
   }
 
-  claim(jobId: string, workerId: string, options?: ExportJobClaimOptions): BackendExportJobRecord {
-    const record = this.innerRegistry.claim(jobId, workerId, options);
+  async claim(
+    jobId: string,
+    workerId: string,
+    options?: ExportJobClaimOptions,
+  ): Promise<BackendExportJobRecord> {
+    const record = await this.innerRegistry.claim(jobId, workerId, options);
     this.persist();
     return record;
   }
 
-  markRendering(jobId: string, workerId: string): BackendExportJobRecord {
-    const record = this.innerRegistry.markRendering(jobId, workerId);
+  async markRendering(
+    jobId: string,
+    workerId: string,
+  ): Promise<BackendExportJobRecord> {
+    const record = await this.innerRegistry.markRendering(jobId, workerId);
     this.persist();
     return record;
   }
 
-  markFinalizing(jobId: string, workerId: string): BackendExportJobRecord {
-    const record = this.innerRegistry.markFinalizing(jobId, workerId);
+  async markFinalizing(
+    jobId: string,
+    workerId: string,
+  ): Promise<BackendExportJobRecord> {
+    const record = await this.innerRegistry.markFinalizing(jobId, workerId);
     this.persist();
     return record;
   }
 
-  markSuccess(jobId: string, workerId: string, artifacts: unknown[]): BackendExportJobRecord {
-    const record = this.innerRegistry.markSuccess(jobId, workerId, artifacts);
+  async markSuccess(
+    jobId: string,
+    workerId: string,
+    artifacts: unknown[],
+  ): Promise<BackendExportJobRecord> {
+    const record = await this.innerRegistry.markSuccess(jobId, workerId, artifacts);
     this.persist();
     return record;
   }
 
-  markError(jobId: string, workerId: string, failure: ExportFailure): BackendExportJobRecord {
-    const record = this.innerRegistry.markError(jobId, workerId, failure);
+  async markError(
+    jobId: string,
+    workerId: string,
+    failure: ExportFailure,
+  ): Promise<BackendExportJobRecord> {
+    const record = await this.innerRegistry.markError(jobId, workerId, failure);
     this.persist();
     return record;
   }
 
-  transition(jobId: string, nextStatus: BackendExportLifecycleStatus, options?: ExportJobTransitionOptions): BackendExportJobRecord {
-    const record = this.innerRegistry.transition(jobId, nextStatus, options);
+  async transition(
+    jobId: string,
+    nextStatus: BackendExportLifecycleStatus,
+    options?: ExportJobTransitionOptions,
+  ): Promise<BackendExportJobRecord> {
+    const record = await this.innerRegistry.transition(jobId, nextStatus, options);
     this.persist();
     return record;
   }

@@ -57,23 +57,23 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
     return jobsRepository;
   }
 
-  create(_input: CreateExportJobInput): BackendExportJobRecord {
+  async create(_input: CreateExportJobInput): Promise<BackendExportJobRecord> {
     throw this.createNotWiredError("create");
   }
 
-  getById(jobId: string): BackendExportJobRecord | undefined {
+  async getById(jobId: string): Promise<BackendExportJobRecord | undefined> {
     const jobsRepository = this.getJobsRepository();
-    return this.readRequiredSync(
+    return this.readRequiredAsync(
       jobsRepository.getByJobId(jobId),
       "getById",
     );
   }
 
-  getByIdForOwner(
+  async getByIdForOwner(
     jobId: string,
     ownerScope: BackendExportJobOwnerScope,
-  ): BackendExportJobRecord | undefined {
-    const record = this.getById(jobId);
+  ): Promise<BackendExportJobRecord | undefined> {
+    const record = await this.getById(jobId);
     if (!record) {
       return undefined;
     }
@@ -84,10 +84,10 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
       : undefined;
   }
 
-  getByRequestId(
+  async getByRequestId(
     requestId: string,
     ownerScope?: BackendExportJobOwnerScope,
-  ): BackendExportJobRecord | undefined {
+  ): Promise<BackendExportJobRecord | undefined> {
     if (!ownerScope) {
       throw this.createNotWiredError(
         "getByRequestId requires ownerScope until local default-scope semantics are safely mirrored.",
@@ -95,7 +95,7 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
     }
 
     const jobsRepository = this.getJobsRepository();
-    return this.readRequiredSync(
+    return this.readRequiredAsync(
       jobsRepository.getByIdempotencyScope({
         ownerId: ownerScope.ownerId,
         workspaceId: ownerScope.workspaceId,
@@ -105,47 +105,55 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
     );
   }
 
-  getByStatus(_status: BackendExportLifecycleStatus): BackendExportJobRecord[] {
+  async getByStatus(
+    _status: BackendExportLifecycleStatus,
+  ): Promise<BackendExportJobRecord[]> {
     throw this.createNotWiredError("getByStatus");
   }
 
-  claim(
+  async claim(
     _jobId: string,
     _workerId: string,
     _options?: ExportJobClaimOptions,
-  ): BackendExportJobRecord {
+  ): Promise<BackendExportJobRecord> {
     throw this.createNotWiredError("claim");
   }
 
-  markRendering(_jobId: string, _workerId: string): BackendExportJobRecord {
+  async markRendering(
+    _jobId: string,
+    _workerId: string,
+  ): Promise<BackendExportJobRecord> {
     throw this.createNotWiredError("markRendering");
   }
 
-  markFinalizing(_jobId: string, _workerId: string): BackendExportJobRecord {
+  async markFinalizing(
+    _jobId: string,
+    _workerId: string,
+  ): Promise<BackendExportJobRecord> {
     throw this.createNotWiredError("markFinalizing");
   }
 
-  markSuccess(
+  async markSuccess(
     _jobId: string,
     _workerId: string,
     _artifacts: unknown[],
-  ): BackendExportJobRecord {
+  ): Promise<BackendExportJobRecord> {
     throw this.createNotWiredError("markSuccess");
   }
 
-  markError(
+  async markError(
     _jobId: string,
     _workerId: string,
     _failure: ExportJobFailureInput,
-  ): BackendExportJobRecord {
+  ): Promise<BackendExportJobRecord> {
     throw this.createNotWiredError("markError");
   }
 
-  transition(
+  async transition(
     _jobId: string,
     _nextStatus: BackendExportLifecycleStatus,
     _options?: ExportJobTransitionOptions,
-  ): BackendExportJobRecord {
+  ): Promise<BackendExportJobRecord> {
     throw this.createNotWiredError("transition");
   }
 
@@ -155,17 +163,11 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
     );
   }
 
-  private readRequiredSync<T>(
+  private async readRequiredAsync<T>(
     result: MaybePromise<T>,
     methodName: string,
-  ): T {
-    if (result && typeof result === "object" && "then" in result) {
-      throw this.createNotWiredError(
-        `${methodName} received an async repository dependency. The current ExportJobRegistry contract is synchronous, so async-backed runtime DB reads remain deferred.`,
-      );
-    }
-
-    return result;
+  ): Promise<T> {
+    return await result;
   }
 }
 

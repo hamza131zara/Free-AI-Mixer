@@ -119,7 +119,7 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
   test("in-memory registry stores explicit owner scope on job creation", async () => {
     const registry = new InMemoryExportJobRegistry();
 
-    const record = registry.create({
+    const record = await registry.create({
       requestId: "request-phase62-owned",
       timelineId: "timeline-phase62-owned",
       ownerId: "owner-a",
@@ -134,8 +134,8 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
 
     expect(record.ownerId).toBe("owner-a");
     expect(record.workspaceId).toBe("workspace-a");
-    expect(registry.getById(record.jobId)?.ownerId).toBe("owner-a");
-    expect(registry.getById(record.jobId)?.workspaceId).toBe("workspace-a");
+    expect((await registry.getById(record.jobId))?.ownerId).toBe("owner-a");
+    expect((await registry.getById(record.jobId))?.workspaceId).toBe("workspace-a");
   });
 
   test("local-dev fallback requester context is explicit and non-production", async () => {
@@ -156,7 +156,7 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
   test("in-memory registry scopes requestId lookup by owner and workspace", async () => {
     const registry = new InMemoryExportJobRegistry();
 
-    const ownerA = registry.create({
+    const ownerA = await registry.create({
       requestId: "request-phase62-shared",
       timelineId: "timeline-owner-a",
       ownerId: "owner-a",
@@ -168,7 +168,7 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
         quality: "standard",
       },
     });
-    const ownerB = registry.create({
+    const ownerB = await registry.create({
       requestId: "request-phase62-shared",
       timelineId: "timeline-owner-b",
       ownerId: "owner-b",
@@ -183,19 +183,19 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
 
     expect(ownerB.jobId).not.toBe(ownerA.jobId);
     expect(
-      registry.getByRequestId("request-phase62-shared", {
+      (await registry.getByRequestId("request-phase62-shared", {
         ownerId: "owner-a",
         workspaceId: "workspace-a",
-      })?.jobId,
+      }))?.jobId,
     ).toBe(ownerA.jobId);
     expect(
-      registry.getByRequestId("request-phase62-shared", {
+      (await registry.getByRequestId("request-phase62-shared", {
         ownerId: "owner-b",
         workspaceId: "workspace-b",
-      })?.jobId,
+      }))?.jobId,
     ).toBe(ownerB.jobId);
     expect(
-      registry.getByRequestId("request-phase62-shared", {
+      await registry.getByRequestId("request-phase62-shared", {
         ownerId: "owner-c",
         workspaceId: "workspace-c",
       }),
@@ -205,7 +205,7 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
   test("requester-aware getByIdForOwner is scoped while ownership-blind getById remains available", async () => {
     const registry = new InMemoryExportJobRegistry();
 
-    const ownerScopedRecord = registry.create({
+    const ownerScopedRecord = await registry.create({
       requestId: "request-phase62-owner-lookup",
       timelineId: "timeline-phase62-owner-lookup",
       ownerId: "owner-a",
@@ -219,18 +219,18 @@ test.describe("Phase 6.2 backend registry idempotency and lifecycle", () => {
     });
 
     expect(
-      registry.getByIdForOwner(ownerScopedRecord.jobId, {
+      (await registry.getByIdForOwner(ownerScopedRecord.jobId, {
         ownerId: "owner-a",
         workspaceId: "workspace-a",
-      })?.jobId,
+      }))?.jobId,
     ).toBe(ownerScopedRecord.jobId);
     expect(
-      registry.getByIdForOwner(ownerScopedRecord.jobId, {
+      await registry.getByIdForOwner(ownerScopedRecord.jobId, {
         ownerId: "owner-b",
         workspaceId: "workspace-b",
       }),
     ).toBeUndefined();
-    expect(registry.getById(ownerScopedRecord.jobId)?.jobId).toBe(ownerScopedRecord.jobId);
+    expect((await registry.getById(ownerScopedRecord.jobId))?.jobId).toBe(ownerScopedRecord.jobId);
   });
 
   test("route-level requestId idempotency remains stable for the default owner scope", async () => {

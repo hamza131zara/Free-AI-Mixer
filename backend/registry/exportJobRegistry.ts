@@ -18,39 +18,39 @@ export interface CreateExportJobInput {
 }
 
 export interface ExportJobRegistry {
-  create(input: CreateExportJobInput): BackendExportJobRecord;
-  getById(jobId: string): BackendExportJobRecord | undefined;
+  create(input: CreateExportJobInput): Promise<BackendExportJobRecord>;
+  getById(jobId: string): Promise<BackendExportJobRecord | undefined>;
   getByIdForOwner(
     jobId: string,
     ownerScope: BackendExportJobOwnerScope,
-  ): BackendExportJobRecord | undefined;
+  ): Promise<BackendExportJobRecord | undefined>;
   getByRequestId(
     requestId: string,
     ownerScope?: BackendExportJobOwnerScope,
-  ): BackendExportJobRecord | undefined;
-  getByStatus(status: BackendExportLifecycleStatus): BackendExportJobRecord[];
+  ): Promise<BackendExportJobRecord | undefined>;
+  getByStatus(status: BackendExportLifecycleStatus): Promise<BackendExportJobRecord[]>;
   claim(
     jobId: string,
     workerId: string,
     options?: ExportJobClaimOptions,
-  ): BackendExportJobRecord;
-  markRendering(jobId: string, workerId: string): BackendExportJobRecord;
-  markFinalizing(jobId: string, workerId: string): BackendExportJobRecord;
+  ): Promise<BackendExportJobRecord>;
+  markRendering(jobId: string, workerId: string): Promise<BackendExportJobRecord>;
+  markFinalizing(jobId: string, workerId: string): Promise<BackendExportJobRecord>;
   markSuccess(
     jobId: string,
     workerId: string,
     artifacts: unknown[],
-  ): BackendExportJobRecord;
+  ): Promise<BackendExportJobRecord>;
   markError(
     jobId: string,
     workerId: string,
     failure: ExportFailure,
-  ): BackendExportJobRecord;
+  ): Promise<BackendExportJobRecord>;
   transition(
     jobId: string,
     nextStatus: BackendExportLifecycleStatus,
     options?: ExportJobTransitionOptions,
-  ): BackendExportJobRecord;
+  ): Promise<BackendExportJobRecord>;
 }
 
 export interface ExportJobTransitionOptions {

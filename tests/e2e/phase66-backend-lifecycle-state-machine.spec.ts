@@ -17,9 +17,9 @@ const createArtifact = (jobId: string, artifactId = "artifact-phase66") => ({
 });
 
 test.describe("Phase 6.6 backend lifecycle state machine", () => {
-  test("allowed transitions pass", () => {
+  test("allowed transitions pass", async () => {
     const registry = createRegistry();
-    const job = registry.create({
+    const job = await registry.create({
       requestId: "phase66-allowed",
       timelineId: "timeline-phase66",
       renderSettings: {
@@ -31,16 +31,16 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
     });
 
     expect(canTransition(job.status, "rendering")).toBe(true);
-    const rendering = registry.transition(job.jobId, "rendering");
+    const rendering = await registry.transition(job.jobId, "rendering");
     expect(rendering.status).toBe("rendering");
 
     expect(canTransition(rendering.status, "finalizing")).toBe(true);
-    const finalizing = registry.transition(job.jobId, "finalizing");
+    const finalizing = await registry.transition(job.jobId, "finalizing");
     expect(finalizing.status).toBe("finalizing");
 
     const artifact = createArtifact(job.jobId);
 
-    const success = registry.transition(job.jobId, "success", {
+    const success = await registry.transition(job.jobId, "success", {
       artifacts: [artifact],
     });
 
@@ -48,9 +48,9 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
     expect(success.artifacts).toEqual([artifact]);
   });
 
-  test("forbidden transitions fail", () => {
+  test("forbidden transitions fail", async () => {
     const registry = createRegistry();
-    const job = registry.create({
+    const job = await registry.create({
       requestId: "phase66-forbidden",
       timelineId: "timeline-phase66",
       renderSettings: {
@@ -62,19 +62,19 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
     });
 
     expect(canTransition(job.status, "success")).toBe(false);
-    expect(() =>
+    await expect(
       registry.transition(job.jobId, "success", {
         artifacts: [createArtifact(job.jobId, "artifact-forbidden")],
       }),
-    ).toThrow(ExportJobTransitionError);
-    expect(() => registry.transition(job.jobId, "finalizing")).toThrow(
+    ).rejects.toThrow(ExportJobTransitionError);
+    await expect(registry.transition(job.jobId, "finalizing")).rejects.toThrow(
       ExportJobTransitionError,
     );
   });
 
-  test("terminal states cannot transition", () => {
+  test("terminal states cannot transition", async () => {
     const registry = createRegistry();
-    const job = registry.create({
+    const job = await registry.create({
       requestId: "phase66-terminal",
       timelineId: "timeline-phase66",
       renderSettings: {
@@ -85,22 +85,22 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
       },
     });
 
-    registry.transition(job.jobId, "error", {
+    await registry.transition(job.jobId, "error", {
       failure: { message: "render failed", code: "renderer_failed" },
     });
-    expect(() => registry.transition(job.jobId, "rendering")).toThrow(
+    await expect(registry.transition(job.jobId, "rendering")).rejects.toThrow(
       ExportJobTransitionError,
     );
-    expect(() =>
+    await expect(
       registry.transition(job.jobId, "success", {
         artifacts: [createArtifact(job.jobId, "artifact-terminal")],
       }),
-    ).toThrow(ExportJobTransitionError);
+    ).rejects.toThrow(ExportJobTransitionError);
   });
 
-  test("success without artifacts is rejected", () => {
+  test("success without artifacts is rejected", async () => {
     const registry = createRegistry();
-    const job = registry.create({
+    const job = await registry.create({
       requestId: "phase66-no-artifacts",
       timelineId: "timeline-phase66",
       renderSettings: {
@@ -111,17 +111,17 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
       },
     });
 
-    registry.transition(job.jobId, "rendering");
-    registry.transition(job.jobId, "finalizing");
+    await registry.transition(job.jobId, "rendering");
+    await registry.transition(job.jobId, "finalizing");
 
-    expect(() => registry.transition(job.jobId, "success")).toThrow(
+    await expect(registry.transition(job.jobId, "success")).rejects.toThrow(
       ExportJobTransitionError,
     );
   });
 
-  test("success with artifact metadata is allowed only from finalizing", () => {
+  test("success with artifact metadata is allowed only from finalizing", async () => {
     const registry = createRegistry();
-    const job = registry.create({
+    const job = await registry.create({
       requestId: "phase66-success-from-finalizing",
       timelineId: "timeline-phase66",
       renderSettings: {
@@ -132,11 +132,11 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
       },
     });
 
-    registry.transition(job.jobId, "rendering");
-    const finalizing = registry.transition(job.jobId, "finalizing");
+    await registry.transition(job.jobId, "rendering");
+    const finalizing = await registry.transition(job.jobId, "finalizing");
     expect(finalizing.status).toBe("finalizing");
 
-    const success = registry.transition(job.jobId, "success", {
+    const success = await registry.transition(job.jobId, "success", {
       artifacts: [createArtifact(job.jobId, "artifact-verified")],
     });
 
@@ -148,9 +148,9 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
 ).toBeUndefined();
   });
 
-  test("expired is terminal", () => {
+  test("expired is terminal", async () => {
     const registry = createRegistry();
-    const job = registry.create({
+    const job = await registry.create({
       requestId: "phase66-expired",
       timelineId: "timeline-phase66",
       renderSettings: {
@@ -161,16 +161,16 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
       },
     });
 
-    const expired = registry.transition(job.jobId, "expired");
+    const expired = await registry.transition(job.jobId, "expired");
     expect(expired.status).toBe("expired");
-    expect(() => registry.transition(job.jobId, "rendering")).toThrow(
+    await expect(registry.transition(job.jobId, "rendering")).rejects.toThrow(
       ExportJobTransitionError,
     );
   });
 
-  test("lifecycle transition methods do not add fake progress percent", () => {
+  test("lifecycle transition methods do not add fake progress percent", async () => {
     const registry = createRegistry();
-    const job = registry.create({
+    const job = await registry.create({
       requestId: "phase66-progress",
       timelineId: "timeline-phase66",
       renderSettings: {
@@ -181,7 +181,7 @@ test.describe("Phase 6.6 backend lifecycle state machine", () => {
       },
     });
 
-    const rendering = registry.transition(job.jobId, "rendering");
+    const rendering = await registry.transition(job.jobId, "rendering");
     expect(
       (rendering as unknown as Record<string, unknown>).progress,
     ).toBeUndefined();

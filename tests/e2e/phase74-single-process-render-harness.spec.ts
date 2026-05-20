@@ -20,44 +20,44 @@ import type { RenderInputSnapshot } from "../../backend/contracts/renderInputSna
 class TrackingRegistry extends InMemoryExportJobRegistry {
   public readonly calls: string[] = [];
 
-  override claim(
+  override async claim(
     jobId: string,
     workerId: string,
     options?: ExportJobClaimOptions,
-  ): BackendExportJobRecord {
-    const result = super.claim(jobId, workerId, options);
+  ): Promise<BackendExportJobRecord> {
+    const result = await super.claim(jobId, workerId, options);
     this.calls.push("claim");
     return result;
   }
 
-  override markRendering(jobId: string, workerId: string): BackendExportJobRecord {
-    const result = super.markRendering(jobId, workerId);
+  override async markRendering(jobId: string, workerId: string): Promise<BackendExportJobRecord> {
+    const result = await super.markRendering(jobId, workerId);
     this.calls.push("markRendering");
     return result;
   }
 
-  override markFinalizing(jobId: string, workerId: string): BackendExportJobRecord {
-    const result = super.markFinalizing(jobId, workerId);
+  override async markFinalizing(jobId: string, workerId: string): Promise<BackendExportJobRecord> {
+    const result = await super.markFinalizing(jobId, workerId);
     this.calls.push("markFinalizing");
     return result;
   }
 
-  override markSuccess(
+  override async markSuccess(
     jobId: string,
     workerId: string,
     artifacts: unknown[],
-  ): BackendExportJobRecord {
-    const result = super.markSuccess(jobId, workerId, artifacts);
+  ): Promise<BackendExportJobRecord> {
+    const result = await super.markSuccess(jobId, workerId, artifacts);
     this.calls.push("markSuccess");
     return result;
   }
 
-  override markError(
+  override async markError(
     jobId: string,
     workerId: string,
     failure: { message: string; code?: string; details?: unknown },
-  ): BackendExportJobRecord {
-    const result = super.markError(jobId, workerId, failure);
+  ): Promise<BackendExportJobRecord> {
+    const result = await super.markError(jobId, workerId, failure);
     this.calls.push("markError");
     return result;
   }
@@ -70,7 +70,7 @@ const cleanupTempRoot = async (rootPath: string): Promise<void> => {
   await fs.rm(rootPath, { recursive: true, force: true });
 };
 
-const createJob = (registry: InMemoryExportJobRegistry, requestId: string) =>
+const createJob = async (registry: InMemoryExportJobRegistry, requestId: string) =>
   registry.create({
     requestId,
     timelineId: "timeline-phase74",
@@ -120,7 +120,7 @@ const createFileWritingAdapter = (
   const outputRoot = path.join(tempRoot, "output");
   return async (input: RendererAdapterInput) => {
     if (registry && jobId) {
-      expect(registry.getById(jobId)?.status).toBe("rendering");
+      expect((await registry.getById(jobId))?.status).toBe("rendering");
     }
 
     await fs.mkdir(outputRoot, { recursive: true });
@@ -134,7 +134,7 @@ test.describe("phase74 single-process render harness", () => {
   test("claims before rendering and successful path finalizes before success with verified metadata", async () => {
     const tempRoot = await createTempRoot();
     const registry = new TrackingRegistry();
-    const job = createJob(registry, "phase74-success");
+    const job = await createJob(registry, "phase74-success");
 
     try {
       const result = await executeSingleProcessRender({
@@ -186,7 +186,7 @@ test.describe("phase74 single-process render harness", () => {
   test("adapter failure maps to markError", async () => {
     const tempRoot = await createTempRoot();
     const registry = new TrackingRegistry();
-    const job = createJob(registry, "phase74-adapter-fail");
+    const job = await createJob(registry, "phase74-adapter-fail");
 
     try {
       const result = await executeSingleProcessRender({
@@ -213,7 +213,7 @@ test.describe("phase74 single-process render harness", () => {
       }
       expect(result.failure.code).toBe("renderer_execution_failed");
       expect(registry.calls).toContain("markError");
-      expect(registry.getById(job.jobId)?.status).toBe("error");
+      expect((await registry.getById(job.jobId))?.status).toBe("error");
     } finally {
       await cleanupTempRoot(tempRoot);
     }
@@ -222,7 +222,7 @@ test.describe("phase74 single-process render harness", () => {
   test("verification failure maps to markError with artifact code", async () => {
     const tempRoot = await createTempRoot();
     const registry = new TrackingRegistry();
-    const job = createJob(registry, "phase74-verify-fail");
+    const job = await createJob(registry, "phase74-verify-fail");
 
     try {
       const result = await executeSingleProcessRender({
@@ -245,7 +245,7 @@ test.describe("phase74 single-process render harness", () => {
       }
       expect(result.failure.code).toBe("artifact_file_missing");
       expect(registry.calls).toContain("markError");
-      expect(registry.getById(job.jobId)?.status).toBe("error");
+      expect((await registry.getById(job.jobId))?.status).toBe("error");
     } finally {
       await cleanupTempRoot(tempRoot);
     }
@@ -254,7 +254,7 @@ test.describe("phase74 single-process render harness", () => {
   test("snapshot failure maps to markError", async () => {
     const tempRoot = await createTempRoot();
     const registry = new TrackingRegistry();
-    const job = createJob(registry, "phase74-snapshot-fail");
+    const job = await createJob(registry, "phase74-snapshot-fail");
 
     try {
       const result = await executeSingleProcessRender({
@@ -277,7 +277,7 @@ test.describe("phase74 single-process render harness", () => {
       }
       expect(result.failure.code).toBe("input_snapshot_invalid");
       expect(registry.calls).toContain("markError");
-      expect(registry.getById(job.jobId)?.status).toBe("error");
+      expect((await registry.getById(job.jobId))?.status).toBe("error");
     } finally {
       await cleanupTempRoot(tempRoot);
     }
@@ -286,7 +286,7 @@ test.describe("phase74 single-process render harness", () => {
   test("path resolution failure maps to markError", async () => {
     const tempRoot = await createTempRoot();
     const registry = new TrackingRegistry();
-    const job = createJob(registry, "phase74-path-fail");
+    const job = await createJob(registry, "phase74-path-fail");
 
     try {
       const result = await executeSingleProcessRender({
@@ -310,7 +310,7 @@ test.describe("phase74 single-process render harness", () => {
       }
       expect(result.failure.code).toBe("output_path_invalid");
       expect(registry.calls).toContain("markError");
-      expect(registry.getById(job.jobId)?.status).toBe("error");
+      expect((await registry.getById(job.jobId))?.status).toBe("error");
     } finally {
       await cleanupTempRoot(tempRoot);
     }
@@ -319,8 +319,8 @@ test.describe("phase74 single-process render harness", () => {
   test("non-owner worker cannot mutate lifecycle", async () => {
     const tempRoot = await createTempRoot();
     const registry = new TrackingRegistry();
-    const job = createJob(registry, "phase74-non-owner");
-    registry.claim(job.jobId, "worker-owner");
+    const job = await createJob(registry, "phase74-non-owner");
+    await registry.claim(job.jobId, "worker-owner");
 
     try {
       const result = await executeSingleProcessRender({
@@ -341,8 +341,8 @@ test.describe("phase74 single-process render harness", () => {
       if (result.ok) {
         throw new Error("expected failure");
       }
-      expect(registry.getById(job.jobId)?.claimedByWorkerId).toBe("worker-owner");
-      expect(registry.getById(job.jobId)?.status).toBe("submitted");
+      expect((await registry.getById(job.jobId))?.claimedByWorkerId).toBe("worker-owner");
+      expect((await registry.getById(job.jobId))?.status).toBe("submitted");
       expect(registry.calls.filter((call) => call === "markError").length).toBe(0);
     } finally {
       await cleanupTempRoot(tempRoot);
@@ -352,7 +352,7 @@ test.describe("phase74 single-process render harness", () => {
   test("adapter cannot mutate lifecycle through harness adapter input", async () => {
     const tempRoot = await createTempRoot();
     const registry = new TrackingRegistry();
-    const job = createJob(registry, "phase74-adapter-boundary");
+    const job = await createJob(registry, "phase74-adapter-boundary");
 
     try {
       const result = await executeSingleProcessRender({

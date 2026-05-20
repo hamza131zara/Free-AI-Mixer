@@ -38,7 +38,7 @@ export const drainRenderWorkerOnce = async (
 ): Promise<RenderWorkerDrainResult> => {
   const workerId = options?.workerId ?? `worker-${Date.now()}`;
 
-  const submittedJobs = registry.getByStatus("submitted");
+  const submittedJobs = await registry.getByStatus("submitted");
   const attemptedJobIds: string[] = [];
   let acceptedCount = 0;
   let skippedCount = 0;

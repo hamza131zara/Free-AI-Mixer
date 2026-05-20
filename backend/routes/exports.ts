@@ -111,16 +111,16 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
   router.post(
     "/exports",
-    (
+    async (
       request: Request<unknown, ExportSubmitResponseBody, unknown>,
       response: Response<ExportSubmitResponseBody>,
     ) => {
       const body = parseSubmitBody(request.body);
       const requesterContext = requesterContextResolver(request);
-      const existingRecord = registry.getByRequestId(body.requestId, requesterContext);
+      const existingRecord = await registry.getByRequestId(body.requestId, requesterContext);
       const record =
         existingRecord ??
-        registry.create({
+        await registry.create({
           requestId: body.requestId,
           timelineId: body.timelineId,
           renderSettings: body.renderSettings,
@@ -137,13 +137,13 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
   router.get(
     "/exports/:jobId",
-    (
+    async (
       request: Request<{ jobId: string }, ExportPollResponseBody>,
       response: Response<ExportPollResponseBody>,
     ) => {
       const requesterContext = requesterContextResolver(request);
       const { jobId } = parseJobIdParams(request.params);
-      const record = registry.getByIdForOwner(jobId, requesterContext);
+      const record = await registry.getByIdForOwner(jobId, requesterContext);
       if (!record) {
         throw exportJobNotFound(jobId);
       }
@@ -155,13 +155,13 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
   router.get(
     "/exports/:jobId/artifacts",
-    (
+    async (
       request: Request<{ jobId: string }, ExportArtifactsUnavailableResponseBody>,
       response: Response<ExportArtifactsUnavailableResponseBody>,
     ) => {
       const requesterContext = requesterContextResolver(request);
       const { jobId } = parseJobIdParams(request.params);
-      const record = registry.getByIdForOwner(jobId, requesterContext);
+      const record = await registry.getByIdForOwner(jobId, requesterContext);
       if (!record) {
         throw exportJobNotFound(jobId);
       }
@@ -182,7 +182,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
      const requesterContext = requesterContextResolver(request);
      const { jobId } = parseJobIdParams({ jobId: request.params.jobId });
      const { artifactId } = request.params;
-      const record = registry.getByIdForOwner(jobId, requesterContext);
+      const record = await registry.getByIdForOwner(jobId, requesterContext);
 
       if (!record) {
         response.json({
@@ -278,7 +278,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       const artifactId = request.params.artifactId;
 
       // Get job from registry
-      const record = registry.getByIdForOwner(jobId, requesterContext);
+      const record = await registry.getByIdForOwner(jobId, requesterContext);
       if (!record) {
         response.status(404).json({
           code: "job_not_found",
@@ -413,7 +413,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       }
 
       const { jobId } = parseJobIdParams(request.params);
-      const record = registry.getByIdForOwner(jobId, requesterContext);
+      const record = await registry.getByIdForOwner(jobId, requesterContext);
       if (!record) {
         throw exportJobNotFound(jobId);
       }

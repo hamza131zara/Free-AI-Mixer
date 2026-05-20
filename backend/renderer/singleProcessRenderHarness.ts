@@ -91,7 +91,7 @@ const createArtifactId = (jobId: string): string =>
     ? `${jobId}_${crypto.randomUUID()}`
     : `${jobId}_${Date.now().toString(36)}`;
 
-const mapAndMarkError = (
+const mapAndMarkError = async (
   input: SingleProcessRenderHarnessInput,
   stage:
     | "snapshot"
@@ -102,7 +102,7 @@ const mapAndMarkError = (
   error: unknown,
   transient?: boolean,
   details?: Record<string, unknown>,
-): SingleProcessRenderHarnessResult => {
+): Promise<SingleProcessRenderHarnessResult> => {
   const mapped = mapRendererFailure({
     error,
     stage,
@@ -116,7 +116,7 @@ const mapAndMarkError = (
   const safeFailure = toPublicSafeRendererFailure(mapped);
 
   try {
-    input.registry.markError(input.jobId, input.workerId, asExportFailure(mapped));
+    await input.registry.markError(input.jobId, input.workerId, asExportFailure(mapped));
   } catch {
     // Preserve mapped failure output even when markError cannot be applied
     // (for example claim ownership failures).
@@ -134,9 +134,9 @@ export const executeSingleProcessRender = async (
   input: SingleProcessRenderHarnessInput,
 ): Promise<SingleProcessRenderHarnessResult> => {
   try {
-    input.registry.claim(input.jobId, input.workerId);
+    await input.registry.claim(input.jobId, input.workerId);
   } catch (error) {
-    return mapAndMarkError(input, "render", error, false, {
+    return await mapAndMarkError(input, "render", error, false, {
       summary: "Failed to claim export job.",
     });
   }
@@ -145,7 +145,7 @@ export const executeSingleProcessRender = async (
   try {
     snapshot = createRenderInputSnapshot(input.snapshotInput);
   } catch (error) {
-    return mapAndMarkError(input, "snapshot", error, false, {
+    return await mapAndMarkError(input, "snapshot", error, false, {
       summary: "Invalid render input snapshot.",
     });
   }
@@ -159,15 +159,15 @@ export const executeSingleProcessRender = async (
       extension: snapshot.outputTarget.format,
     });
   } catch (error) {
-    return mapAndMarkError(input, "path", error, false, {
+    return await mapAndMarkError(input, "path", error, false, {
       summary: "Failed to resolve output path.",
     });
   }
 
   try {
-    input.registry.markRendering(input.jobId, input.workerId);
+    await input.registry.markRendering(input.jobId, input.workerId);
   } catch (error) {
-    return mapAndMarkError(input, "render", error, false, {
+    return await mapAndMarkError(input, "render", error, false, {
       summary: "Failed to transition job to rendering.",
     });
   }
@@ -180,13 +180,13 @@ export const executeSingleProcessRender = async (
       abortSignal: input.abortSignal,
     });
   } catch (error) {
-    return mapAndMarkError(input, "render", error, true, {
+    return await mapAndMarkError(input, "render", error, true, {
       summary: "Renderer adapter threw unexpectedly.",
     });
   }
 
   if (!adapterResult.ok) {
-    return mapAndMarkError(
+    return await mapAndMarkError(
       input,
       "render",
       adapterResult.error ?? new Error("Renderer adapter returned failure."),
@@ -207,7 +207,7 @@ export const executeSingleProcessRender = async (
   });
 
   if (!verification.ok) {
-    return mapAndMarkError(input, "verify", {
+    return await mapAndMarkError(input, "verify", {
       code: verification.error.code,
       message: verification.error.message,
     });
@@ -235,17 +235,21 @@ export const executeSingleProcessRender = async (
   }
 
   try {
-    input.registry.markFinalizing(input.jobId, input.workerId);
+    await input.registry.markFinalizing(input.jobId, input.workerId);
   } catch (error) {
-    return mapAndMarkError(input, "finalize", error, false, {
+    return await mapAndMarkError(input, "finalize", error, false, {
       summary: "Failed to transition job to finalizing.",
     });
   }
 
   try {
-    input.registry.markSuccess(input.jobId, input.workerId, [verification.artifact]);
+    await input.registry.markSuccess(
+      input.jobId,
+      input.workerId,
+      [verification.artifact],
+    );
   } catch (error) {
-    return mapAndMarkError(input, "finalize", error, false, {
+    return await mapAndMarkError(input, "finalize", error, false, {
       summary: "Failed to transition job to success.",
     });
   }

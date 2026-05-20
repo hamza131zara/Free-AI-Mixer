@@ -6,7 +6,7 @@ import {
 
 const createRegistry = () => new InMemoryExportJobRegistry();
 
-const createJob = (registry: InMemoryExportJobRegistry, requestId: string) =>
+const createJob = async (registry: InMemoryExportJobRegistry, requestId: string) =>
   registry.create({
     requestId,
     timelineId: "timeline-phase68",
@@ -28,138 +28,138 @@ const createArtifact = (jobId: string, artifactId = "artifact-phase68") => ({
 });
 
 test.describe("Phase 6.8 worker-boundary claim contract", () => {
-  test("eligible submitted job can be claimed by worker", () => {
+  test("eligible submitted job can be claimed by worker", async () => {
     const registry = createRegistry();
-    const job = createJob(registry, "phase68-claim");
-    const claimed = registry.claim(job.jobId, "worker-a");
+    const job = await createJob(registry, "phase68-claim");
+    const claimed = await registry.claim(job.jobId, "worker-a");
     expect(claimed.claimedByWorkerId).toBe("worker-a");
   });
 
-  test("claim stores claimedByWorkerId and increments attemptCount", () => {
+  test("claim stores claimedByWorkerId and increments attemptCount", async () => {
     const registry = createRegistry();
-    const job = createJob(registry, "phase68-attempts");
+    const job = await createJob(registry, "phase68-attempts");
     expect(job.attemptCount).toBe(0);
-    const claimed = registry.claim(job.jobId, "worker-a");
+    const claimed = await registry.claim(job.jobId, "worker-a");
     expect(claimed.attemptCount).toBe(1);
 
-    const claimedAgain = registry.claim(job.jobId, "worker-a");
+    const claimedAgain = await registry.claim(job.jobId, "worker-a");
     expect(claimedAgain.attemptCount).toBe(2);
   });
 
-  test("same claimed job cannot be claimed by a different worker", () => {
+  test("same claimed job cannot be claimed by a different worker", async () => {
     const registry = createRegistry();
-    const job = createJob(registry, "phase68-claim-conflict");
-    registry.claim(job.jobId, "worker-a");
-    expect(() => registry.claim(job.jobId, "worker-b")).toThrow(
+    const job = await createJob(registry, "phase68-claim-conflict");
+    await registry.claim(job.jobId, "worker-a");
+    await expect(registry.claim(job.jobId, "worker-b")).rejects.toThrow(
       ExportJobTransitionError,
     );
   });
 
-  test("terminal job cannot be claimed", () => {
+  test("terminal job cannot be claimed", async () => {
     const registry = createRegistry();
-    const job = createJob(registry, "phase68-terminal-claim");
-    registry.transition(job.jobId, "error", {
+    const job = await createJob(registry, "phase68-terminal-claim");
+    await registry.transition(job.jobId, "error", {
       failure: { message: "failed", code: "renderer_failed" },
     });
 
-    expect(() => registry.claim(job.jobId, "worker-a")).toThrow(
+    await expect(registry.claim(job.jobId, "worker-a")).rejects.toThrow(
       ExportJobTransitionError,
     );
   });
 
-  test("non-owner worker cannot markRendering", () => {
+  test("non-owner worker cannot markRendering", async () => {
     const registry = createRegistry();
-    const job = createJob(registry, "phase68-non-owner-render");
-    registry.claim(job.jobId, "worker-a");
-    expect(() => registry.markRendering(job.jobId, "worker-b")).toThrow(
+    const job = await createJob(registry, "phase68-non-owner-render");
+    await registry.claim(job.jobId, "worker-a");
+    await expect(registry.markRendering(job.jobId, "worker-b")).rejects.toThrow(
       ExportJobTransitionError,
     );
   });
 
-  test("owning worker can markRendering", () => {
+  test("owning worker can markRendering", async () => {
     const registry = createRegistry();
-    const job = createJob(registry, "phase68-owner-render");
-    registry.claim(job.jobId, "worker-a");
-    const rendering = registry.markRendering(job.jobId, "worker-a");
+    const job = await createJob(registry, "phase68-owner-render");
+    await registry.claim(job.jobId, "worker-a");
+    const rendering = await registry.markRendering(job.jobId, "worker-a");
     expect(rendering.status).toBe("rendering");
   });
 
-  test("owning worker can markFinalizing after rendering", () => {
+  test("owning worker can markFinalizing after rendering", async () => {
     const registry = createRegistry();
-    const job = createJob(registry, "phase68-owner-finalize");
-    registry.claim(job.jobId, "worker-a");
-    registry.markRendering(job.jobId, "worker-a");
-    const finalizing = registry.markFinalizing(job.jobId, "worker-a");
+    const job = await createJob(registry, "phase68-owner-finalize");
+    await registry.claim(job.jobId, "worker-a");
+    await registry.markRendering(job.jobId, "worker-a");
+    const finalizing = await registry.markFinalizing(job.jobId, "worker-a");
     expect(finalizing.status).toBe("finalizing");
   });
 
-  test("markSuccess requires owning worker and valid artifact metadata", () => {
+  test("markSuccess requires owning worker and valid artifact metadata", async () => {
     const registry = createRegistry();
-    const job = createJob(registry, "phase68-owner-success");
-    registry.claim(job.jobId, "worker-a");
-    registry.markRendering(job.jobId, "worker-a");
-    registry.markFinalizing(job.jobId, "worker-a");
+    const job = await createJob(registry, "phase68-owner-success");
+    await registry.claim(job.jobId, "worker-a");
+    await registry.markRendering(job.jobId, "worker-a");
+    await registry.markFinalizing(job.jobId, "worker-a");
 
-    expect(() =>
+    await expect(
       registry.markSuccess(job.jobId, "worker-b", [createArtifact(job.jobId)]),
-    ).toThrow(ExportJobTransitionError);
+    ).rejects.toThrow(ExportJobTransitionError);
 
-    const success = registry.markSuccess(job.jobId, "worker-a", [
+    const success = await registry.markSuccess(job.jobId, "worker-a", [
       createArtifact(job.jobId),
     ]);
     expect(success.status).toBe("success");
   });
 
-  test("markError requires owning worker and valid failure", () => {
+  test("markError requires owning worker and valid failure", async () => {
     const registry = createRegistry();
-    const job = createJob(registry, "phase68-owner-error");
-    registry.claim(job.jobId, "worker-a");
+    const job = await createJob(registry, "phase68-owner-error");
+    await registry.claim(job.jobId, "worker-a");
 
-    expect(() =>
+    await expect(
       registry.markError(job.jobId, "worker-b", {
         message: "x",
         code: "renderer_failed",
       }),
-    ).toThrow(ExportJobTransitionError);
+    ).rejects.toThrow(ExportJobTransitionError);
 
-    expect(() =>
+    await expect(
       registry.markError(job.jobId, "worker-a", {
         message: "",
       }),
-    ).toThrow(ExportJobTransitionError);
+    ).rejects.toThrow(ExportJobTransitionError);
 
-    const error = registry.markError(job.jobId, "worker-a", {
+    const error = await registry.markError(job.jobId, "worker-a", {
       message: "render failed",
       code: "renderer_failed",
     });
     expect(error.status).toBe("error");
   });
 
-  test("terminal states remain immutable", () => {
+  test("terminal states remain immutable", async () => {
     const registry = createRegistry();
-    const job = createJob(registry, "phase68-terminal-immutable");
-    registry.claim(job.jobId, "worker-a");
-    registry.markRendering(job.jobId, "worker-a");
-    registry.markFinalizing(job.jobId, "worker-a");
-    registry.markSuccess(job.jobId, "worker-a", [createArtifact(job.jobId)]);
+    const job = await createJob(registry, "phase68-terminal-immutable");
+    await registry.claim(job.jobId, "worker-a");
+    await registry.markRendering(job.jobId, "worker-a");
+    await registry.markFinalizing(job.jobId, "worker-a");
+    await registry.markSuccess(job.jobId, "worker-a", [createArtifact(job.jobId)]);
 
-    expect(() => registry.markRendering(job.jobId, "worker-a")).toThrow(
+    await expect(registry.markRendering(job.jobId, "worker-a")).rejects.toThrow(
       ExportJobTransitionError,
     );
-    expect(() =>
+    await expect(
       registry.markError(job.jobId, "worker-a", {
         message: "late failure",
       }),
-    ).toThrow(ExportJobTransitionError);
+    ).rejects.toThrow(ExportJobTransitionError);
   });
 
-  test("no fake progress percent or artifact urls/download urls are added", () => {
+  test("no fake progress percent or artifact urls/download urls are added", async () => {
     const registry = createRegistry();
-    const job = createJob(registry, "phase68-no-fake");
-    registry.claim(job.jobId, "worker-a");
-    const rendering = registry.markRendering(job.jobId, "worker-a");
-    registry.markFinalizing(job.jobId, "worker-a");
-    const success = registry.markSuccess(job.jobId, "worker-a", [
+    const job = await createJob(registry, "phase68-no-fake");
+    await registry.claim(job.jobId, "worker-a");
+    const rendering = await registry.markRendering(job.jobId, "worker-a");
+    await registry.markFinalizing(job.jobId, "worker-a");
+    const success = await registry.markSuccess(job.jobId, "worker-a", [
       createArtifact(job.jobId),
     ]);
 

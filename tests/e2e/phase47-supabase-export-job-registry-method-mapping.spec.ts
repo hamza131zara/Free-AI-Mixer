@@ -143,34 +143,34 @@ test.describe("phase47 supabase export job registry method mapping", () => {
 
       expect(supabaseExportJobRegistryBoundary.wired).toBe(false);
       expect(createdRegistry).toBeTruthy();
-      expect(registry.getById(record.jobId)).toBe(record);
+      await expect(registry.getById(record.jobId)).resolves.toBe(record);
       expect(calls).toEqual([`getByJobId:${record.jobId}`]);
 
       calls.length = 0;
-      expect(
+      await expect(
         registry.getByIdForOwner(record.jobId, {
           ownerId: record.ownerId,
           workspaceId: record.workspaceId,
         }),
-      ).toBe(record);
+      ).resolves.toBe(record);
       expect(calls).toEqual([`getByJobId:${record.jobId}`]);
 
       calls.length = 0;
-      expect(
+      await expect(
         registry.getByIdForOwner(record.jobId, {
           ownerId: "owner-2",
           workspaceId: record.workspaceId,
         }),
-      ).toBeUndefined();
+      ).resolves.toBeUndefined();
       expect(calls).toEqual([`getByJobId:${record.jobId}`]);
 
       calls.length = 0;
-      expect(
+      await expect(
         registry.getByRequestId(record.requestId, {
           ownerId: record.ownerId,
           workspaceId: record.workspaceId,
         }),
-      ).toBe(record);
+      ).resolves.toBe(record);
       expect(calls).toEqual([
         `getByIdempotencyScope:${record.ownerId}:${record.workspaceId}:${record.requestId}`,
       ]);
@@ -178,31 +178,31 @@ test.describe("phase47 supabase export job registry method mapping", () => {
       const expectedErrorPattern =
         /SupabaseExportJobRegistry is a boundary scaffold only and is not wired for runtime DB persistence yet\./;
 
-      expect(() => registry.getByRequestId(record.requestId)).toThrow(
+      await expect(registry.getByRequestId(record.requestId)).rejects.toThrow(
         /getByRequestId requires ownerScope/,
       );
-      expect(() =>
+      await expect(
         registry.create({
           requestId: "request-2",
           timelineId: "timeline-2",
           renderSettings: record.renderSettings,
         }),
-      ).toThrow(expectedErrorPattern);
-      expect(() => registry.getByStatus("submitted")).toThrow(expectedErrorPattern);
-      expect(() => registry.claim(record.jobId, "worker-1")).toThrow(expectedErrorPattern);
-      expect(() => registry.markRendering(record.jobId, "worker-1")).toThrow(
+      ).rejects.toThrow(expectedErrorPattern);
+      await expect(registry.getByStatus("submitted")).rejects.toThrow(expectedErrorPattern);
+      await expect(registry.claim(record.jobId, "worker-1")).rejects.toThrow(expectedErrorPattern);
+      await expect(registry.markRendering(record.jobId, "worker-1")).rejects.toThrow(
         expectedErrorPattern,
       );
-      expect(() => registry.markFinalizing(record.jobId, "worker-1")).toThrow(
+      await expect(registry.markFinalizing(record.jobId, "worker-1")).rejects.toThrow(
         expectedErrorPattern,
       );
-      expect(() => registry.markSuccess(record.jobId, "worker-1", [])).toThrow(
+      await expect(registry.markSuccess(record.jobId, "worker-1", [])).rejects.toThrow(
         expectedErrorPattern,
       );
-      expect(() =>
+      await expect(
         registry.markError(record.jobId, "worker-1", { message: "failure" }),
-      ).toThrow(expectedErrorPattern);
-      expect(() => registry.transition(record.jobId, "rendering")).toThrow(
+      ).rejects.toThrow(expectedErrorPattern);
+      await expect(registry.transition(record.jobId, "rendering")).rejects.toThrow(
         expectedErrorPattern,
       );
     });
@@ -238,10 +238,11 @@ test.describe("phase47 supabase export job registry method mapping", () => {
     expect(specSource).not.toContain(forbiddenSupabaseLink);
     expect(specSource).not.toContain(forbiddenSupabaseDb);
 
-    expect(adapterSource).toContain("getByJobId(jobId)");
-    expect(adapterSource).toContain("getByIdempotencyScope({");
+    expect(adapterSource).toContain("jobsRepository.getByJobId(jobId)");
+    expect(adapterSource).toContain("jobsRepository.getByIdempotencyScope({");
     expect(adapterSource).toContain("getByRequestId requires ownerScope");
-    expect(adapterSource).toContain("async repository dependency");
+    expect(adapterSource).toContain("private async readRequiredAsync");
+    expect(adapterSource).toContain("await this.getById(jobId)");
     expect(adapterSource).toContain("implements ExportJobRegistry");
     expect(adapterSource).not.toContain("../routes/");
     expect(adapterSource).not.toContain("../app");
@@ -262,7 +263,7 @@ test.describe("phase47 supabase export job registry method mapping", () => {
     expect(appSource).toContain(
       "createExportRouter(backendDeps.registry, exportRouterOptions)",
     );
-    expect(exportsRouteSource).toContain("registry.getByRequestId");
-    expect(renderWorkerSource).toContain("registry.getByStatus");
+    expect(exportsRouteSource).toContain("await registry.getByRequestId");
+    expect(renderWorkerSource).toContain('await registry.getByStatus("submitted")');
   });
 });

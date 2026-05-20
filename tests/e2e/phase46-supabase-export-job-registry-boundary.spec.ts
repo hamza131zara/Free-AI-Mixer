@@ -144,25 +144,25 @@ test.describe("phase46 supabase export job registry boundary", () => {
       const createdRegistry = createSupabaseExportJobRegistry();
 
       expect(registry.kind).toBe("supabase_export_job_registry");
-      expect(registry.getById(readOnlyRecord.jobId)).toEqual(readOnlyRecord);
-      expect(
+      await expect(registry.getById(readOnlyRecord.jobId)).resolves.toEqual(readOnlyRecord);
+      await expect(
         registry.getByIdForOwner(readOnlyRecord.jobId, {
           ownerId: readOnlyRecord.ownerId,
           workspaceId: readOnlyRecord.workspaceId,
         }),
-      ).toEqual(readOnlyRecord);
-      expect(
+      ).resolves.toEqual(readOnlyRecord);
+      await expect(
         registry.getByRequestId(readOnlyRecord.requestId, {
           ownerId: readOnlyRecord.ownerId,
           workspaceId: readOnlyRecord.workspaceId,
         }),
-      ).toEqual(readOnlyRecord);
+      ).resolves.toEqual(readOnlyRecord);
       expect(createdRegistry).toBeTruthy();
 
       const expectedErrorPattern =
         /SupabaseExportJobRegistry is a boundary scaffold only and is not wired for runtime DB persistence yet\./;
 
-      expect(() =>
+      await expect(
         registry.create({
           requestId: "request-1",
           timelineId: "timeline-1",
@@ -173,23 +173,23 @@ test.describe("phase46 supabase export job registry boundary", () => {
             quality: "draft",
           },
         }),
-      ).toThrow(expectedErrorPattern);
-      expect(() => registry.getByRequestId("request-1")).toThrow(
+      ).rejects.toThrow(expectedErrorPattern);
+      await expect(registry.getByRequestId("request-1")).rejects.toThrow(
         /getByRequestId requires ownerScope/,
       );
-      expect(() => registry.getByStatus("submitted")).toThrow(expectedErrorPattern);
-      expect(() => registry.claim("job-1", "worker-1")).toThrow(expectedErrorPattern);
-      expect(() => registry.markRendering("job-1", "worker-1")).toThrow(expectedErrorPattern);
-      expect(() => registry.markFinalizing("job-1", "worker-1")).toThrow(expectedErrorPattern);
-      expect(() =>
+      await expect(registry.getByStatus("submitted")).rejects.toThrow(expectedErrorPattern);
+      await expect(registry.claim("job-1", "worker-1")).rejects.toThrow(expectedErrorPattern);
+      await expect(registry.markRendering("job-1", "worker-1")).rejects.toThrow(expectedErrorPattern);
+      await expect(registry.markFinalizing("job-1", "worker-1")).rejects.toThrow(expectedErrorPattern);
+      await expect(
         registry.markSuccess("job-1", "worker-1", []),
-      ).toThrow(expectedErrorPattern);
-      expect(() =>
+      ).rejects.toThrow(expectedErrorPattern);
+      await expect(
         registry.markError("job-1", "worker-1", {
           message: "failure",
         }),
-      ).toThrow(expectedErrorPattern);
-      expect(() => registry.transition("job-1", "rendering")).toThrow(
+      ).rejects.toThrow(expectedErrorPattern);
+      await expect(registry.transition("job-1", "rendering")).rejects.toThrow(
         expectedErrorPattern,
       );
     });
@@ -246,6 +246,7 @@ test.describe("phase46 supabase export job registry boundary", () => {
     expect(adapterSource).not.toContain(forbiddenSupabaseStart);
     expect(adapterSource).not.toContain(forbiddenSupabaseLink);
     expect(adapterSource).not.toContain(forbiddenSupabaseDb);
+    expect(adapterSource).toContain("private async readRequiredAsync");
     expect(adapterSource).not.toContain("return []");
     expect(adapterSource).not.toContain('status: "success"');
 
@@ -255,7 +256,7 @@ test.describe("phase46 supabase export job registry boundary", () => {
     expect(renderWorkerLifecycleSource).not.toContain("SupabaseExportJobRegistry");
     expect(renderWorkerStartupSource).not.toContain("SupabaseExportJobRegistry");
     expect(appSource).toContain("createExportRouter(backendDeps.registry, exportRouterOptions)");
-    expect(exportsRouteSource).toContain("registry.getByRequestId");
-    expect(renderWorkerSource).toContain("registry.getByStatus");
+    expect(exportsRouteSource).toContain("await registry.getByRequestId");
+    expect(renderWorkerSource).toContain('await registry.getByStatus("submitted")');
   });
 });
