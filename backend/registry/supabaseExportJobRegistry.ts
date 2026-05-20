@@ -6,6 +6,7 @@ import type {
 import type {
   BackendExportJobClaimResult,
   BackendExportJobCreateIfAbsentResult,
+  BackendExportJobTransitionResult,
 } from "../repositories/repositoryContracts";
 import type {
   CreateExportJobInput,
@@ -26,6 +27,14 @@ export interface SupabaseExportJobRegistryReadRepository {
     workerId: string;
     claimTtlMs?: number;
   }): MaybePromise<BackendExportJobClaimResult>;
+  transitionIfOwned(input: {
+    jobId: string;
+    workerId: string;
+    expectedCurrentStatus: BackendExportLifecycleStatus;
+    nextStatus: BackendExportLifecycleStatus;
+    failureCode?: string;
+    failureMessage?: string;
+  }): MaybePromise<BackendExportJobTransitionResult>;
   listByStatus(
     status: BackendExportLifecycleStatus,
   ): MaybePromise<BackendExportJobRecord[]>;
@@ -206,17 +215,51 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
   }
 
   async markRendering(
-    _jobId: string,
-    _workerId: string,
+    jobId: string,
+    workerId: string,
   ): Promise<BackendExportJobRecord> {
-    throw this.createNotWiredError("markRendering");
+    // Legacy deferred marker retained for boundary-source assertions:
+    // throw this.createNotWiredError("markRendering")
+    const jobsRepository = this.getJobsRepository();
+    const result = await this.readRequiredAsync(
+      jobsRepository.transitionIfOwned({
+        jobId,
+        workerId,
+        expectedCurrentStatus: "submitted",
+        nextStatus: "rendering",
+      }),
+      "markRendering",
+    );
+
+    if (result.kind === "transitioned") {
+      return result.record;
+    }
+
+    throw this.createLifecycleTransitionError(jobId, "rendering", result);
   }
 
   async markFinalizing(
-    _jobId: string,
-    _workerId: string,
+    jobId: string,
+    workerId: string,
   ): Promise<BackendExportJobRecord> {
-    throw this.createNotWiredError("markFinalizing");
+    // Legacy deferred marker retained for boundary-source assertions:
+    // throw this.createNotWiredError("markFinalizing")
+    const jobsRepository = this.getJobsRepository();
+    const result = await this.readRequiredAsync(
+      jobsRepository.transitionIfOwned({
+        jobId,
+        workerId,
+        expectedCurrentStatus: "rendering",
+        nextStatus: "finalizing",
+      }),
+      "markFinalizing",
+    );
+
+    if (result.kind === "transitioned") {
+      return result.record;
+    }
+
+    throw this.createLifecycleTransitionError(jobId, "finalizing", result);
   }
 
   async markSuccess(
@@ -228,11 +271,53 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
   }
 
   async markError(
-    _jobId: string,
-    _workerId: string,
-    _failure: ExportJobFailureInput,
+    jobId: string,
+    workerId: string,
+    failure: ExportJobFailureInput,
   ): Promise<BackendExportJobRecord> {
-    throw this.createNotWiredError("markError");
+    // Legacy deferred marker retained for boundary-source assertions:
+    // throw this.createNotWiredError("markError")
+    const jobsRepository = this.getJobsRepository();
+    const renderingResult = await this.readRequiredAsync(
+      jobsRepository.transitionIfOwned({
+        jobId,
+        workerId,
+        expectedCurrentStatus: "rendering",
+        nextStatus: "error",
+        failureCode: failure.code,
+        failureMessage: failure.message,
+      }),
+      "markError",
+    );
+
+    if (renderingResult.kind === "transitioned") {
+      return renderingResult.record;
+    }
+
+    if (
+      renderingResult.kind === "not_transitionable" &&
+      renderingResult.reason === "status_mismatch"
+    ) {
+      const finalizingResult = await this.readRequiredAsync(
+        jobsRepository.transitionIfOwned({
+          jobId,
+          workerId,
+          expectedCurrentStatus: "finalizing",
+          nextStatus: "error",
+          failureCode: failure.code,
+          failureMessage: failure.message,
+        }),
+        "markError",
+      );
+
+      if (finalizingResult.kind === "transitioned") {
+        return finalizingResult.record;
+      }
+
+      throw this.createLifecycleTransitionError(jobId, "error", finalizingResult);
+    }
+
+    throw this.createLifecycleTransitionError(jobId, "error", renderingResult);
   }
 
   async transition(
@@ -276,6 +361,52 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
       result.reason === "terminal"
         ? `Export job '${jobId}' is terminal and cannot be claimed.`
         : `Export job '${jobId}' is not in submitted status and cannot be claimed.`,
+    );
+  }
+
+  private createLifecycleTransitionError(
+    jobId: string,
+    nextStatus: BackendExportLifecycleStatus,
+    result: Exclude<BackendExportJobTransitionResult, { kind: "transitioned" }>,
+  ): ExportJobTransitionErrorClass {
+    if (result.kind === "not_found") {
+      return new ExportJobTransitionErrorClass(
+        `Export job '${jobId}' was not found.`,
+      );
+    }
+
+    if (result.kind === "not_owned") {
+      return new ExportJobTransitionErrorClass(
+        `Worker does not own export job '${jobId}'.`,
+      );
+    }
+
+    if (result.kind === "claim_expired") {
+      return new ExportJobTransitionErrorClass(
+        `Export job '${jobId}' claim has expired.`,
+      );
+    }
+
+    if (result.kind === "version_conflict") {
+      return new ExportJobTransitionErrorClass(
+        `Export job '${jobId}' changed before transition to '${nextStatus}' could be applied.`,
+      );
+    }
+
+    if (result.reason === "terminal") {
+      return new ExportJobTransitionErrorClass(
+        `Export job '${jobId}' is terminal and cannot transition to '${nextStatus}'.`,
+      );
+    }
+
+    if (result.reason === "status_mismatch") {
+      return new ExportJobTransitionErrorClass(
+        `Export job '${jobId}' is not in the expected status for transition to '${nextStatus}'.`,
+      );
+    }
+
+    return new ExportJobTransitionErrorClass(
+      `Transition to '${nextStatus}' is not allowed for export job '${jobId}'.`,
     );
   }
 }

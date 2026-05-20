@@ -111,7 +111,7 @@ const createRecord = (
 });
 
 test.describe("phase59 supabase export job registry claim adapter", () => {
-  test("claim delegates to repository claimIfAvailable, returns claimed records, throws on non-success results, and keeps lifecycle methods fail-closed", async () => {
+  test("claim delegates to repository claimIfAvailable, returns claimed records, and keeps only deferred lifecycle methods fail-closed", async () => {
     await withUnsetEnv(SUPABASE_ENV_KEYS, async () => {
       const canonicalClaimedRecord = createRecord();
       const claimCalls: Array<{
@@ -206,20 +206,8 @@ test.describe("phase59 supabase export job registry claim adapter", () => {
       );
 
       await expect(
-        registry.markRendering("job-phase59-claimed", "worker-phase59"),
-      ).rejects.toThrow(/Method: markRendering\./);
-      await expect(
-        registry.markFinalizing("job-phase59-claimed", "worker-phase59"),
-      ).rejects.toThrow(/Method: markFinalizing\./);
-      await expect(
         registry.markSuccess("job-phase59-claimed", "worker-phase59", []),
       ).rejects.toThrow(/Method: markSuccess\./);
-      await expect(
-        registry.markError("job-phase59-claimed", "worker-phase59", {
-          code: "render_failed",
-          message: "failure",
-        }),
-      ).rejects.toThrow(/Method: markError\./);
       await expect(
         registry.transition("job-phase59-claimed", "rendering"),
       ).rejects.toThrow(/Method: transition\./);
@@ -255,10 +243,11 @@ test.describe("phase59 supabase export job registry claim adapter", () => {
     expect(registrySource).toContain("async claim(");
     expect(registrySource).toContain("claimIfAvailable");
     expect(registrySource).toContain("ExportJobTransitionError");
-    expect(registrySource).toContain('throw this.createNotWiredError("markRendering")');
-    expect(registrySource).toContain('throw this.createNotWiredError("markFinalizing")');
+    expect(registrySource).toContain("async markRendering(");
+    expect(registrySource).toContain("async markFinalizing(");
+    expect(registrySource).toContain("async markError(");
+    expect(registrySource).toContain("transitionIfOwned");
     expect(registrySource).toContain('throw this.createNotWiredError("markSuccess")');
-    expect(registrySource).toContain('throw this.createNotWiredError("markError")');
     expect(registrySource).toContain('throw this.createNotWiredError("transition")');
     expect(registrySource).not.toContain("createClient(");
     expect(registrySource).not.toContain("readSupabaseConfigFromEnv");
