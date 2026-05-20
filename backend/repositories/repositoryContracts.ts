@@ -116,7 +116,19 @@ export interface BackendExportJobIdempotencyScope
   requestId: string;
 }
 
+export type BackendExportJobCreateIfAbsentResult =
+  | { kind: "created"; record: BackendExportJobRecord }
+  | { kind: "existing"; record: BackendExportJobRecord }
+  | {
+      kind: "conflict";
+      reason: "job_id_mismatch" | "non_create_safe_difference";
+      existingRecord: BackendExportJobRecord;
+    };
+
 export interface BackendExportJobsRepository {
+  createIfAbsent(
+    record: BackendExportJobRecord,
+  ): Promise<BackendExportJobCreateIfAbsentResult>;
   upsertJob(record: BackendExportJobRecord): Promise<BackendExportJobRecord>;
   getByJobId(jobId: string): Promise<BackendExportJobRecord | undefined>;
   getByIdempotencyScope(

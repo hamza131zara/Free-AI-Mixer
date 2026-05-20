@@ -1,18 +1,20 @@
 import type { BackendExportJobRecord } from "../contracts/exportHttpTypes";
 import type {
+  BackendExportJobCreateIfAbsentResult,
   BackendExportJobIdempotencyScope,
   BackendExportJobsRepository,
 } from "./repositoryContracts";
 
 export interface ExportJobsTableQueryResult<Row> {
   data: Row[] | Row | null;
-  error: { message: string } | null;
+  error: { message: string; code?: string | null } | null;
 }
 
 export interface ExportJobsTableQuery<Row> {
   select(columns: string): ExportJobsTableQuery<Row>;
   eq(column: string, value: string): ExportJobsTableQuery<Row>;
   maybeSingle(): Promise<ExportJobsTableQueryResult<Row>>;
+  insert(values: Row): Promise<ExportJobsTableQueryResult<Row>>;
   upsert(
     values: Row,
     options: { onConflict: string },
@@ -121,12 +123,94 @@ const getSingleRow = async (
   return fromExportJobRow(result.data);
 };
 
+const isUniqueConstraintViolation = (
+  error: ExportJobsTableQueryResult<ExportJobRow>["error"],
+): boolean => {
+  if (!error) {
+    return false;
+  }
+
+  if (error.code === "23505") {
+    return true;
+  }
+
+  const normalized = error.message.toLowerCase();
+  return (
+    normalized.includes("duplicate key value") ||
+    normalized.includes("unique constraint") ||
+    normalized.includes("already exists")
+  );
+};
+
+const areCreateSafeEquivalent = (
+  existing: BackendExportJobRecord,
+  incoming: BackendExportJobRecord,
+): boolean =>
+  existing.jobId === incoming.jobId &&
+  existing.requestId === incoming.requestId &&
+  existing.timelineId === incoming.timelineId &&
+  existing.ownerId === incoming.ownerId &&
+  existing.workspaceId === incoming.workspaceId &&
+  JSON.stringify(existing.renderSettings) ===
+    JSON.stringify(incoming.renderSettings);
+
 export class SupabaseExportJobsRepository
   implements BackendExportJobsRepository
 {
   constructor(
     private readonly client: SupabaseExportJobsClient<ExportJobRow>,
   ) {}
+
+  async createIfAbsent(
+    record: BackendExportJobRecord,
+  ): Promise<BackendExportJobCreateIfAbsentResult> {
+    const row = toExportJobRow(record);
+    const result = await this.client.from("export_jobs").insert(row);
+
+    if (!result.error) {
+      return {
+        kind: "created",
+        record,
+      };
+    }
+
+    if (!isUniqueConstraintViolation(result.error)) {
+      throw new Error(result.error.message);
+    }
+
+    const existing = await this.getByIdempotencyScope({
+      workspaceId: record.workspaceId,
+      ownerId: record.ownerId,
+      requestId: record.requestId,
+    });
+
+    if (!existing) {
+      throw new Error(
+        "Export job createIfAbsent detected an idempotency conflict but could not load the existing record.",
+      );
+    }
+
+    if (existing.jobId !== record.jobId) {
+      return {
+        kind: "conflict",
+        reason: "job_id_mismatch",
+        existingRecord: existing,
+      };
+    }
+
+    if (!areCreateSafeEquivalent(existing, record)) {
+      return {
+        kind: "conflict",
+        reason: "non_create_safe_difference",
+        existingRecord: existing,
+      };
+    }
+
+    return {
+      kind: "existing",
+      record: existing,
+    };
+  }
 
   async upsertJob(record: BackendExportJobRecord): Promise<BackendExportJobRecord> {
     const row = toExportJobRow(record);
