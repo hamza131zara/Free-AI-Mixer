@@ -5245,3 +5245,55 @@ Scope:
 - Async registry contract refactor does not imply worker DB wiring is active
 - Async registry contract refactor does not imply runtime DB persistence is active
 - Supabase lifecycle mutation behavior remains deferred until atomic DB behavior exists
+
+## Phase 50-B - Supabase Registry Create/Idempotency Boundary Guard
+
+Status:
+
+- complete
+
+Scope:
+
+- boundary guard only
+- no Supabase runtime wiring
+- no route DB wiring
+- no worker DB wiring
+- no app dependency wiring
+- no runtime DB persistence activation
+
+### Phase 50-B completion summary
+
+- Added `tests/e2e/phase50-supabase-registry-create-idempotency-boundary.spec.ts`
+- Confirmed `SupabaseExportJobRegistry.create(...)` remains fail-closed
+- Confirmed unsafe `upsertJob`-based create behavior was not added
+- Confirmed `SupabaseExportJobRegistry.create(...)` does not call `jobsRepository.upsertJob`
+- Confirmed owner-scoped `getByRequestId(...)` remains the only safe idempotency read path
+- Confirmed unscoped `getByRequestId(...)` remains fail-closed
+- Confirmed lifecycle and mutating methods remain fail-closed:
+  - `getByStatus`
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+  - `transition`
+- Confirmed no route DB wiring exists
+- Confirmed no worker DB wiring exists
+- Confirmed no backend dependency wiring to `SupabaseExportJobRegistry` exists
+- Confirmed no Supabase CLI usage or service-role key logging exists in inspected source paths
+- No runtime DB wiring was added
+
+### Verification
+
+- `phase50`: 2 passed
+- `phase47`: 2 passed
+- `phase48`: 1 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Create and idempotency runtime persistence remain deferred
+- Unsafe broad `upsertJob` create behavior remains blocked
+- No route, worker, or app dependency wiring to `SupabaseExportJobRegistry` was added
+- Supabase runtime DB wiring remains deferred

@@ -1194,9 +1194,12 @@ Still deferred:
 - Async `ExportJobRegistry` foundation now exists across the local runtime boundary.
 - Routes, worker loop, and render harness now await registry methods locally without enabling DB persistence.
 - `SupabaseExportJobRegistry` read methods are awaitable, but Supabase runtime DB wiring still remains deferred.
+- Create and idempotency runtime persistence for `SupabaseExportJobRegistry` still remain deferred.
+- A `createIfAbsent`-style repository primitive still remains deferred.
 - Supabase lifecycle and mutating registry methods still remain fail-closed.
+- `getByStatus` and any real `listByStatus` repository support still remain deferred.
 - Atomic DB lifecycle mutation behavior remains deferred.
-- Claim and lease semantics for a real Supabase-backed registry remain deferred.
+- Claim, lease, and lifecycle DB transition semantics for a real Supabase-backed registry remain deferred.
 - Route DB wiring remains deferred.
 - Worker DB wiring remains deferred.
 - Runtime DB persistence remains deferred.
