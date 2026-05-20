@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type {
@@ -140,16 +140,21 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
     async (
       request: Request<{ jobId: string }, ExportPollResponseBody>,
       response: Response<ExportPollResponseBody>,
+      next: NextFunction,
     ) => {
-      const requesterContext = requesterContextResolver(request);
-      const { jobId } = parseJobIdParams(request.params);
-      const record = await registry.getByIdForOwner(jobId, requesterContext);
-      if (!record) {
-        throw exportJobNotFound(jobId);
-      }
+      try {
+        const requesterContext = requesterContextResolver(request);
+        const { jobId } = parseJobIdParams(request.params);
+        const record = await registry.getByIdForOwner(jobId, requesterContext);
+        if (!record) {
+          throw exportJobNotFound(jobId);
+        }
 
-      const pollResponse = mapRecordToPollResponse(record);
-      response.json(pollResponse);
+        const pollResponse = mapRecordToPollResponse(record);
+        response.json(pollResponse);
+      } catch (error) {
+        next(error);
+      }
     },
   );
 
