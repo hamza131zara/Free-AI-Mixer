@@ -1209,6 +1209,7 @@ Still deferred:
 - Repository-level `claimIfAvailable(...)` now exists.
 - Repository-level `transitionIfOwned(...)` now exists.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
+- `SupabaseExportJobRegistry.markRendering(...)`, `markFinalizing(...)`, and `markError(...)` adapter support now exists, but this still does not make the worker loop runtime-ready.
 - Failed claim mapping now routes through `ExportJobTransitionError`, but this does not imply worker readiness.
 - `getByStatus` support does not imply worker readiness.
 - Lifecycle DB transition semantics for a real Supabase-backed registry remain deferred.
@@ -1217,7 +1218,6 @@ Still deferred:
 - App and composition wiring remain deferred.
 - Worker DB wiring remains deferred.
 - Lifecycle `markRendering` / `markFinalizing` / `markSuccess` / `markError` runtime DB support remains deferred.
-- `SupabaseExportJobRegistry.markRendering(...)` / `markFinalizing(...)` / `markError(...)` still remain deferred/fail-closed.
 - `markSuccess(...)` and artifact persistence still remain deferred.
 - `transition(...)` runtime DB support remains deferred.
 - Execute route DB-backed lifecycle remains deferred.

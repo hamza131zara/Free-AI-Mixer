@@ -5827,3 +5827,64 @@ Scope:
 - `SupabaseExportJobRegistry.markRendering(...)` / `markFinalizing(...)` / `markError(...)` remain deferred
 - `markSuccess(...)` and artifact persistence remain deferred
 - Worker/runtime DB wiring remains deferred
+
+## Phase 61-B - SupabaseExportJobRegistry Lifecycle Adapter Implementation
+
+Status:
+
+- complete
+
+Scope:
+
+- adapter-level lifecycle support for `markRendering(...)`
+- adapter-level lifecycle support for `markFinalizing(...)`
+- adapter-level lifecycle support for `markError(...)`
+- no `markSuccess(...)` implementation
+- no generic `transition(...)` implementation
+- no worker, route, app, or composition wiring
+- no repository, DB, schema, or frontend changes
+- no runtime DB activation
+
+### Phase 61-B completion summary
+
+- Implemented `SupabaseExportJobRegistry` lifecycle adapters for:
+  - `markRendering(...)`
+  - `markFinalizing(...)`
+  - `markError(...)`
+- Confirmed `markRendering(...)` delegates to `jobsRepository.transitionIfOwned(...)` with:
+  - `expectedCurrentStatus: submitted`
+  - `nextStatus: rendering`
+- Confirmed `markFinalizing(...)` delegates to `jobsRepository.transitionIfOwned(...)` with:
+  - `expectedCurrentStatus: rendering`
+  - `nextStatus: finalizing`
+- Confirmed `markError(...)` delegates to `jobsRepository.transitionIfOwned(...)`
+  - first tries `rendering -> error`
+  - falls back to `finalizing -> error` on status mismatch
+  - passes `failure.code`
+  - passes `failure.message`
+- Confirmed `transitionIfOwned(...)` result mapping:
+  - `transitioned -> result.record`
+  - `not_found -> throw ExportJobTransitionError`
+  - `not_owned -> throw ExportJobTransitionError`
+  - `claim_expired -> throw ExportJobTransitionError`
+  - `not_transitionable -> throw ExportJobTransitionError`
+  - `version_conflict -> throw ExportJobTransitionError`
+- Confirmed `markSuccess(...)` remains fail-closed
+- Confirmed generic `transition(...)` remains fail-closed
+- Confirmed no worker, route, app, or composition wiring was added
+- Confirmed no repository, DB, schema, or frontend changes were made in this phase
+
+### Verification
+
+- `phase61`: 2 passed
+- `phase60`: 2 passed
+- `phase59`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Lifecycle adapter support now exists for `markRendering(...)`, `markFinalizing(...)`, and `markError(...)` without enabling worker/runtime DB wiring
+- `markSuccess(...)` remains deferred
+- Generic `transition(...)` remains deferred
+- Worker/runtime DB wiring remains deferred
