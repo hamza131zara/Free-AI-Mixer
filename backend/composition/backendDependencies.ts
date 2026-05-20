@@ -1,6 +1,7 @@
 import path from "node:path";
 import { InMemoryExportJobRegistry } from "../registry/inMemoryExportJobRegistry";
 import { JsonFileExportJobRegistry } from "../registry/jsonFileExportJobRegistry";
+import { SupabaseExportJobRegistry } from "../registry/supabaseExportJobRegistry";
 import type { ExportJobRegistry } from "../registry/exportJobRegistry";
 import { createRemotionRendererAdapter } from "../renderer/remotionRendererAdapter";
 import type { RendererAdapter, VerifiedArtifactRefPayload } from "../renderer/singleProcessRenderHarness";
@@ -52,13 +53,20 @@ export const createBackendDependencies = (): BackendDependencies => {
     runtime: undefined,
   });
 
-  // Use JSON file persistence when env flag is set, otherwise use in-memory
   const usePersistence = process.env.FREE_AI_MIXER_PERSISTENCE_ENABLED === "true";
-  const registry: ExportJobRegistry = usePersistence
-    ? new JsonFileExportJobRegistry({
-        filePath: process.env.FREE_AI_MIXER_PERSISTENCE_FILE_PATH,
-      })
-    : new InMemoryExportJobRegistry();
+  const registry: ExportJobRegistry =
+    repositoryComposition.kind === "repository_composition_available"
+      ? new SupabaseExportJobRegistry({
+          dependencies: {
+            jobsRepository:
+              repositoryComposition.createRepositories().exportJobsRepository,
+          },
+        })
+      : usePersistence
+        ? new JsonFileExportJobRegistry({
+            filePath: process.env.FREE_AI_MIXER_PERSISTENCE_FILE_PATH,
+          })
+        : new InMemoryExportJobRegistry();
 
   // Create internal artifact storage ref store (process-memory only)
   const artifactStorageRefStore = createInMemoryArtifactStorageRefStore();

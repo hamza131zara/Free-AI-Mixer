@@ -125,7 +125,7 @@ test.describe("phase53 supabase runtime registry read/create boundary", () => {
     });
   });
 
-  test("source proves one registry serves submit/read/execute routes while execute and worker paths still require blocked lifecycle methods", async () => {
+  test("source proves one registry serves submit/read/execute routes while runtime selection is still gated in backendDependencies and worker activation remains separate", async () => {
     const [
       specSource,
       appSource,
@@ -162,9 +162,9 @@ test.describe("phase53 supabase runtime registry read/create boundary", () => {
     expect(appSource).not.toContain("SupabaseExportJobRegistry");
 
     expect(backendDependenciesSource).toContain("repositoryComposition");
+    expect(backendDependenciesSource).toContain("new SupabaseExportJobRegistry");
+    expect(backendDependenciesSource).toContain("repositoryComposition.createRepositories().exportJobsRepository");
     expect(backendDependenciesSource).toContain("new InMemoryExportJobRegistry()");
-    expect(backendDependenciesSource).not.toContain("SupabaseExportJobRegistry");
-    expect(backendDependenciesSource).not.toContain("createSupabaseExportJobRegistry");
 
     expect(repositoryCompositionSource).toContain("createSupabaseExportJobsRepository");
     expect(repositoryCompositionSource).not.toContain("SupabaseExportJobRegistry");
@@ -175,11 +175,11 @@ test.describe("phase53 supabase runtime registry read/create boundary", () => {
     expect(registrySource).toContain("async getByRequestId(");
     expect(registrySource).toContain("async getByStatus(");
     expect(registrySource).toContain("jobsRepository.listByStatus(status)");
-    expect(registrySource).toContain('throw this.createNotWiredError("claim")');
-    expect(registrySource).toContain('throw this.createNotWiredError("markRendering")');
-    expect(registrySource).toContain('throw this.createNotWiredError("markFinalizing")');
-    expect(registrySource).toContain('throw this.createNotWiredError("markSuccess")');
-    expect(registrySource).toContain('throw this.createNotWiredError("markError")');
+    expect(registrySource).toContain("async claim(");
+    expect(registrySource).toContain("async markRendering(");
+    expect(registrySource).toContain("async markFinalizing(");
+    expect(registrySource).toContain("async markSuccess(");
+    expect(registrySource).toContain("async markError(");
     expect(registrySource).toContain('throw this.createNotWiredError("transition")');
     expect(registrySource).not.toContain("readSupabaseConfigFromEnv");
     expect(registrySource).not.toContain("createClient(");
@@ -194,8 +194,10 @@ test.describe("phase53 supabase runtime registry read/create boundary", () => {
     expect(exportsRouteSource).toContain("executeRenderJob({");
     expect(exportsRouteSource).toContain("registry,");
     expect(exportsRouteSource).not.toContain("SupabaseExportJobRegistry");
+    expect(exportsRouteSource).toContain("FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION === \"1\"");
 
     expect(renderWorkerSource).toContain('await registry.getByStatus("submitted")');
+    expect(renderWorkerSource).toContain("FREE_AI_MIXER_ENABLE_WORKER_LOOP === \"1\"");
     expect(renderWorkerSource).not.toContain("SupabaseExportJobRegistry");
 
     expect(harnessSource).toContain("await input.registry.claim");

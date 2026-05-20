@@ -276,7 +276,7 @@ test.describe("phase63 supabase export job registry markSuccess adapter", () => 
     });
   });
 
-  test("source documents adapter-only markSuccess support with no worker or runtime wiring and no signed-url behavior", async () => {
+  test("source documents adapter-only markSuccess support with env-gated backend dependency selection, no worker wiring, and no signed-url behavior", async () => {
     const [
       specSource,
       registrySource,
@@ -317,7 +317,7 @@ test.describe("phase63 supabase export job registry markSuccess adapter", () => 
     expect(registrySource).not.toContain(forbiddenSupabaseLink);
     expect(registrySource).not.toContain(forbiddenSupabaseDb);
 
-    expect(backendDependenciesSource).not.toContain("SupabaseExportJobRegistry");
+    expect(backendDependenciesSource).toContain("SupabaseExportJobRegistry");
     expect(appSource).not.toContain("SupabaseExportJobRegistry");
     expect(renderWorkerSource).not.toContain("SupabaseExportJobRegistry");
     expect(renderWorkerSource).toContain('await registry.getByStatus("submitted")');
