@@ -5600,3 +5600,51 @@ Scope:
   - `claim_expires_at`
 - Worker DB wiring remains deferred
 - Route, app, and composition DB wiring remain deferred
+
+## Phase 57-B - Supabase Claim/Lease Schema Draft Update
+
+Status:
+
+- complete
+
+Scope:
+
+- claim/lease schema draft update only
+- no migration application
+- no repository or registry claim implementation
+- no worker, route, app, or composition wiring
+- no runtime DB activation
+
+### Phase 57-B completion summary
+
+- Added claim/lease schema draft fields to `export_jobs` in both SQL drafts:
+  - `claimed_by_worker_id text`
+  - `claim_expires_at timestamptz`
+  - `row_version bigint not null default 0`
+- Added supporting indexes for future worker drain and lease lookup behavior:
+  - `export_jobs_status_submitted_created_job_idx`
+  - `export_jobs_status_claim_expires_idx`
+  - `export_jobs_claimed_by_worker_expires_idx`
+- Updated both SQL schema draft files only
+- Added focused Phase 57 schema boundary coverage
+- Updated the stale Phase 56 boundary guard so it reflects that claim schema draft fields now exist
+- Confirmed `SupabaseExportJobRegistry.claim(...)` still remains fail-closed
+- Confirmed no repository claim implementation was added
+- Confirmed no registry claim implementation was added
+- Confirmed no worker, route, app, or composition wiring was added
+- Confirmed no Supabase CLI, local Supabase, or remote migration/smoke flow was used
+
+### Verification
+
+- `phase57`: 2 passed
+- `phase56`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Claim/lease schema support now exists only in SQL drafts
+- Actual DB migration application remains deferred
+- Repository claim primitive remains deferred
+- `SupabaseExportJobRegistry.claim(...)` remains fail-closed
+- Worker/runtime DB wiring remains deferred
