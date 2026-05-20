@@ -111,15 +111,28 @@ const createRecord = (): BackendExportJobRecord => ({
 });
 
 test.describe("phase50 supabase registry create/idempotency boundary", () => {
-  test("create stays fail-closed and owner-scoped idempotency read remains the only safe path", async () => {
+  test("create uses createIfAbsent without broad upsert and owner-scoped idempotency read remains the only safe path", async () => {
     await withUnsetEnv(SUPABASE_ENV_KEYS, async () => {
       const record = createRecord();
       const calls: string[] = [];
       let upsertCalled = false;
+      let createIfAbsentCalled = false;
 
       const fakeRepository: SupabaseExportJobRegistryReadRepository & {
+        createIfAbsent: (candidate: BackendExportJobRecord) => Promise<{
+          kind: "created";
+          record: BackendExportJobRecord;
+        }>;
         upsertJob: () => Promise<BackendExportJobRecord>;
       } = {
+        createIfAbsent: async (candidate) => {
+          createIfAbsentCalled = true;
+          calls.push(`createIfAbsent:${candidate.requestId}`);
+          return {
+            kind: "created",
+            record: candidate,
+          };
+        },
         getByJobId: (jobId) => {
           calls.push(`getByJobId:${jobId}`);
           return jobId === record.jobId ? record : undefined;
@@ -145,10 +158,6 @@ test.describe("phase50 supabase registry create/idempotency boundary", () => {
           jobsRepository: fakeRepository,
         },
       });
-
-      const expectedErrorPattern =
-        /SupabaseExportJobRegistry is a boundary scaffold only and is not wired for runtime DB persistence yet\./;
-
       await expect(
         registry.create({
           requestId: "request-create",
@@ -157,10 +166,22 @@ test.describe("phase50 supabase registry create/idempotency boundary", () => {
           ownerId: record.ownerId,
           workspaceId: record.workspaceId,
         }),
-      ).rejects.toThrow(expectedErrorPattern);
+      ).resolves.toMatchObject({
+        requestId: "request-create",
+        timelineId: "timeline-create",
+        ownerId: record.ownerId,
+        workspaceId: record.workspaceId,
+        status: "submitted",
+        attemptCount: 0,
+      });
+      expect(createIfAbsentCalled).toBe(true);
       expect(upsertCalled).toBe(false);
-      expect(calls).toEqual([]);
+      expect(calls).toEqual(["createIfAbsent:request-create"]);
 
+      const expectedErrorPattern =
+        /SupabaseExportJobRegistry is a boundary scaffold only and is not wired for runtime DB persistence yet\./;
+
+      calls.length = 0;
       await expect(
         registry.getByRequestId(record.requestId, {
           ownerId: record.ownerId,
@@ -223,6 +244,7 @@ test.describe("phase50 supabase registry create/idempotency boundary", () => {
     const forbiddenSupabaseDb = buildForbiddenCliPattern("db ");
 
     expect(specSource).toContain("upsertCalled = false");
+    expect(specSource).toContain("createIfAbsentCalled = false");
     expect(specSource).toContain("getByRequestId requires ownerScope");
     expect(specSource).not.toContain(forbiddenSecretLogging);
     expect(specSource).not.toContain(forbiddenSupabaseStart);
@@ -230,7 +252,7 @@ test.describe("phase50 supabase registry create/idempotency boundary", () => {
     expect(specSource).not.toContain(forbiddenSupabaseDb);
 
     expect(adapterSource).toContain("async create(_input: CreateExportJobInput)");
-    expect(adapterSource).toContain('throw this.createNotWiredError("create")');
+    expect(adapterSource).toContain("jobsRepository.createIfAbsent(record)");
     expect(adapterSource).toContain("jobsRepository.getByIdempotencyScope({");
     expect(adapterSource).toContain("getByRequestId requires ownerScope");
     expect(adapterSource).not.toContain("upsertJob");

@@ -114,6 +114,13 @@ test.describe("phase47 supabase export job registry method mapping", () => {
       const record = createRecord();
       const calls: string[] = [];
       const fakeRepository: SupabaseExportJobRegistryReadRepository = {
+        createIfAbsent: (candidate) => {
+          calls.push(`createIfAbsent:${candidate.requestId}`);
+          return {
+            kind: "created",
+            record: candidate,
+          };
+        },
         getByJobId: (jobId) => {
           calls.push(`getByJobId:${jobId}`);
           return jobId === record.jobId ? record : undefined;
@@ -181,13 +188,21 @@ test.describe("phase47 supabase export job registry method mapping", () => {
       await expect(registry.getByRequestId(record.requestId)).rejects.toThrow(
         /getByRequestId requires ownerScope/,
       );
+      calls.length = 0;
       await expect(
         registry.create({
           requestId: "request-2",
           timelineId: "timeline-2",
           renderSettings: record.renderSettings,
         }),
-      ).rejects.toThrow(expectedErrorPattern);
+      ).resolves.toMatchObject({
+        requestId: "request-2",
+        timelineId: "timeline-2",
+        status: "submitted",
+        attemptCount: 0,
+        renderSettings: record.renderSettings,
+      });
+      expect(calls).toEqual(["createIfAbsent:request-2"]);
       await expect(registry.getByStatus("submitted")).rejects.toThrow(expectedErrorPattern);
       await expect(registry.claim(record.jobId, "worker-1")).rejects.toThrow(expectedErrorPattern);
       await expect(registry.markRendering(record.jobId, "worker-1")).rejects.toThrow(
@@ -239,6 +254,7 @@ test.describe("phase47 supabase export job registry method mapping", () => {
     expect(specSource).not.toContain(forbiddenSupabaseDb);
 
     expect(adapterSource).toContain("jobsRepository.getByJobId(jobId)");
+    expect(adapterSource).toContain("jobsRepository.createIfAbsent(record)");
     expect(adapterSource).toContain("jobsRepository.getByIdempotencyScope({");
     expect(adapterSource).toContain("getByRequestId requires ownerScope");
     expect(adapterSource).toContain("private async readRequiredAsync");

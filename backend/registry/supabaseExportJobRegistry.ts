@@ -3,6 +3,7 @@ import type {
   BackendExportLifecycleStatus,
   BackendExportJobOwnerScope,
 } from "../contracts/exportHttpTypes";
+import type { BackendExportJobCreateIfAbsentResult } from "../repositories/repositoryContracts";
 import type {
   CreateExportJobInput,
   ExportJobClaimOptions,
@@ -13,6 +14,9 @@ import type {
 type MaybePromise<T> = T | Promise<T>;
 
 export interface SupabaseExportJobRegistryReadRepository {
+  createIfAbsent(
+    record: BackendExportJobRecord,
+  ): MaybePromise<BackendExportJobCreateIfAbsentResult>;
   getByJobId(jobId: string): MaybePromise<BackendExportJobRecord | undefined>;
   getByIdempotencyScope(scope: {
     ownerId: string;
@@ -34,6 +38,29 @@ type ExportJobFailureInput = Parameters<ExportJobRegistry["markError"]>[2];
 
 const SUPABASE_EXPORT_JOB_REGISTRY_NOT_WIRED_MESSAGE =
   "SupabaseExportJobRegistry is a boundary scaffold only and is not wired for runtime DB persistence yet.";
+
+const defaultOwnerScope: BackendExportJobOwnerScope = {
+  ownerId: "local-dev-owner",
+  workspaceId: "local-dev-workspace",
+};
+
+const createJobId = (): string =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `job_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+
+const resolveOwnerScope = (
+  scope?: Partial<BackendExportJobOwnerScope>,
+): BackendExportJobOwnerScope => ({
+  ownerId:
+    typeof scope?.ownerId === "string" && scope.ownerId.trim().length > 0
+      ? scope.ownerId
+      : defaultOwnerScope.ownerId,
+  workspaceId:
+    typeof scope?.workspaceId === "string" && scope.workspaceId.trim().length > 0
+      ? scope.workspaceId
+      : defaultOwnerScope.workspaceId,
+});
 
 export class SupabaseExportJobRegistry implements ExportJobRegistry {
   readonly kind = "supabase_export_job_registry";
@@ -58,7 +85,36 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
   }
 
   async create(_input: CreateExportJobInput): Promise<BackendExportJobRecord> {
-    throw this.createNotWiredError("create");
+    const jobsRepository = this.getJobsRepository();
+    const now = new Date().toISOString();
+    const ownerScope = resolveOwnerScope(_input);
+    const record: BackendExportJobRecord = {
+      jobId: createJobId(),
+      requestId: _input.requestId,
+      timelineId: _input.timelineId,
+      ownerId: ownerScope.ownerId,
+      workspaceId: ownerScope.workspaceId,
+      status: "submitted",
+      attemptCount: 0,
+      createdAt: now,
+      updatedAt: now,
+      renderSettings: _input.renderSettings,
+    };
+
+    const result = await this.readRequiredAsync(
+      jobsRepository.createIfAbsent(record),
+      "create",
+    );
+
+    if (result.kind === "created" || result.kind === "existing") {
+      return result.record;
+    }
+
+    throw new Error(
+      result.reason === "job_id_mismatch"
+        ? "SupabaseExportJobRegistry.create encountered an idempotency conflict: existing job uses a different jobId for this owner/workspace/request scope."
+        : "SupabaseExportJobRegistry.create encountered an idempotency conflict: existing job differs from the requested create-time payload for this owner/workspace/request scope.",
+    );
   }
 
   async getById(jobId: string): Promise<BackendExportJobRecord | undefined> {
