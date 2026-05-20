@@ -1,4 +1,5 @@
 import type {
+  BackendArtifactMetadata,
   BackendExportJobRecord,
   BackendExportLifecycleStatus,
 } from "../contracts/exportHttpTypes";
@@ -7,6 +8,8 @@ import type {
   BackendExportJobClaimInput,
   BackendExportJobClaimResult,
   BackendExportJobIdempotencyScope,
+  BackendExportJobMarkSuccessInput,
+  BackendExportJobMarkSuccessResult,
   BackendExportJobTransitionInput,
   BackendExportJobTransitionResult,
   BackendExportJobsRepository,
@@ -46,6 +49,22 @@ export interface SupabaseExportJobsClient<Row> {
   from(table: "export_jobs"): ExportJobsTableQuery<Row>;
 }
 
+export interface ArtifactRecordsTableQueryResult<Row> {
+  data: Row[] | Row | null;
+  error: { message: string; code?: string | null } | null;
+}
+
+export interface ArtifactRecordsTableQuery<Row> {
+  upsert(
+    values: Row[],
+    options: { onConflict: string },
+  ): Promise<ArtifactRecordsTableQueryResult<Row>>;
+}
+
+interface SupabaseArtifactRecordsClient<Row> {
+  from(table: "artifact_records"): ArtifactRecordsTableQuery<Row>;
+}
+
 export interface ExportJobRow {
   job_id: string;
   request_id: string;
@@ -64,6 +83,19 @@ export interface ExportJobRow {
   submitted_at: string | null;
   started_at: string | null;
   finalized_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ArtifactRecordRow {
+  artifact_id: string;
+  job_id: string;
+  workspace_id: string;
+  kind: string;
+  format: string;
+  status: BackendArtifactMetadata["status"];
+  size_bytes: number | null;
+  duration_ms: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -140,6 +172,56 @@ const fromExportJobRow = (row: ExportJobRow): BackendExportJobRecord => ({
         },
       }
     : {}),
+});
+
+const toSafeArtifactMetadata = (
+  artifact: BackendArtifactMetadata,
+): BackendArtifactMetadata => ({
+  artifactId: artifact.artifactId,
+  jobId: artifact.jobId,
+  kind: artifact.kind,
+  format: artifact.format,
+  status: artifact.status,
+  createdAt: artifact.createdAt,
+  ...(artifact.sizeBytes === undefined
+    ? {}
+    : { sizeBytes: artifact.sizeBytes }),
+  ...(artifact.durationMs === undefined
+    ? {}
+    : { durationMs: artifact.durationMs }),
+});
+
+const toArtifactRecordRow = (
+  artifact: BackendArtifactMetadata,
+  workspaceId: string,
+  now: string,
+): ArtifactRecordRow => {
+  const safeArtifact = toSafeArtifactMetadata(artifact);
+  return {
+    artifact_id: safeArtifact.artifactId,
+    job_id: safeArtifact.jobId,
+    workspace_id: workspaceId,
+    kind: safeArtifact.kind,
+    format: safeArtifact.format,
+    status: safeArtifact.status,
+    size_bytes: safeArtifact.sizeBytes ?? null,
+    duration_ms: safeArtifact.durationMs ?? null,
+    created_at: safeArtifact.createdAt,
+    updated_at: now,
+  };
+};
+
+const fromArtifactRecordRow = (
+  row: ArtifactRecordRow,
+): BackendArtifactMetadata => ({
+  artifactId: row.artifact_id,
+  jobId: row.job_id,
+  kind: row.kind,
+  format: row.format,
+  status: row.status,
+  createdAt: row.created_at,
+  ...(row.size_bytes === null ? {} : { sizeBytes: row.size_bytes }),
+  ...(row.duration_ms === null ? {} : { durationMs: row.duration_ms }),
 });
 
 const getSingleRow = async (
@@ -302,12 +384,29 @@ const buildTransitionUpdate = (
   return nextValues;
 };
 
+const buildMarkSuccessUpdate = (
+  current: ExportJobRow,
+  now: string,
+): Partial<ExportJobRow> => ({
+  status: "success",
+  updated_at: now,
+  row_version: current.row_version + 1,
+  finalized_at: now,
+  failure_code: null,
+  failure_message: null,
+  failure_retryable: null,
+});
+
 export class SupabaseExportJobsRepository
   implements BackendExportJobsRepository
 {
   constructor(
     private readonly client: SupabaseExportJobsClient<ExportJobRow>,
   ) {}
+
+  private getArtifactRecordsClient(): SupabaseArtifactRecordsClient<ArtifactRecordRow> {
+    return this.client as unknown as SupabaseArtifactRecordsClient<ArtifactRecordRow>;
+  }
 
   async createIfAbsent(
     record: BackendExportJobRecord,
@@ -539,6 +638,107 @@ export class SupabaseExportJobsRepository
     }
 
     if (reloaded.status !== input.expectedCurrentStatus) {
+      return {
+        kind: "not_transitionable",
+        reason: isTerminalStatus(reloaded.status)
+          ? "terminal"
+          : "status_mismatch",
+      };
+    }
+
+    return {
+      kind: "version_conflict",
+      existingRecord: fromExportJobRow(reloaded),
+    };
+  }
+
+  async markSuccessIfOwned(
+    input: BackendExportJobMarkSuccessInput,
+  ): Promise<BackendExportJobMarkSuccessResult> {
+    const now = input.now ?? new Date().toISOString();
+    const current = await getSingleRawRow(
+      this.client
+        .from("export_jobs")
+        .select(exportJobSelectColumns)
+        .eq("job_id", input.jobId),
+    );
+
+    if (!current) {
+      return { kind: "not_found" };
+    }
+
+    if (current.claimed_by_worker_id !== input.workerId) {
+      return { kind: "not_owned" };
+    }
+
+    if (isClaimExpiredAt(current, now)) {
+      return { kind: "claim_expired" };
+    }
+
+    if (current.status !== "finalizing") {
+      return {
+        kind: "not_transitionable",
+        reason: isTerminalStatus(current.status)
+          ? "terminal"
+          : "status_mismatch",
+      };
+    }
+
+    const artifactRows = input.artifacts.map((artifact) =>
+      toArtifactRecordRow(artifact, current.workspace_id, now),
+    );
+    const artifactUpsert = await this.getArtifactRecordsClient()
+      .from("artifact_records")
+      .upsert(artifactRows, {
+        onConflict: "job_id,artifact_id",
+      });
+
+    if (artifactUpsert.error) {
+      throw new Error(artifactUpsert.error.message);
+    }
+
+    const updatedRow = await getSingleRawRow(
+      this.client
+        .from("export_jobs")
+        .update(buildMarkSuccessUpdate(current, now))
+        .eq("job_id", input.jobId)
+        .eq("status", "finalizing")
+        .eq("claimed_by_worker_id", input.workerId)
+        .eq("claim_expires_at", current.claim_expires_at)
+        .eq("row_version", current.row_version)
+        .select(exportJobSelectColumns),
+    );
+
+    if (updatedRow) {
+      return {
+        kind: "succeeded",
+        record: {
+          ...fromExportJobRow(updatedRow),
+          artifacts: artifactRows.map(fromArtifactRecordRow),
+        },
+      };
+    }
+
+    const reloaded = await getSingleRawRow(
+      this.client
+        .from("export_jobs")
+        .select(exportJobSelectColumns)
+        .eq("job_id", input.jobId),
+    );
+
+    if (!reloaded) {
+      return { kind: "not_found" };
+    }
+
+    if (reloaded.claimed_by_worker_id !== input.workerId) {
+      return { kind: "not_owned" };
+    }
+
+    if (isClaimExpiredAt(reloaded, now)) {
+      return { kind: "claim_expired" };
+    }
+
+    if (reloaded.status !== "finalizing") {
       return {
         kind: "not_transitionable",
         reason: isTerminalStatus(reloaded.status)

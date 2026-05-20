@@ -556,9 +556,12 @@ test.describe("phase60 supabase export jobs transitionIfOwned", () => {
     expect(repositorySource).toContain('kind: "claim_expired"');
     expect(repositorySource).toContain('kind: "not_transitionable"');
     expect(repositorySource).toContain('kind: "version_conflict"');
-    expect(repositorySource).not.toContain("artifact_records");
+    expect(repositorySource).toContain("artifact_records");
+    expect(repositorySource).toContain("markSuccessIfOwned(");
     expect(repositorySource).not.toContain("markSuccess(");
-    expect(repositorySource).not.toContain("artifacts");
+    expect(repositorySource).not.toContain("signedUrl");
+    expect(repositorySource).not.toContain("downloadUrl");
+    expect(repositorySource).not.toContain('from("storage_refs")');
     expect(repositorySource).not.toContain(forbiddenSecretLogging);
     expect(repositorySource).not.toContain(forbiddenSupabaseStart);
     expect(repositorySource).not.toContain(forbiddenSupabaseLink);

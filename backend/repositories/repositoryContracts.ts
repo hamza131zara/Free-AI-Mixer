@@ -8,6 +8,7 @@ import type {
   BackendWorkspaceProviderKeyOwnership,
 } from "../auth/accountContracts";
 import type {
+  BackendArtifactMetadata,
   BackendExportJobOwnerScope,
   BackendExportLifecycleStatus,
   BackendExportJobRecord,
@@ -160,6 +161,24 @@ export type BackendExportJobTransitionResult =
     }
   | { kind: "version_conflict"; existingRecord: BackendExportJobRecord };
 
+export interface BackendExportJobMarkSuccessInput {
+  jobId: string;
+  workerId: string;
+  artifacts: BackendArtifactMetadata[];
+  now?: string;
+}
+
+export type BackendExportJobMarkSuccessResult =
+  | { kind: "succeeded"; record: BackendExportJobRecord }
+  | { kind: "not_found" }
+  | { kind: "not_owned" }
+  | { kind: "claim_expired" }
+  | {
+      kind: "not_transitionable";
+      reason: "terminal" | "status_mismatch";
+    }
+  | { kind: "version_conflict"; existingRecord: BackendExportJobRecord };
+
 export interface BackendExportJobsRepository {
   createIfAbsent(
     record: BackendExportJobRecord,
@@ -170,6 +189,9 @@ export interface BackendExportJobsRepository {
   transitionIfOwned(
     input: BackendExportJobTransitionInput,
   ): Promise<BackendExportJobTransitionResult>;
+  markSuccessIfOwned(
+    input: BackendExportJobMarkSuccessInput,
+  ): Promise<BackendExportJobMarkSuccessResult>;
   listByStatus(
     status: BackendExportLifecycleStatus,
     options?: { limit?: number },
