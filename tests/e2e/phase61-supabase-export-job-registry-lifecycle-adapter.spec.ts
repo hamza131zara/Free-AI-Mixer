@@ -111,7 +111,7 @@ const createRecord = (
 });
 
 test.describe("phase61 supabase export job registry lifecycle adapter", () => {
-  test("markRendering, markFinalizing, and markError delegate to transitionIfOwned, support finalizing fallback, and throw on non-success results while keeping success/transition fail-closed", async () => {
+  test("markRendering, markFinalizing, and markError delegate to transitionIfOwned, support finalizing fallback, and throw on non-success results while keeping generic transition fail-closed", async () => {
     await withUnsetEnv(SUPABASE_ENV_KEYS, async () => {
       const renderingRecord = createRecord({
         jobId: "job-phase61-rendering",
@@ -220,6 +220,9 @@ test.describe("phase61 supabase export job registry lifecycle adapter", () => {
         listByStatus: async () => [],
         getByJobId: async () => undefined,
         getByIdempotencyScope: async () => undefined,
+        markSuccessIfOwned: async () => ({
+          kind: "not_found",
+        }),
       };
 
       const registry = new SupabaseExportJobRegistry({
@@ -318,10 +321,6 @@ test.describe("phase61 supabase export job registry lifecycle adapter", () => {
       );
 
       await expect(
-        registry.markSuccess("job-phase61-rendering", "worker-phase61", []),
-      ).rejects.toThrow(/Method: markSuccess\./);
-
-      await expect(
         registry.transition("job-phase61-rendering", "rendering"),
       ).rejects.toThrow(/Method: transition\./);
     });
@@ -357,7 +356,9 @@ test.describe("phase61 supabase export job registry lifecycle adapter", () => {
     expect(registrySource).toContain("async markFinalizing(");
     expect(registrySource).toContain("async markError(");
     expect(registrySource).toContain("transitionIfOwned");
-    expect(registrySource).toContain('throw this.createNotWiredError("markSuccess")');
+    expect(registrySource).toContain("async markSuccess(");
+    expect(registrySource).toContain("validateArtifactMetadata");
+    expect(registrySource).toContain("markSuccessIfOwned");
     expect(registrySource).toContain('throw this.createNotWiredError("transition")');
     expect(registrySource).toContain("ExportJobTransitionError");
     expect(registrySource).not.toContain("createClient(");

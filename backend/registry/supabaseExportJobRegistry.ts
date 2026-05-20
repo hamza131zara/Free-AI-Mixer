@@ -1,4 +1,5 @@
 import type {
+  BackendArtifactMetadata,
   BackendExportJobRecord,
   BackendExportLifecycleStatus,
   BackendExportJobOwnerScope,
@@ -6,6 +7,7 @@ import type {
 import type {
   BackendExportJobClaimResult,
   BackendExportJobCreateIfAbsentResult,
+  BackendExportJobMarkSuccessResult,
   BackendExportJobTransitionResult,
 } from "../repositories/repositoryContracts";
 import type {
@@ -14,7 +16,10 @@ import type {
   ExportJobRegistry,
   ExportJobTransitionOptions,
 } from "./exportJobRegistry";
-import { ExportJobTransitionError as ExportJobTransitionErrorClass } from "./exportJobRegistry";
+import {
+  ExportJobTransitionError as ExportJobTransitionErrorClass,
+  validateArtifactMetadata,
+} from "./exportJobRegistry";
 
 type MaybePromise<T> = T | Promise<T>;
 
@@ -35,6 +40,11 @@ export interface SupabaseExportJobRegistryReadRepository {
     failureCode?: string;
     failureMessage?: string;
   }): MaybePromise<BackendExportJobTransitionResult>;
+  markSuccessIfOwned?(input: {
+    jobId: string;
+    workerId: string;
+    artifacts: BackendArtifactMetadata[];
+  }): MaybePromise<BackendExportJobMarkSuccessResult>;
   listByStatus(
     status: BackendExportLifecycleStatus,
   ): MaybePromise<BackendExportJobRecord[]>;
@@ -263,11 +273,31 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
   }
 
   async markSuccess(
-    _jobId: string,
-    _workerId: string,
-    _artifacts: unknown[],
+    jobId: string,
+    workerId: string,
+    artifacts: unknown[],
   ): Promise<BackendExportJobRecord> {
-    throw this.createNotWiredError("markSuccess");
+    const jobsRepository = this.getJobsRepository();
+    if (!jobsRepository.markSuccessIfOwned) {
+      throw this.createNotWiredError("markSuccess");
+    }
+    const validatedArtifacts = artifacts.map((artifact) =>
+      validateArtifactMetadata(jobId, artifact),
+    );
+    const result = await this.readRequiredAsync(
+      jobsRepository.markSuccessIfOwned({
+        jobId,
+        workerId,
+        artifacts: validatedArtifacts,
+      }),
+      "markSuccess",
+    );
+
+    if (result.kind === "succeeded") {
+      return result.record;
+    }
+
+    throw this.createMarkSuccessTransitionError(jobId, result);
   }
 
   async markError(
@@ -407,6 +437,41 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
 
     return new ExportJobTransitionErrorClass(
       `Transition to '${nextStatus}' is not allowed for export job '${jobId}'.`,
+    );
+  }
+
+  private createMarkSuccessTransitionError(
+    jobId: string,
+    result: Exclude<BackendExportJobMarkSuccessResult, { kind: "succeeded" }>,
+  ): ExportJobTransitionErrorClass {
+    if (result.kind === "not_found") {
+      return new ExportJobTransitionErrorClass(
+        `Export job '${jobId}' was not found.`,
+      );
+    }
+
+    if (result.kind === "not_owned") {
+      return new ExportJobTransitionErrorClass(
+        `Worker does not own export job '${jobId}'.`,
+      );
+    }
+
+    if (result.kind === "claim_expired") {
+      return new ExportJobTransitionErrorClass(
+        `Export job '${jobId}' claim has expired.`,
+      );
+    }
+
+    if (result.kind === "version_conflict") {
+      return new ExportJobTransitionErrorClass(
+        `Export job '${jobId}' changed before transition to 'success' could be applied.`,
+      );
+    }
+
+    return new ExportJobTransitionErrorClass(
+      result.reason === "terminal"
+        ? `Export job '${jobId}' is terminal and cannot transition to 'success'.`
+        : `Export job '${jobId}' is not in the expected status for transition to 'success'.`,
     );
   }
 }
