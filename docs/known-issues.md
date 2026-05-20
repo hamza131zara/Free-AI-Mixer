@@ -1197,9 +1197,9 @@ Still deferred:
 - `SupabaseExportJobRegistry.create(...)` adapter support now exists, but Supabase runtime DB wiring still remains deferred.
 - Supabase runtime read/create wiring still remains deferred because the current app uses one shared registry across submit, read, execute, and artifact routes.
 - Repository-level `createIfAbsent(...)` now exists and backs the adapter create path without activating runtime DB persistence.
-- Repository-level `listByStatus(...)` now exists in `SupabaseExportJobsRepository`, but `SupabaseExportJobRegistry.getByStatus(...)` still remains deferred.
+- Repository-level `listByStatus(...)` now exists in `SupabaseExportJobsRepository`, and `SupabaseExportJobRegistry.getByStatus(...)` adapter support now exists.
 - Supabase lifecycle and mutating registry methods still remain fail-closed.
-- Runtime `getByStatus` and any worker-facing `listByStatus` wiring still remain deferred.
+- Runtime `getByStatus` support does not mean worker readiness, and any worker-facing `listByStatus` wiring still remains deferred.
 - Atomic DB lifecycle mutation behavior remains deferred.
 - Claim, lease, and lifecycle DB transition semantics for a real Supabase-backed registry remain deferred.
 - Artifact and failure DB lifecycle fidelity for a real Supabase-backed registry still remains deferred.

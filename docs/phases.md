@@ -5512,3 +5512,48 @@ Scope:
 - Repository-level `listByStatus(...)` does not imply runtime worker DB wiring is active
 - `SupabaseExportJobRegistry.getByStatus(...)` remains deferred
 - Claim/lease behavior and lifecycle DB transitions remain deferred
+
+## Phase 55-B - SupabaseExportJobRegistry getByStatus Adapter Implementation
+
+Status:
+
+- complete
+
+Scope:
+
+- adapter-level `getByStatus(...)` implementation only
+- direct repository delegation only
+- all-status support
+- no worker, route, app, or composition wiring
+- no repository, DB, schema, or frontend changes
+
+### Phase 55-B completion summary
+
+- Implemented `SupabaseExportJobRegistry.getByStatus(status)` at the adapter level only
+- Confirmed `getByStatus(...)` delegates directly to `jobsRepository.listByStatus(status)`
+- Confirmed support for all statuses, not submitted-only
+- Confirmed no adapter-side ordering, filtering, or limit behavior was added
+- Confirmed the repository remains the source of ordering and record reconstruction
+- Confirmed blocked lifecycle methods still remain fail-closed:
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+  - `transition`
+- No worker wiring was added
+- No route, app, or composition wiring was added
+- No repository, DB, schema, or frontend changes were made
+
+### Verification
+
+- `phase55`: 2 passed
+- `phase53`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- `SupabaseExportJobRegistry.getByStatus(...)` adapter support does not imply worker readiness
+- Worker DB wiring remains deferred
+- Claim/lease behavior and lifecycle DB transitions remain deferred
