@@ -1208,6 +1208,8 @@ Still deferred:
 - Actual DB migration/application of claim/lease schema support remains deferred.
 - Repository-level `claimIfAvailable(...)` now exists.
 - Repository-level `transitionIfOwned(...)` now exists.
+- Repository-level `markSuccessIfOwned(...)` now exists.
+- Repository-level `artifact_records` metadata persistence now exists using safe backend artifact metadata only.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
 - `SupabaseExportJobRegistry.markRendering(...)`, `markFinalizing(...)`, and `markError(...)` adapter support now exists, but this still does not make the worker loop runtime-ready.
 - Failed claim mapping now routes through `ExportJobTransitionError`, but this does not imply worker readiness.
@@ -1218,7 +1220,8 @@ Still deferred:
 - App and composition wiring remain deferred.
 - Worker DB wiring remains deferred.
 - Lifecycle `markRendering` / `markFinalizing` / `markSuccess` / `markError` runtime DB support remains deferred.
-- `markSuccess(...)` and artifact persistence still remain deferred.
+- `SupabaseExportJobRegistry.markSuccess(...)` still remains deferred/fail-closed.
+- Signed URLs, download URLs, storage objects, and `storage_refs` runtime persistence still remain deferred.
 - `transition(...)` runtime DB support remains deferred.
 - Execute route DB-backed lifecycle remains deferred.
 - Runtime DB persistence remains deferred.

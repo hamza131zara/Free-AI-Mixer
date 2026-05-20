@@ -5888,3 +5888,57 @@ Scope:
 - `markSuccess(...)` remains deferred
 - Generic `transition(...)` remains deferred
 - Worker/runtime DB wiring remains deferred
+
+## Phase 62-B - Supabase Export Jobs markSuccessIfOwned Repository Primitive
+
+Status:
+
+- complete
+
+Scope:
+
+- repository-level `markSuccessIfOwned(...)` primitive only
+- no registry `markSuccess(...)` implementation
+- no worker, route, app, or composition wiring
+- no schema or migration changes
+- no signed/download URL behavior
+- no runtime DB activation
+
+### Phase 62-B completion summary
+
+- Added repository-level `markSuccessIfOwned(...)` primitive
+- Added `BackendExportJobMarkSuccessInput`
+- Added `BackendExportJobMarkSuccessResult`
+- Implemented `markSuccessIfOwned(...)` in `SupabaseExportJobsRepository`
+- Confirmed success requires:
+  - row exists
+  - `claimed_by_worker_id` matches `workerId`
+  - `claim_expires_at` is null or greater than `now`
+  - current status is `finalizing`
+  - `row_version` matches via conditional update
+- Confirmed successful job update:
+  - sets `status = success`
+  - sets `updated_at`
+  - sets `finalized_at` / completion timing truthfully
+  - increments `row_version`
+  - clears failure fields
+- Confirmed artifact metadata is persisted to `artifact_records` using safe backend artifact metadata only
+- Confirmed no signed URLs, download URLs, storage objects, or `storage_refs` behavior was added
+- Confirmed no `SupabaseExportJobRegistry.markSuccess(...)` implementation was added
+- Confirmed no worker, route, app, or composition wiring was added
+- Confirmed no schema or migration changes were made in this phase
+
+### Verification
+
+- `phase62`: 2 passed
+- `phase60`: 2 passed
+- `phase61`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Repository-level success persistence now exists without enabling runtime success wiring
+- Artifact metadata persistence now exists at the repository layer only
+- `SupabaseExportJobRegistry.markSuccess(...)` remains deferred
+- Worker/runtime DB wiring remains deferred
