@@ -5350,3 +5350,68 @@ Scope:
 - Repository-level `createIfAbsent(...)` does not imply runtime DB persistence is active
 - Route and worker DB wiring remain deferred
 - `getByStatus`, claim/lease behavior, and lifecycle DB transitions remain deferred
+
+## Phase 52-B - SupabaseExportJobRegistry Create Adapter Implementation
+
+Status:
+
+- complete
+
+Scope:
+
+- adapter-level `create(...)` implementation only
+- no runtime DB wiring
+- no route DB wiring
+- no worker DB wiring
+- no app or composition wiring
+- no repository or schema changes
+
+### Phase 52-B completion summary
+
+- Implemented `SupabaseExportJobRegistry.create(...)` at the adapter level only
+- Confirmed `create(...)` now uses `jobsRepository.createIfAbsent(...)`
+- Mapped `createIfAbsent(...)` results truthfully:
+  - `created` returns `result.record`
+  - `existing` returns `result.record`
+  - `conflict` throws a clear `Error`
+- Confirmed conflict behavior distinguishes:
+  - `job_id_mismatch`
+  - `non_create_safe_difference`
+- Confirmed `create(...)` builds a canonical submitted export job record matching local create semantics:
+  - generated `jobId`
+  - `requestId`
+  - `timelineId`
+  - `ownerId`
+  - `workspaceId`
+  - `status = submitted`
+  - `attemptCount = 0`
+  - `createdAt`
+  - `updatedAt`
+  - `renderSettings`
+- Confirmed lifecycle, artifact, and failure fields are not fabricated during create
+- Confirmed blocked lifecycle and mutating methods still remain fail-closed:
+  - `getByStatus`
+  - `claim`
+  - `markRendering`
+  - `markFinalizing`
+  - `markSuccess`
+  - `markError`
+  - `transition`
+- No runtime DB wiring was added
+- No route, worker, app, or composition wiring was added
+- No repository or schema changes were made
+
+### Verification
+
+- `phase52`: 2 passed
+- `phase50`: 2 passed
+- `phase47`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- `SupabaseExportJobRegistry.create(...)` adapter support does not imply runtime DB persistence is active
+- Route and worker DB wiring remain deferred
+- `getByStatus` and any real `listByStatus` support remain deferred
+- Claim/lease behavior and lifecycle DB transitions remain deferred
