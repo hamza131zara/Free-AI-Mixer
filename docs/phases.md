@@ -5996,3 +5996,50 @@ Scope:
 - Artifact metadata validation now exists at the adapter boundary
 - Generic `transition(...)` remains deferred
 - Worker/runtime DB wiring remains deferred
+
+## Phase 64-B - Env-Gated Supabase Runtime Registry Wiring Boundary
+
+Status:
+
+- complete
+
+Scope:
+
+- env-gated runtime registry selection in `backendDependencies` only
+- default local registry behavior preserved
+- existing `repositoryComposition/createRepositories` path reused
+- no worker wiring
+- no route, app, or server wiring
+- no signed/download/storage URL behavior
+- no runtime behavior changes outside dependency selection
+
+### Phase 64-B completion summary
+
+- Added env-gated runtime registry selection in `backendDependencies` only
+- Confirmed default behavior still uses local registry:
+  - `InMemoryExportJobRegistry` by default
+  - `JsonFileExportJobRegistry` when `FREE_AI_MIXER_PERSISTENCE_ENABLED=true`
+- Confirmed valid enabled Supabase config now selects `SupabaseExportJobRegistry`
+- Confirmed selection uses the existing `repositoryComposition/createRepositories` path
+- Confirmed no repository composition bypass was added
+- Confirmed no worker wiring was added
+- Confirmed no route, app, or server wiring was added
+- Confirmed route execution gating remains separate and unchanged
+- Confirmed worker loop env gating remains separate and unchanged
+- Confirmed no signed URLs, download URLs, storage objects, or `storage_refs` behavior was added
+- Confirmed stale Phase 53 and Phase 63 boundary tests were updated to reflect the new wiring truth
+
+### Verification
+
+- `phase64`: 2 passed
+- `phase63`: 2 passed
+- `phase53`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Env-gated `SupabaseExportJobRegistry` runtime selection now exists in `backendDependencies`
+- Worker DB wiring remains deferred
+- Route execution gating remains separate
+- Signed/download/storage URL behavior remains deferred

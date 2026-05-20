@@ -1210,6 +1210,7 @@ Still deferred:
 - Repository-level `transitionIfOwned(...)` now exists.
 - Repository-level `markSuccessIfOwned(...)` now exists.
 - Repository-level `artifact_records` metadata persistence now exists using safe backend artifact metadata only.
+- Env-gated `SupabaseExportJobRegistry` runtime selection now exists in `backendDependencies`.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
 - `SupabaseExportJobRegistry.markRendering(...)`, `markFinalizing(...)`, and `markError(...)` adapter support now exists, but this still does not make the worker loop runtime-ready.
 - `SupabaseExportJobRegistry.markSuccess(...)` adapter support now exists.
@@ -1221,6 +1222,7 @@ Still deferred:
 - Route DB wiring remains deferred.
 - App and composition wiring remain deferred.
 - Worker DB wiring remains deferred.
+- Route execution gating still remains separate from runtime registry selection.
 - Lifecycle `markRendering` / `markFinalizing` / `markSuccess` / `markError` runtime DB support remains deferred.
 - Generic `transition(...)` still remains deferred/fail-closed.
 - Signed URLs, download URLs, storage objects, and `storage_refs` runtime persistence still remain deferred.
