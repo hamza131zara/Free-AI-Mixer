@@ -57,6 +57,9 @@ create table if not exists export_jobs (
   workspace_id uuid not null references workspaces(id),
   status text not null,
   attempt_count integer not null default 0,
+  claimed_by_worker_id text,
+  claim_expires_at timestamptz,
+  row_version bigint not null default 0,
   render_settings jsonb not null,
   failure_code text,
   failure_message text,
@@ -80,6 +83,15 @@ create index if not exists export_jobs_workspace_job_idx
 
 create index if not exists export_jobs_workspace_owner_status_idx
   on export_jobs (workspace_id, owner_id, status);
+
+create index if not exists export_jobs_status_submitted_created_job_idx
+  on export_jobs (status, submitted_at, created_at, job_id);
+
+create index if not exists export_jobs_status_claim_expires_idx
+  on export_jobs (status, claim_expires_at);
+
+create index if not exists export_jobs_claimed_by_worker_expires_idx
+  on export_jobs (claimed_by_worker_id, claim_expires_at);
 
 create table if not exists artifact_records (
   artifact_id text not null,

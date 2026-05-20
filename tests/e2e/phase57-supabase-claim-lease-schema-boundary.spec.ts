@@ -10,7 +10,21 @@ const specPath = path.join(
   process.cwd(),
   "tests",
   "e2e",
-  "phase56-supabase-worker-claim-lease-boundary.spec.ts",
+  "phase57-supabase-claim-lease-schema-boundary.spec.ts",
+);
+const migrationSchemaPath = path.join(
+  process.cwd(),
+  "backend",
+  "db",
+  "migrations",
+  "0001_initial_supabase_postgres_schema.sql",
+);
+const draftSchemaPath = path.join(
+  process.cwd(),
+  "backend",
+  "db",
+  "schema",
+  "phase26-initial-supabase-postgres-schema.sql",
 );
 const registryPath = path.join(
   process.cwd(),
@@ -18,11 +32,17 @@ const registryPath = path.join(
   "registry",
   "supabaseExportJobRegistry.ts",
 );
-const exportJobRegistryPath = path.join(
+const repositoryContractsPath = path.join(
   process.cwd(),
   "backend",
-  "registry",
-  "exportJobRegistry.ts",
+  "repositories",
+  "repositoryContracts.ts",
+);
+const repositoryPath = path.join(
+  process.cwd(),
+  "backend",
+  "repositories",
+  "supabaseExportJobsRepository.ts",
 );
 const renderWorkerPath = path.join(
   process.cwd(),
@@ -48,19 +68,6 @@ const repositoryCompositionPath = path.join(
   "backend",
   "composition",
   "repositoryComposition.ts",
-);
-const repositoryContractsPath = path.join(
-  process.cwd(),
-  "backend",
-  "repositories",
-  "repositoryContracts.ts",
-);
-const schemaPath = path.join(
-  process.cwd(),
-  "backend",
-  "db",
-  "migrations",
-  "0001_initial_supabase_postgres_schema.sql",
 );
 
 const SUPABASE_ENV_KEYS = [
@@ -118,8 +125,8 @@ const buildForbiddenSecretLoggingPattern = (): string =>
 const buildForbiddenCliPattern = (segment: string): string =>
   ["supabase", " ", segment].join("");
 
-test.describe("phase56 supabase worker claim lease boundary", () => {
-  test("claim remains fail-closed and no fake claim success exists without lease schema support", async () => {
+test.describe("phase57 supabase claim lease schema boundary", () => {
+  test("claim remains fail-closed after schema draft preparation", async () => {
     await withUnsetEnv(SUPABASE_ENV_KEYS, async () => {
       const fakeRepository: SupabaseExportJobRegistryReadRepository = {
         createIfAbsent: async (record) => ({
@@ -137,38 +144,39 @@ test.describe("phase56 supabase worker claim lease boundary", () => {
         },
       });
 
-      const expectedErrorPattern =
-        /SupabaseExportJobRegistry is a boundary scaffold only and is not wired for runtime DB persistence yet\./;
-
       await expect(
-        registry.claim("job-phase56", "worker-phase56", { claimTtlMs: 30000 }),
-      ).rejects.toThrow(expectedErrorPattern);
+        registry.claim("job-phase57", "worker-phase57", { claimTtlMs: 60000 }),
+      ).rejects.toThrow(
+        /SupabaseExportJobRegistry is a boundary scaffold only and is not wired for runtime DB persistence yet\./,
+      );
     });
   });
 
-  test("source proves worker claim and lease behavior remain deferred even after schema draft support is added", async () => {
+  test("source proves claim lease schema fields exist while claim implementation and runtime wiring remain deferred", async () => {
     const [
       specSource,
+      migrationSchemaSource,
+      draftSchemaSource,
       registrySource,
-      exportJobRegistrySource,
+      repositoryContractsSource,
+      repositorySource,
       renderWorkerSource,
       harnessSource,
       backendDependenciesSource,
       appSource,
       repositoryCompositionSource,
-      repositoryContractsSource,
-      schemaSource,
     ] = await Promise.all([
       readFileSource(specPath),
+      readFileSource(migrationSchemaPath),
+      readFileSource(draftSchemaPath),
       readFileSource(registryPath),
-      readFileSource(exportJobRegistryPath),
+      readFileSource(repositoryContractsPath),
+      readFileSource(repositoryPath),
       readFileSource(renderWorkerPath),
       readFileSource(harnessPath),
       readFileSource(backendDependenciesPath),
       readFileSource(appPath),
       readFileSource(repositoryCompositionPath),
-      readFileSource(repositoryContractsPath),
-      readFileSource(schemaPath),
     ]);
 
     const forbiddenSecretLogging = buildForbiddenSecretLoggingPattern();
@@ -176,35 +184,49 @@ test.describe("phase56 supabase worker claim lease boundary", () => {
     const forbiddenSupabaseLink = buildForbiddenCliPattern("link");
     const forbiddenSupabaseDb = buildForbiddenCliPattern("db ");
 
-    expect(specSource).not.toContain(forbiddenSecretLogging);
-    expect(specSource).not.toContain(forbiddenSupabaseStart);
-    expect(specSource).not.toContain(forbiddenSupabaseLink);
-    expect(specSource).not.toContain(forbiddenSupabaseDb);
+    for (const source of [specSource, registrySource, repositorySource]) {
+      expect(source).not.toContain(forbiddenSecretLogging);
+      expect(source).not.toContain(forbiddenSupabaseStart);
+      expect(source).not.toContain(forbiddenSupabaseLink);
+      expect(source).not.toContain(forbiddenSupabaseDb);
+    }
 
-    expect(exportJobRegistrySource).toContain("claimTtlMs?: number");
-    expect(exportJobRegistrySource).toContain("claim(");
+    for (const schemaSource of [migrationSchemaSource, draftSchemaSource]) {
+      expect(schemaSource).toContain("create table if not exists export_jobs");
+      expect(schemaSource).toContain("claimed_by_worker_id text");
+      expect(schemaSource).toContain("claim_expires_at timestamptz");
+      expect(schemaSource).toContain("row_version bigint not null default 0");
+      expect(schemaSource).toContain(
+        "create index if not exists export_jobs_status_submitted_created_job_idx",
+      );
+      expect(schemaSource).toContain(
+        "on export_jobs (status, submitted_at, created_at, job_id);",
+      );
+      expect(schemaSource).toContain(
+        "create index if not exists export_jobs_status_claim_expires_idx",
+      );
+      expect(schemaSource).toContain(
+        "on export_jobs (status, claim_expires_at);",
+      );
+      expect(schemaSource).toContain(
+        "create index if not exists export_jobs_claimed_by_worker_expires_idx",
+      );
+      expect(schemaSource).toContain(
+        "on export_jobs (claimed_by_worker_id, claim_expires_at);",
+      );
+    }
 
     expect(registrySource).toContain("async claim(");
     expect(registrySource).toContain('throw this.createNotWiredError("claim")');
     expect(registrySource).toContain("worker claim/TTL semantics");
-    expect(registrySource).not.toContain("claimed_by_worker_id");
-    expect(registrySource).not.toContain("claim_expires_at");
     expect(registrySource).not.toContain("claimIfAvailable");
-    expect(registrySource).not.toContain("createClient(");
-    expect(registrySource).not.toContain("readSupabaseConfigFromEnv");
-    expect(registrySource).not.toContain(forbiddenSecretLogging);
-    expect(registrySource).not.toContain(forbiddenSupabaseStart);
-    expect(registrySource).not.toContain(forbiddenSupabaseLink);
-    expect(registrySource).not.toContain(forbiddenSupabaseDb);
-
-    expect(schemaSource).toContain("create table if not exists export_jobs");
-    expect(schemaSource).toContain("claimed_by_worker_id text");
-    expect(schemaSource).toContain("claim_expires_at timestamptz");
-    expect(schemaSource).toContain("row_version bigint not null default 0");
 
     expect(repositoryContractsSource).not.toContain("claimIfAvailable");
-    expect(repositoryContractsSource).not.toContain("claimedByWorkerId");
-    expect(repositoryContractsSource).not.toContain("claimExpiresAt");
+    expect(repositoryContractsSource).not.toContain("claim(");
+    expect(repositorySource).not.toContain("claimIfAvailable");
+    expect(repositorySource).not.toContain("claimed_by_worker_id");
+    expect(repositorySource).not.toContain("claim_expires_at");
+    expect(repositorySource).not.toContain("row_version");
 
     expect(renderWorkerSource).toContain('await registry.getByStatus("submitted")');
     expect(renderWorkerSource).not.toContain("SupabaseExportJobRegistry");
@@ -214,19 +236,11 @@ test.describe("phase56 supabase worker claim lease boundary", () => {
     expect(harnessSource).toContain("await input.registry.markFinalizing");
     expect(harnessSource).toContain("await input.registry.markSuccess");
     expect(harnessSource).toContain("await input.registry.markError");
-    expect(harnessSource).toContain("Failed to claim export job.");
     expect(harnessSource).not.toContain("SupabaseExportJobRegistry");
 
     expect(backendDependenciesSource).toContain("new InMemoryExportJobRegistry()");
     expect(backendDependenciesSource).not.toContain("SupabaseExportJobRegistry");
-    expect(backendDependenciesSource).not.toContain("createSupabaseExportJobRegistry");
-
-    expect(appSource).toContain(
-      "createExportRouter(backendDeps.registry, exportRouterOptions)",
-    );
     expect(appSource).not.toContain("SupabaseExportJobRegistry");
-
-    expect(repositoryCompositionSource).toContain("createSupabaseExportJobsRepository");
     expect(repositoryCompositionSource).not.toContain("SupabaseExportJobRegistry");
   });
 });
