@@ -130,6 +130,9 @@ test.describe("phase56 supabase worker claim lease boundary", () => {
           kind: "not_claimable",
           reason: "status_not_submitted",
         }),
+        transitionIfOwned: async () => ({
+  kind: "not_found",
+}),
         listByStatus: async () => [],
         getByJobId: async () => undefined,
         getByIdempotencyScope: async () => undefined,
