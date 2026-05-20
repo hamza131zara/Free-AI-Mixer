@@ -17,6 +17,9 @@ export interface SupabaseExportJobRegistryReadRepository {
   createIfAbsent(
     record: BackendExportJobRecord,
   ): MaybePromise<BackendExportJobCreateIfAbsentResult>;
+  listByStatus(
+    status: BackendExportLifecycleStatus,
+  ): MaybePromise<BackendExportJobRecord[]>;
   getByJobId(jobId: string): MaybePromise<BackendExportJobRecord | undefined>;
   getByIdempotencyScope(scope: {
     ownerId: string;
@@ -162,9 +165,13 @@ export class SupabaseExportJobRegistry implements ExportJobRegistry {
   }
 
   async getByStatus(
-    _status: BackendExportLifecycleStatus,
+    status: BackendExportLifecycleStatus,
   ): Promise<BackendExportJobRecord[]> {
-    throw this.createNotWiredError("getByStatus");
+    const jobsRepository = this.getJobsRepository();
+    return this.readRequiredAsync(
+      jobsRepository.listByStatus(status),
+      "getByStatus",
+    );
   }
 
   async claim(

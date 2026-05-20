@@ -173,7 +173,8 @@ test.describe("phase53 supabase runtime registry read/create boundary", () => {
     expect(registrySource).toContain("async getById(jobId: string)");
     expect(registrySource).toContain("async getByIdForOwner(");
     expect(registrySource).toContain("async getByRequestId(");
-    expect(registrySource).toContain('throw this.createNotWiredError("getByStatus")');
+    expect(registrySource).toContain("async getByStatus(");
+    expect(registrySource).toContain("jobsRepository.listByStatus(status)");
     expect(registrySource).toContain('throw this.createNotWiredError("claim")');
     expect(registrySource).toContain('throw this.createNotWiredError("markRendering")');
     expect(registrySource).toContain('throw this.createNotWiredError("markFinalizing")');
