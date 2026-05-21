@@ -6725,3 +6725,59 @@ Safe future options remain:
 - No local paths are exposed or persisted
 - No direct frontend storage access was added
 - No production storage provider runtime wiring was added
+
+## Phase 79 - Auth / Ownership / RLS Strategy Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- auth / ownership / RLS strategy boundary only
+- no broad auth implementation
+- no fake authenticated session
+- no RLS policy application
+- no direct frontend Supabase client
+- no signed/download/storage URL behavior
+- no public artifact delivery enablement
+- no backend route behavior changes
+
+### Phase 79 completion summary
+
+- Added auth / ownership / RLS strategy boundary coverage
+- Confirmed owner/workspace ownership fields remain part of the export/job/artifact boundary:
+  - `ownerId`
+  - `workspaceId`
+- Confirmed current frontend export lifecycle remains backend-mediated
+- Confirmed frontend does not use direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until real auth/RLS/ownership enforcement exists
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed no signed/download/storage URL behavior was added
+- Confirmed `local_dev_stream` remains local-dev-only and not production-ready
+
+### Future production requirements
+
+Before public artifact delivery or production storage access:
+
+- real authenticated requester identity must exist
+- route ownership checks must use authenticated requester/workspace membership
+- Supabase RLS policies must be applied and verified
+- artifact access must be authorized by owner/workspace membership
+- signed URL or backend stream delivery must be short-lived and backend-mediated
+
+### Verification
+
+- `phase79`: expected focused pass
+- `phase78`: expected pass
+- `phase77`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Public artifact delivery remains deferred
+- Auth/RLS/ownership implementation remains deferred
+- No direct frontend Supabase/storage access was added
+- No fake auth/session behavior was added
+- No signed/download URL behavior was added

@@ -1270,3 +1270,12 @@ Still deferred:
   - No direct frontend storage access is implemented.
   - No local filesystem paths should be exposed or persisted.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 79 adds auth / ownership / RLS strategy boundary coverage:
+  - Owner/workspace boundary fields exist, but they are not a complete production auth system yet.
+  - Real authenticated requester identity remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Fake auth/session/user identity remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
