@@ -1260,3 +1260,13 @@ Still deferred:
 - Auth, requester, and RLS enforcement remain deferred.
 - Remote Supabase tests remain opt-in only.
 - Local Supabase Docker remains deferred on this Windows environment.
+
+- Phase 78 adds production artifact delivery strategy boundary coverage:
+  - Production artifact delivery remains deferred.
+  - Future public artifact delivery requires auth/RLS/ownership enforcement first.
+  - Safe future delivery options are short-lived `signed_url` or authenticated `backend_stream`.
+  - `local_dev_stream` remains local-dev-only and is not production-ready.
+  - No fake signed/download URLs are implemented.
+  - No direct frontend storage access is implemented.
+  - No local filesystem paths should be exposed or persisted.
+  - Signed/download/storage URL behavior remains deferred.

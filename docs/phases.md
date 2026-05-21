@@ -6667,3 +6667,61 @@ Scope:
 - No fake progress, fake success, or fake download URL behavior was introduced
 - No signed/download/storage URL behavior was added
 - Backend route contracts remained unchanged
+
+## Phase 78 - Production Artifact Delivery Strategy Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- production artifact delivery strategy boundary only
+- no signed URL implementation
+- no fake signed/download URLs
+- no direct frontend storage access
+- no local path leakage
+- no production storage provider runtime wiring
+- no user-facing download/navigation behavior
+- no auth/RLS implementation
+
+### Phase 78 completion summary
+
+- Added production artifact delivery strategy boundary coverage
+- Confirmed frontend artifact metadata remains safe
+- Confirmed artifact metadata does not expose:
+  - `url`
+  - `downloadUrl`
+  - `signedUrl`
+  - `storageRef`
+  - `filePath`
+  - local filesystem paths
+- Confirmed artifact access remains backend-mediated
+- Confirmed `local_dev_stream` remains local-dev-only and is not production-ready
+- Confirmed production `signed_url` behavior is not implemented or faked
+- Confirmed direct frontend Supabase/storage access is absent
+- Confirmed artifact access/download UI was not added
+- Confirmed auth/RLS/ownership remains required before public artifact delivery
+
+### Future production delivery strategy
+
+Safe future options remain:
+
+- short-lived `signed_url` after auth/RLS/ownership enforcement
+- authenticated `backend_stream` after auth/RLS/ownership enforcement
+
+### Verification
+
+- `phase78`: 2 passed
+- `phase77`: 3 passed
+- `phase72`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Production artifact delivery remains deferred
+- No fake signed/download URLs were added
+- No local paths are exposed or persisted
+- No direct frontend storage access was added
+- No production storage provider runtime wiring was added
