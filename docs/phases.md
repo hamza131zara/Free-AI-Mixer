@@ -9040,3 +9040,54 @@ Before installing the selected dependency:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 116 - JWT Dependency Installation Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- JWT dependency installation audit only
+- no JWT dependency installation
+- no package.json dependency change
+- no lockfile dependency change
+- no JWT dependency import
+- no real JWT verification
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 116 completion summary
+
+- Added JWT dependency installation audit coverage
+- Confirmed jose remains selected as the future JWT verification dependency
+- Confirmed jose is not installed yet
+- Confirmed jsonwebtoken is not installed
+- Confirmed no JWT dependency import exists
+- Confirmed JWT verification remains fail-closed through the existing boundary
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization 401 / 403 responses
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Future dependency installation command
+
+When approved in a dedicated implementation phase:
+
+npm install jose
+
+### Safety boundaries
+
+- Dependency installation remains audit-only
+- No JWT dependency was installed
+- No JWT dependency was imported
+- No real JWT verification was implemented
+- No route authorization behavior changed
+- Public artifact delivery remains deferred
