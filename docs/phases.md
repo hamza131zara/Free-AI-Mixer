@@ -7841,3 +7841,66 @@ Before route authorization or public artifact delivery:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 98 - Auth Provider App Composition Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- auth provider app composition audit only
+- no real auth provider app/server wiring
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 98 completion summary
+
+- Added auth provider app composition audit coverage
+- Confirmed trusted auth provider strategy boundary exists
+- Confirmed trusted auth middleware can consume provider strategies
+- Confirmed app still wires only the auth-not-configured middleware wrapper
+- Confirmed no real auth provider is wired into app/server composition
+- Confirmed export routes still only read trusted request context non-enforcing
+- Confirmed export routes do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization `401` / `403` responses
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before real auth provider app composition can be enabled:
+
+- real trusted auth provider implementation must verify tokens or sessions
+- app/server must intentionally wire the real provider strategy
+- trusted middleware must populate verified authenticated requester context
+- export routes must adapt authenticated requester context intentionally
+- export routes must call authorization decision and route guard boundaries
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase98`: expected focused pass
+- `phase97`: expected pass
+- `phase96`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- App composition remains auth-not-configured only
+- No real auth provider was wired into app/server
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
