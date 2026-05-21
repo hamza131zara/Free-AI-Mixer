@@ -13,7 +13,7 @@ const readIfExists = (relativePath: string): string => {
 };
 
 test.describe("phase93 export routes trusted request context consumption audit pack", () => {
-  test("app has non-enforcing trusted auth middleware while export routes do not consume it yet", async () => {
+  test("app has non-enforcing trusted auth middleware and export routes now read context non-enforcing", async () => {
     const appSource = readSource("backend/app.ts");
     const routeSource = readSource("backend/routes/exports.ts");
     const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
@@ -28,17 +28,16 @@ test.describe("phase93 export routes trusted request context consumption audit p
     expect(routeSource).toContain("resolveExportRequesterContext");
     expect(requesterSource).toContain("resolveExportRequesterContext");
 
-    // Phase 93 is audit/readiness only. Routes do not consume trusted request context yet.
-    expect(routeSource).not.toContain("getRequesterContextFromRequest");
+    // Phase 94 may read trusted request context, but it remains non-enforcing.
+    expect(routeSource).toContain("getRequesterContextFromRequest");
     expect(routeSource).not.toContain("backendRequesterContext");
     expect(routeSource).not.toContain("createTrustedAuthNotConfiguredMiddleware");
 
-    // Route authorization enforcement remains deferred.
     expect(routeSource).not.toContain("throw new ExportApiError(401");
     expect(routeSource).not.toContain("throw new ExportApiError(403");
   });
 
-  test("future route consumption path has boundaries but remains unwired", async () => {
+  test("future route consumption path has boundaries but authorization remains unwired", async () => {
     const routeSource = readSource("backend/routes/exports.ts");
     const adapterSource = readSource("backend/auth/exportRequesterContextAdapter.ts");
     const authorizationSource = readSource("backend/auth/exportAuthorization.ts");
@@ -50,7 +49,6 @@ test.describe("phase93 export routes trusted request context consumption audit p
     expect(authorizationSource).toContain("decideExportOwnerScopeAccess");
     expect(routeGuardSource).toContain("mapExportAuthorizationDecisionToRouteGuard");
 
-    // Boundaries exist, but route wiring/enforcement remains intentionally deferred.
     expect(routeSource).not.toContain("adaptAuthenticatedRequesterToExportRequesterContext");
     expect(routeSource).not.toContain("decideExportOwnerScopeAccess");
     expect(routeSource).not.toContain("mapExportAuthorizationDecisionToRouteGuard");
@@ -63,7 +61,7 @@ test.describe("phase93 export routes trusted request context consumption audit p
     expect(routeSource).not.toContain("getPublicUrl");
   });
 
-  test("frontend and artifact delivery remain blocked until trusted route consumption exists", async () => {
+  test("frontend and artifact delivery remain blocked until trusted route authorization exists", async () => {
     const frontendSource =
       readSource("src/services/exportService.ts") +
       "\n" +

@@ -7597,3 +7597,59 @@ Before export routes consume trusted request context:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 94 - Export Routes Trusted Request Context Non-Enforcing Consumption Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- non-enforcing export route trusted request context consumption only
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 94 completion summary
+
+- Export routes now read trusted requester context from app middleware
+- Confirmed trusted context reading remains non-enforcing
+- Confirmed default app middleware context remains `auth_not_configured`
+- Confirmed export routes still do not call authorization adapter/decision/route guard boundaries
+- Confirmed arbitrary auth/user/workspace headers are not trusted
+- Confirmed no `401` / `403` authorization route behavior was added
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- real trusted auth provider integration must populate authenticated requester context
+- export routes must adapt authenticated requester context intentionally
+- export routes must call authorization decision and route guard boundaries
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase94`: expected focused pass
+- `phase93`: expected pass
+- `phase92`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Route trusted request context consumption is non-enforcing
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

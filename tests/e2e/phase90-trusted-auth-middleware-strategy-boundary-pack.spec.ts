@@ -46,7 +46,7 @@ test.describe("phase90 trusted auth middleware strategy boundary pack", () => {
     });
   });
 
-  test("trusted auth middleware remains non-enforcing after app wiring", async () => {
+  test("trusted auth middleware remains non-enforcing after later app/route boundary phases", async () => {
     const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
     const routeSource = readSource("backend/routes/exports.ts");
     const appSource = readSource("backend/app.ts");
@@ -58,12 +58,12 @@ test.describe("phase90 trusted auth middleware strategy boundary pack", () => {
     expect(middlewareSource).toContain("auth_not_configured");
     expect(requesterContextSource).toContain("BackendRequesterContext");
 
-    // Phase 92 may wire app middleware, but route/server enforcement remains deferred.
+    // Later phases may wire non-enforcing middleware/context reads.
     expect(appSource).toContain("createTrustedAuthNotConfiguredMiddleware");
+
+    // Server startup remains unchanged, and routes still do not enforce auth.
     expect(serverSource).not.toContain("createTrustedAuthNotConfiguredMiddleware");
     expect(routeSource).not.toContain("createTrustedAuthNotConfiguredMiddleware");
-
-    expect(routeSource).not.toContain("getRequesterContextFromRequest");
     expect(routeSource).not.toContain("throw new ExportApiError(401");
     expect(routeSource).not.toContain("throw new ExportApiError(403");
 
