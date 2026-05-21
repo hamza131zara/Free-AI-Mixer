@@ -6899,3 +6899,56 @@ Before route authorization or public artifact delivery:
 - No fake auth/session behavior was added
 - No RLS policies were applied
 - Public artifact delivery remains deferred
+
+## Phase 82 - Requester Context Route Options Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- requester context route option boundary only
+- no real auth enforcement
+- no fake authenticated session
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 82 completion summary
+
+- Added optional `requesterContextResolver` boundary to export router options
+- Added default `auth_not_configured` requester resolver behavior for export routes
+- Confirmed routes can resolve requester context without enforcing authorization yet
+- Confirmed requester context resolution does not fabricate user identity
+- Confirmed arbitrary headers are not trusted as authenticated identity
+- Confirmed route authorization enforcement remains deferred
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- trusted auth middleware must provide authenticated requester context
+- export routes must enforce owner/workspace authorization
+- workspace membership checks must be implemented
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase82`: expected focused pass
+- `phase81`: expected pass
+- `phase80`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Requester context route option exists as a non-enforcing boundary
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No RLS policies were applied
+- Public artifact delivery remains deferred

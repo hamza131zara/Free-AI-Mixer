@@ -1303,3 +1303,14 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 82 adds requester context route options boundary coverage:
+  - Export router can now accept a non-enforcing requester context resolver.
+  - Default route requester context remains explicit `auth_not_configured`.
+  - Route authorization enforcement remains deferred.
+  - Real trusted auth middleware integration remains deferred.
+  - Workspace membership checks remain deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
