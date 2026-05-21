@@ -1502,3 +1502,16 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 99 adds auth provider runtime configuration boundary coverage:
+  - Auth provider runtime config reader now exists.
+  - Missing/disabled/unsupported provider modes fail closed as not configured.
+  - Future JWT/session provider modes are represented as config only.
+  - Runtime config is not wired into app/middleware/routes/server yet.
+  - Real token/session verification remains deferred.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

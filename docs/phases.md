@@ -7904,3 +7904,71 @@ Before real auth provider app composition can be enabled:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 99 - Auth Provider Runtime Configuration Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- auth provider runtime configuration boundary only
+- no real auth provider implementation
+- no app/server provider wiring
+- no middleware provider runtime wiring
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 99 completion summary
+
+- Added auth provider runtime configuration boundary
+- Added `readTrustedAuthProviderRuntimeConfig(...)`
+- Added `isTrustedAuthProviderRuntimeConfigured(...)`
+- Confirmed missing provider env maps to not configured
+- Confirmed disabled provider env maps to disabled
+- Confirmed unsupported provider env maps safely to unsupported provider
+- Confirmed future JWT/session provider modes can be represented as config only
+- Confirmed config reader does not read service-role secrets or token secrets
+- Confirmed config boundary is not wired into app/middleware/routes/server yet
+- Confirmed route authorization enforcement remains deferred
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before real auth provider runtime configuration can be used:
+
+- real trusted auth provider implementation must verify tokens or sessions
+- runtime config must instantiate a concrete trusted provider explicitly
+- app/server must intentionally wire the configured provider strategy
+- export routes must adapt authenticated requester context intentionally
+- export routes must call authorization decision and route guard boundaries
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase99`: expected focused pass
+- `phase98`: expected pass
+- `phase97`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Runtime config exists as a boundary only
+- No real provider was implemented
+- No runtime config was wired into app/middleware/routes/server
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
