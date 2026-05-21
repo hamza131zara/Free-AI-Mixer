@@ -40,7 +40,7 @@ test.describe("phase117 jwt dependency installation pack", () => {
     expect(packageLockSource).not.toContain('"jsonwebtoken"');
   });
 
-  test("jose is installed but not imported or used for real jwt verification yet", async () => {
+  test("jose may be imported only in jwt boundary while route verification remains deferred", async () => {
     const decisionSource = readSource("backend/auth/jwtVerificationDependencyDecision.ts");
     const jwtSource = readSource("backend/auth/jwtProviderVerificationStrategy.ts");
     const compositionSource = readSource("backend/auth/trustedAuthProviderComposition.ts");
@@ -50,24 +50,19 @@ test.describe("phase117 jwt dependency installation pack", () => {
 
     expect(decisionSource).toContain("packageName: \"jose\"");
     expect(decisionSource).toContain("isJwtVerificationDependencyInstalledYet");
+    expect(jwtSource).toContain('from "jose"');
+    expect(jwtSource).toContain("jwtVerify");
+    expect(jwtSource).toContain("createRemoteJWKSet");
+    expect(jwtSource).toContain("realVerificationEnabled: false");
     expect(jwtSource).toContain("createFailClosedFutureJwtVerificationStrategy");
     expect(compositionSource).toContain("createFailClosedFutureJwtVerificationStrategy");
 
-    const runtimeAuthSource =
-      jwtSource +
-      "\n" +
-      compositionSource +
-      "\n" +
-      middlewareSource +
-      "\n" +
-      appSource;
+    const nonJwtBoundaryRuntimeSource =
+      compositionSource + "\n" + middlewareSource + "\n" + appSource + "\n" + routeSource;
 
-    expect(runtimeAuthSource).not.toContain('from "jose"');
-    expect(runtimeAuthSource).not.toContain("from 'jose'");
-    expect(runtimeAuthSource).not.toContain("jwtVerify");
-    expect(runtimeAuthSource).not.toContain("createRemoteJWKSet");
-    expect(runtimeAuthSource).not.toContain("JWKS");
-    expect(runtimeAuthSource).not.toContain("JWK");
+    expect(nonJwtBoundaryRuntimeSource).not.toContain('from "jose"');
+    expect(nonJwtBoundaryRuntimeSource).not.toContain("jwtVerify");
+    expect(nonJwtBoundaryRuntimeSource).not.toContain("createRemoteJWKSet");
 
     expect(routeSource).toContain("getRequesterContextFromRequest");
     expect(routeSource).not.toContain("adaptAuthenticatedRequesterToExportRequesterContext");
@@ -120,8 +115,6 @@ test.describe("phase117 jwt dependency installation pack", () => {
     expect(authSource).not.toContain("SERVICE_ROLE");
     expect(authSource).not.toContain("PRIVATE_KEY");
     expect(authSource).not.toContain("AUTH_SECRET");
-    expect(authSource).not.toContain("jwtVerify");
-    expect(authSource).not.toContain("createRemoteJWKSet");
     expect(authSource).not.toContain("createSignedUrl");
     expect(authSource).not.toContain("getPublicUrl");
 

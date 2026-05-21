@@ -1,4 +1,5 @@
 ﻿import type { IncomingHttpHeaders } from "node:http";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import type { BackendRequesterContext } from "./requesterContext";
 import { createUnauthenticatedRequesterContext } from "./requesterContext";
 
@@ -25,6 +26,25 @@ export interface TrustedJwtVerificationStrategy {
   kind: "jwt_verification_not_configured" | "future_jwt_verification";
   verify(input?: TrustedJwtVerificationInput): Promise<TrustedJwtVerificationResult>;
 }
+
+export interface JoseRuntimeImportBoundaryStatus {
+  jwtVerifyImported: boolean;
+  createRemoteJWKSetImported: boolean;
+  realVerificationEnabled: false;
+}
+
+/**
+ * Phase 119 import boundary.
+ *
+ * This proves the selected `jose` runtime imports are available inside the JWT
+ * verification boundary. It intentionally does not execute real verification yet.
+ */
+export const getJoseRuntimeImportBoundaryStatus =
+  (): JoseRuntimeImportBoundaryStatus => ({
+    jwtVerifyImported: typeof jwtVerify === "function",
+    createRemoteJWKSetImported: typeof createRemoteJWKSet === "function",
+    realVerificationEnabled: false,
+  });
 
 const getAuthorizationHeader = (
   headers?: TrustedJwtVerificationInput["headers"],
@@ -82,3 +102,4 @@ export const mapJwtVerificationResultToRequesterContext = (
     authSubject: result.authSubject,
   };
 };
+

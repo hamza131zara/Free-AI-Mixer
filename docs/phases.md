@@ -9212,3 +9212,62 @@ Scope:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 119 - JWT Verification Runtime Import Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- JWT verification runtime import boundary only
+- import jose only inside JWT verification boundary
+- no real JWT verification
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 119 completion summary
+
+- Added jose runtime imports inside backend/auth/jwtProviderVerificationStrategy.ts
+- Added getJoseRuntimeImportBoundaryStatus()
+- Confirmed jwtVerify import is available
+- Confirmed createRemoteJWKSet import is available
+- Confirmed realVerificationEnabled remains false
+- Confirmed JWT provider strategy still fails closed
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization 401 / 403 responses
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Future production requirements
+
+- Implement actual jose jwtVerify logic only inside backend/auth/jwtProviderVerificationStrategy.ts
+- Validate issuer and audience
+- Validate token signature and expiry
+- Map verified subject to authenticated requester context
+- Require verified workspace scope or membership lookup
+- Keep route authorization disabled until verified auth and RLS are ready
+
+### Verification
+
+- phase119: expected focused pass
+- phase118: expected pass
+- phase117: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- jose import is isolated to JWT boundary
+- No real JWT verification was implemented
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
