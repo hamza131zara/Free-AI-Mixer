@@ -8972,3 +8972,71 @@ Before JWT dependency installation:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 115 - JWT Verification Dependency Selection Strategy Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- JWT verification dependency selection strategy only
+- no JWT dependency installation
+- no JWT dependency import
+- no real JWT verification
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 115 completion summary
+
+- Added JWT verification dependency decision boundary
+- Selected `jose` as the future JWT verification dependency candidate
+- Rejected `jsonwebtoken` for this project boundary because JWKS support would require extra plumbing
+- Confirmed selected dependency is not installed yet
+- Confirmed selected dependency is not imported yet
+- Confirmed JWT verification remains fail-closed through the existing boundary
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization `401` / `403` responses
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Future production requirements
+
+Before installing the selected dependency:
+
+- install `jose` in a dedicated dependency phase
+- document lockfile change
+- implement verification in the existing JWT verification boundary only
+- validate issuer and audience
+- validate token signature and expiry
+- map verified subject to authenticated requester context
+- require verified workspace scope or membership lookup
+- keep route authorization disabled until verified auth and RLS are ready
+
+### Verification
+
+- `phase115`: expected focused pass
+- `phase114`: expected pass
+- `phase113`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Dependency selection is decision-only
+- No JWT dependency was installed
+- No JWT dependency was imported
+- No real JWT verification was implemented
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

@@ -1,0 +1,149 @@
+﻿import { test, expect } from "@playwright/test";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import {
+  getJwtVerificationDependencyDecision,
+  getRejectedJwtVerificationDependencyDecisions,
+  isJwtVerificationDependencyInstalledYet,
+} from "../../backend/auth/jwtVerificationDependencyDecision";
+
+const projectRoot = process.cwd();
+
+const readSource = (relativePath: string): string =>
+  readFileSync(path.join(projectRoot, relativePath), "utf8");
+
+const readIfExists = (relativePath: string): string => {
+  const fullPath = path.join(projectRoot, relativePath);
+  return existsSync(fullPath) ? readFileSync(fullPath, "utf8") : "";
+};
+
+test.describe("phase115 jwt verification dependency selection strategy pack", () => {
+  test("dependency decision selects jose for future use without installing it", async () => {
+    expect(getJwtVerificationDependencyDecision()).toEqual({
+      kind: "selected",
+      packageName: "jose",
+      reason: "modern_jwks_and_jwt_verify_support",
+    });
+
+    expect(getRejectedJwtVerificationDependencyDecisions()).toContainEqual({
+      kind: "rejected",
+      packageName: "jsonwebtoken",
+      reason: "jwks_support_requires_extra_plumbing",
+    });
+
+    expect(isJwtVerificationDependencyInstalledYet()).toBe(false);
+
+    const packageJson = JSON.parse(readSource("package.json")) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+
+    const allDependencies = {
+      ...(packageJson.dependencies ?? {}),
+      ...(packageJson.devDependencies ?? {}),
+    };
+
+    expect(allDependencies).not.toHaveProperty("jose");
+    expect(allDependencies).not.toHaveProperty("jsonwebtoken");
+    expect(allDependencies).not.toHaveProperty("@panva/jose");
+  });
+
+  test("dependency decision boundary is not imported by jwt verification or runtime auth yet", async () => {
+    const decisionSource = readSource("backend/auth/jwtVerificationDependencyDecision.ts");
+    const jwtSource = readSource("backend/auth/jwtProviderVerificationStrategy.ts");
+    const compositionSource = readSource("backend/auth/trustedAuthProviderComposition.ts");
+    const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
+    const appSource = readSource("backend/app.ts");
+    const routeSource = readSource("backend/routes/exports.ts");
+
+    expect(decisionSource).toContain("getJwtVerificationDependencyDecision");
+    expect(decisionSource).toContain("packageName: \"jose\"");
+    expect(decisionSource).toContain("isJwtVerificationDependencyInstalledYet");
+
+    expect(jwtSource).toContain("createFailClosedFutureJwtVerificationStrategy");
+    expect(compositionSource).toContain("createFailClosedFutureJwtVerificationStrategy");
+
+    // Phase 115 is decision-only. No dependency import or runtime wiring yet.
+    expect(jwtSource).not.toContain("getJwtVerificationDependencyDecision");
+    expect(compositionSource).not.toContain("getJwtVerificationDependencyDecision");
+    expect(middlewareSource).not.toContain("getJwtVerificationDependencyDecision");
+    expect(appSource).not.toContain("getJwtVerificationDependencyDecision");
+    expect(routeSource).not.toContain("getJwtVerificationDependencyDecision");
+
+    expect(jwtSource).not.toContain('from "jose"');
+    expect(jwtSource).not.toContain("from 'jose'");
+    expect(jwtSource).not.toContain("jwtVerify");
+    expect(jwtSource).not.toContain("createRemoteJWKSet");
+    expect(jwtSource).not.toContain("jsonwebtoken");
+
+    // Route authorization remains deferred.
+    expect(routeSource).not.toContain("adaptAuthenticatedRequesterToExportRequesterContext");
+    expect(routeSource).not.toContain("decideExportOwnerScopeAccess");
+    expect(routeSource).not.toContain("mapExportAuthorizationDecisionToRouteGuard");
+    expect(routeSource).not.toContain("throw new ExportApiError(401");
+    expect(routeSource).not.toContain("throw new ExportApiError(403");
+  });
+
+  test("dependency selection does not introduce fake auth frontend storage or artifact delivery", async () => {
+    const routeSource = readSource("backend/routes/exports.ts");
+
+    const authSource =
+      readSource("backend/auth/jwtVerificationDependencyDecision.ts") +
+      "\n" +
+      readSource("backend/auth/jwtProviderVerificationStrategy.ts") +
+      "\n" +
+      readSource("backend/auth/trustedAuthProviderComposition.ts") +
+      "\n" +
+      readSource("backend/auth/trustedAuthProviderRuntimeConfig.ts") +
+      "\n" +
+      readSource("backend/auth/trustedAuthProviderStrategy.ts") +
+      "\n" +
+      readSource("backend/auth/trustedAuthMiddleware.ts");
+
+    const frontendSource =
+      readSource("src/services/exportService.ts") +
+      "\n" +
+      readSource("src/store/exportStore.ts") +
+      "\n" +
+      readIfExists("src/types/exportJob.ts") +
+      "\n" +
+      readIfExists("src/services/exportHandleStorage.ts");
+
+    const artifactSource =
+      readIfExists("backend/artifacts/artifactAccessProvider.ts") +
+      "\n" +
+      readIfExists("backend/artifacts/localDevArtifactAccessProvider.ts") +
+      "\n" +
+      readIfExists("backend/artifacts/notConfiguredArtifactAccessProvider.ts");
+
+    expect(routeSource).not.toContain('req.headers["x-user-id"]');
+    expect(routeSource).not.toContain('req.headers["x-workspace-id"]');
+    expect(routeSource).not.toContain("x-user-id");
+    expect(routeSource).not.toContain("x-workspace-id");
+
+    expect(authSource).not.toContain("fakeSession");
+    expect(authSource).not.toContain("mockAuthenticatedUser");
+    expect(authSource).not.toContain("service_role");
+    expect(authSource).not.toContain("SERVICE_ROLE");
+    expect(authSource).not.toContain("PRIVATE_KEY");
+    expect(authSource).not.toContain("AUTH_SECRET");
+    expect(authSource).not.toContain('from "jose"');
+    expect(authSource).not.toContain("from 'jose'");
+    expect(authSource).not.toContain("jwtVerify");
+    expect(authSource).not.toContain("createRemoteJWKSet");
+    expect(authSource).not.toContain("createSignedUrl");
+    expect(authSource).not.toContain("getPublicUrl");
+
+    expect(frontendSource).not.toContain("@supabase/supabase-js");
+    expect(frontendSource).not.toContain("createClient(");
+    expect(frontendSource).not.toContain(".storage.from(");
+    expect(frontendSource).not.toContain("createSignedUrl");
+    expect(frontendSource).not.toContain("getPublicUrl");
+    expect(frontendSource).not.toContain("window.open");
+    expect(frontendSource).not.toContain("location.href");
+
+    expect(artifactSource).not.toContain("production_ready_local_dev_stream");
+    expect(artifactSource).not.toContain("createSignedUrl");
+    expect(artifactSource).not.toContain("getPublicUrl");
+  });
+});
