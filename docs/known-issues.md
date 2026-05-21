@@ -1803,3 +1803,19 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 120 adds JWT verification execution strategy audit coverage:
+  - jose imports are available inside the JWT verification boundary.
+  - realVerificationEnabled remains false.
+  - No jwtVerify execution call exists yet.
+  - No createRemoteJWKSet execution call exists yet.
+  - JWT provider strategy still fails closed.
+  - Export routes still read trusted request context non-enforcing only.
+  - Export routes still do not call authorization adapter/decision/guard boundaries.
+  - Export routes still do not emit authorization 401 / 403 responses.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
