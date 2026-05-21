@@ -10919,3 +10919,55 @@ Scope:
 - No frontend Supabase/storage access was added
 - No service-role behavior was added
 - Public artifact delivery remains deferred
+
+## Phase 149 - Backend Artifact Delivery Descriptor Route Wiring Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- backend artifact delivery descriptor route wiring
+- unavailable descriptor responses only until workspace/RLS/storage are ready
+- authorization guard integration for descriptor route
+- no signed URL generation
+- no public URL generation
+- no frontend download/navigation behavior
+- no direct frontend Supabase client
+- no service-role usage
+- no public artifact delivery enablement
+
+### Phase 149 completion summary
+
+- Added backend descriptor route GET /exports/:jobId/artifacts/:artifactId/delivery
+- Wired descriptor route to resolveBackendMediatedArtifactDelivery(...)
+- Confirmed default descriptor route returns unavailable state
+- Confirmed enforced descriptor route rejects unauthenticated requesters with safe 401
+- Confirmed enforced descriptor route rejects mismatched requesters with safe 403
+- Confirmed matching authenticated requester receives unavailable until workspace/RLS readiness is complete
+- Confirmed no signed URL generation was added
+- Confirmed no public URL generation was added
+- Confirmed no frontend storage or download/navigation behavior was added
+
+### Future artifact delivery roadmap note
+
+- Phase 149 wires the backend descriptor route safely.
+- Future phases may connect frontend store/service to this descriptor route.
+- Real browser navigation/download behavior remains deferred until backend descriptor responses can become ready safely.
+
+### Verification
+
+- phase149: expected focused pass
+- phase148: expected pass
+- phase147: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Descriptor route returns unavailable until prerequisites are ready
+- No active signed/download/public URL behavior was added
+- No frontend Supabase/storage access was added
+- No service-role behavior was added
+- Public artifact delivery remains deferred

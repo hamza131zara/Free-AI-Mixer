@@ -2180,3 +2180,14 @@ Still deferred:
   - Direct frontend Supabase/storage access remains forbidden.
   - Service-role shortcuts remain forbidden.
   - Public artifact delivery remains blocked until backend descriptor route wiring is implemented safely.
+
+- Phase 149 adds backend artifact delivery descriptor route wiring:
+  - Descriptor route exists at /exports/:jobId/artifacts/:artifactId/delivery.
+  - Descriptor route returns unavailable until workspace/RLS/storage prerequisites are ready.
+  - Enforced mode rejects unauthenticated requester with safe 401.
+  - Enforced mode rejects owner/workspace mismatch with safe 403.
+  - No signed URL or public URL behavior was added.
+  - No frontend download/navigation behavior was added.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Service-role shortcuts remain forbidden.
+  - Public artifact delivery remains blocked until backend descriptor readiness can be made production-safe.

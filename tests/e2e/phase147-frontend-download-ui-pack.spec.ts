@@ -107,7 +107,7 @@ test.describe("phase147 frontend download ui pack", () => {
     expect(frontendSource).toContain("ArtifactDownloadAction");
     expect(frontendSource).toContain("getArtifactDownloadUiState");
 
-    expect(routeSource).not.toContain("resolveBackendMediatedArtifactDelivery");
+    expect(routeSource).toContain("resolveBackendMediatedArtifactDelivery");
     expect(routeSource).not.toContain("createProductionArtifactDeliveryNotConfiguredProvider");
 
     expect(frontendSource).not.toContain("@supabase/supabase-js");
@@ -125,4 +125,5 @@ test.describe("phase147 frontend download ui pack", () => {
     expect(artifactSource).not.toContain("production_ready_public_delivery");
   });
 });
+
 

@@ -90,11 +90,11 @@ test.describe("phase148 backend artifact delivery descriptor route wiring audit 
     expect(backendMediatedSource).toContain("resolveBackendMediatedArtifactDelivery");
     expect(productionProviderSource).toContain("createProductionArtifactDeliveryNotConfiguredProvider");
 
-    // Phase 148 is audit-only. Route wiring remains deferred.
-    expect(routeSource).not.toContain("resolveBackendMediatedArtifactDelivery");
+    // Phase 148 is audit-only. Descriptor route wiring now exists but remains unavailable until prerequisites are ready.
+    expect(routeSource).toContain("resolveBackendMediatedArtifactDelivery");
     expect(routeSource).not.toContain("createProductionArtifactDeliveryNotConfiguredProvider");
     expect(routeSource).not.toContain("ProductionArtifactDeliveryProvider");
-    expect(routeSource).not.toContain("backendRoutePath");
+    expect(routeSource).toContain("backendRoutePath");
     expect(routeSource).not.toContain('deliveryMode: "backend_mediated"');
 
     expect(routeSource).toContain("authorizationMode?: ExportRouteAuthorizationMode");
@@ -152,3 +152,4 @@ test.describe("phase148 backend artifact delivery descriptor route wiring audit 
     expect(frontendSource).not.toContain(".click()");
   });
 });
+

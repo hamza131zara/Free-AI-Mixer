@@ -1,4 +1,5 @@
 ﻿import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
+import { resolveBackendMediatedArtifactDelivery } from "../artifacts/backendMediatedArtifactDelivery";
 import { Router } from "express";
 import type { NextFunction, Request, Response } from "express";
 import { promises as fs } from "node:fs";
@@ -609,8 +610,78 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
     },
   );
 
+
+  router.get(
+    "/exports/:jobId/artifacts/:artifactId/delivery",
+    async (request, response) => {
+      const jobId = request.params.jobId;
+      const artifactId = request.params.artifactId;
+
+      if (!jobId || !artifactId) {
+        response.status(400).json({
+          code: "invalid_artifact_delivery_request",
+          message: "A jobId and artifactId are required.",
+        });
+        return;
+      }
+
+      const requesterContext = requesterContextResolver(request);
+      const record = await registry.getByIdForOwner(jobId, requesterContext);
+
+      if (!record) {
+        response.status(404).json({
+          code: "export_job_not_found",
+          message: "Export job was not found.",
+        });
+        return;
+      }
+
+      const authorizationFailure = getExportRouteAuthorizationFailure(request, record, options);
+      if (authorizationFailure) {
+        sendExportRouteAuthorizationFailure(response, authorizationFailure);
+        return;
+      }
+
+      const descriptor = resolveBackendMediatedArtifactDelivery({
+        jobId,
+        artifactId,
+        requester: {
+          userId: record.ownerId,
+          workspaceId: record.workspaceId,
+        },
+        authorization: {
+          ownerOrWorkspaceAccessAllowed: options?.authorizationMode === "enforce",
+          workspaceMembershipOrRlsReady: false,
+        },
+        storage: {
+          providerConfigured: false,
+          artifactReady: false,
+        },
+      });
+
+      if (descriptor.kind === "unavailable") {
+        response.status(200).json({
+          kind: "artifact_delivery_unavailable",
+          reason: descriptor.reason,
+        });
+        return;
+      }
+
+      response.status(200).json({
+        kind: "artifact_delivery_ready",
+        deliveryMode: descriptor.deliveryMode,
+        jobId: descriptor.jobId,
+        artifactId: descriptor.artifactId,
+        backendRoutePath: descriptor.backendRoutePath,
+        expiresAt: descriptor.expiresAt,
+      });
+    },
+  );
+
   return router;
 };
+
+
 
 
 
