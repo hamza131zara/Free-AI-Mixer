@@ -1656,3 +1656,15 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 110 adds real auth provider implementation audit coverage:
+  - Real token/session verification is explicitly not implemented yet.
+  - Future JWT/session provider strategies still fail closed with `invalid_credentials`.
+  - Export routes still read trusted request context non-enforcing only.
+  - Export routes still do not call authorization adapter/decision/guard boundaries.
+  - Export routes still do not emit authorization `401` / `403` responses.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
