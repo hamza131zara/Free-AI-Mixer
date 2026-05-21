@@ -6840,3 +6840,62 @@ Before route authorization or public artifact delivery:
 - No route behavior changed
 - No RLS policies were applied
 - Public artifact delivery remains deferred
+
+## Phase 81 - Requester Context Resolver Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- requester context resolver boundary only
+- no broad auth implementation
+- no fake authenticated session
+- no route authorization enforcement
+- no app/server auth wiring
+- no RLS policy application
+- no direct frontend Supabase client
+- no signed/download/storage URL behavior
+- no public artifact delivery enablement
+
+### Phase 81 completion summary
+
+- Added requester context resolver boundary
+- Added `createAuthNotConfiguredRequesterContextResolver(...)`
+- Added `resolveRequesterContext(...)`
+- Confirmed resolver returns explicit unauthenticated state:
+  - `auth_not_configured`
+- Confirmed resolver does not fabricate user identity from headers
+- Confirmed arbitrary auth/user/workspace headers are not trusted as authenticated identity
+- Confirmed route/app/server authorization enforcement remains deferred
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- real auth provider integration must be added
+- authenticated requester context must be resolved from trusted auth middleware
+- route ownership checks must use authenticated requester context
+- workspace membership checks must be enforced
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase81`: expected focused pass
+- `phase80`: expected pass
+- `phase79`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Resolver exists as a boundary only
+- No route behavior changed
+- No fake auth/session behavior was added
+- No RLS policies were applied
+- Public artifact delivery remains deferred

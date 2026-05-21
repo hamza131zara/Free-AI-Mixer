@@ -1291,3 +1291,15 @@ Still deferred:
   - No fake auth/session/user identity was introduced.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 81 adds requester context resolver boundary coverage:
+  - Requester context resolver boundary now exists.
+  - Resolver returns explicit `auth_not_configured` state by default.
+  - Resolver does not fabricate user identity from headers.
+  - Real trusted auth middleware integration remains deferred.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership checks remain deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
