@@ -2223,3 +2223,15 @@ Still deferred:
   - No frontend Supabase/storage access was added.
   - No signed URL or public URL handling was added.
   - Public artifact delivery remains blocked until UI wiring and backend readiness are approved.
+
+- Phase 153 adds frontend artifact delivery descriptor UI wiring coverage:
+  - ArtifactDeliveryDescriptorAction component exists.
+  - Descriptor store state maps to ArtifactDownloadAction descriptor props.
+  - Ready state requires backend-mediated descriptor state.
+  - Idle/error states do not become fake ready descriptors.
+  - TimelineExportPanel wiring remains deferred.
+  - No window.open or location.href behavior was added.
+  - No anchor download behavior was added.
+  - No frontend Supabase/storage access was added.
+  - No signed URL or public URL handling was added.
+  - Public artifact delivery remains blocked until main UI wiring and backend readiness are approved.

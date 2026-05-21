@@ -11141,3 +11141,61 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 153 - Frontend Artifact Delivery Descriptor UI Wiring Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- frontend artifact delivery descriptor UI wiring component
+- store-to-download-action wiring boundary
+- reusable component only
+- no TimelineExportPanel wiring
+- no browser download/navigation behavior
+- no window.open behavior
+- no location.href behavior
+- no anchor download behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no signed URL handling
+- no public URL handling
+- no public artifact delivery enablement
+
+### Phase 153 completion summary
+
+- Added src/components/ArtifactDeliveryDescriptorAction.tsx
+- Added mapDescriptorStoreEntryToDownloadDescriptor(...)
+- Wired descriptor store state to ArtifactDownloadAction descriptor props
+- Wired descriptor store request action to a render/dispatch-only button
+- Confirmed unavailable descriptor state maps safely
+- Confirmed ready backend-mediated descriptor state maps safely
+- Confirmed idle/error states do not become fake ready descriptors
+- Confirmed TimelineExportPanel wiring remains deferred
+- Confirmed no browser navigation or download behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Future artifact delivery roadmap note
+
+- Phase 153 adds a reusable UI wiring component only.
+- Future phase can wire this component into TimelineExportPanel after another focused audit.
+- Real browser navigation/download behavior remains deferred.
+
+### Verification
+
+- phase153: expected focused pass
+- phase152: expected pass
+- phase151: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Component renders and dispatches store actions only
+- No main export UI wiring behavior changed
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
