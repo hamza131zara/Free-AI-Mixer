@@ -2097,3 +2097,16 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 141 adds RLS verification and remote opt-in smoke coverage:
+  - Offline RLS draft verification boundary exists.
+  - Remote RLS smoke configuration boundary exists.
+  - Remote smoke is disabled by default.
+  - Incomplete opt-in env fails safely.
+  - No Supabase CLI apply was performed.
+  - No live migration was added.
+  - RLS verification is not wired into routes or app runtime.
+  - Service-role shortcuts remain forbidden.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

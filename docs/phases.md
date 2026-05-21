@@ -10474,3 +10474,63 @@ Scope:
 - No service-role behavior was added
 - No Supabase/RLS runtime behavior was added
 - Public artifact delivery remains deferred
+
+## Phase 141 - RLS Verification + Remote Opt-In Smoke Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- offline RLS draft verification boundary
+- remote RLS smoke configuration boundary
+- default remote smoke disabled
+- no Supabase CLI apply
+- no live migration application
+- no route/runtime RLS enforcement
+- no service-role usage
+- no fake authenticated session
+- no trusted-header shortcut
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 141 completion summary
+
+- Added verifySupabaseRlsPolicyDraftText(...)
+- Added readSupabaseRlsRemoteSmokeConfig(...)
+- Confirmed Phase 140 RLS draft passes offline verification
+- Confirmed incomplete draft fails verification safely
+- Confirmed remote RLS smoke is disabled by default
+- Confirmed opt-in remote smoke refuses incomplete env safely
+- Confirmed configured remote smoke state can be represented without printing secrets
+- Confirmed RLS verification boundary is not wired into routes or app runtime
+- Confirmed no Supabase CLI apply was performed
+- Confirmed no live migration was added
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Merged Workspace/RLS roadmap note
+
+- Phase 137 covered workspace membership strategy and contract only.
+- Phase 138 covered workspace membership repository implementation boundary.
+- Phase 139 covered backend-only workspace membership enforcement decision helper.
+- Phase 140 covered Supabase RLS policy draft and migration audit.
+- Phase 141 covers RLS verification and remote opt-in smoke configuration.
+
+### Verification
+
+- phase141: expected focused pass
+- phase140: expected pass
+- phase139: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- RLS verification is offline/default only
+- Remote RLS smoke is opt-in and config-only in default runs
+- No route behavior changed
+- No service-role behavior was added
+- No Supabase/RLS runtime behavior was added
+- Public artifact delivery remains deferred
