@@ -10298,3 +10298,61 @@ Scope:
 - No trusted-header shortcut was added
 - No RLS behavior was added
 - Public artifact delivery remains deferred
+
+## Phase 138 - Workspace Membership Repository Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- workspace membership repository implementation boundary
+- in-memory/offline repository only
+- no route authorization membership enforcement
+- no Supabase membership repository implementation
+- no RLS policy application
+- no fake authenticated session
+- no trusted-header shortcut
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 138 completion summary
+
+- Added createInMemoryWorkspaceMembershipRepository(...)
+- Confirmed active membership records can be returned by repository
+- Confirmed active membership allows workspace membership access decision
+- Confirmed missing membership denies safely
+- Confirmed disabled membership denies safely
+- Confirmed not-configured membership repository still denies safely
+- Confirmed membership repository is not wired into routes yet
+- Confirmed workspace membership runtime enforcement remains deferred
+- Confirmed Supabase membership repository implementation remains deferred
+- Confirmed Supabase RLS policy application remains deferred
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Merged Workspace/RLS roadmap note
+
+- Phase 137 covered workspace membership strategy and contract only.
+- Phase 138 covers workspace membership repository implementation boundary.
+- Phase 139 will cover workspace membership enforcement wiring.
+- Phase 140 will cover Supabase RLS policy draft and migration audit.
+- Phase 141 will cover RLS verification and remote opt-in smoke.
+
+### Verification
+
+- phase138: expected focused pass
+- phase137: expected pass
+- phase135: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Workspace membership repository is offline/in-memory only
+- No route behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- No Supabase/RLS behavior was added
+- Public artifact delivery remains deferred
