@@ -10076,3 +10076,60 @@ Scope:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 133 - Export Route Authorization Enforcement Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- merged export route authorization enforcement implementation
+- test-controlled authorization enforcement only
+- default route authorization remains disabled
+- owner/workspace checks for core export status and execute routes
+- no artifact access/stream route authorization yet
+- no trusted-header shortcut
+- no fake authenticated session
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 133 completion summary
+
+- Added ExportRouteAuthorizationMode with disabled/enforce modes
+- Default createExportRouter behavior remains authorization disabled
+- Explicit enforce mode checks trusted backend requester context
+- Matching authenticated requester owner/workspace can access core export status route
+- Unauthenticated requester is rejected with safe 401
+- Owner/workspace mismatch is rejected with safe 403
+- Arbitrary x-user-id / x-workspace-id headers are not trusted
+- POST /exports creation behavior remains unchanged
+- Artifact access/stream authorization remains deferred to Phase 134
+- Public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Merged route roadmap note
+
+- Phase 133 covers core export route authorization enforcement only.
+- Phase 134 will cover artifact access/stream authorization.
+- Phase 135 will cover route authorization regression and hardening.
+
+### Verification
+
+- phase133: expected focused pass
+- phase132: expected pass
+- phase131: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Authorization enforcement is opt-in only
+- Default/local-dev behavior remains unchanged
+- No trusted-header shortcut was added
+- No fake auth/session behavior was added
+- No artifact access/stream authorization yet
+- Public artifact delivery remains deferred

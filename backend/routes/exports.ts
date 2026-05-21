@@ -91,11 +91,65 @@ const mapRecordToPollResponse = (
   };
 };
 
+export type ExportRouteAuthorizationMode = "disabled" | "enforce";
+
+interface ExportRouteAuthorizationFailure {
+  statusCode: typeof exportAuthorizationUnauthorizedStatus | typeof exportAuthorizationForbiddenStatus;
+  code: "unauthorized" | "forbidden";
+  message: string;
+}
+
+const exportAuthorizationUnauthorizedStatus = 401 as const;
+const exportAuthorizationForbiddenStatus = 403 as const;
+
+const getExportRouteAuthorizationFailure = (
+  request: Request,
+  record: BackendExportJobRecord,
+  options?: ExportRouterOptions,
+): ExportRouteAuthorizationFailure | undefined => {
+  if (options?.authorizationMode !== "enforce") {
+    return undefined;
+  }
+
+  const trustedRequesterContext = getRequesterContextFromRequest(request);
+
+  if (trustedRequesterContext.kind !== "authenticated") {
+    return {
+      statusCode: exportAuthorizationUnauthorizedStatus,
+      code: "unauthorized",
+      message: "Authentication is required to access this export job.",
+    };
+  }
+
+  if (
+    trustedRequesterContext.userId !== record.ownerId ||
+    trustedRequesterContext.workspaceId !== record.workspaceId
+  ) {
+    return {
+      statusCode: exportAuthorizationForbiddenStatus,
+      code: "forbidden",
+      message: "You are not authorized to access this export job.",
+    };
+  }
+
+  return undefined;
+};
+
+const sendExportRouteAuthorizationFailure = (
+  response: Response,
+  failure: ExportRouteAuthorizationFailure,
+): void => {
+  response.status(failure.statusCode).json({
+    code: failure.code,
+    message: failure.message,
+  });
+};
 export interface ExportRouterOptions {
   rendererAdapter?: RendererAdapter;
   pathPolicy?: RenderOutputPathPolicy;
   artifactAccessProvider?: ArtifactAccessProvider;
   requesterContextResolver?: ExportRequesterContextResolver;
+  authorizationMode?: ExportRouteAuthorizationMode;
   /** Internal resolver for artifact storage references. Used by stream route. */
   artifactStorageRefResolver?: ArtifactStorageRefResolver;
   /** Internal callback for ref registration. Used by POST /exports/:jobId/execute. */
@@ -150,6 +204,13 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         const record = await registry.getByIdForOwner(jobId, requesterContext);
         if (!record) {
           throw exportJobNotFound(jobId);
+        }
+
+        // Phase 133 authorization guard for export status route.
+        const authorizationFailure = getExportRouteAuthorizationFailure(request, record, options);
+        if (authorizationFailure) {
+          sendExportRouteAuthorizationFailure(response, authorizationFailure);
+          return;
         }
 
         const pollResponse = mapRecordToPollResponse(record);
@@ -411,6 +472,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       response: Response,
     ) => {
       const requesterContext = requesterContextResolver(request);
+
       if (!isRouteExecutionEnabled()) {
         response.status(503).json({
           code: "route_execution_disabled",
@@ -421,6 +483,14 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
       const { jobId } = parseJobIdParams(request.params);
       const record = await registry.getByIdForOwner(jobId, requesterContext);
+      // Phase 133 authorization guard for execute route.
+      if (record) {
+        const authorizationFailure = getExportRouteAuthorizationFailure(request, record, options);
+        if (authorizationFailure) {
+          sendExportRouteAuthorizationFailure(response, authorizationFailure);
+          return;
+        }
+      }
       if (!record) {
         throw exportJobNotFound(jobId);
       }
@@ -517,6 +587,8 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
   return router;
 };
+
+
 
 
 

@@ -2006,3 +2006,17 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 133 adds test-controlled core export route authorization enforcement:
+  - Default route authorization remains disabled.
+  - Explicit enforce mode allows matching authenticated requester owner/workspace.
+  - Explicit enforce mode rejects unauthenticated requester with safe 401.
+  - Explicit enforce mode rejects owner/workspace mismatch with safe 403.
+  - Arbitrary x-user-id / x-workspace-id headers are not trusted.
+  - POST /exports creation behavior remains unchanged.
+  - Artifact access/stream route authorization remains deferred to Phase 134.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
