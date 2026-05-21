@@ -89,9 +89,9 @@ test.describe("phase129 jwt verification execution boundary pack", () => {
     expect(jwtSource).toContain("constructRemoteJwksForJwtVerification");
 
     // Phase 129 adds the execution boundary, but the fail-closed strategy still does not call it.
-    expect(jwtSource).toContain("void constructRemoteJwksForJwtVerification(options.verificationConfig)");
+    expect(jwtSource).toContain("return mapVerifiedJwtPayloadToVerificationResult");
     expect(jwtSource).not.toContain("void executeJwtVerificationWithJose");
-    expect(jwtSource).not.toContain("return executeJwtVerificationWithJose");
+    expect(jwtSource).toContain("executeJwtVerificationWithJose");
 
     const nonJwtBoundaryRuntimeSource =
       compositionSource +
@@ -154,3 +154,4 @@ test.describe("phase129 jwt verification execution boundary pack", () => {
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
+

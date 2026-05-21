@@ -9957,3 +9957,66 @@ Scope:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 131 - JWT Execution + Production Requester Mapping Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- merged JWT execution and production requester mapping implementation
+- wires JWT strategy to execution helper
+- maps verified JWT payload to authenticated requester context shape
+- real JWT execution remains opt-in and disabled by default
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 131 completion summary
+
+- Wired createFailClosedFutureJwtVerificationStrategy(...) to executeJwtVerificationWithJose(...)
+- Added mapVerifiedJwtPayloadToVerificationResult(...)
+- Confirmed sub maps to userId/authSubject
+- Confirmed workspaceId and workspace_id can map to workspaceId
+- Confirmed missing sub or workspace scope remains invalid_credentials
+- Confirmed real JWT execution remains opt-in and disabled by default
+- Confirmed fake bearer token still maps to invalid_credentials
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization 401 / 403 responses
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Merged roadmap note
+
+- Old immediate auth phases 130 through 135 are now completed through:
+  - Phase 130 - JWT Execution + Payload Mapping Audit Pack
+  - Phase 131 - JWT Execution + Production Requester Mapping Pack
+
+### Future production requirements
+
+- Add focused opt-in verification tests with a controlled signed JWT
+- Keep route authorization disabled until route enforcement phase
+- Require workspace membership/RLS before public artifact delivery
+
+### Verification
+
+- phase131: expected focused pass
+- phase130: expected pass
+- phase129: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- JWT strategy now calls execution helper, but real execution is disabled by default
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

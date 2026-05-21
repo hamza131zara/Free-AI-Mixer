@@ -1,5 +1,5 @@
 ﻿import type { IncomingHttpHeaders } from "node:http";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import type { BackendRequesterContext } from "./requesterContext";
 import { createUnauthenticatedRequesterContext } from "./requesterContext";
 import type { JwtVerificationConfiguration } from "./jwtVerificationConfiguration";
@@ -12,6 +12,7 @@ export interface TrustedJwtVerificationInput {
 
 export interface TrustedJwtVerificationStrategyOptions {
   verificationConfig?: JwtVerificationConfiguration;
+  executeRealVerification?: boolean;
 }
 
 export type TrustedJwtVerificationResult =
@@ -57,93 +58,11 @@ export type JwtRemoteJwksConstructionResult =
       reason: "missing_config" | "not_configured" | "unsupported_key_mode" | "invalid_jwks_uri";
       realVerificationEnabled: false;
     };
+
 export interface JwtVerificationExecutionOptions {
   executeRealVerification?: boolean;
 }
 
-export const executeJwtVerificationWithJose = async (
-  input: TrustedJwtVerificationInput,
-  config: JwtVerificationConfiguration | undefined,
-  options: JwtVerificationExecutionOptions = {},
-): Promise<TrustedJwtVerificationResult> => {
-  const authorizationHeader = getAuthorizationHeader(input.headers);
-
-  if (!authorizationHeader) {
-    return {
-      kind: "not_verified",
-      reason: "missing_credentials",
-    };
-  }
-
-  if (!options.executeRealVerification) {
-    return {
-      kind: "not_verified",
-      reason: "invalid_credentials",
-    };
-  }
-
-  const jwksResult = constructRemoteJwksForJwtVerification(config);
-
-  if (jwksResult.kind !== "constructed") {
-    return {
-      kind: "not_verified",
-      reason: "auth_not_configured",
-    };
-  }
-
-  try {
-    const token = authorizationHeader.replace(/^Bearer\s+/i, "").trim();
-
-    const verified = await jwtVerify(token, jwksResult.jwks, {
-      issuer: config?.kind === "jwt_verification_configured" ? config.issuer : undefined,
-      audience: config?.kind === "jwt_verification_configured" ? config.audience : undefined,
-    });
-
-    const subject = verified.payload.sub;
-
-    if (!subject) {
-      return {
-        kind: "not_verified",
-        reason: "invalid_credentials",
-      };
-    }
-
-    const workspaceId =
-      typeof verified.payload.workspaceId === "string"
-        ? verified.payload.workspaceId
-        : typeof verified.payload.workspace_id === "string"
-          ? verified.payload.workspace_id
-          : undefined;
-
-    if (!workspaceId) {
-      return {
-        kind: "not_verified",
-        reason: "invalid_credentials",
-      };
-    }
-
-    return {
-      kind: "verified",
-      userId: subject,
-      workspaceId,
-      authProvider: "jwt",
-      authSubject: subject,
-    };
-  } catch {
-    return {
-      kind: "not_verified",
-      reason: "invalid_credentials",
-    };
-  }
-};
-
-
-/**
- * Phase 119 import boundary.
- *
- * This proves the selected `jose` runtime imports are available inside the JWT
- * verification boundary. It intentionally does not execute real verification yet.
- */
 export const getJoseRuntimeImportBoundaryStatus =
   (): JoseRuntimeImportBoundaryStatus => ({
     jwtVerifyImported: typeof jwtVerify === "function",
@@ -151,12 +70,6 @@ export const getJoseRuntimeImportBoundaryStatus =
     realVerificationEnabled: false,
   });
 
-/**
- * Phase 123 configuration wiring boundary.
- *
- * This lets the JWT verification boundary understand future verification
- * configuration without executing jwtVerify or constructing JWKS yet.
- */
 export const getJwtVerificationExecutionReadiness = (
   config?: JwtVerificationConfiguration,
 ): JwtVerificationExecutionReadiness => {
@@ -219,6 +132,7 @@ export const constructRemoteJwksForJwtVerification = (
     };
   }
 };
+
 const getAuthorizationHeader = (
   headers?: TrustedJwtVerificationInput["headers"],
 ): string | undefined => {
@@ -229,6 +143,90 @@ const getAuthorizationHeader = (
   }
 
   return value;
+};
+
+export const mapVerifiedJwtPayloadToVerificationResult = (
+  payload: JWTPayload,
+): TrustedJwtVerificationResult => {
+  const subject = payload.sub;
+
+  if (!subject) {
+    return {
+      kind: "not_verified",
+      reason: "invalid_credentials",
+    };
+  }
+
+  const payloadRecord = payload as Record<string, unknown>;
+
+  const workspaceId =
+    typeof payloadRecord.workspaceId === "string"
+      ? payloadRecord.workspaceId
+      : typeof payloadRecord.workspace_id === "string"
+        ? payloadRecord.workspace_id
+        : undefined;
+
+  if (!workspaceId) {
+    return {
+      kind: "not_verified",
+      reason: "invalid_credentials",
+    };
+  }
+
+  return {
+    kind: "verified",
+    userId: subject,
+    workspaceId,
+    authProvider: "jwt",
+    authSubject: subject,
+  };
+};
+
+export const executeJwtVerificationWithJose = async (
+  input: TrustedJwtVerificationInput,
+  config: JwtVerificationConfiguration | undefined,
+  options: JwtVerificationExecutionOptions = {},
+): Promise<TrustedJwtVerificationResult> => {
+  const authorizationHeader = getAuthorizationHeader(input.headers);
+
+  if (!authorizationHeader) {
+    return {
+      kind: "not_verified",
+      reason: "missing_credentials",
+    };
+  }
+
+  if (!options.executeRealVerification) {
+    return {
+      kind: "not_verified",
+      reason: "invalid_credentials",
+    };
+  }
+
+  const jwksResult = constructRemoteJwksForJwtVerification(config);
+
+  if (jwksResult.kind !== "constructed") {
+    return {
+      kind: "not_verified",
+      reason: "auth_not_configured",
+    };
+  }
+
+  try {
+    const token = authorizationHeader.replace(/^Bearer\s+/i, "").trim();
+
+    const verified = await jwtVerify(token, jwksResult.jwks, {
+      issuer: config?.kind === "jwt_verification_configured" ? config.issuer : undefined,
+      audience: config?.kind === "jwt_verification_configured" ? config.audience : undefined,
+    });
+
+    return mapVerifiedJwtPayloadToVerificationResult(verified.payload);
+  } catch {
+    return {
+      kind: "not_verified",
+      reason: "invalid_credentials",
+    };
+  }
 };
 
 export const createJwtVerificationNotConfiguredStrategy =
@@ -244,24 +242,10 @@ export const createFailClosedFutureJwtVerificationStrategy = (
   options: TrustedJwtVerificationStrategyOptions = {},
 ): TrustedJwtVerificationStrategy => ({
   kind: "future_jwt_verification",
-  verify: async (input) => {
-    void getJwtVerificationExecutionReadiness(options.verificationConfig);
-    void constructRemoteJwksForJwtVerification(options.verificationConfig);
-
-    const authorizationHeader = getAuthorizationHeader(input?.headers);
-
-    if (!authorizationHeader) {
-      return {
-        kind: "not_verified",
-        reason: "missing_credentials",
-      };
-    }
-
-    return {
-      kind: "not_verified",
-      reason: "invalid_credentials",
-    };
-  },
+  verify: async (input) =>
+    executeJwtVerificationWithJose(input ?? {}, options.verificationConfig, {
+      executeRealVerification: options.executeRealVerification === true,
+    }),
 });
 
 export const mapJwtVerificationResultToRequesterContext = (
@@ -279,8 +263,3 @@ export const mapJwtVerificationResultToRequesterContext = (
     authSubject: result.authSubject,
   };
 };
-
-
-
-
-

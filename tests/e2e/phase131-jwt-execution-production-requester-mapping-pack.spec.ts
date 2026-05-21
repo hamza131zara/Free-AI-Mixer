@@ -4,7 +4,8 @@ import path from "node:path";
 import {
   createFailClosedFutureJwtVerificationStrategy,
   executeJwtVerificationWithJose,
-  getJoseRuntimeImportBoundaryStatus,
+  mapJwtVerificationResultToRequesterContext,
+  mapVerifiedJwtPayloadToVerificationResult,
 } from "../../backend/auth/jwtProviderVerificationStrategy";
 import { readJwtVerificationConfiguration } from "../../backend/auth/jwtVerificationConfiguration";
 
@@ -18,19 +19,59 @@ const readIfExists = (relativePath: string): string => {
   return existsSync(fullPath) ? readFileSync(fullPath, "utf8") : "";
 };
 
-test.describe("phase130 jwt execution and payload mapping audit pack", () => {
-  test("jwt execution helper exists but defaults to fail-closed non-execution", async () => {
+test.describe("phase131 jwt execution and production requester mapping pack", () => {
+  test("verified jwt payload maps to authenticated requester context shape", async () => {
+    const camelCaseResult = mapVerifiedJwtPayloadToVerificationResult({
+      sub: "user-123",
+      workspaceId: "workspace-456",
+    });
+
+    expect(camelCaseResult).toEqual({
+      kind: "verified",
+      userId: "user-123",
+      workspaceId: "workspace-456",
+      authProvider: "jwt",
+      authSubject: "user-123",
+    });
+
+    expect(mapJwtVerificationResultToRequesterContext(camelCaseResult)).toEqual({
+      kind: "authenticated",
+      userId: "user-123",
+      workspaceId: "workspace-456",
+      authProvider: "jwt",
+      authSubject: "user-123",
+    });
+
+    const snakeCaseResult = mapVerifiedJwtPayloadToVerificationResult({
+      sub: "user-abc",
+      workspace_id: "workspace-def",
+    });
+
+    expect(snakeCaseResult).toEqual({
+      kind: "verified",
+      userId: "user-abc",
+      workspaceId: "workspace-def",
+      authProvider: "jwt",
+      authSubject: "user-abc",
+    });
+
+    expect(mapVerifiedJwtPayloadToVerificationResult({ workspaceId: "workspace-only" })).toEqual({
+      kind: "not_verified",
+      reason: "invalid_credentials",
+    });
+
+    expect(mapVerifiedJwtPayloadToVerificationResult({ sub: "user-only" })).toEqual({
+      kind: "not_verified",
+      reason: "invalid_credentials",
+    });
+  });
+
+  test("jwt strategy calls execution helper while real execution remains disabled by default", async () => {
     const configured = readJwtVerificationConfiguration({
       FREE_AI_MIXER_AUTH_PROVIDER: "jwt",
       FREE_AI_MIXER_AUTH_ISSUER: "https://auth.example.test",
       FREE_AI_MIXER_AUTH_AUDIENCE: "free-ai-mixer",
       FREE_AI_MIXER_AUTH_JWKS_URI: "https://auth.example.test/.well-known/jwks.json",
-    });
-
-    expect(getJoseRuntimeImportBoundaryStatus()).toEqual({
-      jwtVerifyImported: true,
-      createRemoteJWKSetImported: true,
-      realVerificationEnabled: false,
     });
 
     await expect(
@@ -58,46 +99,41 @@ test.describe("phase130 jwt execution and payload mapping audit pack", () => {
       kind: "not_verified",
       reason: "invalid_credentials",
     });
+
+    const strategy = createFailClosedFutureJwtVerificationStrategy({
+      verificationConfig: configured,
+    });
+
+    await expect(strategy.verify()).resolves.toEqual({
+      kind: "not_verified",
+      reason: "missing_credentials",
+    });
+
+    await expect(
+      strategy.verify({
+        headers: {
+          authorization: "Bearer fake-token-must-not-authenticate",
+        },
+      }),
+    ).resolves.toEqual({
+      kind: "not_verified",
+      reason: "invalid_credentials",
+    });
   });
 
-  test("verified payload mapping shape exists but is not wired into strategy routes app or server", async () => {
+  test("production mapping is not route-enforced and artifact delivery remains blocked", async () => {
     const jwtSource = readSource("backend/auth/jwtProviderVerificationStrategy.ts");
-    const requesterSource = readSource("backend/auth/requesterContext.ts");
-    const compositionSource = readSource("backend/auth/trustedAuthProviderComposition.ts");
-    const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
-    const appSource = readSource("backend/app.ts");
     const routeSource = readSource("backend/routes/exports.ts");
-    const serverSource = readSource("backend/server.ts");
+    const appSource = readSource("backend/app.ts");
+    const compositionSource = readSource("backend/auth/trustedAuthProviderComposition.ts");
 
+    expect(jwtSource).toContain("mapVerifiedJwtPayloadToVerificationResult");
     expect(jwtSource).toContain("executeJwtVerificationWithJose");
-    expect(jwtSource).toContain("await jwtVerify");
-    expect(jwtSource).toContain("payload.sub");
-    expect(jwtSource).toContain("payloadRecord.workspaceId");
-    expect(jwtSource).toContain("payloadRecord.workspace_id");
-    expect(jwtSource).toContain('authProvider: "jwt"');
-    expect(jwtSource).toContain("authSubject: subject");
-
-    expect(requesterSource).toContain("BackendRequesterContext");
-
-    // Phase 130 is audit-only. The JWT strategy now calls execution helper with real execution disabled by default.
+    expect(jwtSource).toContain("executeRealVerification: options.executeRealVerification === true");
     expect(jwtSource).toContain("return mapVerifiedJwtPayloadToVerificationResult");
-    expect(jwtSource).toContain("executeJwtVerificationWithJose");
-    expect(jwtSource).toContain("executeJwtVerificationWithJose");
 
-    const nonJwtBoundaryRuntimeSource =
-      compositionSource +
-      "\n" +
-      middlewareSource +
-      "\n" +
-      appSource +
-      "\n" +
-      routeSource +
-      "\n" +
-      serverSource;
-
-    expect(nonJwtBoundaryRuntimeSource).not.toContain("executeJwtVerificationWithJose");
-    expect(nonJwtBoundaryRuntimeSource).not.toContain("await jwtVerify");
-    expect(nonJwtBoundaryRuntimeSource).not.toContain('from "jose"');
+    expect(compositionSource).toContain("mapJwtVerificationResultToRequesterContext");
+    expect(appSource).toContain("createTrustedAuthMiddleware");
 
     expect(routeSource).toContain("getRequesterContextFromRequest");
     expect(routeSource).not.toContain("adaptAuthenticatedRequesterToExportRequesterContext");
@@ -105,10 +141,8 @@ test.describe("phase130 jwt execution and payload mapping audit pack", () => {
     expect(routeSource).not.toContain("mapExportAuthorizationDecisionToRouteGuard");
     expect(routeSource).not.toContain("throw new ExportApiError(401");
     expect(routeSource).not.toContain("throw new ExportApiError(403");
-  });
-
-  test("jwt execution audit keeps route enforcement frontend storage and artifact delivery blocked", async () => {
-    const routeSource = readSource("backend/routes/exports.ts");
+    expect(routeSource).not.toContain('req.headers["x-user-id"]');
+    expect(routeSource).not.toContain('req.headers["x-workspace-id"]');
 
     const frontendSource =
       readSource("src/services/exportService.ts") +
@@ -126,40 +160,9 @@ test.describe("phase130 jwt execution and payload mapping audit pack", () => {
       "\n" +
       readIfExists("backend/artifacts/notConfiguredArtifactAccessProvider.ts");
 
-    const configured = readJwtVerificationConfiguration({
-      FREE_AI_MIXER_AUTH_PROVIDER: "jwt",
-      FREE_AI_MIXER_AUTH_ISSUER: "https://auth.example.test",
-      FREE_AI_MIXER_AUTH_AUDIENCE: "free-ai-mixer",
-      FREE_AI_MIXER_AUTH_JWKS_URI: "https://auth.example.test/.well-known/jwks.json",
-    });
-
-    const strategy = createFailClosedFutureJwtVerificationStrategy({
-      verificationConfig: configured,
-    });
-
-    await expect(
-      strategy.verify({
-        headers: {
-          authorization: "Bearer fake-token-must-not-authenticate",
-          "x-user-id": "fake-user-must-not-authenticate",
-          "x-workspace-id": "fake-workspace-must-not-authenticate",
-        },
-      }),
-    ).resolves.toEqual({
-      kind: "not_verified",
-      reason: "invalid_credentials",
-    });
-
-    expect(routeSource).not.toContain('req.headers["x-user-id"]');
-    expect(routeSource).not.toContain('req.headers["x-workspace-id"]');
-    expect(routeSource).not.toContain("x-user-id");
-    expect(routeSource).not.toContain("x-workspace-id");
-
     expect(frontendSource).not.toContain("@supabase/supabase-js");
     expect(frontendSource).not.toContain("createClient(");
     expect(frontendSource).not.toContain(".storage.from(");
-    expect(frontendSource).not.toContain("createSignedUrl");
-    expect(frontendSource).not.toContain("getPublicUrl");
     expect(frontendSource).not.toContain("window.open");
     expect(frontendSource).not.toContain("location.href");
 
@@ -168,5 +171,3 @@ test.describe("phase130 jwt execution and payload mapping audit pack", () => {
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
-
-

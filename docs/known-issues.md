@@ -1983,3 +1983,15 @@ Still deferred:
   - Workspace membership lookup/enforcement remains deferred.
   - Supabase RLS policy application remains deferred.
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+
+- Phase 131 implements merged JWT execution and production requester mapping:
+  - JWT strategy now calls executeJwtVerificationWithJose(...).
+  - Real JWT execution remains opt-in and disabled by default.
+  - Verified JWT payload mapping shape exists for sub and workspaceId/workspace_id.
+  - Export routes still read trusted request context non-enforcing only.
+  - Export routes still do not call authorization adapter/decision/guard boundaries.
+  - Export routes still do not emit authorization 401 / 403 responses.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
