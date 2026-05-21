@@ -1479,3 +1479,14 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 97 adds auth provider middleware wiring strategy coverage:
+  - Trusted auth middleware can now consume a trusted auth provider strategy.
+  - Default app behavior remains explicit `auth_not_configured`.
+  - Real auth provider app/server wiring remains deferred.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

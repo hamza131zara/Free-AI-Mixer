@@ -36,7 +36,7 @@ test.describe("phase96 real auth provider integration strategy pack", () => {
     });
   });
 
-  test("strategy boundary is not wired into app routes or middleware yet", async () => {
+  test("strategy boundary can be used by middleware but route enforcement remains deferred", async () => {
     const providerSource = readSource("backend/auth/trustedAuthProviderStrategy.ts");
     const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
     const appSource = readSource("backend/app.ts");
@@ -50,12 +50,16 @@ test.describe("phase96 real auth provider integration strategy pack", () => {
     expect(providerSource).toContain("future_session_provider");
     expect(providerSource).toContain("auth_not_configured");
 
-    // Phase 96 adds strategy only. No app/route/server provider wiring yet.
-    expect(middlewareSource).not.toContain("createAuthNotConfiguredTrustedAuthProviderStrategy");
-    expect(appSource).not.toContain("createAuthNotConfiguredTrustedAuthProviderStrategy");
+    // Phase 97 may wire provider strategy into middleware only.
+    expect(middlewareSource).toContain("TrustedAuthProviderStrategy");
+    expect(middlewareSource).toContain("createTrustedAuthMiddleware");
+
+    // App still uses the auth-not-configured middleware wrapper.
+    expect(appSource).toContain("createTrustedAuthNotConfiguredMiddleware");
+
+    // Routes/server do not wire a real provider or enforce auth yet.
     expect(routeSource).not.toContain("createAuthNotConfiguredTrustedAuthProviderStrategy");
     expect(serverSource).not.toContain("createAuthNotConfiguredTrustedAuthProviderStrategy");
-
     expect(routeSource).not.toContain("throw new ExportApiError(401");
     expect(routeSource).not.toContain("throw new ExportApiError(403");
 

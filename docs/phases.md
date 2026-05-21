@@ -7780,3 +7780,64 @@ Before route authorization or public artifact delivery:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 97 - Auth Provider Middleware Wiring Strategy Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- auth provider strategy to trusted auth middleware wiring only
+- no real auth provider app wiring
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 97 completion summary
+
+- Added provider strategy support to trusted auth middleware
+- Added `createTrustedAuthMiddleware(...)`
+- Preserved `createTrustedAuthNotConfiguredMiddleware(...)` default behavior
+- Confirmed default app behavior remains explicit `auth_not_configured`
+- Confirmed middleware can consume a trusted provider strategy in isolation
+- Confirmed app does not wire a real provider yet
+- Confirmed export routes do not enforce authorization yet
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- real trusted auth provider implementation must verify tokens or sessions
+- app/server must intentionally wire the real provider strategy
+- export routes must adapt authenticated requester context intentionally
+- export routes must call authorization decision and route guard boundaries
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase97`: expected focused pass
+- `phase96`: expected pass
+- `phase94`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Middleware strategy wiring is non-enforcing
+- No real provider is wired into app/server
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
