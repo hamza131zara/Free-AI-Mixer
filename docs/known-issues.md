@@ -2160,3 +2160,14 @@ Still deferred:
   - No frontend Supabase/storage access was added.
   - No signed URL or public URL handling was added.
   - Public artifact delivery remains blocked until backend descriptor route wiring is ready.
+
+- Phase 147 adds frontend download UI boundary coverage:
+  - ArtifactDownloadAction component exists.
+  - Download UI remains disabled without backend-mediated descriptor.
+  - Ready state only dispatches a callback.
+  - No window.open or location.href behavior was added.
+  - No anchor download behavior was added.
+  - No frontend Supabase/storage access was added.
+  - No signed URL or public URL handling was added.
+  - Backend descriptor route/provider wiring remains deferred.
+  - Public artifact delivery remains blocked until backend descriptor route wiring is ready.

@@ -10811,3 +10811,58 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 147 - Frontend Download UI Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- frontend download UI component boundary
+- backend-mediated descriptor rendering only
+- callback dispatch only
+- no route wiring
+- no window.open behavior
+- no location.href behavior
+- no anchor download behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no signed URL handling
+- no public URL handling
+- no public artifact delivery enablement
+
+### Phase 147 completion summary
+
+- Added src/services/artifactDownloadUiState.ts
+- Added src/components/ArtifactDownloadAction.tsx
+- Added safe disabled/ready download UI states
+- Confirmed UI stays disabled without backend-mediated descriptor
+- Confirmed ready UI only dispatches onRequestDownload callback
+- Confirmed no direct navigation or browser download behavior was added
+- Confirmed no frontend Supabase/storage access was added
+- Confirmed backend-mediated delivery boundary remains not route-wired
+- Confirmed public artifact delivery remains blocked
+
+### Future artifact delivery roadmap note
+
+- Phase 147 adds frontend download UI boundary only.
+- Future route/provider wiring must connect backend descriptors safely before enabling real download/navigation.
+- Real browser navigation/download behavior remains deferred until backend descriptor route wiring is complete.
+
+### Verification
+
+- phase147: expected focused pass
+- phase146: expected pass
+- phase145: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Component renders and dispatches only
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
