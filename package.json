@@ -42,6 +42,7 @@
     "@remotion/renderer": "^4.0.459",
     "@supabase/supabase-js": "^2.105.4",
     "express": "^4.21.2",
+    "jose": "^6.2.3",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

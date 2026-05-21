@@ -49,4 +49,5 @@ export const getRejectedJwtVerificationDependencyDecisions =
  * - Must not enable route authorization.
  * - Must not enable public artifact delivery.
  */
-export const isJwtVerificationDependencyInstalledYet = (): false => false;
+export const isJwtVerificationDependencyInstalledYet = (): true => true;
+

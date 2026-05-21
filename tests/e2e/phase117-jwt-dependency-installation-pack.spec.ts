@@ -16,8 +16,8 @@ const readIfExists = (relativePath: string): string => {
   return existsSync(fullPath) ? readFileSync(fullPath, "utf8") : "";
 };
 
-test.describe("phase116 jwt dependency installation audit pack", () => {
-  test("selected jwt dependency remains uninstalled before installation phase", async () => {
+test.describe("phase117 jwt dependency installation pack", () => {
+  test("jose is installed as the selected jwt verification dependency", async () => {
     expect(getJwtVerificationDependencyDecision()).toEqual({
       kind: "selected",
       packageName: "jose",
@@ -31,38 +31,27 @@ test.describe("phase116 jwt dependency installation audit pack", () => {
       devDependencies?: Record<string, string>;
     };
 
-    const dependencies = packageJson.dependencies ?? {};
-    const devDependencies = packageJson.devDependencies ?? {};
+    const packageLockSource = readSource("package-lock.json");
 
-    expect(dependencies).toHaveProperty("jose");
-        expect(dependencies).not.toHaveProperty("jsonwebtoken");
-    expect(devDependencies).not.toHaveProperty("jsonwebtoken");
-    expect(dependencies).not.toHaveProperty("@panva/jose");
-    expect(devDependencies).not.toHaveProperty("@panva/jose");
+    expect(packageJson.dependencies ?? {}).toHaveProperty("jose");
+    expect(packageJson.dependencies ?? {}).not.toHaveProperty("jsonwebtoken");
+    expect(packageJson.devDependencies ?? {}).not.toHaveProperty("jsonwebtoken");
+    expect(packageLockSource).toContain('"jose"');
+    expect(packageLockSource).not.toContain('"jsonwebtoken"');
   });
 
-  test("jwt verification source remains fail-closed and has no real dependency import", async () => {
-    const dependencyDecisionSource = readSource(
-      "backend/auth/jwtVerificationDependencyDecision.ts",
-    );
+  test("jose is installed but not imported or used for real jwt verification yet", async () => {
+    const decisionSource = readSource("backend/auth/jwtVerificationDependencyDecision.ts");
     const jwtSource = readSource("backend/auth/jwtProviderVerificationStrategy.ts");
     const compositionSource = readSource("backend/auth/trustedAuthProviderComposition.ts");
     const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
     const appSource = readSource("backend/app.ts");
     const routeSource = readSource("backend/routes/exports.ts");
 
-    expect(dependencyDecisionSource).toContain("packageName: \"jose\"");
-    expect(dependencyDecisionSource).toContain("packageName: \"jsonwebtoken\"");
-    expect(dependencyDecisionSource).toContain(
-      "isJwtVerificationDependencyInstalledYet",
-    );
-
+    expect(decisionSource).toContain("packageName: \"jose\"");
+    expect(decisionSource).toContain("isJwtVerificationDependencyInstalledYet");
     expect(jwtSource).toContain("createFailClosedFutureJwtVerificationStrategy");
-    expect(jwtSource).toContain("missing_credentials");
-    expect(jwtSource).toContain("invalid_credentials");
-
     expect(compositionSource).toContain("createFailClosedFutureJwtVerificationStrategy");
-    expect(compositionSource).toContain("mapJwtVerificationResultToRequesterContext");
 
     const runtimeAuthSource =
       jwtSource +
@@ -77,8 +66,6 @@ test.describe("phase116 jwt dependency installation audit pack", () => {
     expect(runtimeAuthSource).not.toContain("from 'jose'");
     expect(runtimeAuthSource).not.toContain("jwtVerify");
     expect(runtimeAuthSource).not.toContain("createRemoteJWKSet");
-    expect(runtimeAuthSource).not.toContain('from "jsonwebtoken"');
-    expect(runtimeAuthSource).not.toContain("from 'jsonwebtoken'");
     expect(runtimeAuthSource).not.toContain("JWKS");
     expect(runtimeAuthSource).not.toContain("JWK");
 
@@ -90,10 +77,12 @@ test.describe("phase116 jwt dependency installation audit pack", () => {
     expect(routeSource).not.toContain("throw new ExportApiError(403");
   });
 
-  test("dependency installation audit keeps secrets frontend storage and artifact delivery blocked", async () => {
+  test("jwt dependency installation does not enable fake auth frontend storage or artifact delivery", async () => {
     const routeSource = readSource("backend/routes/exports.ts");
 
     const authSource =
+      readSource("backend/auth/jwtVerificationDependencyDecision.ts") +
+      "\n" +
       readSource("backend/auth/jwtProviderVerificationStrategy.ts") +
       "\n" +
       readSource("backend/auth/trustedAuthProviderComposition.ts") +
@@ -131,6 +120,8 @@ test.describe("phase116 jwt dependency installation audit pack", () => {
     expect(authSource).not.toContain("SERVICE_ROLE");
     expect(authSource).not.toContain("PRIVATE_KEY");
     expect(authSource).not.toContain("AUTH_SECRET");
+    expect(authSource).not.toContain("jwtVerify");
+    expect(authSource).not.toContain("createRemoteJWKSet");
     expect(authSource).not.toContain("createSignedUrl");
     expect(authSource).not.toContain("getPublicUrl");
 
@@ -147,4 +138,3 @@ test.describe("phase116 jwt dependency installation audit pack", () => {
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
-

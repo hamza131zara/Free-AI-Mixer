@@ -31,7 +31,7 @@ test.describe("phase115 jwt verification dependency selection strategy pack", ()
       reason: "jwks_support_requires_extra_plumbing",
     });
 
-    expect(isJwtVerificationDependencyInstalledYet()).toBe(false);
+    expect(isJwtVerificationDependencyInstalledYet()).toBe(true);
 
     const packageJson = JSON.parse(readSource("package.json")) as {
       dependencies?: Record<string, string>;
@@ -43,7 +43,7 @@ test.describe("phase115 jwt verification dependency selection strategy pack", ()
       ...(packageJson.devDependencies ?? {}),
     };
 
-    expect(allDependencies).not.toHaveProperty("jose");
+    expect(allDependencies).toHaveProperty("jose");
     expect(allDependencies).not.toHaveProperty("jsonwebtoken");
     expect(allDependencies).not.toHaveProperty("@panva/jose");
   });
@@ -147,3 +147,4 @@ test.describe("phase115 jwt verification dependency selection strategy pack", ()
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
+

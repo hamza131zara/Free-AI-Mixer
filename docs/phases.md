@@ -9091,3 +9091,66 @@ npm install jose
 - No real JWT verification was implemented
 - No route authorization behavior changed
 - Public artifact delivery remains deferred
+
+## Phase 117 - JWT Dependency Installation Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- JWT dependency installation only
+- install selected `jose` dependency
+- package lockfile update only
+- no JWT dependency import in runtime auth
+- no real JWT verification
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 117 completion summary
+
+- Installed selected JWT verification dependency `jose`
+- Updated package manifest and lockfile
+- Updated JWT dependency decision boundary to report dependency installed
+- Confirmed `jsonwebtoken` is not installed
+- Confirmed `jose` is not imported by runtime auth yet
+- Confirmed JWT verification remains fail-closed through the existing boundary
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization `401` / `403` responses
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Future production requirements
+
+Before using `jose` for route authorization:
+
+- implement JWT verification only inside `backend/auth/jwtProviderVerificationStrategy.ts`
+- validate issuer and audience
+- validate token signature and expiry
+- map verified subject to authenticated requester context
+- require verified workspace scope or membership lookup
+- keep route authorization disabled until verified auth and RLS are ready
+
+### Verification
+
+- `phase117`: expected focused pass
+- `phase116`: expected pass
+- `phase115`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Dependency installation only
+- No real JWT verification was implemented
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
