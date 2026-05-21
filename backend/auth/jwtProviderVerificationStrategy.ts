@@ -2,11 +2,16 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import type { BackendRequesterContext } from "./requesterContext";
 import { createUnauthenticatedRequesterContext } from "./requesterContext";
+import type { JwtVerificationConfiguration } from "./jwtVerificationConfiguration";
 
 export interface TrustedJwtVerificationInput {
   headers?: IncomingHttpHeaders | Record<string, string | string[] | undefined>;
   issuer?: string;
   audience?: string;
+}
+
+export interface TrustedJwtVerificationStrategyOptions {
+  verificationConfig?: JwtVerificationConfiguration;
 }
 
 export type TrustedJwtVerificationResult =
@@ -33,6 +38,13 @@ export interface JoseRuntimeImportBoundaryStatus {
   realVerificationEnabled: false;
 }
 
+export interface JwtVerificationExecutionReadiness {
+  realVerificationEnabled: false;
+  verificationConfigured: boolean;
+  configurationReason?: string;
+  keyMode?: "remote_jwks";
+}
+
 /**
  * Phase 119 import boundary.
  *
@@ -45,6 +57,30 @@ export const getJoseRuntimeImportBoundaryStatus =
     createRemoteJWKSetImported: typeof createRemoteJWKSet === "function",
     realVerificationEnabled: false,
   });
+
+/**
+ * Phase 123 configuration wiring boundary.
+ *
+ * This lets the JWT verification boundary understand future verification
+ * configuration without executing jwtVerify or constructing JWKS yet.
+ */
+export const getJwtVerificationExecutionReadiness = (
+  config?: JwtVerificationConfiguration,
+): JwtVerificationExecutionReadiness => {
+  if (!config || config.kind === "jwt_verification_not_configured") {
+    return {
+      realVerificationEnabled: false,
+      verificationConfigured: false,
+      configurationReason: config?.reason ?? "missing_provider",
+    };
+  }
+
+  return {
+    realVerificationEnabled: false,
+    verificationConfigured: true,
+    keyMode: config.keyMode,
+  };
+};
 
 const getAuthorizationHeader = (
   headers?: TrustedJwtVerificationInput["headers"],
@@ -67,25 +103,28 @@ export const createJwtVerificationNotConfiguredStrategy =
     }),
   });
 
-export const createFailClosedFutureJwtVerificationStrategy =
-  (): TrustedJwtVerificationStrategy => ({
-    kind: "future_jwt_verification",
-    verify: async (input) => {
-      const authorizationHeader = getAuthorizationHeader(input?.headers);
+export const createFailClosedFutureJwtVerificationStrategy = (
+  options: TrustedJwtVerificationStrategyOptions = {},
+): TrustedJwtVerificationStrategy => ({
+  kind: "future_jwt_verification",
+  verify: async (input) => {
+    void getJwtVerificationExecutionReadiness(options.verificationConfig);
 
-      if (!authorizationHeader) {
-        return {
-          kind: "not_verified",
-          reason: "missing_credentials",
-        };
-      }
+    const authorizationHeader = getAuthorizationHeader(input?.headers);
 
+    if (!authorizationHeader) {
       return {
         kind: "not_verified",
-        reason: "invalid_credentials",
+        reason: "missing_credentials",
       };
-    },
-  });
+    }
+
+    return {
+      kind: "not_verified",
+      reason: "invalid_credentials",
+    };
+  },
+});
 
 export const mapJwtVerificationResultToRequesterContext = (
   result: TrustedJwtVerificationResult,
@@ -102,4 +141,3 @@ export const mapJwtVerificationResultToRequesterContext = (
     authSubject: result.authSubject,
   };
 };
-

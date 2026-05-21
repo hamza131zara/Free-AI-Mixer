@@ -1854,3 +1854,21 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 123 wires JWT verification configuration shape into the JWT boundary:
+  - JWT verification boundary can now accept configuration shape.
+  - Configured remote JWKS mode can be represented inside the boundary.
+  - realVerificationEnabled remains false.
+  - Missing Authorization still maps to missing_credentials.
+  - Fake bearer token still maps to invalid_credentials.
+  - No jwtVerify execution call exists yet.
+  - No createRemoteJWKSet execution call exists yet.
+  - Export routes still read trusted request context non-enforcing only.
+  - Export routes still do not call authorization adapter/decision/guard boundaries.
+  - Export routes still do not emit authorization 401 / 403 responses.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
