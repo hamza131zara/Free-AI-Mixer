@@ -230,6 +230,14 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       const requesterContext = requesterContextResolver(request);
       const { jobId } = parseJobIdParams(request.params);
       const record = await registry.getByIdForOwner(jobId, requesterContext);
+      // Phase 134 authorization guard for artifact access/stream routes.
+      if (record) {
+        const authorizationFailure = getExportRouteAuthorizationFailure(request, record, options);
+        if (authorizationFailure) {
+          sendExportRouteAuthorizationFailure(response, authorizationFailure);
+          return;
+        }
+      }
       if (!record) {
         throw exportJobNotFound(jobId);
       }
@@ -251,6 +259,14 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
      const { jobId } = parseJobIdParams({ jobId: request.params.jobId });
      const { artifactId } = request.params;
       const record = await registry.getByIdForOwner(jobId, requesterContext);
+      // Phase 134 authorization guard for artifact access/stream routes.
+      if (record) {
+        const authorizationFailure = getExportRouteAuthorizationFailure(request, record, options);
+        if (authorizationFailure) {
+          sendExportRouteAuthorizationFailure(response, authorizationFailure);
+          return;
+        }
+      }
 
       if (!record) {
         response.json({
@@ -347,6 +363,14 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
       // Get job from registry
       const record = await registry.getByIdForOwner(jobId, requesterContext);
+      // Phase 134 authorization guard for artifact access/stream routes.
+      if (record) {
+        const authorizationFailure = getExportRouteAuthorizationFailure(request, record, options);
+        if (authorizationFailure) {
+          sendExportRouteAuthorizationFailure(response, authorizationFailure);
+          return;
+        }
+      }
       if (!record) {
         response.status(404).json({
           code: "job_not_found",
@@ -587,6 +611,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
   return router;
 };
+
 
 
 

@@ -1,10 +1,10 @@
-# Phases
+﻿# Phases
 
 This file is the canonical phase map for the repository. If older prompts, notes, or large documents use different numbering, this file wins for future implementation work.
 
 ## Canonical Phase Map
 
-### Phase 1 — Vision & Product Direction
+### Phase 1 â€” Vision & Product Direction
 
 Status:
 
@@ -17,7 +17,7 @@ Scope:
 - real generation lifecycle
 - production-oriented architecture
 
-### Phase 2 — UI Exploration
+### Phase 2 â€” UI Exploration
 
 Status:
 
@@ -31,7 +31,7 @@ Scope:
 - generation cards
 - provider visibility
 
-### Phase 3 — Real Logic Layer
+### Phase 3 â€” Real Logic Layer
 
 Status:
 
@@ -41,43 +41,43 @@ Purpose:
 
 - move from UI-first experimentation into a real production logic layer
 
-#### Phase 3.0 — UI System
+#### Phase 3.0 â€” UI System
 
 Status:
 
 - complete
 
-#### Phase 3.1 — Zustand Global Store / Scene Lifecycle
+#### Phase 3.1 â€” Zustand Global Store / Scene Lifecycle
 
 Status:
 
 - complete
 
-#### Phase 3.2 — Global Store Stabilization
+#### Phase 3.2 â€” Global Store Stabilization
 
 Status:
 
 - complete
 
-#### Phase 3.3 — Error Normalization / Async Pipeline
+#### Phase 3.3 â€” Error Normalization / Async Pipeline
 
 Status:
 
 - mostly complete or integrated
 
-#### Phase 3.4 — Queue + Providers
+#### Phase 3.4 â€” Queue + Providers
 
 Status:
 
 - complete
 
-#### Phase 3.5 — Lifecycle Engine
+#### Phase 3.5 â€” Lifecycle Engine
 
 Status:
 
 - mostly complete
 
-#### Phase 3.6 — Hydration & State Stability
+#### Phase 3.6 â€” Hydration & State Stability
 
 Status:
 
@@ -100,7 +100,7 @@ Verification sign-off:
 - `npm run test:e2e` passed
 - `npm run verify:phase36` passed
 
-#### Phase 3.7 — Transport Truthfulness & Provider Realism
+#### Phase 3.7 â€” Transport Truthfulness & Provider Realism
 
 Status:
 
@@ -123,7 +123,7 @@ Verified in this phase:
 - lifecycle progress is labeled as app stage semantics, not provider telemetry
 - Phase 3.6 hydration verification still passes
 
-#### Phase 3.8 — Long-running Provider Patterns
+#### Phase 3.8 â€” Long-running Provider Patterns
 
 Status:
 
@@ -222,7 +222,7 @@ Phase 3.8 final sign-off:
 - components remain render/dispatch only
 - backend durable queue, multi-device resume, server workers, remote cancellation, and webhook completion remain deferred
 
-### Phase 4 — Timeline & Video System
+### Phase 4 â€” Timeline & Video System
 
 Status:
 
@@ -260,7 +260,7 @@ Verified in Phase 4.6A:
 - video/export implementation is not built
 - backend rendering, render queues, workers, webhooks, and media processing remain deferred
 
-### Phase 5 — Agent System
+### Phase 5 â€” Agent System
 
 Status:
 
@@ -321,7 +321,7 @@ Phase 5.6 note:
 - auto-resume polling for export jobs remains deferred
 - backend rendering, render queue, workers, webhooks, remote cancellation, and downloadable output remain deferred
 
-### Phase 6 — Backend & Infrastructure
+### Phase 6 â€” Backend & Infrastructure
 
 Status:
 
@@ -944,7 +944,7 @@ Phase 8.1 note:
   - no lifecycle mutation was introduced in runtime helper, adapter, or composition
 - lifecycle ownership remains in harness/registry only
 
-### Phase 7 — Production Optimization
+### Phase 7 â€” Production Optimization
 
 Status:
 
@@ -959,7 +959,7 @@ Status:
 - Provider telemetry beyond app lifecycle stages belongs to Phase 3.8 or later.
 - Phase 3.6 hydration/runtime verification is complete.
 - Phase 3.8B defines contracts only; it does not change runtime orchestration.
-## Phase 8.2-C — Real Remotion Smoke Docs Update
+## Phase 8.2-C â€” Real Remotion Smoke Docs Update
 
 - Phase 8.2-A (audit) is complete.
 - Phase 8.2-B (controlled real Remotion smoke) is complete, verified, and committed.
@@ -984,7 +984,7 @@ Status:
 - Success requires real file verification via artifact verification.
 - Runtime/helper/composition do not call `markSuccess` or `markError`.
 
-## Phase 8.3-C — Renderer Adapter Real Runtime Integration Docs Update
+## Phase 8.3-C â€” Renderer Adapter Real Runtime Integration Docs Update
 
 - Phase 8.3-A (audit) is complete.
 - Phase 8.3-B (adapter runtime boundary integration) is complete and committed.
@@ -1007,7 +1007,7 @@ Status:
 - Adapter remains artifact-neutral (no verification, no metadata creation, no hosting/signing/download URLs).
 - Download capability is still not available.
 
-## Phase 8.4-C — Harness Real Runtime Integration Docs Update
+## Phase 8.4-C â€” Harness Real Runtime Integration Docs Update
 
 - Phase 8.4-A (audit) is complete.
 - Phase 8.4-B (harness real runtime integration test milestone) is complete and committed.
@@ -1030,7 +1030,7 @@ Status:
 - Routes remain non-executing for renderer runtime; `POST /exports` is not wired to execution.
 - Download capability is still not available.
 
-## Phase 8.5-C — Backend Execution Trigger Docs Update
+## Phase 8.5-C â€” Backend Execution Trigger Docs Update
 
 - Phase 8.5-A (audit) is complete.
 - Phase 8.5-B (backend internal execution trigger) is complete and committed.
@@ -1053,7 +1053,7 @@ Status:
 - `POST /exports` remains non-executing.
 - Download capability is still not available.
 
-## Phase 8.6-C — Backend Route Execution Trigger Docs Update
+## Phase 8.6-C â€” Backend Route Execution Trigger Docs Update
 
 - Phase 8.6-A (audit) is complete.
 - Phase 8.6-B (dev/test-gated route execution trigger) is complete and committed.
@@ -1083,7 +1083,7 @@ Status:
 - No frontend changes.
 - Synchronous HTTP execution remains a known deferred limitation (route blocks request until complete).
 
-## Phase 8.7-C — Route Execution Timeout Guard Docs Update
+## Phase 8.7-C â€” Route Execution Timeout Guard Docs Update
 
 - Phase 8.7-A (audit) is complete.
 - Phase 8.7-B (route timeout guard) is complete and committed.
@@ -1100,7 +1100,7 @@ Status:
 - Route execution is raced against timeout using `Promise.race`.
 - If `executeRenderJob` finishes before timeout, existing success/failure response behavior remains.
 - If timeout wins, route returns truthful HTTP 504 with safe JSON.
-- Timeout response does not claim cancellation — it says "the job may still be running; poll the job state for the latest lifecycle status."
+- Timeout response does not claim cancellation â€” it says "the job may still be running; poll the job state for the latest lifecycle status."
 - Timeout response does not expose local paths, artifact metadata, download URLs, signed URLs, or fake progress.
 - Route remains gated by `FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION=1`.
 - Added focused test: `tests/e2e/phase87-route-execution-timeout.spec.ts`.
@@ -1122,7 +1122,7 @@ Status:
 - POST /exports remains unchanged and non-executing.
 - No frontend changes.
 
-## Phase 8.8-C — Worker Helper Boundary Docs Update
+## Phase 8.8-C â€” Worker Helper Boundary Docs Update
 
 - Phase 8.8-A (audit) is complete.
 - Phase 8.8-B (worker helper boundary) is complete and committed.
@@ -1148,7 +1148,7 @@ Status:
 
 ### Boundaries preserved
 
-- No app.ts wiring — worker does not auto-start.
+- No app.ts wiring â€” worker does not auto-start.
 - No auto-start worker loop.
 - No interval polling loop.
 - No queue persistence.
@@ -1157,9 +1157,9 @@ Status:
 - No frontend changes.
 - POST /exports remains non-executing.
 - POST /exports/:jobId/execute remains dev/test-gated and synchronous with timeout guard.
-- Route behavior is unchanged — worker helper is manual one-shot drain only.
+- Route behavior is unchanged â€” worker helper is manual one-shot drain only.
 
-## Phase 8.9-C — Test-Controlled Worker Loop Helper Docs Update
+## Phase 8.9-C â€” Test-Controlled Worker Loop Helper Docs Update
 
 - Phase 8.9-A (audit) is complete.
 - Phase 8.9-B (test-controlled worker loop helper) is complete and committed.
@@ -1176,7 +1176,7 @@ Status:
 - Loop reuses existing `drainRenderWorkerOnce(...)` for job processing.
 - Loop contains per-tick errors so one drain failure does not crash the loop.
 - Loop prevents overlapping drain calls via `draining` flag.
-- `start()` is idempotent — calling twice does not create duplicate intervals.
+- `start()` is idempotent â€” calling twice does not create duplicate intervals.
 - `stop()` clears interval and is idempotent.
 - Added focused test: `tests/e2e/phase89-worker-loop.spec.ts`.
 
@@ -1185,12 +1185,12 @@ Status:
 - Loop does NOT directly call `executeSingleProcessRender`.
 - Loop does NOT directly call registry mutation methods.
 - Lifecycle ownership remains inside `executeRenderJob` / `executeSingleProcessRender` / harness / registry.
-- No app.ts wiring — worker does not auto-start on server startup.
+- No app.ts wiring â€” worker does not auto-start on server startup.
 - No backend/server.ts changes.
-- Route behavior is unchanged — POST /exports remains non-executing, POST /exports/:jobId/execute remains dev/test-gated.
+- Route behavior is unchanged â€” POST /exports remains non-executing, POST /exports/:jobId/execute remains dev/test-gated.
 - Loop status does not expose local paths, filePath, URLs, download URLs, or signed URLs.
 
-## Phase 8.10-C — Worker Startup Factory Boundary Docs Update
+## Phase 8.10-C â€” Worker Startup Factory Boundary Docs Update
 
 - Phase 8.10-A (audit) is complete.
 - Phase 8.10-B (worker startup factory boundary) is complete and committed.
@@ -1203,11 +1203,11 @@ Status:
 - Added worker startup factory boundary: `backend/workers/renderWorkerStartup.ts`.
 - Added startup factory function: `createRenderWorkerStartup(...)`.
 - Startup factory returns controller with `start()`, `stop()`, `isRunning()`, `getStatus()` methods.
-- Startup factory does NOT auto-start on creation — manual start required.
+- Startup factory does NOT auto-start on creation â€” manual start required.
 - Startup factory is gated by `FREE_AI_MIXER_ENABLE_WORKER_STARTUP=1`.
 - Runtime loop also requires `FREE_AI_MIXER_ENABLE_WORKER_LOOP=1`.
 - Default poll interval remains `2000` ms via `FREE_AI_MIXER_WORKER_POLL_INTERVAL_MS`.
-- Startup factory wraps/reuses `createRenderWorkerLoop(...)` — does NOT duplicate loop logic.
+- Startup factory wraps/reuses `createRenderWorkerLoop(...)` â€” does NOT duplicate loop logic.
 - Startup factory does NOT call `setInterval`, `drainRenderWorkerOnce`, or `executeRenderJob` directly.
 - Added focused test: `tests/e2e/phase810-worker-startup.spec.ts`.
 
@@ -1215,14 +1215,14 @@ Status:
 
 - Startup factory does NOT directly call `executeSingleProcessRender`.
 - Startup factory does NOT directly call registry mutation methods.
-- Lifecycle ownership remains in `createRenderWorkerLoop` → `drainRenderWorkerOnce` → `executeRenderJob` → harness/registry.
-- No app.ts wiring — worker startup factory is not wired to server startup.
+- Lifecycle ownership remains in `createRenderWorkerLoop` â†’ `drainRenderWorkerOnce` â†’ `executeRenderJob` â†’ harness/registry.
+- No app.ts wiring â€” worker startup factory is not wired to server startup.
 - No server.ts changes.
-- Route behavior is unchanged — POST /exports remains non-executing, POST /exports/:jobId/execute remains synchronous with timeout.
+- Route behavior is unchanged â€” POST /exports remains non-executing, POST /exports/:jobId/execute remains synchronous with timeout.
 - No route enqueue behavior.
 - Startup status does not expose local paths, filePath, URLs, download URLs, or signed URLs.
 
-## Phase 8.12-C — Backend Dependency Composition Module Docs Update
+## Phase 8.12-C â€” Backend Dependency Composition Module Docs Update
 
 Status:
 
@@ -1237,7 +1237,7 @@ Status:
 - Added composition function: `createBackendDependencies()`.
 - `createBackendDependencies()` returns:
   - `registry`: InMemoryExportJobRegistry instance
-  - `rendererAdapter`: createRemotionRendererAdapter({ runtime: undefined }) — safe no-op default
+  - `rendererAdapter`: createRemotionRendererAdapter({ runtime: undefined }) â€” safe no-op default
   - `pathPolicy`: RenderOutputPathPolicy using backend-local temp/output roots
 - pathPolicy uses `process.cwd()`-based roots: `.free-ai-mixer-temp` and `.free-ai-mixer-output`.
 - Added focused test: `tests/e2e/phase812-backend-dependencies.spec.ts`.
@@ -1247,7 +1247,7 @@ Status:
 - rendererAdapter and pathPolicy are composed but NOT passed into createExportRouter in this phase.
 - app.ts passes only `dependencies.registry` into createExportRouter.
 - This preserves existing execute-route behavior: POST /exports/:jobId/execute returns 501 (not-configured) when dependencies are missing.
-- No route behavior change — POST /exports remains non-executing.
+- No route behavior change â€” POST /exports remains non-executing.
 
 ### Boundaries preserved
 
@@ -1285,7 +1285,7 @@ Status:
 - No frontend async worker integration yet.
 - process.cwd()-based roots are acceptable for dev/test but may need env override before production.
 
-## Phase 8.13-C — Worker Lifecycle App Wiring Docs Update
+## Phase 8.13-C â€” Worker Lifecycle App Wiring Docs Update
 
 Status:
 
@@ -1299,11 +1299,11 @@ Status:
 - Added worker lifecycle module: `backend/workers/renderWorkerLifecycle.ts`.
 - Added lifecycle factory function: `createRenderWorkerLifecycle(...)`.
 - Lifecycle API returns controller with:
-  - `init()` — initializes worker startup factory
-  - `shutdown()` — stops worker loop and releases resources
-  - `isRunning()` — returns boolean running state
-  - `getStatus()` — returns detailed status object
-- Lifecycle chain: `createRenderWorkerLifecycle` → `createRenderWorkerStartup` → `createRenderWorkerLoop` → `drainRenderWorkerOnce` → `executeRenderJob` → `executeSingleProcessRender` → harness/registry.
+  - `init()` â€” initializes worker startup factory
+  - `shutdown()` â€” stops worker loop and releases resources
+  - `isRunning()` â€” returns boolean running state
+  - `getStatus()` â€” returns detailed status object
+- Lifecycle chain: `createRenderWorkerLifecycle` â†’ `createRenderWorkerStartup` â†’ `createRenderWorkerLoop` â†’ `drainRenderWorkerOnce` â†’ `executeRenderJob` â†’ `executeSingleProcessRender` â†’ harness/registry.
 - App wiring added in `backend/app.ts`:
   - Uses already-composed `backendDeps` (registry, rendererAdapter, pathPolicy)
   - Calls `lifecycle.init()` during app creation
@@ -1362,7 +1362,7 @@ Status:
 - Worker lifecycle depends on env gates and in-memory registry only.
 - rendererAdapter/pathPolicy are composed for lifecycle but still intentionally not wired into exports router.
 
-## Phase 8.14-C — Truthful GET Status Docs Update
+## Phase 8.14-C â€” Truthful GET Status Docs Update
 
 Status:
 
@@ -1389,15 +1389,15 @@ Status:
 ### Phase 8.14-B implementation summary
 
 - Added `mapRecordToPollResponse()` helper in `backend/routes/exports.ts`.
-- Updated `backend/contracts/exportHttpTypes.ts` — `ExportPollResponseBody` now allows full `ExportPollResult` union.
+- Updated `backend/contracts/exportHttpTypes.ts` â€” `ExportPollResponseBody` now allows full `ExportPollResult` union.
 - GET status now maps registry status truthfully.
 
 ### GET status mapping
 
-- `submitted`, `rendering`, `finalizing` → `kind: "pending"` with handle
-- `success` → `kind: "terminal_success"` with result and artifact metadata
-- `error` → `kind: "terminal_failure"` with failure message and code
-- `expired` → `kind: "terminal_failure"` with expired message and code
+- `submitted`, `rendering`, `finalizing` â†’ `kind: "pending"` with handle
+- `success` â†’ `kind: "terminal_success"` with result and artifact metadata
+- `error` â†’ `kind: "terminal_failure"` with failure message and code
+- `expired` â†’ `kind: "terminal_failure"` with expired message and code
 
 ### Success response safety
 
@@ -1447,7 +1447,7 @@ Status:
 - Tests verify truthful status mapping, no path leakage, no failure.details in terminal_failure.
 - All focused tests pass along with regression coverage for phase63/813/812/810/89/88/87/86/85.
 
-## Phase 8.15-C — Registry Interface Boundary Docs Update
+## Phase 8.15-C â€” Registry Interface Boundary Docs Update
 
 Status:
 
@@ -1459,8 +1459,8 @@ Status:
 ### Phase 8.15-A finding: durable persistence not ready for real storage yet
 
 - Current InMemoryExportJobRegistry is clean enough to serve as one implementation behind a registry interface.
-- The safest next step is interface separation only — no real storage.
-- Recommended progression: interface boundary → JSON file → SQLite → Postgres (if multi-instance needed).
+- The safest next step is interface separation only â€” no real storage.
+- Recommended progression: interface boundary â†’ JSON file â†’ SQLite â†’ Postgres (if multi-instance needed).
 - No JSON/SQLite/Postgres/Redis in this phase.
 
 ### Phase 8.15-B implementation summary
@@ -1520,7 +1520,7 @@ Status:
 - No graceful shutdown yet.
 - No cancellation yet.
 
-## Phase 8.16-C — Graceful Shutdown Helper Docs Update
+## Phase 8.16-C â€” Graceful Shutdown Helper Docs Update
 
 Status:
 
@@ -1542,12 +1542,12 @@ Status:
 - Added graceful shutdown helper: `backend/lifecycle/gracefulShutdown.ts`.
 - Added factory function: `createGracefulShutdown(...)`.
 - Shutdown helper API returns controller with:
-  - `shutdown()` — idempotent shutdown
-  - `isShuttingDown()` — current shutdown state
-  - `getStatus()` — safe status object
+  - `shutdown()` â€” idempotent shutdown
+  - `isShuttingDown()` â€” current shutdown state
+  - `getStatus()` â€” safe status object
 - Helper accepts explicit dependencies:
-  - `lifecycle` — lifecycle controller
-  - `server` (optional) — server-like object with `close()`
+  - `lifecycle` â€” lifecycle controller
+  - `server` (optional) â€” server-like object with `close()`
 - Helper behavior:
   - Calls `lifecycle.shutdown()` to stop worker polling
   - Calls `server.close()` if server provided
@@ -1593,7 +1593,7 @@ Status:
 - No persistence-backed shutdown recovery yet.
 - No cancellation yet.
 
-## Phase 8.17-C — Server Shutdown Wiring Docs Update
+## Phase 8.17-C â€” Server Shutdown Wiring Docs Update
 
 Status:
 
@@ -1667,7 +1667,7 @@ Status:
 - No artifact hosting/download/signed URLs.
 - No frontend changes.
 
-## Phase 8.18-C — Recovery Policy Boundary Docs Update
+## Phase 8.18-C â€” Recovery Policy Boundary Docs Update
 
 Status:
 
@@ -1690,10 +1690,10 @@ Status:
 
 - Added restart recovery policy module: backend/registry/exportJobRecoveryPolicy.ts.
 - Added recovery policy APIs:
-  - recoverExportJobRecord(record, options?) — applies recovery rules to single record
-  - recoverExportJobRecords(records, options?) — applies recovery rules to batch
-  - getRecoverableRecords(records) — filters non-terminal records
-  - getTerminalRecords(records) — filters terminal records
+  - recoverExportJobRecord(record, options?) â€” applies recovery rules to single record
+  - recoverExportJobRecords(records, options?) â€” applies recovery rules to batch
+  - getRecoverableRecords(records) â€” filters non-terminal records
+  - getTerminalRecords(records) â€” filters terminal records
 - Recovery rules implemented:
   - submitted stays submitted (already recoverable)
   - rendering recovers to submitted (worker died, claim expired)
@@ -1751,7 +1751,7 @@ Status:
 - No cancellation yet.
 - Future JSON persistence adapter should use this recovery policy.
 
-## Phase 8.19-C — JSON File Persistence Adapter Docs Update
+## Phase 8.19-C â€” JSON File Persistence Adapter Docs Update
 
 Status:
 
@@ -1778,8 +1778,8 @@ Status:
 
 ### Environment flags
 
-- FREE_AI_MIXER_PERSISTENCE_ENABLED — enable with "true" (disabled by default).
-- FREE_AI_MIXER_PERSISTENCE_FILE_PATH — optional custom file path override.
+- FREE_AI_MIXER_PERSISTENCE_ENABLED â€” enable with "true" (disabled by default).
+- FREE_AI_MIXER_PERSISTENCE_FILE_PATH â€” optional custom file path override.
 - Default persistence file: .free-ai-mixer-jobs.json in process.cwd().
 
 ### JSON schema
@@ -1812,8 +1812,8 @@ Uses Phase 8.18 recovery policy on load:
 
 ### Safety sanitization
 
-- No failure.details persisted — only message and code.
-- Artifact metadata sanitized — only safe fields persisted:
+- No failure.details persisted â€” only message and code.
+- Artifact metadata sanitized â€” only safe fields persisted:
   artifactId, jobId, kind, format, status, createdAt, sizeBytes, durationMs.
 - No local path/filePath/path/url/artifactUrl/downloadUrl/signedUrl persisted.
 - No artifact hosting added.
@@ -1857,7 +1857,7 @@ Uses Phase 8.18 recovery policy on load:
 - No cancellation yet.
 - No frontend async persistence UX yet.
 
-## Phase 8.20-C — Persistence Runtime Local Smoke Test Docs Update
+## Phase 8.20-C â€” Persistence Runtime Local Smoke Test Docs Update
 
 Status:
 
@@ -1922,7 +1922,7 @@ Status:
 - No frontend async persistence UX yet.
 - No cancellation yet.
 
-## Phase 8.21-C — Production DB Adapter Strategy Docs Update
+## Phase 8.21-C â€” Production DB Adapter Strategy Docs Update
 
 Status:
 
@@ -2012,7 +2012,7 @@ Status:
 - No frontend async persistence UX yet.
 - JSON persistence remains dev/local only.
 
-## Phase 8.22-B — Frontend Export Status Refresh Service Boundary
+## Phase 8.22-B â€” Frontend Export Status Refresh Service Boundary
 
 ### What was added
 
@@ -2024,7 +2024,7 @@ Frontend export status refresh service boundary now exists:
 - Applies result via `applyExportPollEvent` to update store state
 - Returns updated `ExportTimelineState` or `undefined`
 - Works with persisted jobs that have `handle.jobId` or `requestId`
-- No polling loop, no automatic refresh — only manual trigger
+- No polling loop, no automatic refresh â€” only manual trigger
 
 ### Frontend refresh boundary contract
 
@@ -2075,14 +2075,14 @@ const handleRefresh = async () => {
 - No fake success/progress before actual backend confirmation
 - Resume state classification happens after status refresh
 
-## Phase 8.23-B — Persisted Export Handle Storage Boundary
+## Phase 8.23-B â€” Persisted Export Handle Storage Boundary
 
 ### What was added
 
 Minimal versioned frontend storage for export handles:
 
-- `src/services/exportHandleStorage.ts` — export handle storage boundary
-- `tests/e2e/phase823-export-handle-storage.spec.ts` — 15 focused tests
+- `src/services/exportHandleStorage.ts` â€” export handle storage boundary
+- `tests/e2e/phase823-export-handle-storage.spec.ts` â€” 15 focused tests
 
 ### Storage format
 
@@ -2106,11 +2106,11 @@ interface PersistedExportHandle {
 
 ### Safe persisted fields
 
-- `timelineId` — timeline identifier
-- `jobId` — backend job identifier for reconnect
-- `requestId` — request identifier
-- `submittedAt` — submission timestamp
-- `lastCheckedAt` — optional, avoids immediate re-poll
+- `timelineId` â€” timeline identifier
+- `jobId` â€” backend job identifier for reconnect
+- `requestId` â€” request identifier
+- `submittedAt` â€” submission timestamp
+- `lastCheckedAt` â€” optional, avoids immediate re-poll
 
 ### Fields that must never be persisted
 
@@ -2133,10 +2133,10 @@ clearAllExportHandles(): void
 ### Safety behaviors
 
 - `localStorage` availability checked via `globalThis.localStorage` with try/catch guard
-- Corrupt JSON is handled safely — returns `[]`, clears storage
-- Unknown version is handled safely — returns `[]`, clears storage
-- Missing required fields are ignored — handle not persisted
-- Unsafe extra fields are silently stripped — not rejected
+- Corrupt JSON is handled safely â€” returns `[]`, clears storage
+- Unknown version is handled safely â€” returns `[]`, clears storage
+- Missing required fields are ignored â€” handle not persisted
+- Unsafe extra fields are silently stripped â€” not rejected
 - All functions are safe-no-op when localStorage unavailable
 
 ### Test coverage
@@ -2170,14 +2170,14 @@ clearAllExportHandles(): void
 - Automatic polling remains deferred
 - Artifact hosting/download URLs remain deferred
 
-## Phase 8.24-B — Manual Reconnect Store Action
+## Phase 8.24-B â€” Manual Reconnect Store Action
 
 ### What was added
 
 Store-only manual reconnect that loads persisted handle and triggers a single refresh:
 
-- `src/store/exportStore.ts` — added `reconnectExport(timelineId, options?)` action
-- `tests/e2e/phase824-reconnect.spec.ts` — 11 focused tests
+- `src/store/exportStore.ts` â€” added `reconnectExport(timelineId, options?)` action
+- `tests/e2e/phase824-reconnect.spec.ts` â€” 11 focused tests
 
 ### reconnectExport behavior
 
@@ -2230,7 +2230,7 @@ reconnectExport: async (timelineId, options) => {
 
 - Returns `undefined` if no persisted handle exists
 - Seeds store with minimal state before calling refresh
-- Calls `refreshExportStatus` exactly once — no polling loop
+- Calls `refreshExportStatus` exactly once â€” no polling loop
 - Updates `lastCheckedAt` in localStorage after successful refresh
 - Handles corrupt localStorage, network errors, and 404 gracefully
 - Does not fake progress, success, artifacts, or downloads
@@ -2267,15 +2267,15 @@ reconnectExport: async (timelineId, options) => {
 - Automatic polling remains deferred
 - Artifact hosting/download URLs remain deferred
 
-## Phase 8.25-B — Manual Reconnect UI Button
+## Phase 8.25-B â€” Manual Reconnect UI Button
 
 ### What was added
 
 Manual reconnect UI button that dispatches store action only:
 
-- `src/store/exportStore.ts` — added `selectHasPersistedHandle` selector
-- `src/components/TimelineExportPanel.tsx` — added reconnect button
-- `tests/e2e/phase825-reconnect-ui.spec.ts` — 13 focused tests
+- `src/store/exportStore.ts` â€” added `selectHasPersistedHandle` selector
+- `src/components/TimelineExportPanel.tsx` â€” added reconnect button
+- `tests/e2e/phase825-reconnect-ui.spec.ts` â€” 13 focused tests
 
 ### selectHasPersistedHandle selector
 
@@ -2289,7 +2289,7 @@ export const selectHasPersistedHandle = (
 };
 ```
 
-Reads from exportHandleStorage — no state mutation, no backend call.
+Reads from exportHandleStorage â€” no state mutation, no backend call.
 
 ### Button behavior
 
@@ -2357,7 +2357,7 @@ const showReconnectButton =
 
 ---
 
-## Phase 9-B — Artifact Access Contract Types Only
+## Phase 9-B â€” Artifact Access Contract Types Only
 
 Status:
 
@@ -2375,9 +2375,9 @@ Scope:
 
 - Updated `backend/contracts/exportHttpTypes.ts`
 - Added `BackendArtifactAccessKind` type:
-  - `signed_url` — production signed/expiring URL (not implemented)
-  - `backend_stream` — backend route URL for streaming (not implemented)
-  - `local_dev_stream` — local dev backend stream (not implemented)
+  - `signed_url` â€” production signed/expiring URL (not implemented)
+  - `backend_stream` â€” backend route URL for streaming (not implemented)
+  - `local_dev_stream` â€” local dev backend stream (not implemented)
 - Added `BackendArtifactAccessDescriptor` interface
 - Added `BackendArtifactAccessReadyResponse` type
 - Added `BackendArtifactAccessUnavailableResponse` type with reason enum
@@ -2415,7 +2415,7 @@ Scope:
 
 ---
 
-## Phase 9-F — Artifact Access Provider Interface Only
+## Phase 9-F â€” Artifact Access Provider Interface Only
 
 Status:
 
@@ -2433,9 +2433,9 @@ Scope:
 
 - Created `backend/artifacts/artifactAccessProvider.ts`
 - Added `ArtifactAccessRequest` interface:
-  - `jobId: string` — safe identifier only
-  - `artifactId: string` — safe identifier only
-  - `artifact?: BackendArtifactMetadata` — verified metadata from registry, not user input
+  - `jobId: string` â€” safe identifier only
+  - `artifactId: string` â€” safe identifier only
+  - `artifact?: BackendArtifactMetadata` â€” verified metadata from registry, not user input
 - Added `ArtifactAccessProvider` interface with `getArtifactAccess()` method
 - Returns `Promise<BackendArtifactAccessResponse>` (from Phase 9-B contract)
 - Added safety comments:
@@ -2488,7 +2488,7 @@ Scope:
 
 ---
 
-## Phase 9-J — Not-Configured Artifact Access Provider Implementation
+## Phase 9-J â€” Not-Configured Artifact Access Provider Implementation
 
 Status:
 
@@ -2538,7 +2538,7 @@ Scope:
 
 ---
 
-## Phase 10-B — Artifact Access Route Implementation
+## Phase 10-B â€” Artifact Access Route Implementation
 
 Status:
 
@@ -2564,11 +2564,11 @@ Scope:
 
 ### Route validation behavior
 
-- Unknown job → `{ kind: "artifact_access_unavailable", reason: "job_not_found" }`
-- Non-successful job → `{ kind: "artifact_access_unavailable", reason: "job_not_successful" }`
-- Unknown artifact → `{ kind: "artifact_access_unavailable", reason: "artifact_not_found" }`
-- Not-ready artifact → `{ kind: "artifact_access_unavailable", reason: "artifact_not_ready" }`
-- Successful ready artifact with default provider → `{ kind: "artifact_access_unavailable", reason: "artifact_access_not_configured" }`
+- Unknown job â†’ `{ kind: "artifact_access_unavailable", reason: "job_not_found" }`
+- Non-successful job â†’ `{ kind: "artifact_access_unavailable", reason: "job_not_successful" }`
+- Unknown artifact â†’ `{ kind: "artifact_access_unavailable", reason: "artifact_not_found" }`
+- Not-ready artifact â†’ `{ kind: "artifact_access_unavailable", reason: "artifact_not_ready" }`
+- Successful ready artifact with default provider â†’ `{ kind: "artifact_access_unavailable", reason: "artifact_access_not_configured" }`
 - Provider errors safely map to `artifact_access_not_configured` (no stack/details leak)
 
 ### Provider fallback behavior
@@ -2588,9 +2588,9 @@ Scope:
 
 ### Existing routes unchanged
 
-- `POST /exports` — unchanged
-- `GET /exports/:jobId` — unchanged
-- `GET /exports/:jobId/artifacts` — unchanged
+- `POST /exports` â€” unchanged
+- `GET /exports/:jobId` â€” unchanged
+- `GET /exports/:jobId/artifacts` â€” unchanged
 
 ### Test updates
 
@@ -2610,7 +2610,7 @@ Scope:
 
 ---
 
-## Phase 11-B — Internal Artifact Storage Reference Boundary
+## Phase 11-B â€” Internal Artifact Storage Reference Boundary
 
 Status:
 
@@ -2627,10 +2627,10 @@ Scope:
 
 - Created `backend/artifacts/internalArtifactStorageRef.ts`
 - Added `InternalArtifactStorageRef` interface:
-  - `filePath: string` — absolute file path to artifact
-  - `rootPath: string` — root path for security validation
-  - `jobSegment: string` — job segment identifier
-  - `directoryPath: string` — directory containing artifact
+  - `filePath: string` â€” absolute file path to artifact
+  - `rootPath: string` â€” root path for security validation
+  - `jobSegment: string` â€” job segment identifier
+  - `directoryPath: string` â€” directory containing artifact
 - Added safety comments documenting internal-only rules:
   - Must NOT be exported from contracts
   - Must NOT be returned to frontend
@@ -2671,7 +2671,7 @@ Scope:
 
 ---
 
-## Phase 11-F — Local Dev Stream Provider Implementation
+## Phase 11-F â€” Local Dev Stream Provider Implementation
 
 Status:
 
@@ -2689,9 +2689,9 @@ Scope:
 
 - Created `backend/artifacts/localDevArtifactAccessProvider.ts`
 - Added `LocalDevProviderOptions` interface with injected functions:
-  - `resolveArtifactStorageRef` — lookup internal storage ref from job/artifact
-  - `streamUrlForArtifact` — generate backend route URL for streaming
-  - `isPathWithinRoot` — validate file path is within allowed root
+  - `resolveArtifactStorageRef` â€” lookup internal storage ref from job/artifact
+  - `streamUrlForArtifact` â€” generate backend route URL for streaming
+  - `isPathWithinRoot` â€” validate file path is within allowed root
 - Added `createLocalDevArtifactAccessProvider(options)` factory
 - Provider implements `ArtifactAccessProvider` interface
 - Added URL safety validation (`isSafeBackendRouteUrl`)
@@ -2706,10 +2706,10 @@ Returns `artifact_access_ready` with `access.kind: local_dev_stream` when:
 - Stream URL is safe (backend route, not file path)
 
 Returns `artifact_access_unavailable` when:
-- Storage ref missing → reason: `artifact_not_found`
-- Artifact metadata missing → reason: `artifact_not_found`
-- Path outside allowed root → reason: `artifact_not_ready`
-- Stream URL unsafe → reason: `artifact_not_ready`
+- Storage ref missing â†’ reason: `artifact_not_found`
+- Artifact metadata missing â†’ reason: `artifact_not_found`
+- Path outside allowed root â†’ reason: `artifact_not_ready`
+- Stream URL unsafe â†’ reason: `artifact_not_ready`
 
 ### URL/path safety rules
 
@@ -2740,7 +2740,7 @@ Returns `artifact_access_unavailable` when:
 
 ---
 
-## Phase 11-J — Artifact Storage Ref Resolver Boundary
+## Phase 11-J â€” Artifact Storage Ref Resolver Boundary
 
 Status:
 
@@ -2782,7 +2782,7 @@ Scope:
 
 ----
 
-## Phase 11-M — Backend Stream Route Implementation
+## Phase 11-M â€” Backend Stream Route Implementation
 
 Status:
 
@@ -2813,7 +2813,7 @@ Scope:
 
 **Dependency Injection:**
 - Uses injected `ArtifactStorageRefResolver` to map jobId + artifactId to `InternalArtifactStorageRef`
-- Dependency is test-injected only via router options — no app/server wiring yet
+- Dependency is test-injected only via router options â€” no app/server wiring yet
 
 **Validation Pipeline:**
 1. Returns 501 if `artifactStorageRefResolver` not configured
@@ -2823,24 +2823,24 @@ Scope:
 5. Calls `fs.realpath()` on both filePath and rootPath to resolve symlinks
 6. Uses `path.relative(rootPath, filePath)` to validate file is inside root
 7. Returns 403 if path escapes root (path traversal or symlink escape attempt)
-8. Calls `fs.stat()` and verifies `stat.isFile()` — returns 404 if missing, 403 if directory
+8. Calls `fs.stat()` and verifies `stat.isFile()` â€” returns 404 if missing, 403 if directory
 9. On success: streams file using `response.sendFile()` after all validations pass
 
 **Safe Headers:**
-- Content-Type: based on artifact format (mp4→video/mp4, webm→video/webm, default→application/octet-stream)
+- Content-Type: based on artifact format (mp4â†’video/mp4, webmâ†’video/webm, defaultâ†’application/octet-stream)
 - Content-Disposition: `attachment; filename="<sanitized-artifact-id>.<format>"`
 - Cache-Control: no-store
 - X-Content-Type-Options: nosniff
 
 **Error Response Codes (no local path leakage):**
-- `stream_not_configured` — resolver not injected (501)
-- `job_not_found` — job doesn't exist or not successful (404)
-- `artifact_not_found` — artifact doesn't exist or not available (404)
-- `forbidden` — path traversal or directory accessed (403)
-- `not_found` — file missing on disk (404)
-- `internal_error` — realpath/stat failure (500)
+- `stream_not_configured` â€” resolver not injected (501)
+- `job_not_found` â€” job doesn't exist or not successful (404)
+- `artifact_not_found` â€” artifact doesn't exist or not available (404)
+- `forbidden` â€” path traversal or directory accessed (403)
+- `not_found` â€” file missing on disk (404)
+- `internal_error` â€” realpath/stat failure (500)
 
-All error responses use generic codes and messages — no file paths, root paths, or storage refs exposed.
+All error responses use generic codes and messages â€” no file paths, root paths, or storage refs exposed.
 
 ### What was NOT added
 
@@ -2863,7 +2863,7 @@ All error responses use generic codes and messages — no file paths, root paths
 
 ----
 
-## Phase 12-B — Internal In-Memory Artifact Storage Ref Store
+## Phase 12-B â€” Internal In-Memory Artifact Storage Ref Store
 
 Status:
 
@@ -2882,13 +2882,13 @@ Scope:
 
 - Created `backend/artifacts/inMemoryArtifactStorageRefStore.ts`
 - Added `ArtifactStorageRefStore` interface:
-  - `set(jobId, artifactId, ref)` — store internal ref
-  - `get(jobId, artifactId)` — retrieve ref or undefined
-  - `has(jobId, artifactId)` — check existence
-  - `delete(jobId, artifactId?)` — delete single or all for job
-  - `clear()` — clear all refs
+  - `set(jobId, artifactId, ref)` â€” store internal ref
+  - `get(jobId, artifactId)` â€” retrieve ref or undefined
+  - `has(jobId, artifactId)` â€” check existence
+  - `delete(jobId, artifactId?)` â€” delete single or all for job
+  - `clear()` â€” clear all refs
 - Added `createInMemoryArtifactStorageRefStore` factory
-- Store maps jobId + artifactId → InternalArtifactStorageRef
+- Store maps jobId + artifactId â†’ InternalArtifactStorageRef
 - Store uses private Map storage (Map<string, Map<string, InternalArtifactStorageRef>>)
 - Store is process-memory only (no persistence)
 - Tests added: `tests/e2e/phase12-in-memory-ref-store.spec.ts` (23 tests)
@@ -2925,7 +2925,7 @@ Scope:
 
 ----
 
-## Phase 12-F — Render Harness Verified Artifact Ref Registration Callback
+## Phase 12-F â€” Render Harness Verified Artifact Ref Registration Callback
 
 Status:
 
@@ -2994,7 +2994,7 @@ Scope:
 
 ----
 
-## Phase 12-J — Backend Store Wiring / Ref Registration Callback Connection
+## Phase 12-J â€” Backend Store Wiring / Ref Registration Callback Connection
 
 Status:
 
@@ -3034,16 +3034,16 @@ Scope:
 
 - `executeRenderJob` accepts optional `onVerifiedArtifactRef`
 - If provided, forwarded to harness
-- If undefined, harness callback is undefined → no registration
+- If undefined, harness callback is undefined â†’ no registration
 - Caller decides whether to pass callback
 
 ### Lifecycle ordering
 
-1. Render executes → verification succeeds
+1. Render executes â†’ verification succeeds
 2. Harness calls `onVerifiedArtifactRef(payload)`
 3. `backendDependencies.onVerifiedArtifactRef` receives payload
 4. `artifactStorageRefStore.set(jobId, artifactId, storageRef)`
-5. `markFinalizing` → `markSuccess`
+5. `markFinalizing` â†’ `markSuccess`
 6. Stream route later can query store via resolver (future phase)
 
 ### What was NOT added
@@ -3073,7 +3073,7 @@ Scope:
 
 ----
 
-## Phase 12-N — Resolver Wiring / Ref Store Query Implementation
+## Phase 12-N â€” Resolver Wiring / Ref Store Query Implementation
 
 Status:
 
@@ -3114,7 +3114,7 @@ Scope:
 - Access route returns artifact_access_unavailable as before
 - Provider remains not-configured
 
-## Phase 12-R — Worker Callback Wiring
+## Phase 12-R â€” Worker Callback Wiring
 
 Status:
 
@@ -3145,23 +3145,23 @@ Scope:
 
 ```
 backendDeps.onVerifiedArtifactRef (best-effort callback)
-    ↓
-app.ts → createRenderWorkerLifecycle(onVerifiedArtifactRef)
-    ↓
-createRenderWorkerStartup → createRenderWorkerLoop → drainRenderWorkerOnce
-    ↓
-renderWorker → executeRenderJob
-    ↓
+    â†“
+app.ts â†’ createRenderWorkerLifecycle(onVerifiedArtifactRef)
+    â†“
+createRenderWorkerStartup â†’ createRenderWorkerLoop â†’ drainRenderWorkerOnce
+    â†“
+renderWorker â†’ executeRenderJob
+    â†“
 singleProcessRenderHarness({ onVerifiedArtifactRef })
-    ↓
+    â†“
 [Render completes successfully]
-    ↓
+    â†“
 Artifact verification succeeds (path safety checks pass)
-    ↓
+    â†“
 onVerifiedArtifactRef(payload) called
-    ↓
+    â†“
 backendDependencies.onVerifiedArtifactRef(payload)
-    ↓
+    â†“
 artifactStorageRefStore.set(jobId, artifactId, storageRef)
 ```
 
@@ -3211,7 +3211,7 @@ artifactStorageRefStore.set(jobId, artifactId, storageRef)
 - Production storage provider selection
 - Auth/authorization for artifact access
 
-## Phase 12-V — Route Execution Callback Wiring
+## Phase 12-V â€” Route Execution Callback Wiring
 
 Status:
 
@@ -3237,21 +3237,21 @@ Scope:
 
 ```
 backendDeps.onVerifiedArtifactRef (best-effort callback)
-    ↓
-app.ts → createExportRouter({ onVerifiedArtifactRef: backendDeps.onVerifiedArtifactRef })
-    ↓
-POST /exports/:jobId/execute → executeRenderJob({ onVerifiedArtifactRef: options?.onVerifiedArtifactRef })
-    ↓
+    â†“
+app.ts â†’ createExportRouter({ onVerifiedArtifactRef: backendDeps.onVerifiedArtifactRef })
+    â†“
+POST /exports/:jobId/execute â†’ executeRenderJob({ onVerifiedArtifactRef: options?.onVerifiedArtifactRef })
+    â†“
 singleProcessRenderHarness({ onVerifiedArtifactRef })
-    ↓
+    â†“
 [Render completes successfully]
-    ↓
+    â†“
 Artifact verification succeeds (path safety checks pass)
-    ↓
+    â†“
 onVerifiedArtifactRef(payload) called
-    ↓
+    â†“
 backendDependencies.onVerifiedArtifactRef(payload)
-    ↓
+    â†“
 artifactStorageRefStore.set(jobId, artifactId, storageRef)
 ```
 
@@ -3296,7 +3296,7 @@ artifactStorageRefStore.set(jobId, artifactId, storageRef)
 - Production storage provider selection
 - Auth/authorization for artifact access
 
-## Phase 12-Z — Env-Gated Artifact Resolver Route Injection
+## Phase 12-Z â€” Env-Gated Artifact Resolver Route Injection
 
 Status:
 
@@ -3323,15 +3323,15 @@ Scope:
 
 ```
 app.ts
-  ↓
+  â†“
 isLocalDevArtifactStreamEnabled() checks FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1"
-  ↓
+  â†“
 exportRouterOptions:
   - onVerifiedArtifactRef: backendDeps.onVerifiedArtifactRef (always)
   - artifactStorageRefResolver: backendDeps.artifactStorageRefResolver (conditional)
-  ↓
+  â†“
 createExportRouter(backendDeps.registry, exportRouterOptions)
-  ↓
+  â†“
 Stream route:
   - If resolver exists: resolves refs from artifactStorageRefStore
   - If resolver missing: returns 501 stream_not_configured
@@ -3355,15 +3355,15 @@ Stream route:
 
 Stream route remains final authority for path safety:
 
-1. Job exists → 404 (masqueraded)
-2. Job status is "success" → 404 (masqueraded)
-3. Artifact exists → 404
-4. Artifact status is "available" → 404
-5. Resolver returns `InternalArtifactStorageRef` → 404 if missing
-6. `fs.realpath(rootPath)` → 500 on failure
-7. `fs.realpath(filePath)` → 500 on failure
-8. Root containment check (`path.relative`) → 403 if escapes
-9. `fs.stat(filePath).isFile()` → 403 if not file
+1. Job exists â†’ 404 (masqueraded)
+2. Job status is "success" â†’ 404 (masqueraded)
+3. Artifact exists â†’ 404
+4. Artifact status is "available" â†’ 404
+5. Resolver returns `InternalArtifactStorageRef` â†’ 404 if missing
+6. `fs.realpath(rootPath)` â†’ 500 on failure
+7. `fs.realpath(filePath)` â†’ 500 on failure
+8. Root containment check (`path.relative`) â†’ 403 if escapes
+9. `fs.stat(filePath).isFile()` â†’ 403 if not file
 10. `sendFile()` called only after all validations pass
 
 ### Path leakage prevention
@@ -3390,7 +3390,7 @@ Stream route remains final authority for path safety:
 - Production storage provider selection
 - Auth/authorization for artifact access
 
-## Phase 13-B — Env-Gated Local Dev Artifact Access Provider Wiring
+## Phase 13-B â€” Env-Gated Local Dev Artifact Access Provider Wiring
 
 Status:
 
@@ -3439,7 +3439,7 @@ Scope:
 - No auth/authorization was added
 - This phase does not claim production-ready download behavior
 
-## Phase 14-B — Artifact Route Param Validation Fix / Local Dev Access Behavior Smoke
+## Phase 14-B â€” Artifact Route Param Validation Fix / Local Dev Access Behavior Smoke
 
 Status:
 
@@ -3478,7 +3478,7 @@ Scope:
 - No auth/authorization was added
 - No real file streaming success case was added in this phase
 
-## Phase 15-B â€” Positive Local Dev Artifact Stream File Smoke
+## Phase 15-B Ã¢â‚¬â€ Positive Local Dev Artifact Stream File Smoke
 
 Status:
 
@@ -10133,3 +10133,56 @@ Scope:
 - No fake auth/session behavior was added
 - No artifact access/stream authorization yet
 - Public artifact delivery remains deferred
+
+## Phase 134 - Artifact Access/Stream Authorization Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- artifact access authorization plus artifact stream blocked/public-delivery guard
+- test-controlled authorization enforcement only
+- default route authorization remains disabled
+- no trusted-header shortcut
+- no fake authenticated session
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 134 completion summary
+
+- Added authorization guard coverage for artifact access and artifact stream routes
+- Default artifact access behavior remains authorization disabled
+- Explicit enforce mode rejects unauthenticated artifact access with safe 401
+- Explicit enforce mode rejects owner/workspace mismatch with safe 403
+- Matching authenticated requester owner/workspace can pass artifact access authorization
+- Artifact stream remains blocked when stream provider is not configured; configured stream-provider authorization regression is deferred to Phase 135
+- Arbitrary x-user-id / x-workspace-id headers are not trusted
+- Public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Merged route roadmap note
+
+- Phase 133 covered core export status/execute route authorization enforcement.
+- Phase 134 covers artifact access/stream route authorization enforcement.
+- Phase 135 will cover route authorization regression and hardening.
+
+### Verification
+
+- phase134: expected focused pass
+- phase133: expected pass
+- phase132: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Authorization enforcement remains opt-in only
+- Default/local-dev behavior remains unchanged
+- No trusted-header shortcut was added
+- No fake auth/session behavior was added
+- Public artifact delivery remains deferred
+

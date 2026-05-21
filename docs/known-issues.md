@@ -1,4 +1,4 @@
-# Known Issues
+﻿# Known Issues
 
 This file tracks current architecture debt and unstable behaviors that future work must not ignore.
 
@@ -115,7 +115,7 @@ Why it matters:
 - `@remotion/bundler` dependency and runtime type boundary prep exist from Phase 8.1-B; real runtime bundle/selectComposition/renderMedia execution remains deferred
 - route auto-execution remains deferred
 - Phase 8.11-B safely stopped (app.ts lacked rendererAdapter/pathPolicy)
-- Phase 8.12-B adds backend dependency composition module (`backend/composition/backendDependencies.ts`) — composes registry, rendererAdapter, pathPolicy but does NOT wire them into exports router yet
+- Phase 8.12-B adds backend dependency composition module (`backend/composition/backendDependencies.ts`) â€” composes registry, rendererAdapter, pathPolicy but does NOT wire them into exports router yet
 - Phase 8.13-B adds worker lifecycle app wiring (`backend/workers/renderWorkerLifecycle.ts`):
   - lifecycle created in app.ts using already-composed backendDeps
   - lifecycle.init() called during app creation but remains harmless when env flags disabled
@@ -226,7 +226,7 @@ Why it matters:
   - Provider remains not-configured
 - Phase 12-R adds worker callback wiring:
   - backendDeps.onVerifiedArtifactRef passed to createRenderWorkerLifecycle
-  - Callback flows through worker startup → loop → worker → executeRenderJob
+  - Callback flows through worker startup â†’ loop â†’ worker â†’ executeRenderJob
   - Callback fires in harness only after artifact verification succeeds
   - Successful renders populate artifactStorageRefStore internally
   - Failed renders do NOT register refs (callback not called on failure)
@@ -1068,13 +1068,13 @@ Target fix phase:
 - Frontend export lifecycle integration with real backend completion.
 - Synchronous HTTP route execution blocks request until render completes (no async queue/worker yet).
 - Route trigger (`POST /exports/:jobId/execute`) is dev/test-gated only; not production-exposed.
-- Timeout guard now exists (120000ms default via `FREE_AI_MIXER_ROUTE_EXECUTION_TIMEOUT_MS`) but does not cancel render — only protects HTTP response from hanging.
+- Timeout guard now exists (120000ms default via `FREE_AI_MIXER_ROUTE_EXECUTION_TIMEOUT_MS`) but does not cancel render â€” only protects HTTP response from hanging.
 - Caller must poll job state after receiving 504 timeout response to get latest lifecycle status.
 - No cancellation, no queue, no scheduler yet.
 - Worker helper `drainRenderWorkerOnce` exists but requires manual invocation (not auto-started).
 - Worker loop helper `createRenderWorkerLoop` exists and is test-controlled, but requires manual `start()` call.
 - Worker startup factory `createRenderWorkerStartup` exists but is not wired to app/server startup.
-- No production auto-start yet — worker loop and startup are dev/test-gated only.
+- No production auto-start yet â€” worker loop and startup are dev/test-gated only.
 - Worker lifecycle app wiring exists (Phase 8.13-B):
   - `createRenderWorkerLifecycle(...)` created in app.ts using composed backendDeps
   - `lifecycle.init()` called during app creation but remains harmless without env flags
@@ -1084,14 +1084,14 @@ Target fix phase:
   - no process signal handlers added
 - No route enqueue behavior yet.
 - Backend dependency composition module exists (Phase 8.12-B) but dependencies are not wired into exports router yet.
-- rendererAdapter and pathPolicy composed for lifecycle (Phase 8.13-B) but still NOT passed to createExportRouter — execute route returns 501 without them.
+- rendererAdapter and pathPolicy composed for lifecycle (Phase 8.13-B) but still NOT passed to createExportRouter â€” execute route returns 501 without them.
 - process.cwd()-based pathPolicy roots are acceptable for dev/test but may need env override before production.
 - Registry interface boundary exists (Phase 8.15-B):
   - `ExportJobRegistry` interface separated from `InMemoryExportJobRegistry` implementation
   - `backend/registry/exportJobRegistry.ts` owns interface/types
   - `backend/registry/inMemoryExportJobRegistry.ts` contains implementation
   - Future durable persistence adapters can implement `ExportJobRegistry` without changing consumers
-  - No real persistence/storage added — jobs remain in-memory only
+  - No real persistence/storage added â€” jobs remain in-memory only
   - requestId idempotency remains process-local only
   - Claims/leases remain in-memory only with TTL support
   - Submitted/rendering/finalizing jobs do not survive server restart yet
@@ -1117,7 +1117,7 @@ Target fix phase:
 Recovery policy boundary exists (Phase 8.18-B):
 - `backend/registry/exportJobRecoveryPolicy.ts` provides restart recovery policy
 - Exports: recoverExportJobRecord, recoverExportJobRecords, getRecoverableRecords, getTerminalRecords
-- Recovery rules: submitted stays, rendering/finalizing → submitted, terminal stays
+- Recovery rules: submitted stays, rendering/finalizing â†’ submitted, terminal stays
 - Claims cleared for recovered non-terminal jobs
 - attemptCount and identity fields preserved
 - Clone-based (original records not mutated)
@@ -2020,3 +2020,16 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 134 adds test-controlled artifact access/stream authorization enforcement:
+  - Default artifact access behavior remains authorization disabled.
+  - Explicit enforce mode protects artifact access; stream remains blocked when stream provider is not configured.
+  - Unauthenticated artifact access requests return safe 401; unconfigured stream requests remain safely blocked with 501.
+  - Owner/workspace mismatch returns safe 403.
+  - Arbitrary x-user-id / x-workspace-id headers are not trusted.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
+

@@ -17,11 +17,11 @@ const readIfExists = (relativePath: string): string => {
 };
 
 const record = {
-  jobId: "job-phase133",
-  requestId: "request-phase133",
-  timelineId: "timeline-phase133",
-  ownerId: "owner-phase133",
-  workspaceId: "workspace-phase133",
+  jobId: "job-phase134",
+  requestId: "request-phase134",
+  timelineId: "timeline-phase134",
+  ownerId: "owner-phase134",
+  workspaceId: "workspace-phase134",
   status: "submitted",
   renderSettings: {
     format: "mp4",
@@ -49,22 +49,22 @@ const createFakeRegistry = (): ExportJobRegistry =>
     getByRequestId: async () => undefined,
     getByStatus: async () => [record],
     claim: async () => {
-      throw new Error("claim should not be called in phase133");
+      throw new Error("claim should not be called in phase134");
     },
     markRendering: async () => {
-      throw new Error("markRendering should not be called in phase133");
+      throw new Error("markRendering should not be called in phase134");
     },
     markFinalizing: async () => {
-      throw new Error("markFinalizing should not be called in phase133");
+      throw new Error("markFinalizing should not be called in phase134");
     },
     markSuccess: async () => {
-      throw new Error("markSuccess should not be called in phase133");
+      throw new Error("markSuccess should not be called in phase134");
     },
     markError: async () => {
-      throw new Error("markError should not be called in phase133");
+      throw new Error("markError should not be called in phase134");
     },
     transition: async () => {
-      throw new Error("transition should not be called in phase133");
+      throw new Error("transition should not be called in phase134");
     },
   }) as unknown as ExportJobRegistry;
 
@@ -127,58 +127,42 @@ const withTestServer = async (
   }
 };
 
-test.describe("phase133 export route authorization enforcement pack", () => {
-  test("default route authorization remains disabled", async () => {
+test.describe("phase134 artifact access stream authorization pack", () => {
+  test("artifact access authorization remains disabled by default", async () => {
     await withTestServer({}, async (baseUrl) => {
-      const response = await fetch(`${baseUrl}/exports/${record.jobId}`, {
-        headers: {
-          authorization: "Bearer fake-token-must-not-authenticate",
-          "x-user-id": "fake-user-must-not-authenticate",
-          "x-workspace-id": "fake-workspace-must-not-authenticate",
+      const response = await fetch(
+        `${baseUrl}/exports/${record.jobId}/artifacts/artifact-phase134/access`,
+        {
+          headers: {
+            authorization: "Bearer fake-token-must-not-authenticate",
+            "x-user-id": "fake-user-must-not-authenticate",
+            "x-workspace-id": "fake-workspace-must-not-authenticate",
+          },
         },
-      });
+      );
 
       expect(response.status).toBe(200);
 
       const payload = await response.json();
-      expect(payload.kind).toBe("pending");
-      expect(payload.handle.jobId).toBe(record.jobId);
+      expect(payload.kind).toBe("artifact_access_unavailable");
     });
   });
 
-  test("explicit enforcement allows matching authenticated requester and rejects unauthenticated or mismatched requesters", async () => {
-    await withTestServer(
-      {
-        authorizationMode: "enforce",
-        trustedRequesterContext: {
-          kind: "authenticated",
-          userId: record.ownerId,
-          workspaceId: record.workspaceId,
-          authProvider: "jwt",
-          authSubject: record.ownerId,
-        },
-      },
-      async (baseUrl) => {
-        const response = await fetch(`${baseUrl}/exports/${record.jobId}`);
-
-        expect(response.status).toBe(200);
-
-        const payload = await response.json();
-        expect(payload.kind).toBe("pending");
-      },
-    );
-
+  test("explicit enforcement protects artifact access route with 401 403 and matching allow-through", async () => {
     await withTestServer(
       {
         authorizationMode: "enforce",
       },
       async (baseUrl) => {
-        const response = await fetch(`${baseUrl}/exports/${record.jobId}`, {
-          headers: {
-            "x-user-id": record.ownerId,
-            "x-workspace-id": record.workspaceId,
+        const response = await fetch(
+          `${baseUrl}/exports/${record.jobId}/artifacts/artifact-phase134/access`,
+          {
+            headers: {
+              "x-user-id": record.ownerId,
+              "x-workspace-id": record.workspaceId,
+            },
           },
-        });
+        );
 
         expect(response.status).toBe(401);
 
@@ -199,7 +183,9 @@ test.describe("phase133 export route authorization enforcement pack", () => {
         },
       },
       async (baseUrl) => {
-        const response = await fetch(`${baseUrl}/exports/${record.jobId}`);
+        const response = await fetch(
+          `${baseUrl}/exports/${record.jobId}/artifacts/artifact-phase134/access`,
+        );
 
         expect(response.status).toBe(403);
 
@@ -207,16 +193,37 @@ test.describe("phase133 export route authorization enforcement pack", () => {
         expect(payload.code).toBe("forbidden");
       },
     );
+
+    await withTestServer(
+      {
+        authorizationMode: "enforce",
+        trustedRequesterContext: {
+          kind: "authenticated",
+          userId: record.ownerId,
+          workspaceId: record.workspaceId,
+          authProvider: "jwt",
+          authSubject: record.ownerId,
+        },
+      },
+      async (baseUrl) => {
+        const response = await fetch(
+          `${baseUrl}/exports/${record.jobId}/artifacts/artifact-phase134/access`,
+        );
+
+        expect(response.status).not.toBe(401);
+        expect(response.status).not.toBe(403);
+      },
+    );
   });
 
-  test("artifact access remains backend-mediated and public delivery stays blocked", async () => {
+  test("artifact stream remains blocked without enabling public delivery when stream provider is not configured", async () => {
     await withTestServer(
       {
         authorizationMode: "enforce",
       },
       async (baseUrl) => {
         const response = await fetch(
-          `${baseUrl}/exports/${record.jobId}/artifacts/artifact-phase133/access`,
+          `${baseUrl}/exports/${record.jobId}/artifacts/artifact-phase134/stream`,
           {
             headers: {
               "x-user-id": record.ownerId,
@@ -225,16 +232,13 @@ test.describe("phase133 export route authorization enforcement pack", () => {
           },
         );
 
-        expect(response.status).toBe(401);
-
-        const payload = await response.json();
-        expect(payload.code).toBe("unauthorized");
+        expect(response.status).toBe(501);
       },
     );
 
     const routeSource = readSource("backend/routes/exports.ts");
 
-    expect(routeSource).toContain("authorizationMode?: ExportRouteAuthorizationMode");
+    expect(routeSource).toContain("Phase 134 authorization guard for artifact access/stream routes");
     expect(routeSource).toContain("getExportRouteAuthorizationFailure");
     expect(routeSource).toContain("getRequesterContextFromRequest");
 
@@ -254,13 +258,22 @@ test.describe("phase133 export route authorization enforcement pack", () => {
       "\n" +
       readIfExists("src/services/exportHandleStorage.ts");
 
+    const artifactSource =
+      readIfExists("backend/artifacts/artifactAccessProvider.ts") +
+      "\n" +
+      readIfExists("backend/artifacts/localDevArtifactAccessProvider.ts") +
+      "\n" +
+      readIfExists("backend/artifacts/notConfiguredArtifactAccessProvider.ts");
+
     expect(frontendSource).not.toContain("@supabase/supabase-js");
     expect(frontendSource).not.toContain("createClient(");
     expect(frontendSource).not.toContain(".storage.from(");
-    expect(frontendSource).not.toContain("createSignedUrl");
-    expect(frontendSource).not.toContain("getPublicUrl");
     expect(frontendSource).not.toContain("window.open");
     expect(frontendSource).not.toContain("location.href");
+
+    expect(artifactSource).not.toContain("production_ready_local_dev_stream");
+    expect(artifactSource).not.toContain("createSignedUrl");
+    expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
 
