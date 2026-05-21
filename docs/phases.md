@@ -8842,3 +8842,69 @@ Before JWT provider composition can be wired:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 113 - JWT Provider Composition Wiring Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- fail-closed JWT provider composition wiring only
+- no real JWT verification
+- no JWT package dependency
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 113 completion summary
+
+- Wired future JWT provider composition to the fail-closed JWT verification boundary
+- Confirmed JWT provider composition delegates to `createFailClosedFutureJwtVerificationStrategy(...)`
+- Confirmed JWT verification result maps through `mapJwtVerificationResultToRequesterContext(...)`
+- Confirmed missing authorization header maps to `missing_credentials`
+- Confirmed fake bearer token maps to `invalid_credentials`
+- Confirmed session provider remains fail-closed with `invalid_credentials`
+- Confirmed no real JWT verification package or token verification was added
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not emit authorization `401` / `403` responses
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Future production requirements
+
+Before real JWT auth can be used for route authorization:
+
+- choose and install an audited JWT verification dependency
+- validate issuer and audience
+- validate token signature and expiry
+- map verified subject to authenticated requester context
+- require verified workspace scope or membership lookup
+- export routes must call authorization adapter/decision/guard boundaries
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase113`: expected focused pass
+- `phase112`: expected pass
+- `phase111`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- JWT composition wiring remains fail-closed
+- No real JWT verification was implemented
+- No JWT dependency was added
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

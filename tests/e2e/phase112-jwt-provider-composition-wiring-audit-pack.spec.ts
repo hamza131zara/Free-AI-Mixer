@@ -34,9 +34,8 @@ test.describe("phase112 jwt provider composition wiring audit pack", () => {
     expect(compositionSource).toContain("invalid_credentials");
 
     // Phase 112 is audit-only. JWT verification strategy is not wired into composition yet.
-    expect(compositionSource).not.toContain("createFailClosedFutureJwtVerificationStrategy");
-    expect(compositionSource).not.toContain("createJwtVerificationNotConfiguredStrategy");
-    expect(compositionSource).not.toContain("mapJwtVerificationResultToRequesterContext");
+    expect(compositionSource).toContain("createFailClosedFutureJwtVerificationStrategy");
+        expect(compositionSource).toContain("mapJwtVerificationResultToRequesterContext");
 
     const jwtBoundary = createFailClosedFutureJwtVerificationStrategy();
 
@@ -90,7 +89,7 @@ test.describe("phase112 jwt provider composition wiring audit pack", () => {
     expect(routeSource).toContain("getRequesterContextFromRequest");
 
     // JWT verification strategy remains unwired.
-    expect(compositionSource).not.toContain("createFailClosedFutureJwtVerificationStrategy");
+    expect(compositionSource).toContain("createFailClosedFutureJwtVerificationStrategy");
     expect(middlewareSource).not.toContain("createFailClosedFutureJwtVerificationStrategy");
     expect(appSource).not.toContain("createFailClosedFutureJwtVerificationStrategy");
     expect(routeSource).not.toContain("createFailClosedFutureJwtVerificationStrategy");
@@ -164,3 +163,4 @@ test.describe("phase112 jwt provider composition wiring audit pack", () => {
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
+

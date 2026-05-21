@@ -6,12 +6,17 @@ import {
 import type {
   TrustedAuthProviderRuntimeConfig,
 } from "./trustedAuthProviderRuntimeConfig";
+import {
+  createFailClosedFutureJwtVerificationStrategy,
+  mapJwtVerificationResultToRequesterContext,
+} from "./jwtProviderVerificationStrategy";
 
 /**
- * Phase 101 boundary helper.
+ * Phase 113 boundary helper.
  *
  * This composes runtime auth provider config into a trusted provider strategy.
- * It intentionally does not implement real token/session verification yet.
+ * JWT provider mode now delegates to the fail-closed JWT verification boundary.
+ * It intentionally does not implement real JWT verification yet.
  *
  * Safety rules:
  * - Must not fabricate authenticated identity.
@@ -27,6 +32,23 @@ export const createTrustedAuthProviderStrategyFromRuntimeConfig = (
 ): TrustedAuthProviderStrategy => {
   if (config.kind === "auth_provider_not_configured") {
     return createAuthNotConfiguredTrustedAuthProviderStrategy();
+  }
+
+  if (config.provider === "future_jwt_provider") {
+    const jwtVerificationStrategy = createFailClosedFutureJwtVerificationStrategy();
+
+    return {
+      kind: config.provider,
+      resolveRequesterContext: async (input) => {
+        const jwtResult = await jwtVerificationStrategy.verify({
+          headers: input?.headers,
+          issuer: config.issuer,
+          audience: config.audience,
+        });
+
+        return mapJwtVerificationResultToRequesterContext(jwtResult);
+      },
+    };
   }
 
   return {

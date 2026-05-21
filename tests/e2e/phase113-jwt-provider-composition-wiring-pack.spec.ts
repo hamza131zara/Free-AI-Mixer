@@ -1,11 +1,8 @@
 ﻿import { test, expect } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import {
-  createFailClosedFutureJwtVerificationStrategy,
-  createJwtVerificationNotConfiguredStrategy,
-  mapJwtVerificationResultToRequesterContext,
-} from "../../backend/auth/jwtProviderVerificationStrategy";
+import { createTrustedAuthProviderStrategyFromRuntimeConfig } from "../../backend/auth/trustedAuthProviderComposition";
+import { readTrustedAuthProviderRuntimeConfig } from "../../backend/auth/trustedAuthProviderRuntimeConfig";
 
 const projectRoot = process.cwd();
 
@@ -17,77 +14,75 @@ const readIfExists = (relativePath: string): string => {
   return existsSync(fullPath) ? readFileSync(fullPath, "utf8") : "";
 };
 
-test.describe("phase111 jwt provider verification strategy boundary pack", () => {
-  test("jwt verification strategies fail closed without real verification", async () => {
-    const notConfiguredStrategy = createJwtVerificationNotConfiguredStrategy();
-
-    expect(notConfiguredStrategy.kind).toBe("jwt_verification_not_configured");
-
-    await expect(notConfiguredStrategy.verify()).resolves.toEqual({
-      kind: "not_verified",
-      reason: "auth_not_configured",
-    });
-
-    expect(
-      mapJwtVerificationResultToRequesterContext({
-        kind: "not_verified",
-        reason: "auth_not_configured",
+test.describe("phase113 jwt provider composition wiring pack", () => {
+  test("jwt provider composition delegates to fail-closed jwt verification boundary", async () => {
+    const jwtStrategy = createTrustedAuthProviderStrategyFromRuntimeConfig(
+      readTrustedAuthProviderRuntimeConfig({
+        FREE_AI_MIXER_AUTH_PROVIDER: "jwt",
+        FREE_AI_MIXER_AUTH_ISSUER: "https://auth.example.test",
+        FREE_AI_MIXER_AUTH_AUDIENCE: "free-ai-mixer",
       }),
-    ).toEqual({
+    );
+
+    expect(jwtStrategy.kind).toBe("future_jwt_provider");
+
+    await expect(jwtStrategy.resolveRequesterContext()).resolves.toEqual({
       kind: "unauthenticated",
-      reason: "auth_not_configured",
-    });
-
-    const futureStrategy = createFailClosedFutureJwtVerificationStrategy();
-
-    expect(futureStrategy.kind).toBe("future_jwt_verification");
-
-    await expect(futureStrategy.verify()).resolves.toEqual({
-      kind: "not_verified",
       reason: "missing_credentials",
     });
 
     await expect(
-      futureStrategy.verify({
+      jwtStrategy.resolveRequesterContext({
         headers: {
           authorization: "Bearer fake-token-must-not-authenticate",
           "x-user-id": "fake-user-must-not-authenticate",
           "x-workspace-id": "fake-workspace-must-not-authenticate",
         },
-        issuer: "https://auth.example.test",
-        audience: "free-ai-mixer",
       }),
     ).resolves.toEqual({
-      kind: "not_verified",
+      kind: "unauthenticated",
+      reason: "invalid_credentials",
+    });
+
+    const sessionStrategy = createTrustedAuthProviderStrategyFromRuntimeConfig(
+      readTrustedAuthProviderRuntimeConfig({
+        FREE_AI_MIXER_AUTH_PROVIDER: "session",
+      }),
+    );
+
+    expect(sessionStrategy.kind).toBe("future_session_provider");
+
+    await expect(sessionStrategy.resolveRequesterContext()).resolves.toEqual({
+      kind: "unauthenticated",
       reason: "invalid_credentials",
     });
   });
 
-  test("jwt verification boundary exists but is not wired into provider composition routes or app", async () => {
-    const jwtSource = readSource("backend/auth/jwtProviderVerificationStrategy.ts");
-    const providerSource = readSource("backend/auth/trustedAuthProviderStrategy.ts");
+  test("jwt composition wiring exists but routes remain non-enforcing", async () => {
     const compositionSource = readSource("backend/auth/trustedAuthProviderComposition.ts");
+    const jwtSource = readSource("backend/auth/jwtProviderVerificationStrategy.ts");
     const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
     const appSource = readSource("backend/app.ts");
     const routeSource = readSource("backend/routes/exports.ts");
+    const serverSource = readSource("backend/server.ts");
 
-    expect(jwtSource).toContain("TrustedJwtVerificationStrategy");
-    expect(jwtSource).toContain("createJwtVerificationNotConfiguredStrategy");
+    expect(compositionSource).toContain("createFailClosedFutureJwtVerificationStrategy");
+    expect(compositionSource).toContain("mapJwtVerificationResultToRequesterContext");
     expect(jwtSource).toContain("createFailClosedFutureJwtVerificationStrategy");
     expect(jwtSource).toContain("mapJwtVerificationResultToRequesterContext");
 
-    expect(providerSource).toContain("TrustedAuthProviderStrategy");
-    expect(compositionSource).toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
-    expect(middlewareSource).toContain("createTrustedAuthMiddleware");
+    expect(middlewareSource).toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
     expect(appSource).toContain("readTrustedAuthProviderRuntimeConfig");
     expect(routeSource).toContain("getRequesterContextFromRequest");
 
-    expect(providerSource).not.toContain("createFailClosedFutureJwtVerificationStrategy");
-    expect(compositionSource).toContain("createFailClosedFutureJwtVerificationStrategy");
-    expect(middlewareSource).not.toContain("createFailClosedFutureJwtVerificationStrategy");
-    expect(appSource).not.toContain("createFailClosedFutureJwtVerificationStrategy");
-    expect(routeSource).not.toContain("createFailClosedFutureJwtVerificationStrategy");
+    // No real JWT verification dependency or implementation yet.
+    expect(compositionSource + jwtSource + middlewareSource + appSource + serverSource).not.toContain("jwtVerify");
+    expect(compositionSource + jwtSource + middlewareSource + appSource + serverSource).not.toContain("jsonwebtoken");
+    expect(compositionSource + jwtSource + middlewareSource + appSource + serverSource).not.toContain("jose");
+    expect(compositionSource + jwtSource + middlewareSource + appSource + serverSource).not.toContain("JWKS");
+    expect(compositionSource + jwtSource + middlewareSource + appSource + serverSource).not.toContain("JWK");
 
+    // Route authorization remains deferred.
     expect(routeSource).not.toContain("adaptAuthenticatedRequesterToExportRequesterContext");
     expect(routeSource).not.toContain("decideExportOwnerScopeAccess");
     expect(routeSource).not.toContain("mapExportAuthorizationDecisionToRouteGuard");
@@ -95,13 +90,13 @@ test.describe("phase111 jwt provider verification strategy boundary pack", () =>
     expect(routeSource).not.toContain("throw new ExportApiError(403");
   });
 
-  test("jwt strategy boundary does not introduce fake auth secrets frontend storage or artifact delivery", async () => {
+  test("jwt composition wiring does not introduce fake auth frontend storage or artifact delivery", async () => {
     const authSource =
       readSource("backend/auth/jwtProviderVerificationStrategy.ts") +
       "\n" +
-      readSource("backend/auth/trustedAuthProviderRuntimeConfig.ts") +
-      "\n" +
       readSource("backend/auth/trustedAuthProviderComposition.ts") +
+      "\n" +
+      readSource("backend/auth/trustedAuthProviderRuntimeConfig.ts") +
       "\n" +
       readSource("backend/auth/trustedAuthProviderStrategy.ts") +
       "\n" +
@@ -155,4 +150,3 @@ test.describe("phase111 jwt provider verification strategy boundary pack", () =>
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
-
