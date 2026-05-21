@@ -6781,3 +6781,62 @@ Before public artifact delivery or production storage access:
 - No direct frontend Supabase/storage access was added
 - No fake auth/session behavior was added
 - No signed/download URL behavior was added
+
+## Phase 80 - Requester Context Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- requester/auth context contract boundary only
+- no broad auth implementation
+- no fake authenticated session
+- no route enforcement
+- no RLS policy application
+- no direct frontend Supabase client
+- no signed/download/storage URL behavior
+- no public artifact delivery enablement
+
+### Phase 80 completion summary
+
+- Added backend requester context boundary
+- Added explicit unauthenticated requester state:
+  - `auth_not_configured`
+  - `missing_credentials`
+  - `invalid_credentials`
+- Added authenticated requester shape for future real auth integration
+- Added helper for explicit unauthenticated context creation
+- Added helper for authenticated requester narrowing
+- Confirmed no fake user/session identity was introduced
+- Confirmed export ownership contracts remain separate from real requester authentication
+- Confirmed route enforcement remains deferred
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+- Confirmed frontend still has no direct Supabase/storage access
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- real authenticated requester identity must be integrated
+- route ownership checks must use authenticated requester context
+- workspace membership checks must be enforced
+- Supabase RLS policies must be applied and verified
+- artifact access must be authorized through backend-mediated owner/workspace checks
+
+### Verification
+
+- `phase80`: expected focused pass
+- `phase79`: expected pass
+- `phase78`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Requester context exists as a boundary only
+- No fake auth/session behavior was added
+- No route behavior changed
+- No RLS policies were applied
+- Public artifact delivery remains deferred

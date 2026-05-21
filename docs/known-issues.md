@@ -1279,3 +1279,15 @@ Still deferred:
   - Direct frontend Supabase/storage access remains forbidden.
   - Fake auth/session/user identity remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 80 adds requester context boundary coverage:
+  - Backend requester context boundary now exists.
+  - Explicit unauthenticated requester states now exist.
+  - Real authenticated requester integration remains deferred.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership checks remain deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - No fake auth/session/user identity was introduced.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
