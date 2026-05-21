@@ -8436,3 +8436,64 @@ Before route authorization or public artifact delivery:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 107 - Auth Runtime Config Route Authorization Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- auth runtime config route authorization audit only
+- no route authorization enforcement
+- no real token/session verification
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 107 completion summary
+
+- Added auth runtime config route authorization audit coverage
+- Confirmed app wires runtime auth config into trusted auth middleware composition
+- Confirmed export routes read trusted request context non-enforcing only
+- Confirmed authorization adapter, decision, and route guard boundaries exist
+- Confirmed export routes do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization `401` / `403` responses
+- Confirmed arbitrary `x-user-id` / `x-workspace-id` headers are not trusted
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization can be enabled:
+
+- real trusted auth provider implementation must verify tokens or sessions
+- authenticated requester context must be adapted intentionally
+- export routes must call authorization decision and route guard boundaries
+- workspace membership checks must be implemented where required
+- route errors must map unauthorized/forbidden outcomes safely
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase107`: expected focused pass
+- `phase106`: expected pass
+- `phase105`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Route authorization remains audit-only
+- Runtime auth config app wiring remains fail-closed
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
