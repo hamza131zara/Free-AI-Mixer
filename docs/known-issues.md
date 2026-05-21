@@ -2086,3 +2086,14 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 140 adds Supabase RLS policy draft and migration audit coverage:
+  - RLS policy draft exists under docs/security only.
+  - No live supabase/migrations file was added.
+  - No Supabase CLI apply was performed.
+  - No remote Supabase smoke was added.
+  - RLS policies are not applied at runtime.
+  - Service-role shortcuts remain forbidden.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

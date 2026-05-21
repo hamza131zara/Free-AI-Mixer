@@ -10415,3 +10415,62 @@ Scope:
 - No trusted-header shortcut was added
 - No Supabase/RLS behavior was added
 - Public artifact delivery remains deferred
+
+## Phase 140 - Supabase RLS Policy Draft + Migration Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- Supabase RLS policy draft and migration audit only
+- docs/security SQL draft only
+- no live supabase/migrations file
+- no Supabase CLI apply
+- no remote Supabase smoke
+- no route/runtime RLS enforcement
+- no service-role usage
+- no fake authenticated session
+- no trusted-header shortcut
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 140 completion summary
+
+- Added docs/security/phase140-supabase-rls-policy-draft.sql
+- Drafted future RLS policy shape for export_jobs
+- Drafted future RLS policy shape for export_artifacts
+- Drafted future RLS policy shape for workspace_memberships
+- Confirmed draft uses auth.uid() conceptually for future authenticated user scope
+- Confirmed active workspace membership concept is included in draft policy shape
+- Confirmed draft is not placed under supabase/migrations
+- Confirmed no RLS policy is applied at runtime
+- Confirmed no service-role shortcut was added
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Merged Workspace/RLS roadmap note
+
+- Phase 137 covered workspace membership strategy and contract only.
+- Phase 138 covered workspace membership repository implementation boundary.
+- Phase 139 covered backend-only workspace membership enforcement decision helper.
+- Phase 140 covers Supabase RLS policy draft and migration audit.
+- Phase 141 will cover RLS verification and remote opt-in smoke.
+
+### Verification
+
+- phase140: expected focused pass
+- phase139: expected pass
+- phase138: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- RLS work is draft/audit only
+- No live migration was added
+- No route behavior changed
+- No service-role behavior was added
+- No Supabase/RLS runtime behavior was added
+- Public artifact delivery remains deferred
