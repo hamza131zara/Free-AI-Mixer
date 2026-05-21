@@ -10646,3 +10646,61 @@ Scope:
 - No active signed/download/public URL behavior was added
 - No frontend Supabase/storage access was added
 - No service-role behavior was added
+
+## Phase 144 - Signed URL Delivery Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- signed URL delivery audit only
+- docs/security signed URL audit document only
+- no signed URL generation
+- no public URL generation
+- no Supabase storage provider
+- no S3/R2 storage provider
+- no route response signed URLs
+- no frontend download/navigation behavior
+- no direct frontend Supabase client
+- no service-role usage
+- no public artifact delivery enablement
+
+### Phase 144 completion summary
+
+- Added docs/security/phase144-signed-url-delivery-audit.md
+- Documented future signed URL delivery requirements
+- Confirmed signed URL delivery must be backend-only
+- Confirmed signed URL delivery must require authenticated requester context
+- Confirmed signed URL delivery must require owner/workspace authorization
+- Confirmed signed URL delivery must require workspace/RLS readiness
+- Confirmed production artifact provider still fails closed
+- Confirmed no signed URL generation was added
+- Confirmed no public URL generation was added
+- Confirmed no frontend storage or download behavior was added
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Future artifact delivery roadmap note
+
+- Phase 143 added the production artifact provider boundary only.
+- Phase 144 audits signed URL delivery requirements only.
+- Phase 145 should implement backend-mediated artifact delivery only after auth/RLS readiness.
+- Phase 146 should audit frontend download UI.
+- Phase 147 should implement frontend download UI only through backend descriptors.
+
+### Verification
+
+- phase144: expected focused pass
+- phase143: expected pass
+- phase142: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No active signed/download/public URL behavior was added
+- No frontend Supabase/storage access was added
+- No service-role behavior was added
+- Public artifact delivery remains deferred

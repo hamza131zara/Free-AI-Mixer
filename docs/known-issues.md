@@ -2131,3 +2131,13 @@ Still deferred:
   - Direct frontend Supabase/storage access remains forbidden.
   - Service-role shortcuts remain forbidden.
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+
+- Phase 144 adds signed URL delivery audit coverage:
+  - Signed URL delivery remains deferred.
+  - No createSignedUrl or getPublicUrl behavior was added.
+  - No production storage provider was added.
+  - No route response signed URLs were added.
+  - No frontend download/navigation behavior was added.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Service-role shortcuts remain forbidden.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
