@@ -5957,7 +5957,7 @@ Scope:
 - no generic `transition(...)` implementation
 - no worker, route, app, or composition wiring
 - no repository, DB, schema, or frontend changes
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no runtime DB activation
 
 ### Phase 63-B completion summary
@@ -6010,7 +6010,7 @@ Scope:
 - existing `repositoryComposition/createRepositories` path reused
 - no worker wiring
 - no route, app, or server wiring
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no runtime behavior changes outside dependency selection
 
 ### Phase 64-B completion summary
@@ -6041,7 +6041,7 @@ Scope:
 
 - Env-gated runtime registry selection now exists without enabling worker DB wiring
 - Route execution gating remains separate from runtime registry selection
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 65-B - Supabase Runtime Registry Local Config Smoke
 
@@ -6057,7 +6057,7 @@ Scope:
 - valid enabled Supabase config selection coverage without remote DB calls
 - no worker activation
 - route execution gating remains separate
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no runtime/backend source changes
 
 ### Phase 65-B completion summary
@@ -6103,7 +6103,7 @@ Scope:
 - render harness supported lifecycle method coverage
 - generic `transition(...)` remains unused/deferred
 - worker DB wiring remains deferred
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no runtime/backend source changes
 
 ### Phase 66-B completion summary
@@ -6139,7 +6139,7 @@ Scope:
 - Execute route gating remains separate from runtime registry selection
 - Generic `transition(...)` remains deferred
 - Worker DB wiring remains deferred
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 67-B - Supabase Route Runtime Offline Smoke
 
@@ -6155,7 +6155,7 @@ Scope:
 - execute route gate/error-path coverage
 - async not-found route bug fix
 - no worker wiring
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no fake success/artifacts
 
 ### Phase 67-B completion summary
@@ -6194,7 +6194,7 @@ Scope:
 - `GET /exports/:jobId` async not-found handling is now fixed
 - Worker DB wiring remains deferred
 - Execute success-path smoke remains deferred
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 68-B - Supabase Worker Runtime Offline Smoke
 
@@ -6212,7 +6212,7 @@ Scope:
 - generic `transition(...)` remains unused/deferred
 - worker loop env gate remains inert unless enabled
 - worker gating remains separate from registry selection
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 
 ### Phase 68-B completion summary
 
@@ -6226,7 +6226,7 @@ Scope:
 - Proved `FREE_AI_MIXER_ENABLE_WORKER_LOOP !== "1"` keeps the loop inert
 - Proved worker gating remains separate from runtime registry selection
 - Proved no Supabase CLI usage or service-role logging exists
-- Proved no signed/download/storage URL behavior exists
+- Proved no active signed URL generation, public URL generation, or frontend download/navigation behavior exists
 - Proved no route/app/server rollout is implied
 - Confirmed no runtime/backend source files changed
 
@@ -6244,7 +6244,7 @@ Scope:
 - Worker DB wiring remains deferred
 - Worker loop activation remains deferred and env-gated
 - Generic `transition(...)` remains deferred
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 69-B - Supabase Worker Startup Gating Boundary
 
@@ -6261,7 +6261,7 @@ Scope:
 - worker gating remains separate from Supabase registry selection
 - no hardwired Supabase worker rollout
 - supported worker method surface
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 
 ### Phase 69-B completion summary
 
@@ -6279,7 +6279,7 @@ Scope:
   - `markSuccess`
   - `markError`
 - Proved no Supabase CLI usage or service-role logging exists
-- Proved no signed/download/storage URL behavior exists
+- Proved no active signed URL generation, public URL generation, or frontend download/navigation behavior exists
 - Confirmed no runtime/backend source files changed
 
 ### Verification
@@ -6296,7 +6296,7 @@ Scope:
 - Worker startup remains env-gated
 - Worker loop remains separately env-gated
 - Worker DB wiring remains deferred
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 70-B - Supabase Worker Manual Drain Boundary
 
@@ -6313,7 +6313,7 @@ Scope:
 - supported worker lifecycle method surface
 - generic `transition(...)` remains unused/deferred
 - Supabase registry selection remains separate from manual worker activation
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no remote env required
 
 ### Phase 70-B completion summary
@@ -6332,7 +6332,7 @@ Scope:
 - Proved generic `transition(...)` remains unused
 - Proved Supabase registry selection remains separate from manual worker activation
 - Proved no Supabase CLI usage or service-role logging exists
-- Proved no signed/download/storage URL behavior exists
+- Proved no active signed URL generation, public URL generation, or frontend download/navigation behavior exists
 - Proved no remote env is required
 - Confirmed no runtime/backend source files changed
 
@@ -6350,7 +6350,7 @@ Scope:
 - Worker loop startup remains deferred and env-gated
 - Worker DB wiring still is not activated as an automatic loop
 - Generic `transition(...)` remains deferred
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 71 - Manual Worker Drain Runtime Pack
 
@@ -6366,7 +6366,7 @@ Scope:
 - no automatic worker loop startup
 - worker startup and loop remain separately env-gated
 - generic `transition(...)` remains unused/deferred
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 
 ### Phase 71 completion summary
 
@@ -6385,7 +6385,7 @@ Scope:
 - Proved no route/API endpoint was added
 - Proved no app/server rollout was added
 - Proved no Supabase CLI usage or service-role logging exists
-- Proved no signed/download/storage URL behavior exists
+- Proved no active signed URL generation, public URL generation, or frontend download/navigation behavior exists
 - Proved no remote env is required
 
 ### Verification
@@ -6403,7 +6403,7 @@ Scope:
 - No route/API endpoint was added
 - Worker loop remains env-gated
 - Remote Supabase worker smoke remains deferred
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 72 - Execute Success-Path Offline Smoke Pack
 
@@ -6418,7 +6418,7 @@ Scope:
 - truthful verified artifact metadata
 - no automatic worker loop startup
 - no route/API endpoint changes
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 
 ### Phase 72 completion summary
 
@@ -6450,7 +6450,7 @@ Scope:
 - Truthful verified artifact metadata is now covered on the execute success path
 - No automatic worker loop startup was added
 - Remote Supabase smoke remains deferred
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 73 - Supabase Remote Smoke Readiness Pack
 
@@ -6466,7 +6466,7 @@ Scope:
 - missing/incomplete env stays safe and secret-free
 - no Supabase CLI or local start
 - no worker loop activation
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 
 ### Phase 73 completion summary
 
@@ -6477,7 +6477,7 @@ Scope:
 - Proved service-role key does not appear in safe factory/public-config outputs
 - Proved no Supabase CLI usage or local Supabase start is required
 - Proved no worker loop activation is implied
-- Proved no signed/download/storage URL behavior appears
+- Proved no active signed URL generation, public URL generation, or frontend download/navigation behavior appears
 - Proved no fake DB success is introduced
 
 ### Verification
@@ -6494,7 +6494,7 @@ Scope:
 - Remote smoke still remains opt-in only
 - Default test runs remain offline
 - Worker loop activation remains deferred
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 74 - Opt-In Supabase Remote Lifecycle Smoke Pack
 
@@ -6509,7 +6509,7 @@ Scope:
 - explicit env flag required
 - no Supabase CLI or local start
 - no worker loop startup
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 
 ### Phase 74 completion summary
 
@@ -6538,7 +6538,7 @@ Scope:
 - Explicit env flag and complete backend Supabase env are still required before any remote lifecycle smoke can run
 - No Supabase CLI or local Supabase start is required
 - Worker loop startup remains deferred
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 75 - Manual Worker Drain With Supabase Runtime Pack
 
@@ -6554,7 +6554,7 @@ Scope:
 - explicit env flag required for remote worker drain smoke
 - no worker loop startup
 - no route/API endpoint
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 
 ### Phase 75 completion summary
 
@@ -6565,7 +6565,7 @@ Scope:
 - Added opt-in remote manual worker drain smoke coverage behind `FREE_AI_MIXER_RUN_REMOTE_SUPABASE_WORKER_DRAIN_SMOKE=1`
 - Kept the remote worker drain smoke skipped by default unless explicit opt-in env is present
 - Required full backend Supabase env only when the remote worker drain smoke is explicitly enabled
-- Preserved that no route/API endpoint, no automatic worker loop startup, and no signed/download/storage URL behavior were introduced
+- Preserved that no route/API endpoint, no automatic worker loop startup, and no active signed URL generation, public URL generation, or frontend download/navigation behavior were introduced
 - Preserved that the remote worker drain smoke is a smoke boundary only and is not production rollout
 
 ### Verification
@@ -6583,7 +6583,7 @@ Scope:
 - Remote manual worker drain smoke remains opt-in only and skipped by default
 - Worker loop startup remains deferred
 - No route/API endpoint was added
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 76 - Worker Loop Controlled Activation Pack
 
@@ -6599,7 +6599,7 @@ Scope:
 - controlled and test-bounded loop only
 - no route/API endpoint
 - no remote DB/default remote smoke
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 
 ### Phase 76 completion summary
 
@@ -6609,7 +6609,7 @@ Scope:
 - Proved the loop can drive the existing drain path without any route/API endpoint
 - Proved worker loop behavior remains separate from env-gated Supabase registry selection
 - Preserved that default runs remain offline and do not require remote Supabase env
-- Preserved that no Supabase CLI/local start, no service-role logging, and no signed/download/storage URL behavior were introduced
+- Preserved that no Supabase CLI/local start, no service-role logging, and no active signed URL generation, public URL generation, or frontend download/navigation behavior were introduced
 - Preserved that no fake success/artifacts and no automatic production/default worker loop activation were introduced
 
 ### Verification
@@ -6627,7 +6627,7 @@ Scope:
 - Both startup and loop env gates are still required
 - No route/API endpoint was added
 - No remote DB/default remote smoke was required
-- Signed/download/storage URL behavior remains deferred
+- active signed URL generation, public URL generation, and frontend download/navigation remain deferred
 
 ## Phase 77 - Frontend DB-Backed Export Lifecycle Pack
 
@@ -6641,7 +6641,7 @@ Scope:
 - no direct Supabase client in frontend
 - truthful store/service refresh and reconnect behavior
 - no fake progress, no fake success, no fake download URLs
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 
 ### Phase 77 completion summary
 
@@ -6665,7 +6665,7 @@ Scope:
 - Frontend DB-backed export lifecycle coverage now exists through backend routes only
 - No direct Supabase client was added to the frontend
 - No fake progress, fake success, or fake download URL behavior was introduced
-- No signed/download/storage URL behavior was added
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior was added
 - Backend route contracts remained unchanged
 
 ## Phase 78 - Production Artifact Delivery Strategy Pack
@@ -6739,7 +6739,7 @@ Scope:
 - no fake authenticated session
 - no RLS policy application
 - no direct frontend Supabase client
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no public artifact delivery enablement
 - no backend route behavior changes
 
@@ -6753,7 +6753,7 @@ Scope:
 - Confirmed frontend does not use direct Supabase/storage access
 - Confirmed public artifact delivery remains blocked until real auth/RLS/ownership enforcement exists
 - Confirmed no fake auth/session/user identity was introduced
-- Confirmed no signed/download/storage URL behavior was added
+- Confirmed no active signed URL generation, public URL generation, or frontend download/navigation behavior was added
 - Confirmed `local_dev_stream` remains local-dev-only and not production-ready
 
 ### Future production requirements
@@ -6796,7 +6796,7 @@ Scope:
 - no route enforcement
 - no RLS policy application
 - no direct frontend Supabase client
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no public artifact delivery enablement
 
 ### Phase 80 completion summary
@@ -6856,7 +6856,7 @@ Scope:
 - no app/server auth wiring
 - no RLS policy application
 - no direct frontend Supabase client
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no public artifact delivery enablement
 
 ### Phase 81 completion summary
@@ -6913,7 +6913,7 @@ Scope:
 - no fake authenticated session
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 82 completion summary
@@ -6966,7 +6966,7 @@ Scope:
 - no fake authenticated session
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 83 completion summary
@@ -7021,7 +7021,7 @@ Scope:
 - no workspace membership enforcement yet
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 84 completion summary
@@ -7079,7 +7079,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 85 completion summary
@@ -7137,7 +7137,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 86 completion summary
@@ -7195,7 +7195,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 87 completion summary
@@ -7255,7 +7255,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 88 completion summary
@@ -7313,7 +7313,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 89 completion summary
@@ -7374,7 +7374,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 90 completion summary
@@ -7434,7 +7434,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 91 completion summary
@@ -7494,7 +7494,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 92 completion summary
@@ -7552,7 +7552,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 93 completion summary
@@ -7613,7 +7613,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 94 completion summary
@@ -7669,7 +7669,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 95 completion summary
@@ -7734,7 +7734,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 96 completion summary
@@ -7797,7 +7797,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 97 completion summary
@@ -7858,7 +7858,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 98 completion summary
@@ -7923,7 +7923,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 99 completion summary
@@ -7991,7 +7991,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 100 completion summary
@@ -8058,7 +8058,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 101 completion summary
@@ -8126,7 +8126,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 102 completion summary
@@ -8196,7 +8196,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 103 completion summary
@@ -8265,7 +8265,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 104 completion summary
@@ -8330,7 +8330,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 105 completion summary
@@ -8394,7 +8394,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 106 completion summary
@@ -8453,7 +8453,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 107 completion summary
@@ -8514,7 +8514,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 108 completion summary
@@ -8577,7 +8577,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 109 completion summary
@@ -8655,7 +8655,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 110 completion summary
@@ -8735,7 +8735,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 111 completion summary
@@ -8793,7 +8793,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 112 completion summary
@@ -8860,7 +8860,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 113 completion summary
@@ -8926,7 +8926,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 114 completion summary
@@ -8991,7 +8991,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 115 completion summary
@@ -9061,7 +9061,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 116 completion summary
@@ -9111,7 +9111,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 117 completion summary
@@ -9172,7 +9172,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 118 completion summary
@@ -9230,7 +9230,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 119 completion summary
@@ -9290,7 +9290,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 120 completion summary
@@ -9351,7 +9351,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 121 completion summary
@@ -9419,7 +9419,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 122 completion summary
@@ -9484,7 +9484,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 123 completion summary
@@ -9548,7 +9548,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 124 completion summary
@@ -9611,7 +9611,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 125 completion summary
@@ -9672,7 +9672,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 126 completion summary
@@ -9733,7 +9733,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 127 completion summary
@@ -9792,7 +9792,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 128 completion summary
@@ -9852,7 +9852,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 129 completion summary
@@ -9912,7 +9912,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 130 completion summary
@@ -9976,7 +9976,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 131 completion summary
@@ -10036,7 +10036,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 132 completion summary
@@ -10095,7 +10095,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 133 completion summary
@@ -10150,7 +10150,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 134 completion summary
@@ -10203,7 +10203,7 @@ Scope:
 - no workspace membership lookup
 - no RLS policy application
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 135 completion summary
@@ -10257,7 +10257,7 @@ Scope:
 - no fake authenticated session
 - no trusted-header shortcut
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 137 completion summary
@@ -10315,7 +10315,7 @@ Scope:
 - no fake authenticated session
 - no trusted-header shortcut
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 138 completion summary
@@ -10373,7 +10373,7 @@ Scope:
 - no fake authenticated session
 - no trusted-header shortcut
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 139 completion summary
@@ -10434,7 +10434,7 @@ Scope:
 - no fake authenticated session
 - no trusted-header shortcut
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 140 completion summary
@@ -10493,7 +10493,7 @@ Scope:
 - no fake authenticated session
 - no trusted-header shortcut
 - no public artifact delivery enablement
-- no signed/download/storage URL behavior
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior
 - no direct frontend Supabase client
 
 ### Phase 141 completion summary
@@ -10534,3 +10534,57 @@ Scope:
 - No service-role behavior was added
 - No Supabase/RLS runtime behavior was added
 - Public artifact delivery remains deferred
+
+## Phase 142 - Production Artifact Delivery Strategy Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- production artifact delivery strategy audit only
+- docs/security strategy document only
+- no production storage provider
+- no signed URL generation
+- no public URL generation
+- no frontend download/navigation behavior
+- no direct frontend Supabase client
+- no service-role usage
+- no route behavior change
+- no public artifact delivery enablement
+
+### Phase 142 completion summary
+
+- Added docs/security/phase142-production-artifact-delivery-strategy.md
+- Documented future backend-mediated artifact delivery model
+- Confirmed production artifact delivery is not implemented yet
+- Confirmed active signed URL generation, public URL generation, and frontend download/navigation remain deferred
+- Confirmed frontend direct Supabase/storage access remains forbidden
+- Confirmed local-dev stream remains separate from production delivery
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Future artifact delivery roadmap note
+
+- Phase 143 should add a production artifact provider boundary.
+- Phase 144 should audit signed URL delivery requirements.
+- Phase 145 should implement backend-mediated artifact delivery after auth/RLS readiness.
+- Phase 146 should audit frontend download UI.
+- Phase 147 should implement frontend download UI only through backend descriptors.
+
+### Verification
+
+- phase142: expected focused pass
+- phase141: expected pass
+- phase140: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No production artifact delivery was enabled
+- no active signed URL generation, public URL generation, or frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No service-role behavior was added
+

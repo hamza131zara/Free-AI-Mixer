@@ -2110,3 +2110,13 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 142 adds production artifact delivery strategy audit coverage:
+  - Production artifact delivery remains deferred.
+  - No production storage provider was added.
+  - No active signed URL generation or public URL delivery behavior was added.
+  - No frontend download/navigation behavior was added.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Service-role shortcuts remain forbidden.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+
