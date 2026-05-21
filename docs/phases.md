@@ -11086,3 +11086,58 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 152 - Frontend Artifact Delivery Descriptor UI Wiring Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- frontend artifact delivery descriptor UI wiring audit only
+- no TimelineExportPanel wiring
+- no browser download/navigation behavior
+- no window.open behavior
+- no location.href behavior
+- no anchor download behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no signed URL handling
+- no public URL handling
+- no public artifact delivery enablement
+
+### Phase 152 completion summary
+
+- Added docs/security/phase152-frontend-artifact-delivery-descriptor-ui-wiring-audit.md
+- Confirmed backend descriptor route exists
+- Confirmed frontend descriptor service exists
+- Confirmed frontend descriptor store exists
+- Confirmed ArtifactDownloadAction component boundary exists
+- Confirmed TimelineExportPanel wiring remains deferred
+- Confirmed no component-owned fetch orchestration was added
+- Confirmed no browser navigation or download behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Future artifact delivery roadmap note
+
+- Phase 152 audits UI wiring readiness only.
+- Phase 153 should wire descriptor store state into UI only if components remain render/dispatch-only.
+- Real browser navigation/download behavior remains deferred.
+
+### Verification
+
+- phase152: expected focused pass
+- phase151: expected pass
+- phase150: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No UI wiring behavior changed
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
