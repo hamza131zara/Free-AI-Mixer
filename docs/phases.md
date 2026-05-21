@@ -7179,3 +7179,63 @@ Before route authorization or public artifact delivery:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 87 - Export Authorization Route Enforcement Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- route authorization enforcement audit only
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 87 completion summary
+
+- Added route authorization enforcement audit coverage
+- Confirmed authorization decision boundary exists:
+  - `decideExportOwnerScopeAccess(...)`
+- Confirmed route guard mapping boundary exists:
+  - `mapExportAuthorizationDecisionToRouteGuard(...)`
+- Confirmed export routes are not enforcing authorization yet
+- Confirmed export routes do not yet emit authorization `401` / `403` responses
+- Confirmed arbitrary `x-user-id` / `x-workspace-id` headers are not trusted
+- Confirmed trusted auth middleware remains required before route enforcement
+- Confirmed RLS policy application remains required before public artifact delivery
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization can be safely enabled:
+
+- trusted auth middleware must provide authenticated requester context
+- export routes must call the authorization decision and route guard boundaries
+- route errors must map unauthorized/forbidden outcomes safely
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase87`: expected focused pass
+- `phase86`: expected pass
+- `phase85`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Route authorization enforcement remains deferred
+- No route behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
