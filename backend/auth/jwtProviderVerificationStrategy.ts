@@ -45,6 +45,20 @@ export interface JwtVerificationExecutionReadiness {
   keyMode?: "remote_jwks";
 }
 
+export type JwtRemoteJwksConstructionResult =
+  | {
+      kind: "constructed";
+      jwks: ReturnType<typeof createRemoteJWKSet>;
+      jwksUri: string;
+      realVerificationEnabled: false;
+    }
+  | {
+      kind: "not_constructed";
+      reason: "missing_config" | "not_configured" | "unsupported_key_mode" | "invalid_jwks_uri";
+      realVerificationEnabled: false;
+    };
+
+
 /**
  * Phase 119 import boundary.
  *
@@ -82,6 +96,50 @@ export const getJwtVerificationExecutionReadiness = (
   };
 };
 
+export const constructRemoteJwksForJwtVerification = (
+  config?: JwtVerificationConfiguration,
+): JwtRemoteJwksConstructionResult => {
+  if (!config) {
+    return {
+      kind: "not_constructed",
+      reason: "missing_config",
+      realVerificationEnabled: false,
+    };
+  }
+
+  if (config.kind === "jwt_verification_not_configured") {
+    return {
+      kind: "not_constructed",
+      reason: "not_configured",
+      realVerificationEnabled: false,
+    };
+  }
+
+  if (config.keyMode !== "remote_jwks") {
+    return {
+      kind: "not_constructed",
+      reason: "unsupported_key_mode",
+      realVerificationEnabled: false,
+    };
+  }
+
+  try {
+    const jwksUrl = new URL(config.jwksUri);
+
+    return {
+      kind: "constructed",
+      jwks: createRemoteJWKSet(jwksUrl),
+      jwksUri: jwksUrl.toString(),
+      realVerificationEnabled: false,
+    };
+  } catch {
+    return {
+      kind: "not_constructed",
+      reason: "invalid_jwks_uri",
+      realVerificationEnabled: false,
+    };
+  }
+};
 const getAuthorizationHeader = (
   headers?: TrustedJwtVerificationInput["headers"],
 ): string | undefined => {
@@ -141,3 +199,5 @@ export const mapJwtVerificationResultToRequesterContext = (
     authSubject: result.authSubject,
   };
 };
+
+

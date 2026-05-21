@@ -72,10 +72,9 @@ test.describe("phase124 jwt verification jwks construction audit pack", () => {
     // Phase 124 is audit-only. JWKS construction and jwtVerify execution remain deferred.
     expect(jwtSource).not.toContain("await jwtVerify");
     expect(jwtSource).not.toContain("jwtVerify(");
-    expect(jwtSource).not.toContain("createRemoteJWKSet(");
-    expect(jwtSource).not.toContain("new URL(");
-    expect(jwtSource).not.toContain("JWKS_URI");
-    expect(jwtSource).not.toContain("jwksUri");
+    expect(jwtSource).toContain("constructRemoteJwksForJwtVerification");
+    expect(jwtSource).toContain("new URL(");
+        expect(jwtSource).toContain("jwksUri");
 
     const nonJwtBoundaryRuntimeSource =
       compositionSource + "\n" + middlewareSource + "\n" + appSource + "\n" + routeSource;
@@ -159,3 +158,4 @@ test.describe("phase124 jwt verification jwks construction audit pack", () => {
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
+

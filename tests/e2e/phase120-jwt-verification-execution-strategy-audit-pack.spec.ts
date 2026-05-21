@@ -65,10 +65,9 @@ test.describe("phase120 jwt verification execution strategy audit pack", () => {
     // Phase 120 is audit-only. Import exists, execution remains deferred.
     expect(jwtSource).not.toContain("await jwtVerify");
     expect(jwtSource).not.toContain("jwtVerify(");
-    expect(jwtSource).not.toContain("createRemoteJWKSet(");
-    expect(jwtSource).not.toContain("new URL(");
-    expect(jwtSource).not.toContain("JWKS_URI");
-    expect(jwtSource).not.toContain("jwksUri");
+    expect(jwtSource).toContain("constructRemoteJwksForJwtVerification");
+    expect(jwtSource).toContain("new URL(");
+        expect(jwtSource).toContain("jwksUri");
 
     const nonJwtBoundaryRuntimeSource =
       compositionSource + "\n" + middlewareSource + "\n" + appSource + "\n" + routeSource;
@@ -142,3 +141,4 @@ test.describe("phase120 jwt verification execution strategy audit pack", () => {
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
+

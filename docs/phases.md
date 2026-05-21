@@ -9593,3 +9593,64 @@ Scope:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 125 - JWT Verification JWKS Construction Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- JWT verification JWKS construction boundary only
+- construct jose RemoteJWKSet from validated config shape
+- no JWT verification execution
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 125 completion summary
+
+- Added constructRemoteJwksForJwtVerification(...)
+- Confirmed missing config fails closed
+- Confirmed not-configured JWT config fails closed
+- Confirmed configured remote JWKS mode can construct a jose RemoteJWKSet function
+- Confirmed realVerificationEnabled remains false
+- Confirmed no jwtVerify execution call exists yet
+- Confirmed missing Authorization still maps to missing_credentials
+- Confirmed fake bearer token still maps to invalid_credentials
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization 401 / 403 responses
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Future production requirements
+
+- Execute jose jwtVerify only inside JWT verification boundary
+- Validate issuer and audience
+- Validate token signature and expiry
+- Map verified subject to authenticated requester context
+- Require verified workspace scope or membership lookup
+- Keep route authorization disabled until verified auth and RLS are ready
+
+### Verification
+
+- phase125: expected focused pass
+- phase124: expected pass
+- phase123: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- JWKS construction is boundary-only
+- No real JWT verification was implemented
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

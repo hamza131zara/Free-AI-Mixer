@@ -68,8 +68,8 @@ test.describe("phase122 jwt verification configuration wiring audit pack", () =>
     expect(jwtSource).toContain("realVerificationEnabled: false");
     expect(jwtSource).not.toContain("await jwtVerify");
     expect(jwtSource).not.toContain("jwtVerify(");
-    expect(jwtSource).not.toContain("createRemoteJWKSet(");
-    expect(jwtSource).not.toContain("new URL(");
+    expect(jwtSource).toContain("constructRemoteJwksForJwtVerification");
+    expect(jwtSource).toContain("new URL(");
 
     expect(compositionSource).not.toContain("readJwtVerificationConfiguration");
     expect(middlewareSource).not.toContain("readJwtVerificationConfiguration");
@@ -144,3 +144,4 @@ test.describe("phase122 jwt verification configuration wiring audit pack", () =>
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
+

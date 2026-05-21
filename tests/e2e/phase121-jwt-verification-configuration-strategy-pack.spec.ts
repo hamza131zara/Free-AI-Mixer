@@ -109,7 +109,7 @@ test.describe("phase121 jwt verification configuration strategy pack", () => {
     expect(jwtSource).not.toContain("isJwtVerificationConfigured");
     expect(jwtSource).not.toContain("await jwtVerify");
     expect(jwtSource).not.toContain("jwtVerify(");
-    expect(jwtSource).not.toContain("createRemoteJWKSet(");
+    expect(jwtSource).toContain("constructRemoteJwksForJwtVerification");
     expect(jwtSource).toContain("realVerificationEnabled: false");
 
     expect(compositionSource).not.toContain("readJwtVerificationConfiguration");
@@ -184,3 +184,4 @@ test.describe("phase121 jwt verification configuration strategy pack", () => {
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
+
