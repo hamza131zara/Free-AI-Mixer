@@ -10971,3 +10971,60 @@ Scope:
 - No frontend Supabase/storage access was added
 - No service-role behavior was added
 - Public artifact delivery remains deferred
+
+## Phase 150 - Frontend Artifact Delivery Descriptor Service Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- frontend artifact delivery descriptor service boundary
+- descriptor route fetch only
+- response parsing only
+- no store wiring
+- no UI wiring
+- no window.open behavior
+- no location.href behavior
+- no anchor download behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no signed URL handling
+- no public URL handling
+- no public artifact delivery enablement
+
+### Phase 150 completion summary
+
+- Added src/services/artifactDeliveryDescriptorService.ts
+- Added buildArtifactDeliveryDescriptorPath(...)
+- Added parseArtifactDeliveryDescriptorPayload(...)
+- Added getArtifactDeliveryDescriptor(...)
+- Confirmed service maps unavailable descriptor responses safely
+- Confirmed service maps ready backend-mediated descriptor responses safely
+- Confirmed service maps 401 and 403 route errors safely
+- Confirmed service is not wired into exportStore yet
+- Confirmed no browser navigation or download behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Future artifact delivery roadmap note
+
+- Phase 150 adds frontend descriptor service boundary only.
+- Future phase should add store state/actions for descriptor requests.
+- Real browser navigation/download behavior remains deferred.
+
+### Verification
+
+- phase150: expected focused pass
+- phase149: expected pass
+- phase148: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Service fetches backend descriptor only
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred

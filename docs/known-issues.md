@@ -2191,3 +2191,14 @@ Still deferred:
   - Direct frontend Supabase/storage access remains forbidden.
   - Service-role shortcuts remain forbidden.
   - Public artifact delivery remains blocked until backend descriptor readiness can be made production-safe.
+
+- Phase 150 adds frontend artifact delivery descriptor service coverage:
+  - Frontend can call backend descriptor route through service boundary.
+  - Service parses unavailable and backend-mediated ready descriptor states.
+  - Service maps 401/403 safely.
+  - Service is not wired into exportStore or UI yet.
+  - No window.open or location.href behavior was added.
+  - No anchor download behavior was added.
+  - No frontend Supabase/storage access was added.
+  - No signed URL or public URL handling was added.
+  - Public artifact delivery remains blocked until store/UI wiring and backend readiness are approved.
