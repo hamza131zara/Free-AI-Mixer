@@ -2151,3 +2151,12 @@ Still deferred:
   - Direct frontend Supabase/storage access remains forbidden.
   - Service-role shortcuts remain forbidden.
   - Public artifact delivery remains blocked until production route/provider readiness.
+
+- Phase 146 adds frontend download UI audit coverage:
+  - Frontend download UI remains deferred.
+  - Frontend artifact access remains backend-service/store mediated.
+  - No window.open or location.href behavior was added.
+  - No anchor download behavior was added.
+  - No frontend Supabase/storage access was added.
+  - No signed URL or public URL handling was added.
+  - Public artifact delivery remains blocked until backend descriptor route wiring is ready.

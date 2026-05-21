@@ -10758,3 +10758,56 @@ Scope:
 - No frontend Supabase/storage access was added
 - No service-role behavior was added
 - Public artifact delivery remains deferred
+
+## Phase 146 - Frontend Download UI Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- frontend download UI audit only
+- docs/security frontend download UI audit document only
+- no download button implementation
+- no window.open behavior
+- no location.href behavior
+- no anchor download behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no signed URL handling
+- no public URL handling
+- no route behavior change
+- no public artifact delivery enablement
+
+### Phase 146 completion summary
+
+- Added docs/security/phase146-frontend-download-ui-audit.md
+- Documented future frontend download UI requirements
+- Confirmed frontend still uses backend service/store artifact access boundary
+- Confirmed frontend does not directly create Supabase clients
+- Confirmed frontend does not create signed URLs or public URLs
+- Confirmed frontend does not use window.open or location.href for artifact delivery
+- Confirmed backend-mediated delivery boundary is not frontend-wired yet
+- Confirmed public artifact delivery remains blocked
+
+### Future artifact delivery roadmap note
+
+- Phase 146 audits frontend download UI only.
+- Phase 147 should implement frontend download UI only through backend descriptors.
+
+### Verification
+
+- phase146: expected focused pass
+- phase145: expected pass
+- phase144: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
