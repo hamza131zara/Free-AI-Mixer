@@ -10186,3 +10186,55 @@ Scope:
 - No fake auth/session behavior was added
 - Public artifact delivery remains deferred
 
+
+## Phase 135 - Route Authorization Regression Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- route authorization regression and hardening coverage
+- no new route authorization behavior beyond Phase 133 and Phase 134 guards
+- default/local-dev behavior remains non-enforcing
+- no trusted-header shortcut
+- no fake authenticated session
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 135 completion summary
+
+- Added route authorization regression coverage
+- Confirmed default local-dev behavior remains unchanged and non-enforcing
+- Confirmed arbitrary x-user-id / x-workspace-id headers are not trusted
+- Confirmed enforced status route rejects unauthenticated requester with safe 401
+- Confirmed enforced artifact access route rejects unauthenticated requester with safe 401
+- Confirmed owner/workspace mismatch returns safe 403
+- Confirmed matching authenticated owner/workspace can pass guarded routes
+- Confirmed stream route remains safely blocked when stream provider is not configured
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Merged route roadmap note
+
+- Phase 133 covered core export status/execute route authorization enforcement.
+- Phase 134 covered artifact access authorization and stream blocked/public-delivery guard.
+- Phase 135 covers route authorization regression and hardening.
+
+### Verification
+
+- phase135: expected focused pass
+- phase134: expected pass
+- phase133: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- No trusted-header shortcut was added
+- No fake auth/session behavior was added
+- No workspace membership/RLS enforcement yet
+- Public artifact delivery remains deferred

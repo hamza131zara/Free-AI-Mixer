@@ -2033,3 +2033,16 @@ Still deferred:
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
 
+
+- Phase 135 adds route authorization regression coverage:
+  - Default/local-dev behavior remains non-enforcing.
+  - Arbitrary x-user-id / x-workspace-id headers are not trusted.
+  - Enforced status and artifact access routes reject unauthenticated requester with safe 401.
+  - Owner/workspace mismatch returns safe 403.
+  - Matching authenticated owner/workspace can pass guarded routes.
+  - Stream route remains safely blocked when stream provider is not configured.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
