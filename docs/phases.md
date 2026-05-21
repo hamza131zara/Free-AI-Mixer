@@ -7121,3 +7121,61 @@ Before route authorization or public artifact delivery:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 86 - Export Authorization Route Guard Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- pure route authorization guard mapping only
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 86 completion summary
+
+- Added route-safe export authorization guard mapping boundary
+- Added `mapExportAuthorizationDecisionToRouteGuard(...)`
+- Confirmed authorized decisions map to allowed route guard results
+- Confirmed unauthenticated / local-dev fallback decisions map to future `401 auth_required`
+- Confirmed owner mismatch maps to future `403 forbidden`
+- Confirmed workspace mismatch maps to future `403 forbidden`
+- Confirmed route enforcement remains deferred
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- trusted auth middleware must provide authenticated requester context
+- export routes must call the authorization decision and route guard boundary
+- route errors must map unauthorized/forbidden outcomes safely
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase86`: expected focused pass
+- `phase85`: expected pass
+- `phase84`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Route guard mapping exists as a pure boundary only
+- No route behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

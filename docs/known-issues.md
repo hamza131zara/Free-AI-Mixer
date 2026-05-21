@@ -1345,3 +1345,14 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 86 adds export authorization route guard boundary coverage:
+  - Pure route-safe authorization guard mapping now exists.
+  - Future unauthorized decisions can map to `401 auth_required`.
+  - Future forbidden owner/workspace decisions can map to `403 forbidden`.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
