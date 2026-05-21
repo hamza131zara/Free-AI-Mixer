@@ -2141,3 +2141,13 @@ Still deferred:
   - Direct frontend Supabase/storage access remains forbidden.
   - Service-role shortcuts remain forbidden.
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+
+- Phase 145 adds backend-mediated artifact delivery boundary coverage:
+  - Backend-mediated descriptor boundary exists.
+  - Delivery fails closed unless authorization, workspace/RLS readiness, storage config, and artifact readiness are all true.
+  - Ready descriptor is not wired into routes yet.
+  - No signed URL or public URL behavior was added.
+  - No frontend download/navigation behavior was added.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Service-role shortcuts remain forbidden.
+  - Public artifact delivery remains blocked until production route/provider readiness.

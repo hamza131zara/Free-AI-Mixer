@@ -10704,3 +10704,57 @@ Scope:
 - No frontend Supabase/storage access was added
 - No service-role behavior was added
 - Public artifact delivery remains deferred
+
+## Phase 145 - Backend-Mediated Artifact Delivery Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-mediated artifact delivery descriptor boundary
+- no route wiring
+- no signed URL generation
+- no public URL generation
+- no frontend download/navigation behavior
+- no direct frontend Supabase client
+- no service-role usage
+- no public artifact delivery enablement
+
+### Phase 145 completion summary
+
+- Added backend/artifacts/backendMediatedArtifactDelivery.ts
+- Added resolveBackendMediatedArtifactDelivery(...)
+- Added isBackendMediatedArtifactDeliveryReady(...)
+- Confirmed delivery fails closed without authorization
+- Confirmed delivery fails closed without workspace/RLS readiness
+- Confirmed delivery fails closed without configured storage
+- Confirmed delivery fails closed when artifact is not ready
+- Confirmed ready result only returns backend-mediated route descriptor
+- Confirmed boundary is not wired into routes or production provider runtime
+- Confirmed no signed URL generation was added
+- Confirmed no public URL generation was added
+- Confirmed no frontend storage or download behavior was added
+
+### Future artifact delivery roadmap note
+
+- Phase 145 adds backend-mediated descriptor boundary only.
+- Phase 146 should audit frontend download UI.
+- Phase 147 should implement frontend download UI only through backend descriptors.
+
+### Verification
+
+- phase145: expected focused pass
+- phase144: expected pass
+- phase143: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Boundary is not route-wired
+- No active signed/download/public URL behavior was added
+- No frontend Supabase/storage access was added
+- No service-role behavior was added
+- Public artifact delivery remains deferred
