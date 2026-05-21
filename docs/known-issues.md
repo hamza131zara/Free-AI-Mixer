@@ -1429,3 +1429,15 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 93 adds export routes trusted request context consumption audit coverage:
+  - App has non-enforcing trusted auth middleware, but export routes do not consume trusted request context yet.
+  - Export routes still use the existing requester resolver boundary.
+  - Requester adapter, authorization decision, and route guard boundaries exist but remain unwired from routes.
+  - Route authorization enforcement remains deferred.
+  - Real trusted auth provider integration remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
