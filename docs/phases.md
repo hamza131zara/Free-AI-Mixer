@@ -9893,3 +9893,67 @@ Scope:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 130 - JWT Execution + Payload Mapping Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- merged JWT execution and payload mapping audit only
+- covers old planned phases 130 through 135 audit portions
+- no JWT strategy execution wiring
+- no production requester context mapping wiring
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 130 completion summary
+
+- Added merged JWT execution and payload mapping audit coverage
+- Confirmed executeJwtVerificationWithJose(...) exists
+- Confirmed isolated jose jwtVerify call path exists only inside JWT boundary
+- Confirmed default execution helper remains fail-closed without real execution
+- Confirmed verified payload mapping shape exists for sub and workspaceId/workspace_id
+- Confirmed JWT strategy still does not call executeJwtVerificationWithJose(...)
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization 401 / 403 responses
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Merged roadmap note
+
+- Old immediate auth phases 130 through 135 are now merged into:
+  - Phase 130 - JWT Execution + Payload Mapping Audit Pack
+  - Phase 131 - JWT Execution + Production Requester Mapping Pack
+
+### Future production requirements
+
+- Wire executeJwtVerificationWithJose(...) into JWT strategy in Phase 131
+- Map verified JWT payload into authenticated requester context
+- Keep route authorization disabled until route enforcement phase
+- Require workspace membership/RLS before public artifact delivery
+
+### Verification
+
+- phase130: expected focused pass
+- phase129: expected pass
+- phase128: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No JWT strategy behavior changed
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

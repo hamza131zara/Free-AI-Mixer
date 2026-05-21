@@ -1971,3 +1971,15 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 130 adds merged JWT execution and payload mapping audit coverage:
+  - Old immediate auth phases 130 through 135 are merged into Phase 130 and Phase 131.
+  - executeJwtVerificationWithJose(...) exists but is not wired into JWT strategy yet.
+  - Verified payload mapping shape exists for sub and workspaceId/workspace_id.
+  - Export routes still read trusted request context non-enforcing only.
+  - Export routes still do not call authorization adapter/decision/guard boundaries.
+  - Export routes still do not emit authorization 401 / 403 responses.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
