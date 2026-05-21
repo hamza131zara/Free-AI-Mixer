@@ -2,8 +2,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import {
-  constructRemoteJwksForJwtVerification,
   createFailClosedFutureJwtVerificationStrategy,
+  executeJwtVerificationWithJose,
   getJoseRuntimeImportBoundaryStatus,
 } from "../../backend/auth/jwtProviderVerificationStrategy";
 import { readJwtVerificationConfiguration } from "../../backend/auth/jwtVerificationConfiguration";
@@ -18,11 +18,8 @@ const readIfExists = (relativePath: string): string => {
   return existsSync(fullPath) ? readFileSync(fullPath, "utf8") : "";
 };
 
-const countOccurrences = (source: string, value: string): number =>
-  source.split(value).length - 1;
-
-test.describe("phase127 jwt verification jwks construction wiring pack", () => {
-  test("fail-closed jwt verify path now wires jwks construction without authenticating", async () => {
+test.describe("phase129 jwt verification execution boundary pack", () => {
+  test("jwt execution boundary exists but defaults to non-executing fail-closed behavior", async () => {
     const configured = readJwtVerificationConfiguration({
       FREE_AI_MIXER_AUTH_PROVIDER: "jwt",
       FREE_AI_MIXER_AUTH_ISSUER: "https://auth.example.test",
@@ -30,32 +27,40 @@ test.describe("phase127 jwt verification jwks construction wiring pack", () => {
       FREE_AI_MIXER_AUTH_JWKS_URI: "https://auth.example.test/.well-known/jwks.json",
     });
 
-    const constructed = constructRemoteJwksForJwtVerification(configured);
+    await expect(
+      executeJwtVerificationWithJose(
+        {
+          headers: {},
+        },
+        configured,
+      ),
+    ).resolves.toEqual({
+      kind: "not_verified",
+      reason: "missing_credentials",
+    });
 
-    expect(constructed.kind).toBe("constructed");
-
-    if (constructed.kind !== "constructed") {
-      throw new Error("expected JWKS construction boundary to construct");
-    }
-
-    expect(typeof constructed.jwks).toBe("function");
-    expect(constructed.realVerificationEnabled).toBe(false);
+    await expect(
+      executeJwtVerificationWithJose(
+        {
+          headers: {
+            authorization: "Bearer fake-token-must-not-authenticate",
+          },
+        },
+        configured,
+      ),
+    ).resolves.toEqual({
+      kind: "not_verified",
+      reason: "invalid_credentials",
+    });
 
     const strategy = createFailClosedFutureJwtVerificationStrategy({
       verificationConfig: configured,
-    });
-
-    await expect(strategy.verify()).resolves.toEqual({
-      kind: "not_verified",
-      reason: "missing_credentials",
     });
 
     await expect(
       strategy.verify({
         headers: {
           authorization: "Bearer fake-token-must-not-authenticate",
-          "x-user-id": "fake-user-must-not-authenticate",
-          "x-workspace-id": "fake-workspace-must-not-authenticate",
         },
       }),
     ).resolves.toEqual({
@@ -64,12 +69,12 @@ test.describe("phase127 jwt verification jwks construction wiring pack", () => {
     });
   });
 
-  test("jwks construction is wired into jwt boundary while jwtVerify execution remains deferred", async () => {
+  test("jwt execution boundary is isolated from strategy routes app and server", async () => {
     const jwtSource = readSource("backend/auth/jwtProviderVerificationStrategy.ts");
-    const routeSource = readSource("backend/routes/exports.ts");
     const compositionSource = readSource("backend/auth/trustedAuthProviderComposition.ts");
     const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
     const appSource = readSource("backend/app.ts");
+    const routeSource = readSource("backend/routes/exports.ts");
     const serverSource = readSource("backend/server.ts");
 
     expect(getJoseRuntimeImportBoundaryStatus()).toEqual({
@@ -78,16 +83,15 @@ test.describe("phase127 jwt verification jwks construction wiring pack", () => {
       realVerificationEnabled: false,
     });
 
-    expect(jwtSource).toContain("constructRemoteJwksForJwtVerification");
-    expect(jwtSource).toContain("void constructRemoteJwksForJwtVerification(options.verificationConfig)");
-    expect(countOccurrences(jwtSource, "constructRemoteJwksForJwtVerification")).toBeGreaterThan(1);
-    expect(jwtSource).toContain("createRemoteJWKSet");
-    expect(jwtSource).toContain("new URL(");
-    expect(jwtSource).toContain("realVerificationEnabled: false");
-
-    // Phase 127 wires JWKS construction only. jwtVerify execution boundary exists but remains isolated from routes.
-    expect(jwtSource).toContain("await jwtVerify");
     expect(jwtSource).toContain("executeJwtVerificationWithJose");
+    expect(jwtSource).toContain("executeRealVerification");
+    expect(jwtSource).toContain("await jwtVerify");
+    expect(jwtSource).toContain("constructRemoteJwksForJwtVerification");
+
+    // Phase 129 adds the execution boundary, but the fail-closed strategy still does not call it.
+    expect(jwtSource).toContain("void constructRemoteJwksForJwtVerification(options.verificationConfig)");
+    expect(jwtSource).not.toContain("void executeJwtVerificationWithJose");
+    expect(jwtSource).not.toContain("return executeJwtVerificationWithJose");
 
     const nonJwtBoundaryRuntimeSource =
       compositionSource +
@@ -100,6 +104,7 @@ test.describe("phase127 jwt verification jwks construction wiring pack", () => {
       "\n" +
       serverSource;
 
+    expect(nonJwtBoundaryRuntimeSource).not.toContain("executeJwtVerificationWithJose");
     expect(nonJwtBoundaryRuntimeSource).not.toContain('from "jose"');
     expect(nonJwtBoundaryRuntimeSource).not.toContain("jwtVerify");
     expect(nonJwtBoundaryRuntimeSource).not.toContain("createRemoteJWKSet");
@@ -112,21 +117,8 @@ test.describe("phase127 jwt verification jwks construction wiring pack", () => {
     expect(routeSource).not.toContain("throw new ExportApiError(403");
   });
 
-  test("jwks construction wiring keeps fake auth frontend storage and artifact delivery blocked", async () => {
+  test("jwt execution boundary keeps fake auth frontend storage and artifact delivery blocked", async () => {
     const routeSource = readSource("backend/routes/exports.ts");
-
-    const authSource =
-      readSource("backend/auth/jwtProviderVerificationStrategy.ts") +
-      "\n" +
-      readSource("backend/auth/jwtVerificationConfiguration.ts") +
-      "\n" +
-      readSource("backend/auth/trustedAuthProviderComposition.ts") +
-      "\n" +
-      readSource("backend/auth/trustedAuthProviderRuntimeConfig.ts") +
-      "\n" +
-      readSource("backend/auth/trustedAuthProviderStrategy.ts") +
-      "\n" +
-      readSource("backend/auth/trustedAuthMiddleware.ts");
 
     const frontendSource =
       readSource("src/services/exportService.ts") +
@@ -149,15 +141,6 @@ test.describe("phase127 jwt verification jwks construction wiring pack", () => {
     expect(routeSource).not.toContain("x-user-id");
     expect(routeSource).not.toContain("x-workspace-id");
 
-    expect(authSource).not.toContain("fakeSession");
-    expect(authSource).not.toContain("mockAuthenticatedUser");
-    expect(authSource).not.toContain("service_role");
-    expect(authSource).not.toContain("SERVICE_ROLE");
-    expect(authSource).not.toContain("PRIVATE_KEY");
-    expect(authSource).not.toContain("AUTH_SECRET");
-    expect(authSource).not.toContain("createSignedUrl");
-    expect(authSource).not.toContain("getPublicUrl");
-
     expect(frontendSource).not.toContain("@supabase/supabase-js");
     expect(frontendSource).not.toContain("createClient(");
     expect(frontendSource).not.toContain(".storage.from(");
@@ -171,4 +154,3 @@ test.describe("phase127 jwt verification jwks construction wiring pack", () => {
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
-

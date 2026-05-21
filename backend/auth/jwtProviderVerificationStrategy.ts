@@ -57,6 +57,85 @@ export type JwtRemoteJwksConstructionResult =
       reason: "missing_config" | "not_configured" | "unsupported_key_mode" | "invalid_jwks_uri";
       realVerificationEnabled: false;
     };
+export interface JwtVerificationExecutionOptions {
+  executeRealVerification?: boolean;
+}
+
+export const executeJwtVerificationWithJose = async (
+  input: TrustedJwtVerificationInput,
+  config: JwtVerificationConfiguration | undefined,
+  options: JwtVerificationExecutionOptions = {},
+): Promise<TrustedJwtVerificationResult> => {
+  const authorizationHeader = getAuthorizationHeader(input.headers);
+
+  if (!authorizationHeader) {
+    return {
+      kind: "not_verified",
+      reason: "missing_credentials",
+    };
+  }
+
+  if (!options.executeRealVerification) {
+    return {
+      kind: "not_verified",
+      reason: "invalid_credentials",
+    };
+  }
+
+  const jwksResult = constructRemoteJwksForJwtVerification(config);
+
+  if (jwksResult.kind !== "constructed") {
+    return {
+      kind: "not_verified",
+      reason: "auth_not_configured",
+    };
+  }
+
+  try {
+    const token = authorizationHeader.replace(/^Bearer\s+/i, "").trim();
+
+    const verified = await jwtVerify(token, jwksResult.jwks, {
+      issuer: config?.kind === "jwt_verification_configured" ? config.issuer : undefined,
+      audience: config?.kind === "jwt_verification_configured" ? config.audience : undefined,
+    });
+
+    const subject = verified.payload.sub;
+
+    if (!subject) {
+      return {
+        kind: "not_verified",
+        reason: "invalid_credentials",
+      };
+    }
+
+    const workspaceId =
+      typeof verified.payload.workspaceId === "string"
+        ? verified.payload.workspaceId
+        : typeof verified.payload.workspace_id === "string"
+          ? verified.payload.workspace_id
+          : undefined;
+
+    if (!workspaceId) {
+      return {
+        kind: "not_verified",
+        reason: "invalid_credentials",
+      };
+    }
+
+    return {
+      kind: "verified",
+      userId: subject,
+      workspaceId,
+      authProvider: "jwt",
+      authSubject: subject,
+    };
+  } catch {
+    return {
+      kind: "not_verified",
+      reason: "invalid_credentials",
+    };
+  }
+};
 
 
 /**
@@ -200,6 +279,8 @@ export const mapJwtVerificationResultToRequesterContext = (
     authSubject: result.authSubject,
   };
 };
+
+
 
 
 

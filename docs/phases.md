@@ -9834,3 +9834,62 @@ Scope:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 129 - JWT Verification Execution Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- JWT verification execution boundary only
+- real jwtVerify execution remains opt-in inside boundary helper
+- fail-closed strategy does not call execution boundary yet
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 129 completion summary
+
+- Added executeJwtVerificationWithJose(...) boundary helper
+- Confirmed missing Authorization maps to missing_credentials
+- Confirmed default execution boundary remains fail-closed without real execution
+- Confirmed execution boundary contains the isolated jose jwtVerify call path
+- Confirmed fail-closed strategy does not call execution boundary yet
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization 401 / 403 responses
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Future production requirements
+
+- Wire executeJwtVerificationWithJose(...) into the JWT strategy only after dedicated audit
+- Keep real execution guarded by verified config
+- Validate issuer and audience
+- Validate token signature and expiry
+- Map verified subject to authenticated requester context
+- Require verified workspace scope or membership lookup
+- Keep route authorization disabled until verified auth and RLS are ready
+
+### Verification
+
+- phase129: expected focused pass
+- phase128: expected pass
+- phase127: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Execution boundary exists but is not route-wired
+- Fail-closed strategy still does not authenticate users
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

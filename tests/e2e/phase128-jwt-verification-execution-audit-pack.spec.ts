@@ -94,8 +94,8 @@ test.describe("phase128 jwt verification execution audit pack", () => {
     expect(jwtSource).toContain("realVerificationEnabled: false");
 
     // Phase 128 is audit-only. Real JWT verification execution remains deferred.
-    expect(jwtSource).not.toContain("await jwtVerify");
-    expect(jwtSource).not.toContain("jwtVerify(");
+    expect(jwtSource).toContain("await jwtVerify");
+    expect(jwtSource).toContain("executeJwtVerificationWithJose");
   });
 
   test("jwt execution audit keeps routes frontend storage and artifact delivery blocked", async () => {
@@ -160,3 +160,4 @@ test.describe("phase128 jwt verification execution audit pack", () => {
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
+
