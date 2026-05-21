@@ -2046,3 +2046,16 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 137 adds workspace membership strategy and contract coverage:
+  - WorkspaceMembershipRepository contract exists.
+  - Not-configured membership repository denies safely.
+  - Active membership can produce an allowed decision.
+  - Inactive/missing membership denies safely.
+  - Membership boundary is not wired into routes yet.
+  - Workspace membership repository implementation remains deferred.
+  - Workspace membership enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

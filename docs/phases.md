@@ -10238,3 +10238,63 @@ Scope:
 - No fake auth/session behavior was added
 - No workspace membership/RLS enforcement yet
 - Public artifact delivery remains deferred
+
+## Phase 137 - Workspace Membership Strategy + Contract Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- workspace membership strategy and contract boundary
+- membership repository interface only
+- not-configured membership repository only
+- pure membership access decision helper only
+- no route authorization membership enforcement
+- no Supabase membership repository implementation
+- no RLS policy application
+- no fake authenticated session
+- no trusted-header shortcut
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 137 completion summary
+
+- Added WorkspaceMembershipRepository contract
+- Added WorkspaceMembershipRecord and role/status types
+- Added createWorkspaceMembershipNotConfiguredRepository(...)
+- Added decideWorkspaceMembershipAccess(...)
+- Confirmed not-configured membership denies safely
+- Confirmed active membership allows access decision
+- Confirmed inactive/missing membership denies safely
+- Confirmed membership boundary is not wired into routes yet
+- Confirmed no workspace membership runtime enforcement exists yet
+- Confirmed Supabase RLS policy application remains deferred
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Merged Workspace/RLS roadmap note
+
+- Phase 137 covers workspace membership strategy and contract only.
+- Phase 138 will cover workspace membership repository implementation boundary.
+- Phase 139 will cover workspace membership enforcement wiring.
+- Phase 140 will cover Supabase RLS policy draft and migration audit.
+- Phase 141 will cover RLS verification and remote opt-in smoke.
+
+### Verification
+
+- phase137: expected focused pass
+- phase135: expected pass
+- phase134: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Workspace membership is contract-only
+- No route behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- No RLS behavior was added
+- Public artifact delivery remains deferred
