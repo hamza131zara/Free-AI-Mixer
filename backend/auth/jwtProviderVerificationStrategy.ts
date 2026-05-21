@@ -167,6 +167,7 @@ export const createFailClosedFutureJwtVerificationStrategy = (
   kind: "future_jwt_verification",
   verify: async (input) => {
     void getJwtVerificationExecutionReadiness(options.verificationConfig);
+    void constructRemoteJwksForJwtVerification(options.verificationConfig);
 
     const authorizationHeader = getAuthorizationHeader(input?.headers);
 
@@ -199,5 +200,6 @@ export const mapJwtVerificationResultToRequesterContext = (
     authSubject: result.authSubject,
   };
 };
+
 
 
