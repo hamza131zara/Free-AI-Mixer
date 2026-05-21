@@ -7417,3 +7417,64 @@ Before route authorization or public artifact delivery:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 91 - Trusted Auth Middleware App Wiring Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- trusted auth middleware app/server wiring audit only
+- no app/server middleware wiring
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 91 completion summary
+
+- Added trusted auth middleware app wiring audit coverage
+- Confirmed trusted auth middleware boundary exists:
+  - `createTrustedAuthNotConfiguredMiddleware(...)`
+  - `getRequesterContextFromRequest(...)`
+- Confirmed app/server do not wire trusted auth middleware yet
+- Confirmed export routes do not consume trusted auth middleware yet
+- Confirmed route authorization enforcement remains deferred
+- Confirmed arbitrary `x-user-id` / `x-workspace-id` headers are not trusted
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before app/server auth wiring can be safely enabled:
+
+- real trusted auth provider integration must exist
+- trusted middleware must populate authenticated requester context
+- export routes must consume trusted requester context intentionally
+- export routes must call requester adapter, authorization decision, and route guard boundaries
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase91`: expected focused pass
+- `phase90`: expected pass
+- `phase89`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- App/server auth wiring remains deferred
+- No route behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
