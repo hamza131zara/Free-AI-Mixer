@@ -1685,3 +1685,18 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 112 adds JWT provider composition wiring audit coverage:
+  - JWT verification strategy boundary exists, but remains unwired from provider composition.
+  - Auth provider composition still uses generic fail-closed JWT behavior.
+  - Middleware/app/routes/server do not wire JWT verification strategy yet.
+  - No real JWT verification package or token verification was added.
+  - Export routes still read trusted request context non-enforcing only.
+  - Export routes still do not call authorization adapter/decision/guard boundaries.
+  - Export routes still do not emit authorization `401` / `403` responses.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
