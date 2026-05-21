@@ -6495,3 +6495,47 @@ Scope:
 - Default test runs remain offline
 - Worker loop activation remains deferred
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 74 - Opt-In Supabase Remote Lifecycle Smoke Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- opt-in remote Supabase lifecycle smoke
+- skipped/offline by default
+- explicit env flag required
+- no Supabase CLI or local start
+- no worker loop startup
+- no signed/download/storage URL behavior
+
+### Phase 74 completion summary
+
+- Added opt-in remote Supabase lifecycle smoke coverage
+- Kept the default test run offline with the remote lifecycle smoke skipped by default
+- Required an explicit `FREE_AI_MIXER_RUN_REMOTE_SUPABASE_LIFECYCLE_SMOKE=1` flag before any remote lifecycle smoke can run
+- Required valid backend Supabase env before remote lifecycle smoke can proceed
+- Proved incomplete opt-in remote env still fails safely without printing secrets
+- Exercised create/read, claim, `markRendering`, `markFinalizing`, and `markSuccess` in the remote lifecycle smoke path when explicitly enabled
+- Verified success-state artifact metadata uses the safe persisted metadata shape only
+- Verified no signed URLs, download URLs, storage objects, or worker loop startup behavior are introduced
+- Preserved that remote lifecycle smoke is a smoke boundary only and is not production rollout
+
+### Verification
+
+- `phase74`: 1 passed, 1 skipped
+- `phase73`: 2 passed
+- `phase72`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Opt-in remote Supabase lifecycle smoke coverage now exists
+- The remote lifecycle smoke remains skipped/offline by default
+- Explicit env flag and complete backend Supabase env are still required before any remote lifecycle smoke can run
+- No Supabase CLI or local Supabase start is required
+- Worker loop startup remains deferred
+- Signed/download/storage URL behavior remains deferred
