@@ -9333,3 +9333,70 @@ Scope:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 121 - JWT Verification Configuration Strategy Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- JWT verification configuration strategy only
+- no JWT verification execution
+- no JWKS construction
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 121 completion summary
+
+- Added JWT verification configuration boundary
+- Added readJwtVerificationConfiguration(...)
+- Added isJwtVerificationConfigured(...)
+- Added future remote JWKS config shape
+- Confirmed missing provider / issuer / audience / JWKS URI fail closed
+- Confirmed unsupported key mode fails closed
+- Confirmed configured remote JWKS mode can be represented without execution
+- Confirmed jose runtime imports remain available inside JWT boundary
+- Confirmed realVerificationEnabled remains false
+- Confirmed no jwtVerify execution call exists yet
+- Confirmed no createRemoteJWKSet execution call exists yet
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization 401 / 403 responses
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Future production requirements
+
+- Wire JWT verification configuration into backend/auth/jwtProviderVerificationStrategy.ts only
+- Construct JWKS safely from validated config
+- Execute jose jwtVerify only inside JWT verification boundary
+- Validate issuer and audience
+- Validate token signature and expiry
+- Map verified subject to authenticated requester context
+- Require verified workspace scope or membership lookup
+- Keep route authorization disabled until verified auth and RLS are ready
+
+### Verification
+
+- phase121: expected focused pass
+- phase120: expected pass
+- phase119: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- JWT config exists as a boundary only
+- No real JWT verification was implemented
+- No JWKS construction was implemented
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
