@@ -6628,3 +6628,42 @@ Scope:
 - No route/API endpoint was added
 - No remote DB/default remote smoke was required
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 77 - Frontend DB-Backed Export Lifecycle Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- frontend DB-backed export lifecycle hardening through existing backend routes only
+- no direct Supabase client in frontend
+- truthful store/service refresh and reconnect behavior
+- no fake progress, no fake success, no fake download URLs
+- no signed/download/storage URL behavior
+
+### Phase 77 completion summary
+
+- Tightened `refreshExportStatus(...)` so frontend status refresh only uses a real backend `GET /exports/:jobId` handle and never fabricates a poll handle from `requestId`
+- Added focused frontend coverage proving pending, terminal success, and terminal failure map truthfully through existing `exportService` and `exportStore` boundaries
+- Proved reconnect continues to use persisted export handles truthfully without adding direct Supabase client usage in the frontend
+- Proved terminal success artifact metadata remains safe and does not expose signed URLs, download URLs, storage refs, or local filesystem paths
+- Proved terminal failure stays truthful without introducing unsafe details in the frontend DB-backed lifecycle path
+- Preserved that React components still consume store actions instead of owning fetch/export orchestration logic directly
+
+### Verification
+
+- `phase77`: 3 passed
+- `phase72`: 2 passed
+- `phase67`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Frontend DB-backed export lifecycle coverage now exists through backend routes only
+- No direct Supabase client was added to the frontend
+- No fake progress, fake success, or fake download URL behavior was introduced
+- No signed/download/storage URL behavior was added
+- Backend route contracts remained unchanged

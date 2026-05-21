@@ -660,23 +660,13 @@ export const useExportStore = create<ExportStoreState>()(
           return undefined;
         }
 
-        // Need either a handle with jobId or stored requestId to poll
-        const hasHandleWithJobId = current.handle?.jobId;
-        const hasRequestId = current.requestId;
-
-        if (!hasHandleWithJobId && !hasRequestId) {
+        if (!isValidHandle(current.handle)) {
           return current;
         }
 
-        // Construct a handle for polling - use stored handle or create minimal one
-        const pollHandle: ExportJobHandle = current.handle ?? {
-          provider: "backend_render",
-          requestId: current.requestId,
-          jobId: current.requestId, // Fallback: use requestId as jobId
-          status: "submitted",
-        };
-
-        const pollResult = await pollExportJob(pollHandle, { signal: options?.signal });
+        const pollResult = await pollExportJob(current.handle, {
+          signal: options?.signal,
+        });
 
         // Apply the poll result to update state
         get().applyExportPollEvent(timelineId, pollResult);

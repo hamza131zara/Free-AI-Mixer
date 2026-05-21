@@ -1225,6 +1225,7 @@ Still deferred:
 - Opt-in remote Supabase lifecycle smoke coverage now exists.
 - Manual worker drain with Supabase runtime selection coverage now exists.
 - Controlled worker-loop activation coverage now exists.
+- Frontend DB-backed export lifecycle coverage now exists through backend routes only.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
 - `SupabaseExportJobRegistry.markRendering(...)`, `markFinalizing(...)`, and `markError(...)` adapter support now exists, but this still does not make the worker loop runtime-ready.
 - `SupabaseExportJobRegistry.markSuccess(...)` adapter support now exists.
@@ -1241,6 +1242,9 @@ Still deferred:
 - Worker DB wiring still is not activated as an automatic loop.
 - Default worker loop startup still remains disabled unless both startup and loop env gates are enabled.
 - Default test runs still remain offline by default, even when future remote smoke coverage exists.
+- Frontend status refresh now requires a real backend `jobId` handle and does not fabricate poll handles from `requestId`.
+- Frontend reconnect and refresh continue to use existing backend export routes only; no direct Supabase client usage exists in the frontend.
+- Fake progress percentages, fake success states, fake download URLs, and signed/download/storage URL behavior still remain absent from the frontend DB-backed lifecycle path.
 - Incomplete opt-in remote Supabase env still falls back safely without leaking secrets.
 - Remote lifecycle smoke now exists, but it still remains skipped/offline by default unless explicitly enabled.
 - Remote manual worker drain smoke now exists, but it still remains skipped/offline by default unless explicitly enabled.
