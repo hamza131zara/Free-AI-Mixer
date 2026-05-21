@@ -10866,3 +10866,56 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 148 - Backend Artifact Delivery Descriptor Route Wiring Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- backend artifact delivery descriptor route wiring audit only
+- no descriptor route wiring
+- no production provider route wiring
+- no signed URL generation
+- no public URL generation
+- no frontend download/navigation behavior
+- no direct frontend Supabase client
+- no service-role usage
+- no public artifact delivery enablement
+
+### Phase 148 completion summary
+
+- Added docs/security/phase148-backend-artifact-delivery-descriptor-route-wiring-audit.md
+- Audited future backend artifact delivery descriptor route requirements
+- Confirmed backend-mediated delivery boundary exists
+- Confirmed production artifact provider boundary exists
+- Confirmed production provider still fails closed by default
+- Confirmed descriptor route wiring remains deferred
+- Confirmed no signed URL generation was added
+- Confirmed no public URL generation was added
+- Confirmed no frontend storage or download/navigation behavior was added
+
+### Future artifact delivery roadmap note
+
+- Phase 148 audits backend descriptor route wiring only.
+- Phase 149 should implement backend artifact delivery descriptor route wiring if safety boundaries remain satisfied.
+- Real browser navigation/download behavior remains deferred until backend descriptor route wiring is complete and separately approved.
+
+### Verification
+
+- phase148: expected focused pass
+- phase147: expected pass
+- phase146: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No route behavior changed
+- No active signed/download/public URL behavior was added
+- No frontend Supabase/storage access was added
+- No service-role behavior was added
+- Public artifact delivery remains deferred

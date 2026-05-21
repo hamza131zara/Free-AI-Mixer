@@ -2171,3 +2171,12 @@ Still deferred:
   - No signed URL or public URL handling was added.
   - Backend descriptor route/provider wiring remains deferred.
   - Public artifact delivery remains blocked until backend descriptor route wiring is ready.
+
+- Phase 148 adds backend artifact delivery descriptor route wiring audit coverage:
+  - Backend descriptor route wiring remains deferred.
+  - Production provider route wiring remains deferred.
+  - No signed URL or public URL behavior was added.
+  - No frontend download/navigation behavior was added.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Service-role shortcuts remain forbidden.
+  - Public artifact delivery remains blocked until backend descriptor route wiring is implemented safely.
