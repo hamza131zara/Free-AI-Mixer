@@ -1529,3 +1529,17 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 101 adds auth provider runtime config composition boundary coverage:
+  - Runtime auth provider config can compose to a provider strategy boundary.
+  - Missing/disabled config composes to auth-not-configured behavior.
+  - Future JWT/session provider modes fail closed and do not authenticate users yet.
+  - Runtime config composition remains unwired from app/middleware/routes/server.
+  - Real token/session verification remains deferred.
+  - Runtime config provider instantiation remains deferred from app composition.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
