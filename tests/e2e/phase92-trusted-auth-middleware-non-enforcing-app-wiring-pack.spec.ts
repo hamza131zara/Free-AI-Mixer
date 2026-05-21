@@ -19,8 +19,8 @@ test.describe("phase92 trusted auth middleware non enforcing app wiring pack", (
     const routeSource = readSource("backend/routes/exports.ts");
     const serverSource = readSource("backend/server.ts");
 
-    expect(appSource).toContain("createTrustedAuthNotConfiguredMiddleware");
-    expect(appSource).toContain("app.use(createTrustedAuthNotConfiguredMiddleware())");
+    expect(appSource).toContain("createTrustedAuthMiddleware");
+    expect(appSource).toContain("readTrustedAuthProviderRuntimeConfig");
 
     // App wires middleware, but route context reading belongs in routes after Phase 94.
     expect(appSource).not.toContain("getRequesterContextFromRequest");
@@ -95,3 +95,4 @@ test.describe("phase92 trusted auth middleware non enforcing app wiring pack", (
     expect(docsSource).toContain("ownership");
   });
 });
+

@@ -38,14 +38,14 @@ test.describe("phase103 auth provider runtime composition middleware wiring audi
     const serverSource = readSource("backend/server.ts");
     const routeSource = readSource("backend/routes/exports.ts");
 
-    expect(appSource).toContain("createTrustedAuthNotConfiguredMiddleware");
+    expect(appSource).toContain("createTrustedAuthMiddleware");
     expect(routeSource).toContain("getRequesterContextFromRequest");
 
     expect(appSource).not.toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
     expect(serverSource).not.toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
     expect(routeSource).not.toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
 
-    expect(appSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
+    expect(appSource).toContain("readTrustedAuthProviderRuntimeConfig");
     expect(serverSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
     expect(routeSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
 
@@ -112,4 +112,5 @@ test.describe("phase103 auth provider runtime composition middleware wiring audi
     expect(docsSource).toContain("ownership");
   });
 });
+
 

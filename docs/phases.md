@@ -8377,3 +8377,62 @@ Before app/server runtime auth config composition can be enabled:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 106 - Auth Runtime Config App Composition Wiring Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- runtime auth config app composition wiring only
+- no real token/session verification
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 106 completion summary
+
+- Wired runtime auth provider config into app trusted auth middleware composition
+- Confirmed app now uses `createTrustedAuthMiddleware({ runtimeConfig: readTrustedAuthProviderRuntimeConfig() })`
+- Confirmed missing/disabled config remains fail-closed as auth-not-configured
+- Confirmed future JWT/session config remains fail-closed and does not authenticate users yet
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization `401` / `403` responses
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- real trusted auth provider implementation must verify tokens or sessions
+- authenticated requester context must be adapted intentionally
+- export routes must call authorization decision and route guard boundaries
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase106`: expected focused pass
+- `phase105`: expected pass
+- `phase104`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- App runtime config wiring is fail-closed
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

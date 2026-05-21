@@ -90,8 +90,8 @@ test.describe("phase104 auth provider runtime composition middleware wiring pack
     expect(configSource).toContain("readTrustedAuthProviderRuntimeConfig");
 
     // App/server still do not wire runtime config or real provider behavior.
-    expect(appSource).toContain("createTrustedAuthNotConfiguredMiddleware");
-    expect(appSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
+    expect(appSource).toContain("createTrustedAuthMiddleware");
+    expect(appSource).toContain("readTrustedAuthProviderRuntimeConfig");
     expect(appSource).not.toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
     expect(serverSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
     expect(serverSource).not.toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
@@ -153,3 +153,4 @@ test.describe("phase104 auth provider runtime composition middleware wiring pack
     expect(artifactSource).not.toContain("getPublicUrl");
   });
 });
+

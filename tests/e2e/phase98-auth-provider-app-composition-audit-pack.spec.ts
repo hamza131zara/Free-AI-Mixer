@@ -28,11 +28,11 @@ test.describe("phase98 auth provider app composition audit pack", () => {
     expect(middlewareSource).toContain("createAuthNotConfiguredTrustedAuthProviderStrategy");
 
     // App composition remains intentionally non-enforcing.
-    expect(appSource).toContain("createTrustedAuthNotConfiguredMiddleware");
-    expect(appSource).toContain("app.use(createTrustedAuthNotConfiguredMiddleware())");
+    expect(appSource).toContain("createTrustedAuthMiddleware");
+    expect(appSource).toContain("readTrustedAuthProviderRuntimeConfig");
 
     // No real auth provider app/server composition yet.
-    expect(appSource).not.toContain("createTrustedAuthMiddleware({");
+    expect(appSource).toContain("createTrustedAuthMiddleware({ runtimeConfig");
     expect(appSource).not.toContain("future_jwt_provider");
     expect(appSource).not.toContain("future_session_provider");
     expect(appSource).not.toContain("resolveTrustedAuthProviderRequesterContext");
@@ -125,3 +125,4 @@ test.describe("phase98 auth provider app composition audit pack", () => {
     expect(docsSource).toContain("ownership");
   });
 });
+
