@@ -1416,3 +1416,16 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 92 adds non-enforcing trusted auth middleware app wiring:
+  - App now wires auth-not-configured trusted auth middleware.
+  - Middleware remains non-enforcing and does not authenticate users yet.
+  - Export routes do not consume trusted auth middleware yet.
+  - Route authorization enforcement remains deferred.
+  - Real trusted auth provider integration remains deferred.
+  - Arbitrary `x-user-id` / `x-workspace-id` headers must not be trusted.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

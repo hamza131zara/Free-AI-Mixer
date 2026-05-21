@@ -7478,3 +7478,60 @@ Before app/server auth wiring can be safely enabled:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 92 - Trusted Auth Middleware Non-Enforcing App Wiring Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- non-enforcing trusted auth middleware app wiring only
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 92 completion summary
+
+- Wired trusted auth-not-configured middleware into app composition
+- Confirmed middleware defaults to explicit `auth_not_configured`
+- Confirmed app middleware wiring does not enforce route authorization
+- Confirmed export routes do not consume trusted auth middleware yet
+- Confirmed route authorization enforcement remains deferred
+- Confirmed arbitrary `x-user-id` / `x-workspace-id` headers are not trusted
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- real trusted auth provider integration must replace auth-not-configured middleware behavior
+- export routes must consume trusted requester context intentionally
+- export routes must call requester adapter, authorization decision, and route guard boundaries
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase92`: expected focused pass
+- `phase91`: expected pass
+- `phase90`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- App auth middleware wiring is non-enforcing
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

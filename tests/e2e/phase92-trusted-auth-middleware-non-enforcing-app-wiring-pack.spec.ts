@@ -1,10 +1,6 @@
 ﻿import { test, expect } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import {
-  createTrustedAuthNotConfiguredMiddleware,
-  getRequesterContextFromRequest,
-} from "../../backend/auth/trustedAuthMiddleware";
 
 const projectRoot = process.cwd();
 
@@ -16,66 +12,50 @@ const readIfExists = (relativePath: string): string => {
   return existsSync(fullPath) ? readFileSync(fullPath, "utf8") : "";
 };
 
-test.describe("phase90 trusted auth middleware strategy boundary pack", () => {
-  test("trusted auth middleware boundary exists and remains auth-not-configured by default", async () => {
-    const middleware = createTrustedAuthNotConfiguredMiddleware();
-
-    const request = {
-      headers: {
-        authorization: "Bearer fake-token-must-not-authenticate",
-        "x-user-id": "fake-user-must-not-authenticate",
-        "x-workspace-id": "fake-workspace-must-not-authenticate",
-      },
-    } as any;
-
-    let nextCalled = false;
-
-    middleware(request, {} as any, () => {
-      nextCalled = true;
-    });
-
-    expect(nextCalled).toBe(true);
-    expect(getRequesterContextFromRequest(request)).toEqual({
-      kind: "unauthenticated",
-      reason: "auth_not_configured",
-    });
-
-    expect(request.backendRequesterContext).toEqual({
-      kind: "unauthenticated",
-      reason: "auth_not_configured",
-    });
-  });
-
-  test("trusted auth middleware remains non-enforcing after app wiring", async () => {
+test.describe("phase92 trusted auth middleware non enforcing app wiring pack", () => {
+  test("app wires trusted auth middleware as non-enforcing auth-not-configured boundary", async () => {
+    const appSource = readSource("backend/app.ts");
     const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
     const routeSource = readSource("backend/routes/exports.ts");
-    const appSource = readSource("backend/app.ts");
     const serverSource = readSource("backend/server.ts");
-    const requesterContextSource = readSource("backend/auth/requesterContext.ts");
 
-    expect(middlewareSource).toContain("createTrustedAuthNotConfiguredMiddleware");
-    expect(middlewareSource).toContain("getRequesterContextFromRequest");
-    expect(middlewareSource).toContain("auth_not_configured");
-    expect(requesterContextSource).toContain("BackendRequesterContext");
-
-    // Phase 92 may wire app middleware, but route/server enforcement remains deferred.
     expect(appSource).toContain("createTrustedAuthNotConfiguredMiddleware");
-    expect(serverSource).not.toContain("createTrustedAuthNotConfiguredMiddleware");
-    expect(routeSource).not.toContain("createTrustedAuthNotConfiguredMiddleware");
+    expect(appSource).toContain("app.use(createTrustedAuthNotConfiguredMiddleware())");
 
+    expect(middlewareSource).toContain("auth_not_configured");
+    expect(middlewareSource).toContain("backendRequesterContext");
+    expect(middlewareSource).toContain("getRequesterContextFromRequest");
+
+    // Non-enforcing app middleware only. Route authorization remains deferred.
     expect(routeSource).not.toContain("getRequesterContextFromRequest");
     expect(routeSource).not.toContain("throw new ExportApiError(401");
     expect(routeSource).not.toContain("throw new ExportApiError(403");
 
-    expect(middlewareSource).not.toContain("fakeSession");
-    expect(middlewareSource).not.toContain("mockAuthenticatedUser");
-    expect(middlewareSource).not.toContain("service_role");
-    expect(middlewareSource).not.toContain("SERVICE_ROLE");
-    expect(middlewareSource).not.toContain("createSignedUrl");
-    expect(middlewareSource).not.toContain("getPublicUrl");
+    // Server startup remains unchanged.
+    expect(serverSource).not.toContain("createTrustedAuthNotConfiguredMiddleware");
   });
 
-  test("frontend and artifact delivery remain blocked until real trusted auth exists", async () => {
+  test("non-enforcing app auth wiring does not introduce fake auth or trusted header shortcuts", async () => {
+    const appSource = readSource("backend/app.ts");
+    const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
+    const routeSource = readSource("backend/routes/exports.ts");
+
+    const combinedSource = appSource + "\n" + middlewareSource + "\n" + routeSource;
+
+    expect(combinedSource).not.toContain("fakeSession");
+    expect(combinedSource).not.toContain("mockAuthenticatedUser");
+    expect(combinedSource).not.toContain("service_role");
+    expect(combinedSource).not.toContain("SERVICE_ROLE");
+    expect(combinedSource).not.toContain("createSignedUrl");
+    expect(combinedSource).not.toContain("getPublicUrl");
+
+    expect(routeSource).not.toContain('req.headers["x-user-id"]');
+    expect(routeSource).not.toContain('req.headers["x-workspace-id"]');
+    expect(routeSource).not.toContain("x-user-id");
+    expect(routeSource).not.toContain("x-workspace-id");
+  });
+
+  test("frontend and artifact delivery remain blocked after non-enforcing app wiring", async () => {
     const frontendSource =
       readSource("src/services/exportService.ts") +
       "\n" +

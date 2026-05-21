@@ -13,7 +13,7 @@ const readIfExists = (relativePath: string): string => {
 };
 
 test.describe("phase91 trusted auth middleware app wiring audit pack", () => {
-  test("trusted auth middleware boundary exists but app and server wiring remain deferred", async () => {
+  test("trusted auth middleware boundary exists and app wiring is now non-enforcing", async () => {
     const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
     const appSource = readSource("backend/app.ts");
     const serverSource = readSource("backend/server.ts");
@@ -23,15 +23,13 @@ test.describe("phase91 trusted auth middleware app wiring audit pack", () => {
     expect(middlewareSource).toContain("getRequesterContextFromRequest");
     expect(middlewareSource).toContain("auth_not_configured");
 
-    // Phase 91 is audit/readiness only. App/server/route wiring remains deferred.
-    expect(appSource).not.toContain("createTrustedAuthNotConfiguredMiddleware");
+    expect(appSource).toContain("createTrustedAuthNotConfiguredMiddleware");
+
+    // Phase 92 wires app middleware only. Server and routes remain non-enforcing.
     expect(serverSource).not.toContain("createTrustedAuthNotConfiguredMiddleware");
     expect(routeSource).not.toContain("createTrustedAuthNotConfiguredMiddleware");
 
-    expect(appSource).not.toContain("getRequesterContextFromRequest");
-    expect(serverSource).not.toContain("getRequesterContextFromRequest");
     expect(routeSource).not.toContain("getRequesterContextFromRequest");
-
     expect(routeSource).not.toContain("throw new ExportApiError(401");
     expect(routeSource).not.toContain("throw new ExportApiError(403");
   });

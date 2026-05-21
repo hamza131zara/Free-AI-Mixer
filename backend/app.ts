@@ -1,3 +1,4 @@
+﻿import { createTrustedAuthNotConfiguredMiddleware } from "./auth/trustedAuthMiddleware";
 import express, { type Express } from "express";
 import path from "node:path";
 import { exportErrorHandler } from "./errors/exportErrors";
@@ -71,8 +72,11 @@ export const createApp = (): Express => {
   };
 
   app.use(express.json());
+
+  app.use(createTrustedAuthNotConfiguredMiddleware());
   app.use(createExportRouter(backendDeps.registry, exportRouterOptions));
   app.use(exportErrorHandler);
 
   return app;
 };
+
