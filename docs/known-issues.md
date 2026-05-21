@@ -1392,3 +1392,15 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 90 adds trusted auth middleware strategy boundary coverage:
+  - Trusted auth middleware boundary now exists.
+  - Default middleware behavior remains explicit `auth_not_configured`.
+  - Middleware does not fabricate user identity from arbitrary headers.
+  - App/server wiring remains deferred.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
