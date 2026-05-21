@@ -7063,3 +7063,61 @@ Before route authorization or public artifact delivery:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 85 - Export Authorization Decision Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- pure export authorization decision helper only
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 85 completion summary
+
+- Added pure export owner/workspace authorization decision boundary
+- Added `decideExportOwnerScopeAccess(...)`
+- Confirmed local-dev fallback requester context is not treated as production authorization
+- Confirmed authenticated requester contexts can produce an authorized decision when owner/workspace scope matches
+- Confirmed owner mismatch maps to a forbidden decision
+- Confirmed workspace mismatch maps to a forbidden decision
+- Confirmed route enforcement remains deferred
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- trusted auth middleware must provide authenticated requester context
+- export routes must call the authorization decision boundary
+- route errors must map unauthorized/forbidden decisions safely
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase85`: expected focused pass
+- `phase84`: expected pass
+- `phase83`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Authorization decision helper exists as a pure boundary only
+- No route behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
