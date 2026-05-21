@@ -7005,3 +7005,61 @@ Before route authorization or public artifact delivery:
 - No fake auth/session behavior was added
 - No RLS policies were applied
 - Public artifact delivery remains deferred
+
+## Phase 84 - Route Authorization Strategy Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- route authorization strategy boundary only
+- no real route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership enforcement yet
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 84 completion summary
+
+- Added route authorization strategy boundary coverage
+- Confirmed export ownership contracts include:
+  - `ownerId`
+  - `workspaceId`
+- Confirmed export routes can resolve requester context through the existing route requester boundary
+- Confirmed route authorization enforcement remains deferred
+- Confirmed arbitrary `x-user-id` / `x-workspace-id` headers are not trusted as authenticated identity
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed no `401` / `403` route authorization enforcement was added yet
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- trusted auth middleware must provide authenticated requester context
+- export routes must compare requested owner/workspace scope against authenticated requester context
+- workspace membership checks must be implemented
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase84`: expected focused pass
+- `phase83`: expected pass
+- `phase82`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Route authorization remains strategy-only
+- No route behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

@@ -1325,3 +1325,13 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 84 adds route authorization strategy boundary coverage:
+  - Export owner/workspace contracts exist, but route authorization enforcement remains deferred.
+  - Export routes must eventually authorize requested owner/workspace scope against trusted requester context.
+  - Arbitrary `x-user-id` / `x-workspace-id` headers must not be trusted as authenticated identity.
+  - Workspace membership checks remain deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

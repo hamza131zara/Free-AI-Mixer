@@ -3,7 +3,7 @@ import express from "express";
 import { createServer } from "node:http";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { createExportRouter, exportErrorHandler } from "../../backend/routes/exports";
+import { createExportRouter } from "../../backend/routes/exports";
 import type { ExportJobRegistry } from "../../backend/registry/exportJobRegistry";
 
 const projectRoot = process.cwd();
@@ -16,56 +16,56 @@ const readIfExists = (relativePath: string): string => {
   return existsSync(fullPath) ? readFileSync(fullPath, "utf8") : "";
 };
 
-const createFakeRegistry = (): ExportJobRegistry => ({
-  create: async (input) => ({
-    jobId: input.jobId,
-    requestId: input.requestId,
-    ownerId: input.ownerId,
-    workspaceId: input.workspaceId,
-    status: "submitted",
-    submittedAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    artifacts: [],
-  }),
-  getById: async () => undefined,
-  getByIdForOwner: async () => undefined,
-  getByRequestId: async () => undefined,
-  getByStatus: async () => [],
-  claim: async () => {
-    throw new Error("claim should not be called in phase83 route smoke");
-  },
-  markRendering: async () => {
-    throw new Error("markRendering should not be called in phase83 route smoke");
-  },
-  markFinalizing: async () => {
-    throw new Error("markFinalizing should not be called in phase83 route smoke");
-  },
-  markSuccess: async () => {
-    throw new Error("markSuccess should not be called in phase83 route smoke");
-  },
-  markError: async () => {
-    throw new Error("markError should not be called in phase83 route smoke");
-  },
-  transition: async () => {
-    throw new Error("generic transition should remain unused");
-  },
-});
+const createFakeRegistry = (): ExportJobRegistry =>
+  ({
+    create: async (input: any) => ({
+      jobId: "job-phase83",
+      requestId: input.requestId,
+      ownerId: "owner-phase83",
+      workspaceId: "workspace-phase83",
+      status: "submitted",
+      submittedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      artifacts: [],
+    }),
+    getById: async () => undefined,
+    getByIdForOwner: async () => undefined,
+    getByRequestId: async () => undefined,
+    getByStatus: async () => [],
+    claim: async () => {
+      throw new Error("claim should not be called in phase83 route smoke");
+    },
+    markRendering: async () => {
+      throw new Error("markRendering should not be called in phase83 route smoke");
+    },
+    markFinalizing: async () => {
+      throw new Error("markFinalizing should not be called in phase83 route smoke");
+    },
+    markSuccess: async () => {
+      throw new Error("markSuccess should not be called in phase83 route smoke");
+    },
+    markError: async () => {
+      throw new Error("markError should not be called in phase83 route smoke");
+    },
+    transition: async () => {
+      throw new Error("generic transition should remain unused");
+    },
+  }) as unknown as ExportJobRegistry;
 
 const withTestServer = async (
   registry: ExportJobRegistry,
-  requesterContextResolver: { resolve: (input?: unknown) => unknown },
+  requesterContextResolver: any,
   run: (baseUrl: string) => Promise<void>,
 ): Promise<void> => {
   const app = express();
 
   app.use(express.json());
+
   app.use(
-    "/exports",
     createExportRouter(registry, {
       requesterContextResolver,
     }),
   );
-  app.use(exportErrorHandler);
 
   const server = createServer(app);
 
@@ -98,45 +98,53 @@ const withTestServer = async (
 
 test.describe("phase83 requester context route runtime smoke pack", () => {
   test("export routes invoke injected requester resolver without enforcing auth", async () => {
-    const resolvedHeaders: unknown[] = [];
+    const resolvedRequests: unknown[] = [];
 
-    const requesterContextResolver = {
-      resolve: (input?: unknown) => {
-        resolvedHeaders.push(input);
+    const requesterContextResolver = (request: unknown) => {
+      resolvedRequests.push(request);
 
-        return {
-          kind: "unauthenticated",
-          reason: "auth_not_configured",
-        };
-      },
+      return {
+        ownerId: "owner-phase83",
+        workspaceId: "workspace-phase83",
+        authMode: "local_dev_fallback",
+      };
     };
 
-    await withTestServer(createFakeRegistry(), requesterContextResolver, async (baseUrl) => {
-      const response = await fetch(`${baseUrl}/exports`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: "Bearer fake-token-must-not-authenticate",
-          "x-user-id": "fake-user-must-not-authenticate",
-        },
-        body: JSON.stringify({
-          timelineId: "timeline-phase83",
-          requestId: "request-phase83",
-          ownerId: "owner-phase83",
-          workspaceId: "workspace-phase83",
-        }),
-      });
+    await withTestServer(
+      createFakeRegistry(),
+      requesterContextResolver,
+      async (baseUrl) => {
+        const response = await fetch(`${baseUrl}/exports`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            authorization: "Bearer fake-token-must-not-authenticate",
+            "x-user-id": "fake-user-must-not-authenticate",
+          },
+          body: JSON.stringify({
+            timelineId: "timeline-phase83",
+            requestId: "request-phase83",
+            requestedAt: new Date().toISOString(),
+            renderSettings: {
+              format: "mp4",
+              resolution: "720p",
+              fps: 30,
+              quality: "standard",
+            },
+          }),
+        });
 
-      expect(response.status).toBe(202);
+        expect(response.status).toBe(202);
 
-      const payload = await response.json();
+        const payload = await response.json();
 
-      expect(payload.status).toBe("accepted_job");
-      expect(payload.handle.jobId).toBeTruthy();
-      expect(payload.handle.requestId).toBe("request-phase83");
-    });
+        expect(payload.kind).toBe("accepted_job");
+        expect(payload.handle.jobId).toBeTruthy();
+        expect(payload.handle.requestId).toBe("request-phase83");
+      },
+    );
 
-    expect(resolvedHeaders.length).toBeGreaterThan(0);
+    expect(resolvedRequests.length).toBeGreaterThan(0);
   });
 
   test("source keeps requester route resolver non-enforcing and separate from fake auth", async () => {
@@ -144,8 +152,12 @@ test.describe("phase83 requester context route runtime smoke pack", () => {
     const requesterSource = readSource("backend/requester/exportRequesterContext.ts");
     const authResolverSource = readSource("backend/auth/requesterContextResolver.ts");
 
-    expect(routeSource).toContain("requesterContextResolver?: ExportRequesterContextResolver");
-    expect(routeSource).toContain("options?.requesterContextResolver ?? resolveExportRequesterContext");
+    expect(routeSource).toContain(
+      "requesterContextResolver?: ExportRequesterContextResolver",
+    );
+    expect(routeSource).toContain(
+      "options?.requesterContextResolver ?? resolveExportRequesterContext",
+    );
     expect(routeSource).toContain("requesterContextResolver");
 
     expect(requesterSource).toContain("resolveExportRequesterContext");
@@ -156,7 +168,6 @@ test.describe("phase83 requester context route runtime smoke pack", () => {
     expect(routeSource).not.toContain("service_role");
     expect(routeSource).not.toContain("SERVICE_ROLE");
 
-    // Phase 83 is runtime smoke only, not route authorization enforcement.
     expect(routeSource).not.toContain("isAuthenticatedRequesterContext");
     expect(routeSource).not.toContain("throw new ExportApiError(401");
     expect(routeSource).not.toContain("throw new ExportApiError(403");
