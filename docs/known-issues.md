@@ -2235,3 +2235,14 @@ Still deferred:
   - No frontend Supabase/storage access was added.
   - No signed URL or public URL handling was added.
   - Public artifact delivery remains blocked until main UI wiring and backend readiness are approved.
+
+- Phase 154 adds TimelineExportPanel descriptor UI wiring audit coverage:
+  - TimelineExportPanel wiring remains deferred.
+  - Descriptor route, service, store, and UI component boundaries exist.
+  - No direct fetch orchestration was added to TimelineExportPanel.
+  - No stream/download URL construction was added to TimelineExportPanel.
+  - No window.open or location.href behavior was added.
+  - No anchor download behavior was added.
+  - No frontend Supabase/storage access was added.
+  - No signed URL or public URL handling was added.
+  - Public artifact delivery remains blocked until panel wiring and backend readiness are approved.

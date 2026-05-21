@@ -11199,3 +11199,61 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 154 - Timeline Export Panel Descriptor UI Wiring Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- TimelineExportPanel descriptor UI wiring audit only
+- no TimelineExportPanel wiring
+- no direct fetch calls in React components
+- no stream/download URL construction in React components
+- no browser download/navigation behavior
+- no window.open behavior
+- no location.href behavior
+- no anchor download behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no signed URL handling
+- no public URL handling
+- no public artifact delivery enablement
+
+### Phase 154 completion summary
+
+- Added docs/security/phase154-timeline-export-panel-descriptor-ui-wiring-audit.md
+- Confirmed backend descriptor route exists
+- Confirmed frontend descriptor service exists
+- Confirmed frontend descriptor store exists
+- Confirmed ArtifactDeliveryDescriptorAction exists
+- Confirmed ArtifactDownloadAction exists
+- Confirmed TimelineExportPanel wiring remains deferred
+- Confirmed no direct fetch orchestration was added to TimelineExportPanel
+- Confirmed no browser navigation or download behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Future artifact delivery roadmap note
+
+- Phase 154 audits TimelineExportPanel wiring readiness only.
+- Phase 155 should wire ArtifactDeliveryDescriptorAction into TimelineExportPanel only if components remain render/dispatch-only.
+- Real browser navigation/download behavior remains deferred.
+
+### Verification
+
+- phase154: expected focused pass
+- phase153: expected pass
+- phase152: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No TimelineExportPanel behavior changed
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
