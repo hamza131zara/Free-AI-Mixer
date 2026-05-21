@@ -8560,3 +8560,81 @@ Before route authorization can be enabled:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 109 - Route Authorization Enforcement Strategy Decision Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- route authorization enforcement strategy decision only
+- no route authorization enforcement
+- no real token/session verification
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 109 completion summary
+
+- Added route authorization enforcement strategy decision coverage
+- Confirmed runtime auth config is wired into app trusted auth middleware composition
+- Confirmed future JWT/session provider strategies still fail closed with `invalid_credentials`
+- Confirmed export routes read trusted request context non-enforcing only
+- Confirmed authorization adapter, decision, and route guard boundaries exist
+- Confirmed export routes do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization `401` / `403` responses
+- Confirmed arbitrary `x-user-id` / `x-workspace-id` headers are not trusted
+- Confirmed workspace membership lookup remains deferred
+- Confirmed Supabase RLS policy application remains deferred
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Strategy decision
+
+Route authorization enforcement is not ready yet.
+
+Reasons:
+
+- real token/session verification is not implemented
+- future JWT/session strategies intentionally fail closed
+- authenticated requester context is not yet production-backed
+- workspace membership lookup/enforcement is not implemented
+- Supabase RLS policies are not applied or verified
+- public artifact delivery must remain blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization can be enabled:
+
+- implement real trusted auth provider verification
+- populate authenticated requester context from verified token/session data
+- adapt authenticated requester context intentionally
+- enforce owner/workspace authorization in export routes
+- implement workspace membership checks where required
+- map unauthorized/forbidden outcomes safely to route responses
+- apply and verify Supabase RLS policies
+- keep artifact access backend-mediated and authorized
+
+### Verification
+
+- `phase109`: expected focused pass
+- `phase108`: expected pass
+- `phase107`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Route authorization remains strategy-decision only
+- Runtime auth provider strategies still fail closed
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
