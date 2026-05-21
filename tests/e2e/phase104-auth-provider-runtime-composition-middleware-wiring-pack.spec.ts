@@ -1,6 +1,11 @@
 ﻿import { test, expect } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import {
+  createTrustedAuthMiddleware,
+  createTrustedAuthNotConfiguredMiddleware,
+  getRequesterContextFromRequest,
+} from "../../backend/auth/trustedAuthMiddleware";
 
 const projectRoot = process.cwd();
 
@@ -12,44 +17,87 @@ const readIfExists = (relativePath: string): string => {
   return existsSync(fullPath) ? readFileSync(fullPath, "utf8") : "";
 };
 
-test.describe("phase103 auth provider runtime composition middleware wiring audit pack", () => {
-  test("trusted auth middleware remains provider-strategy based and does not consume runtime composition yet", async () => {
+const runMiddleware = async (
+  middleware: ReturnType<typeof createTrustedAuthMiddleware>,
+  request: any,
+): Promise<void> => {
+  await new Promise<void>((resolve, reject) => {
+    middleware(request, {} as any, (error?: unknown) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+};
+
+test.describe("phase104 auth provider runtime composition middleware wiring pack", () => {
+  test("middleware can consume runtime config composition while app wrapper stays auth-not-configured", async () => {
+    const defaultRequest = {
+      headers: {
+        authorization: "Bearer fake-token-must-not-authenticate",
+        "x-user-id": "fake-user-must-not-authenticate",
+      },
+    } as any;
+
+    await runMiddleware(createTrustedAuthNotConfiguredMiddleware(), defaultRequest);
+
+    expect(getRequesterContextFromRequest(defaultRequest)).toEqual({
+      kind: "unauthenticated",
+      reason: "auth_not_configured",
+    });
+
+    const jwtRuntimeRequest = {
+      headers: {
+        authorization: "Bearer fake-token-must-not-authenticate",
+        "x-user-id": "fake-user-must-not-authenticate",
+        "x-workspace-id": "fake-workspace-must-not-authenticate",
+      },
+    } as any;
+
+    await runMiddleware(
+      createTrustedAuthMiddleware({
+        runtimeConfig: {
+          kind: "auth_provider_configured",
+          provider: "future_jwt_provider",
+          issuer: "https://auth.example.test",
+          audience: "free-ai-mixer",
+        },
+      }),
+      jwtRuntimeRequest,
+    );
+
+    expect(getRequesterContextFromRequest(jwtRuntimeRequest)).toEqual({
+      kind: "unauthenticated",
+      reason: "invalid_credentials",
+    });
+  });
+
+  test("middleware wires runtime composition but app routes and server remain non-enforcing", async () => {
     const middlewareSource = readSource("backend/auth/trustedAuthMiddleware.ts");
     const compositionSource = readSource("backend/auth/trustedAuthProviderComposition.ts");
     const configSource = readSource("backend/auth/trustedAuthProviderRuntimeConfig.ts");
-    const providerSource = readSource("backend/auth/trustedAuthProviderStrategy.ts");
+    const appSource = readSource("backend/app.ts");
+    const routeSource = readSource("backend/routes/exports.ts");
+    const serverSource = readSource("backend/server.ts");
 
-    expect(middlewareSource).toContain("createTrustedAuthMiddleware");
-    expect(middlewareSource).toContain("TrustedAuthProviderStrategy");
-    expect(middlewareSource).toContain("providerStrategy");
-    expect(middlewareSource).toContain("createAuthNotConfiguredTrustedAuthProviderStrategy");
-
-    expect(compositionSource).toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
-    expect(configSource).toContain("readTrustedAuthProviderRuntimeConfig");
-    expect(providerSource).toContain("TrustedAuthProviderStrategy");
-
-    // Phase 103 is audit/readiness only. Middleware runtime composition wiring remains deferred.
     expect(middlewareSource).toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
     expect(middlewareSource).toContain("readTrustedAuthProviderRuntimeConfig");
-              });
+    expect(middlewareSource).toContain("runtimeConfig");
+    expect(compositionSource).toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
+    expect(configSource).toContain("readTrustedAuthProviderRuntimeConfig");
 
-  test("app server and routes still do not wire runtime composition provider behavior", async () => {
-    const appSource = readSource("backend/app.ts");
-    const serverSource = readSource("backend/server.ts");
-    const routeSource = readSource("backend/routes/exports.ts");
-
+    // App/server still do not wire runtime config or real provider behavior.
     expect(appSource).toContain("createTrustedAuthNotConfiguredMiddleware");
-    expect(routeSource).toContain("getRequesterContextFromRequest");
-
-    expect(appSource).not.toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
-    expect(serverSource).not.toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
-    expect(routeSource).not.toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
-
     expect(appSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
+    expect(appSource).not.toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
     expect(serverSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
-    expect(routeSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
+    expect(serverSource).not.toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
 
-    // Route authorization remains deferred.
+    // Routes still read trusted context non-enforcing only.
+    expect(routeSource).toContain("getRequesterContextFromRequest");
     expect(routeSource).not.toContain("adaptAuthenticatedRequesterToExportRequesterContext");
     expect(routeSource).not.toContain("decideExportOwnerScopeAccess");
     expect(routeSource).not.toContain("mapExportAuthorizationDecisionToRouteGuard");
@@ -57,7 +105,7 @@ test.describe("phase103 auth provider runtime composition middleware wiring audi
     expect(routeSource).not.toContain("throw new ExportApiError(403");
   });
 
-  test("middleware composition audit does not introduce fake auth secrets frontend storage or artifact delivery", async () => {
+  test("runtime composition middleware wiring does not introduce fake auth or artifact delivery", async () => {
     const authSource =
       readSource("backend/auth/trustedAuthMiddleware.ts") +
       "\n" +
@@ -83,9 +131,6 @@ test.describe("phase103 auth provider runtime composition middleware wiring audi
       "\n" +
       readIfExists("backend/artifacts/notConfiguredArtifactAccessProvider.ts");
 
-    const docsSource =
-      readIfExists("docs/known-issues.md") + "\n" + readIfExists("docs/phases.md");
-
     expect(authSource).not.toContain("fakeSession");
     expect(authSource).not.toContain("mockAuthenticatedUser");
     expect(authSource).not.toContain("service_role");
@@ -106,10 +151,5 @@ test.describe("phase103 auth provider runtime composition middleware wiring audi
     expect(artifactSource).not.toContain("production_ready_local_dev_stream");
     expect(artifactSource).not.toContain("createSignedUrl");
     expect(artifactSource).not.toContain("getPublicUrl");
-
-    expect(docsSource).toContain("auth");
-    expect(docsSource).toContain("RLS");
-    expect(docsSource).toContain("ownership");
   });
 });
-

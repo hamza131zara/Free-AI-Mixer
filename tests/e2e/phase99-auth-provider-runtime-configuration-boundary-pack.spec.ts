@@ -87,7 +87,7 @@ test.describe("phase99 auth provider runtime configuration boundary pack", () =>
 
     // Phase 99 adds config boundary only. No app/middleware/route/server wiring yet.
     expect(providerSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
-    expect(middlewareSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
+    expect(middlewareSource).toContain("readTrustedAuthProviderRuntimeConfig");
     expect(appSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
     expect(routeSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
     expect(serverSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
@@ -151,3 +151,4 @@ test.describe("phase99 auth provider runtime configuration boundary pack", () =>
     expect(docsSource).toContain("ownership");
   });
 });
+

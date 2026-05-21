@@ -6,6 +6,9 @@ import {
   resolveTrustedAuthProviderRequesterContext,
   type TrustedAuthProviderStrategy,
 } from "./trustedAuthProviderStrategy";
+import type { TrustedAuthProviderRuntimeConfig } from "./trustedAuthProviderRuntimeConfig";
+import { readTrustedAuthProviderRuntimeConfig } from "./trustedAuthProviderRuntimeConfig";
+import { createTrustedAuthProviderStrategyFromRuntimeConfig } from "./trustedAuthProviderComposition";
 
 export interface BackendRequesterContextRequest extends Request {
   backendRequesterContext?: BackendRequesterContext;
@@ -13,13 +16,27 @@ export interface BackendRequesterContextRequest extends Request {
 
 export interface TrustedAuthMiddlewareOptions {
   providerStrategy?: TrustedAuthProviderStrategy;
+  runtimeConfig?: TrustedAuthProviderRuntimeConfig;
 }
 
+const resolveProviderStrategyForTrustedAuthMiddleware = (
+  options: TrustedAuthMiddlewareOptions,
+): TrustedAuthProviderStrategy => {
+  if (options.providerStrategy) {
+    return options.providerStrategy;
+  }
+
+  return createTrustedAuthProviderStrategyFromRuntimeConfig(
+    options.runtimeConfig ?? readTrustedAuthProviderRuntimeConfig(),
+  );
+};
+
 /**
- * Phase 97 boundary middleware.
+ * Phase 104 boundary middleware.
  *
- * This middleware can consume a trusted auth provider strategy, but remains
- * non-enforcing. The default provider remains auth-not-configured.
+ * This middleware can consume runtime auth provider composition, but remains
+ * non-enforcing. App composition still uses the auth-not-configured wrapper
+ * until a later audited phase intentionally wires real provider config.
  *
  * Safety rules:
  * - Must not fabricate authenticated identity.
@@ -32,8 +49,7 @@ export interface TrustedAuthMiddlewareOptions {
 export const createTrustedAuthMiddleware = (
   options: TrustedAuthMiddlewareOptions = {},
 ): RequestHandler => {
-  const providerStrategy =
-    options.providerStrategy ?? createAuthNotConfiguredTrustedAuthProviderStrategy();
+  const providerStrategy = resolveProviderStrategyForTrustedAuthMiddleware(options);
 
   return (request, _response, next): void => {
     void resolveTrustedAuthProviderRequesterContext(providerStrategy, {

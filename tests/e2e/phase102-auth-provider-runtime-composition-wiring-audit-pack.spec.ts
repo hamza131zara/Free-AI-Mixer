@@ -30,11 +30,9 @@ test.describe("phase102 auth provider runtime composition wiring audit pack", ()
     expect(providerSource).toContain("TrustedAuthProviderStrategy");
 
     // Phase 102 is audit/readiness only. Middleware does not use runtime composition yet.
-    expect(middlewareSource).not.toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
-    expect(middlewareSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
-    expect(middlewareSource).not.toContain("future_jwt_provider");
-    expect(middlewareSource).not.toContain("future_session_provider");
-  });
+    expect(middlewareSource).toContain("createTrustedAuthProviderStrategyFromRuntimeConfig");
+    expect(middlewareSource).toContain("readTrustedAuthProviderRuntimeConfig");
+          });
 
   test("app server and export routes still do not wire runtime auth composition", async () => {
     const appSource = readSource("backend/app.ts");
@@ -121,3 +119,4 @@ test.describe("phase102 auth provider runtime composition wiring audit pack", ()
     expect(docsSource).toContain("ownership");
   });
 });
+

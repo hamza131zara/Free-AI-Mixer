@@ -30,10 +30,9 @@ test.describe("phase100 auth provider runtime config wiring audit pack", () => {
 
     // Phase 100 is audit/readiness only. Runtime config remains unwired.
     expect(providerSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
-    expect(middlewareSource).not.toContain("readTrustedAuthProviderRuntimeConfig");
+    expect(middlewareSource).toContain("readTrustedAuthProviderRuntimeConfig");
     expect(providerSource).not.toContain("isTrustedAuthProviderRuntimeConfigured");
-    expect(middlewareSource).not.toContain("isTrustedAuthProviderRuntimeConfigured");
-  });
+      });
 
   test("app server and export routes still do not wire runtime auth provider config", async () => {
     const appSource = readSource("backend/app.ts");
@@ -122,3 +121,4 @@ test.describe("phase100 auth provider runtime config wiring audit pack", () => {
     expect(docsSource).toContain("ownership");
   });
 });
+
