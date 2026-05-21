@@ -6584,3 +6584,47 @@ Scope:
 - Worker loop startup remains deferred
 - No route/API endpoint was added
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 76 - Worker Loop Controlled Activation Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- controlled worker-loop activation coverage
+- default worker loop remains disabled
+- startup and loop gates both remain required
+- controlled and test-bounded loop only
+- no route/API endpoint
+- no remote DB/default remote smoke
+- no signed/download/storage URL behavior
+
+### Phase 76 completion summary
+
+- Added controlled worker-loop activation coverage using injected fake dependencies only
+- Proved the worker loop does not start unless both `FREE_AI_MIXER_ENABLE_WORKER_STARTUP` and `FREE_AI_MIXER_ENABLE_WORKER_LOOP` are enabled
+- Proved loop activation can be bounded safely in tests and cleaned up without changing runtime startup behavior
+- Proved the loop can drive the existing drain path without any route/API endpoint
+- Proved worker loop behavior remains separate from env-gated Supabase registry selection
+- Preserved that default runs remain offline and do not require remote Supabase env
+- Preserved that no Supabase CLI/local start, no service-role logging, and no signed/download/storage URL behavior were introduced
+- Preserved that no fake success/artifacts and no automatic production/default worker loop activation were introduced
+
+### Verification
+
+- `phase76`: 2 passed
+- `phase75`: 2 passed, 1 skipped
+- `phase69`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Controlled worker-loop activation coverage now exists
+- Default worker loop startup still remains disabled
+- Both startup and loop env gates are still required
+- No route/API endpoint was added
+- No remote DB/default remote smoke was required
+- Signed/download/storage URL behavior remains deferred

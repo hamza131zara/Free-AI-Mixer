@@ -1224,6 +1224,7 @@ Still deferred:
 - Remote Supabase readiness guard coverage now exists.
 - Opt-in remote Supabase lifecycle smoke coverage now exists.
 - Manual worker drain with Supabase runtime selection coverage now exists.
+- Controlled worker-loop activation coverage now exists.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
 - `SupabaseExportJobRegistry.markRendering(...)`, `markFinalizing(...)`, and `markError(...)` adapter support now exists, but this still does not make the worker loop runtime-ready.
 - `SupabaseExportJobRegistry.markSuccess(...)` adapter support now exists.
@@ -1238,6 +1239,7 @@ Still deferred:
 - Worker startup still remains env-gated.
 - Worker loop activation still remains deferred and env-gated.
 - Worker DB wiring still is not activated as an automatic loop.
+- Default worker loop startup still remains disabled unless both startup and loop env gates are enabled.
 - Default test runs still remain offline by default, even when future remote smoke coverage exists.
 - Incomplete opt-in remote Supabase env still falls back safely without leaking secrets.
 - Remote lifecycle smoke now exists, but it still remains skipped/offline by default unless explicitly enabled.
