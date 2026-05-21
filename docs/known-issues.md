@@ -1314,3 +1314,14 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 83 adds requester context route runtime smoke coverage:
+  - Export routes can invoke an injected requester context resolver during real route requests.
+  - Requester context remains non-enforcing until real auth integration.
+  - Route authorization enforcement remains deferred.
+  - Real trusted auth middleware integration remains deferred.
+  - Workspace membership checks remain deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

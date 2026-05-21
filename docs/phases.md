@@ -6952,3 +6952,56 @@ Before route authorization or public artifact delivery:
 - No fake auth/session behavior was added
 - No RLS policies were applied
 - Public artifact delivery remains deferred
+
+## Phase 83 - Requester Context Route Runtime Smoke Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- requester context route runtime smoke only
+- no real auth enforcement
+- no fake authenticated session
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 83 completion summary
+
+- Added requester context route runtime smoke coverage
+- Confirmed export routes can invoke an injected requester context resolver during real route requests
+- Confirmed route requests remain non-enforcing while requester context is still unauthenticated / not configured
+- Confirmed arbitrary auth/user headers are not trusted as authenticated identity
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed route authorization enforcement remains deferred
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- trusted auth middleware must provide authenticated requester context
+- export routes must enforce owner/workspace authorization
+- workspace membership checks must be implemented
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase83`: expected focused pass
+- `phase82`: expected pass
+- `phase81`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Requester context route runtime smoke exists as a non-enforcing boundary
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No RLS policies were applied
+- Public artifact delivery remains deferred
