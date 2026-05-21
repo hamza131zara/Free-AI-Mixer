@@ -2073,3 +2073,16 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 139 adds backend-only workspace membership enforcement helper coverage:
+  - Owner/workspace match can allow access.
+  - Active workspace membership can allow access.
+  - Unauthenticated requester denies safely.
+  - Workspace mismatch denies safely.
+  - Inactive/missing/not-configured membership denies safely.
+  - Membership enforcement helper is not wired into routes yet.
+  - Supabase membership repository implementation remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

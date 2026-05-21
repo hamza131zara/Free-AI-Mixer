@@ -10356,3 +10356,62 @@ Scope:
 - No trusted-header shortcut was added
 - No Supabase/RLS behavior was added
 - Public artifact delivery remains deferred
+
+## Phase 139 - Workspace Membership Enforcement Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- workspace membership enforcement helper boundary
+- backend-only membership enforcement decision composition
+- no route authorization membership wiring
+- no Supabase membership repository implementation
+- no RLS policy application
+- no fake authenticated session
+- no trusted-header shortcut
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 139 completion summary
+
+- Added decideWorkspaceMembershipEnforcement(...)
+- Confirmed owner/workspace match allows access
+- Confirmed active workspace membership allows access
+- Confirmed unauthenticated requester denies safely
+- Confirmed owner workspace mismatch denies safely
+- Confirmed inactive membership denies safely
+- Confirmed missing membership denies safely
+- Confirmed not-configured membership repository denies safely
+- Confirmed workspace membership enforcement helper is not wired into routes yet
+- Confirmed Supabase membership repository implementation remains deferred
+- Confirmed Supabase RLS policy application remains deferred
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Merged Workspace/RLS roadmap note
+
+- Phase 137 covered workspace membership strategy and contract only.
+- Phase 138 covered workspace membership repository implementation boundary.
+- Phase 139 covers backend-only workspace membership enforcement decision helper.
+- Phase 140 will cover Supabase RLS policy draft and migration audit.
+- Phase 141 will cover RLS verification and remote opt-in smoke.
+
+### Verification
+
+- phase139: expected focused pass
+- phase138: expected pass
+- phase137: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Workspace membership enforcement is helper-only
+- No route behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- No Supabase/RLS behavior was added
+- Public artifact delivery remains deferred
