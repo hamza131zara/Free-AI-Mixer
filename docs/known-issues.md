@@ -2120,3 +2120,14 @@ Still deferred:
   - Service-role shortcuts remain forbidden.
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
 
+
+- Phase 143 adds production artifact provider boundary coverage:
+  - ProductionArtifactDeliveryProvider interface exists.
+  - Not-configured production delivery provider fails closed.
+  - Provider boundary is not wired into routes or app runtime.
+  - No production storage provider was added.
+  - No active signed URL generation or public URL delivery behavior was added.
+  - No frontend download/navigation behavior was added.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Service-role shortcuts remain forbidden.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
