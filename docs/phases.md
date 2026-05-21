@@ -6451,3 +6451,47 @@ Scope:
 - No automatic worker loop startup was added
 - Remote Supabase smoke remains deferred
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 73 - Supabase Remote Smoke Readiness Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- safe readiness guards for future opt-in remote Supabase lifecycle smoke
+- default test run remains offline
+- explicit opt-in env required for remote smoke
+- missing/incomplete env stays safe and secret-free
+- no Supabase CLI or local start
+- no worker loop activation
+- no signed/download/storage URL behavior
+
+### Phase 73 completion summary
+
+- Added readiness/guard coverage for future remote Supabase lifecycle smoke
+- Proved default test runs do not require Supabase env
+- Proved remote smoke remains explicit opt-in only
+- Proved incomplete opt-in remote env falls back safely without leaking secrets
+- Proved service-role key does not appear in safe factory/public-config outputs
+- Proved no Supabase CLI usage or local Supabase start is required
+- Proved no worker loop activation is implied
+- Proved no signed/download/storage URL behavior appears
+- Proved no fake DB success is introduced
+
+### Verification
+
+- `phase73`: 2 passed
+- `phase72`: 2 passed
+- `phase65`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Remote Supabase readiness guard coverage now exists
+- Remote smoke still remains opt-in only
+- Default test runs remain offline
+- Worker loop activation remains deferred
+- Signed/download/storage URL behavior remains deferred
