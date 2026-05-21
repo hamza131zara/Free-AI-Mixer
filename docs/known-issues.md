@@ -1223,6 +1223,7 @@ Still deferred:
 - Execute success-path offline smoke coverage now exists.
 - Remote Supabase readiness guard coverage now exists.
 - Opt-in remote Supabase lifecycle smoke coverage now exists.
+- Manual worker drain with Supabase runtime selection coverage now exists.
 - `SupabaseExportJobRegistry.claim(...)` adapter support now exists, but real worker/runtime DB claim behavior still remains deferred.
 - `SupabaseExportJobRegistry.markRendering(...)`, `markFinalizing(...)`, and `markError(...)` adapter support now exists, but this still does not make the worker loop runtime-ready.
 - `SupabaseExportJobRegistry.markSuccess(...)` adapter support now exists.
@@ -1240,6 +1241,7 @@ Still deferred:
 - Default test runs still remain offline by default, even when future remote smoke coverage exists.
 - Incomplete opt-in remote Supabase env still falls back safely without leaking secrets.
 - Remote lifecycle smoke now exists, but it still remains skipped/offline by default unless explicitly enabled.
+- Remote manual worker drain smoke now exists, but it still remains skipped/offline by default unless explicitly enabled.
 - Remote Supabase worker smoke still remains deferred and opt-in only.
 - Route execution gating still remains separate from runtime registry selection.
 - Execute success-path smoke no longer remains deferred offline, but remote Supabase execute/worker smoke still remains deferred.

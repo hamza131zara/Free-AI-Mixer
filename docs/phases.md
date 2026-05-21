@@ -6539,3 +6539,48 @@ Scope:
 - No Supabase CLI or local Supabase start is required
 - Worker loop startup remains deferred
 - Signed/download/storage URL behavior remains deferred
+
+## Phase 75 - Manual Worker Drain With Supabase Runtime Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- manual worker drain with Supabase runtime selection coverage
+- default run remains offline
+- opt-in remote worker drain smoke only
+- explicit env flag required for remote worker drain smoke
+- no worker loop startup
+- no route/API endpoint
+- no signed/download/storage URL behavior
+
+### Phase 75 completion summary
+
+- Added manual worker drain coverage with env-gated Supabase runtime selection
+- Proved default runs remain offline and do not require Supabase env
+- Proved manual drain composes through backend dependency selection without enabling worker startup or worker loop activation
+- Proved Supabase registry selection remains separate from manual worker activation
+- Added opt-in remote manual worker drain smoke coverage behind `FREE_AI_MIXER_RUN_REMOTE_SUPABASE_WORKER_DRAIN_SMOKE=1`
+- Kept the remote worker drain smoke skipped by default unless explicit opt-in env is present
+- Required full backend Supabase env only when the remote worker drain smoke is explicitly enabled
+- Preserved that no route/API endpoint, no automatic worker loop startup, and no signed/download/storage URL behavior were introduced
+- Preserved that the remote worker drain smoke is a smoke boundary only and is not production rollout
+
+### Verification
+
+- `phase75`: 2 passed, 1 skipped
+- `phase74`: 1 passed, 1 skipped
+- `phase71`: 2 passed
+- `typecheck`: passed
+- `build`: passed
+
+### Safety boundaries
+
+- Manual worker drain with Supabase runtime selection coverage now exists
+- Default runs remain offline
+- Remote manual worker drain smoke remains opt-in only and skipped by default
+- Worker loop startup remains deferred
+- No route/API endpoint was added
+- Signed/download/storage URL behavior remains deferred
