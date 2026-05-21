@@ -1515,3 +1515,17 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 100 adds auth provider runtime config wiring audit coverage:
+  - Runtime auth provider config boundary exists, but remains unwired from provider strategy, middleware, app, server, and routes.
+  - App still uses the auth-not-configured middleware wrapper.
+  - Export routes still read trusted request context non-enforcing only.
+  - Export routes still do not call authorization adapter/decision/guard boundaries.
+  - Real token/session verification remains deferred.
+  - Runtime config provider instantiation remains deferred.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

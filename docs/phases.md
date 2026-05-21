@@ -7972,3 +7972,70 @@ Before real auth provider runtime configuration can be used:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 100 - Auth Provider Runtime Config Wiring Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- auth provider runtime config wiring audit only
+- no runtime config wiring into provider strategy
+- no runtime config wiring into middleware
+- no app/server provider wiring
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 100 completion summary
+
+- Added auth provider runtime config wiring audit coverage
+- Confirmed auth provider runtime config boundary exists
+- Confirmed runtime config can represent future JWT/session provider modes
+- Confirmed runtime config remains unwired from provider strategy
+- Confirmed runtime config remains unwired from trusted auth middleware
+- Confirmed runtime config remains unwired from app/server/export routes
+- Confirmed app still uses auth-not-configured middleware wrapper
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization `401` / `403` responses
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before runtime auth config can be wired:
+
+- real trusted auth provider implementation must verify tokens or sessions
+- runtime config must instantiate a concrete trusted provider explicitly
+- app/server must intentionally wire configured provider strategy
+- export routes must adapt authenticated requester context intentionally
+- export routes must call authorization decision and route guard boundaries
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase100`: expected focused pass
+- `phase99`: expected pass
+- `phase98`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Runtime config wiring remains audit-only
+- No runtime config was wired into app/middleware/routes/server
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
