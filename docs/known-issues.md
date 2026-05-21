@@ -2202,3 +2202,14 @@ Still deferred:
   - No frontend Supabase/storage access was added.
   - No signed URL or public URL handling was added.
   - Public artifact delivery remains blocked until store/UI wiring and backend readiness are approved.
+
+- Phase 151 adds frontend artifact delivery descriptor store coverage:
+  - Dedicated descriptor store boundary exists.
+  - Store action requests backend descriptor route through service boundary.
+  - Store tracks loading/unavailable/ready/error states.
+  - Main exportStore/UI wiring remains deferred.
+  - No window.open or location.href behavior was added.
+  - No anchor download behavior was added.
+  - No frontend Supabase/storage access was added.
+  - No signed URL or public URL handling was added.
+  - Public artifact delivery remains blocked until UI wiring and backend readiness are approved.

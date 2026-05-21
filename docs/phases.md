@@ -11028,3 +11028,61 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 151 - Frontend Artifact Delivery Descriptor Store Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- frontend artifact delivery descriptor store boundary
+- descriptor service action only
+- loading/unavailable/ready/error state only
+- no main exportStore wiring
+- no UI wiring
+- no window.open behavior
+- no location.href behavior
+- no anchor download behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no signed URL handling
+- no public URL handling
+- no public artifact delivery enablement
+
+### Phase 151 completion summary
+
+- Added src/store/artifactDeliveryDescriptorStore.ts
+- Added buildArtifactDeliveryDescriptorStoreKey(...)
+- Added useArtifactDeliveryDescriptorStore
+- Added requestArtifactDeliveryDescriptor(...) action
+- Added loading/unavailable/ready/error descriptor states
+- Confirmed descriptor state can be cleared safely
+- Confirmed descriptor store maps backend descriptor responses safely
+- Confirmed descriptor store maps route errors safely
+- Confirmed main exportStore/UI wiring remains deferred
+- Confirmed no browser navigation or download behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Future artifact delivery roadmap note
+
+- Phase 151 adds a dedicated frontend descriptor store boundary only.
+- Future phase can wire the descriptor store into UI after another focused audit.
+- Real browser navigation/download behavior remains deferred.
+
+### Verification
+
+- phase151: expected focused pass
+- phase150: expected pass
+- phase149: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Store requests backend descriptor only
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
