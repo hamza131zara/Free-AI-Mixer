@@ -9530,3 +9530,66 @@ Scope:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 124 - JWT Verification JWKS Construction Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- JWT verification JWKS construction audit only
+- no JWKS construction
+- no JWT verification execution
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 124 completion summary
+
+- Added JWT verification JWKS construction audit coverage
+- Confirmed future remote JWKS configuration can be represented
+- Confirmed JWT verification boundary can accept configured remote JWKS mode
+- Confirmed jose createRemoteJWKSet import is available
+- Confirmed createRemoteJWKSet is not executed yet
+- Confirmed no JWKS URL construction exists yet
+- Confirmed realVerificationEnabled remains false
+- Confirmed missing Authorization still maps to missing_credentials
+- Confirmed fake bearer token still maps to invalid_credentials
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization 401 / 403 responses
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Future production requirements
+
+- Construct JWKS safely from validated config inside JWT verification boundary only
+- Execute jose jwtVerify only inside JWT verification boundary
+- Validate issuer and audience
+- Validate token signature and expiry
+- Map verified subject to authenticated requester context
+- Require verified workspace scope or membership lookup
+- Keep route authorization disabled until verified auth and RLS are ready
+
+### Verification
+
+- phase124: expected focused pass
+- phase123: expected pass
+- phase122: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- JWKS construction remains audit-only
+- No real JWT verification was implemented
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
