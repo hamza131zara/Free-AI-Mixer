@@ -1466,3 +1466,16 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 96 adds real auth provider integration strategy boundary coverage:
+  - Trusted auth provider strategy boundary now exists.
+  - Default auth provider strategy returns explicit `auth_not_configured`.
+  - Real token/session verification remains deferred.
+  - App/server provider wiring remains deferred.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Arbitrary `x-user-id` / `x-workspace-id` headers must not be trusted.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

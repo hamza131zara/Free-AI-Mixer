@@ -7716,3 +7716,67 @@ Before route authorization can be safely enabled:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 96 - Real Auth Provider Integration Strategy Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- real auth provider integration strategy boundary only
+- no real auth provider implementation
+- no app/server provider wiring
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 96 completion summary
+
+- Added trusted auth provider strategy boundary
+- Added `TrustedAuthProviderStrategy`
+- Added `createAuthNotConfiguredTrustedAuthProviderStrategy(...)`
+- Added `resolveTrustedAuthProviderRequesterContext(...)`
+- Confirmed default strategy returns explicit `auth_not_configured`
+- Confirmed fake auth/user/workspace headers are not trusted
+- Confirmed strategy is not wired into app/routes/server yet
+- Confirmed route authorization enforcement remains deferred
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- real trusted auth provider implementation must verify tokens or sessions
+- trusted auth middleware must use the real provider intentionally
+- authenticated requester context must include verified user/workspace scope
+- export routes must adapt authenticated requester context intentionally
+- export routes must call authorization decision and route guard boundaries
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase96`: expected focused pass
+- `phase95`: expected pass
+- `phase94`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Auth provider strategy exists as a boundary only
+- No real provider was implemented
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
