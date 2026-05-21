@@ -1995,3 +1995,14 @@ Still deferred:
   - Workspace membership lookup/enforcement remains deferred.
   - Supabase RLS policy application remains deferred.
   - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+
+- Phase 132 adds route authorization enforcement final audit coverage:
+  - Route authorization enforcement remains deferred.
+  - Export routes still do not call authorization adapter/decision/guard boundaries.
+  - Export routes still do not emit authorization 401 / 403 responses.
+  - Arbitrary x-user-id / x-workspace-id headers are not trusted.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.

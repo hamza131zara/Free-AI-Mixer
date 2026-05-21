@@ -10020,3 +10020,59 @@ Scope:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 132 - Route Authorization Enforcement Final Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- merged route authorization enforcement final audit only
+- no route authorization enforcement
+- no 401 / 403 route behavior change
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 132 completion summary
+
+- Added route authorization enforcement final audit coverage
+- Confirmed JWT execution and requester mapping boundaries exist
+- Confirmed requester resolver and trusted auth middleware boundaries exist
+- Confirmed export requester adapter, authorization decision, and route guard boundaries exist
+- Confirmed export routes still read trusted request context non-enforcing only
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization 401 / 403 responses
+- Confirmed arbitrary x-user-id / x-workspace-id headers are not trusted
+- Confirmed workspace membership lookup remains deferred
+- Confirmed Supabase RLS policy application remains deferred
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership exists
+
+### Merged route roadmap note
+
+- Route authorization phases are now merged into:
+  - Phase 132 - Route Authorization Enforcement Final Audit Pack
+  - Phase 133 - Export Route Authorization Enforcement Pack
+  - Phase 134 - Artifact Access/Stream Authorization Pack
+  - Phase 135 - Route Authorization Regression Pack
+
+### Verification
+
+- phase132: expected focused pass
+- phase131: expected pass
+- phase130: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred
