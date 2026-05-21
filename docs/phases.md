@@ -7653,3 +7653,66 @@ Before route authorization or public artifact delivery:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 95 - Export Routes Authorization Enforcement Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- export route authorization enforcement audit only
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 95 completion summary
+
+- Added export route authorization enforcement audit coverage
+- Confirmed app wires non-enforcing trusted auth middleware
+- Confirmed export routes read trusted request context
+- Confirmed requester adapter, authorization decision, and route guard boundaries exist
+- Confirmed export routes still do not call authorization adapter/decision/guard boundaries
+- Confirmed export routes still do not emit authorization `401` / `403` responses
+- Confirmed real trusted auth provider integration remains required before enforcement
+- Confirmed workspace membership checks remain required before enforcement
+- Confirmed Supabase RLS policy application remains required before public artifact delivery
+- Confirmed arbitrary `x-user-id` / `x-workspace-id` headers are not trusted
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization can be safely enabled:
+
+- real trusted auth provider integration must populate authenticated requester context
+- export routes must adapt authenticated requester context intentionally
+- export routes must call authorization decision and route guard boundaries
+- workspace membership checks must be implemented where required
+- route errors must map unauthorized/forbidden outcomes safely
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase95`: expected focused pass
+- `phase94`: expected pass
+- `phase93`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Export route authorization enforcement remains deferred
+- Export route trusted context read remains non-enforcing
+- No route authorization behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

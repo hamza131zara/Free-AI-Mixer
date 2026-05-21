@@ -1454,3 +1454,15 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 95 adds export routes authorization enforcement audit coverage:
+  - Export routes read trusted request context, but authorization enforcement remains deferred.
+  - Requester adapter, authorization decision, and route guard boundaries exist but remain unwired from export routes.
+  - Export routes still do not emit authorization `401` / `403` responses.
+  - Real trusted auth provider integration remains required before enforcement.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Arbitrary `x-user-id` / `x-workspace-id` headers must not be trusted.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
