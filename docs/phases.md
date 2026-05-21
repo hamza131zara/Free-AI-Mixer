@@ -7239,3 +7239,61 @@ Before route authorization can be safely enabled:
 - No fake auth/session behavior was added
 - No trusted-header shortcut was added
 - Public artifact delivery remains deferred
+
+## Phase 88 - Authenticated Requester Export Scope Adapter Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- pure authenticated requester to export requester adapter boundary
+- no route authorization enforcement
+- no fake authenticated session
+- no trusted-header shortcut
+- no workspace membership lookup
+- no RLS policy application
+- no public artifact delivery enablement
+- no signed/download/storage URL behavior
+- no direct frontend Supabase client
+
+### Phase 88 completion summary
+
+- Added authenticated requester to export requester adapter boundary
+- Added `toExportOwnerScopeFromAuthenticatedRequester(...)`
+- Added `adaptAuthenticatedRequesterToExportRequesterContext(...)`
+- Confirmed authenticated requester `userId` maps to export `ownerId`
+- Confirmed authenticated requester `workspaceId` maps to export `workspaceId`
+- Confirmed unauthenticated requester context is not adapted into an authenticated export requester
+- Confirmed route wiring/enforcement remains deferred
+- Confirmed no fake auth/session/user identity was introduced
+- Confirmed frontend still has no direct Supabase/storage access
+- Confirmed public artifact delivery remains blocked until auth/RLS/ownership enforcement exists
+
+### Future production requirements
+
+Before route authorization or public artifact delivery:
+
+- trusted auth middleware must provide authenticated requester context
+- export routes must adapt authenticated requester context through this boundary
+- export routes must call authorization decision and route guard boundaries
+- workspace membership checks must be implemented where required
+- Supabase RLS policies must be applied and verified
+- artifact access must remain backend-mediated and authorized
+
+### Verification
+
+- `phase88`: expected focused pass
+- `phase87`: expected pass
+- `phase86`: expected pass
+- `typecheck`: expected pass
+- `build`: expected pass
+
+### Safety boundaries
+
+- Adapter exists as a pure boundary only
+- No route behavior changed
+- No fake auth/session behavior was added
+- No trusted-header shortcut was added
+- Public artifact delivery remains deferred

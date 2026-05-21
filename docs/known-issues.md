@@ -1368,3 +1368,15 @@ Still deferred:
   - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
   - Direct frontend Supabase/storage access remains forbidden.
   - Signed/download/storage URL behavior remains deferred.
+
+- Phase 88 adds authenticated requester export scope adapter boundary coverage:
+  - Pure authenticated requester to export requester adapter now exists.
+  - Authenticated requester `userId` maps to export `ownerId`.
+  - Authenticated requester `workspaceId` maps to export `workspaceId`.
+  - Unauthenticated requester context is not adapted into authenticated export requester context.
+  - Route authorization enforcement remains deferred.
+  - Workspace membership lookup/enforcement remains deferred.
+  - Supabase RLS policy application remains deferred.
+  - Public artifact delivery remains blocked until auth/RLS/ownership enforcement exists.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Signed/download/storage URL behavior remains deferred.
