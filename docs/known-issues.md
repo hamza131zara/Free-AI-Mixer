@@ -2356,3 +2356,13 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - No frontend Supabase/storage access was added.
   - Public artifact delivery remains blocked until provider integration and readiness are implemented safely.
+- Phase 166 adds production storage provider route/precondition integration audit coverage:
+  - Route/provider integration remains deferred.
+  - ProductionStorageProvider remains backend-only and fail-closed.
+  - Descriptor route remains unavailable by default.
+  - providerConfigured/providerCanResolve remain false in route wiring.
+  - No Supabase/S3/R2 provider was added.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - No frontend Supabase/storage access was added.
+  - Public artifact delivery remains blocked until provider integration is implemented safely.

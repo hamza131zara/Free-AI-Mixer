@@ -11842,3 +11842,59 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+## Phase 166 - Production Storage Provider Route/Precondition Integration Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- production storage provider route/precondition integration audit only
+- no route wiring to ProductionStorageProvider
+- no Supabase Storage provider implementation
+- no S3/R2 provider implementation
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 166 completion summary
+
+- Added docs/security/phase166-production-storage-provider-route-precondition-integration-audit.md
+- Audited future production storage provider integration with descriptor route
+- Audited future production storage provider integration with ready-state preconditions
+- Confirmed ProductionStorageProvider boundary remains fail-closed
+- Confirmed descriptor route remains unavailable by default
+- Confirmed providerConfigured remains false in route wiring
+- Confirmed providerCanResolve remains false in route wiring
+- Confirmed route is not wired to ProductionStorageProvider
+- Confirmed no signed/public URL behavior was added
+- Confirmed no browser download/navigation behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Recommended next phase
+
+- Phase 167 should add a backend-only production storage provider integration boundary/helper.
+- Integration must remain unavailable-by-default with the not-configured provider.
+- Signed/public URL behavior must remain deferred.
+
+### Verification
+
+- phase166: expected focused pass
+- phase165: expected pass
+- phase164: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No production storage provider route wiring was added
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
