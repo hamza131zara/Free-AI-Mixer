@@ -11955,3 +11955,59 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+## Phase 168 - Descriptor Route Production Storage Readiness Integration Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- descriptor route production storage readiness integration audit only
+- no descriptor route wiring to resolveProductionStorageReadiness(...)
+- no Supabase Storage provider implementation
+- no S3/R2 provider implementation
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 168 completion summary
+
+- Added docs/security/phase168-descriptor-route-production-storage-readiness-integration-audit.md
+- Audited future descriptor route integration with resolveProductionStorageReadiness(...)
+- Confirmed production storage readiness helper exists
+- Confirmed missing storage ref fails closed
+- Confirmed invalid storage ref fails closed
+- Confirmed not-configured provider fails closed
+- Confirmed verified provider result can map to providerConfigured/providerCanResolve readiness
+- Confirmed descriptor route is not wired to production storage readiness yet
+- Confirmed descriptor route remains unavailable by default
+- Confirmed no signed/public URL behavior was added
+- Confirmed no browser download/navigation behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Recommended next phase
+
+- Phase 169 should integrate resolveProductionStorageReadiness(...) into the descriptor route only if it remains unavailable-by-default with the not-configured provider.
+- No signed/public URL behavior should be added in Phase 169.
+
+### Verification
+
+- phase168: expected focused pass
+- phase167: expected pass
+- phase166: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No production storage readiness route wiring was added
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred

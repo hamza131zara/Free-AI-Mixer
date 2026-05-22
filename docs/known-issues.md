@@ -2377,3 +2377,13 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - No frontend Supabase/storage access was added.
   - Public artifact delivery remains blocked until route integration and real provider readiness are implemented safely.
+- Phase 168 adds descriptor route production storage readiness integration audit coverage:
+  - Descriptor route integration with resolveProductionStorageReadiness(...) remains deferred.
+  - Production storage readiness helper exists and fails closed by default.
+  - Descriptor route remains unavailable by default.
+  - providerConfigured/providerCanResolve remain false in route wiring.
+  - No Supabase/S3/R2 provider was added.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - No frontend Supabase/storage access was added.
+  - Public artifact delivery remains blocked until route integration and real provider readiness are implemented safely.
