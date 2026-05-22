@@ -2502,3 +2502,10 @@ Still deferred:
   - Backend must not expose public URLs or log secrets.
   - Signed URL generation must remain backend-owned.
   - Public launch remains blocked.
+
+- Phase 176-B adds a secret exposure guard boundary, but it is not route-wired:
+  - Service-role and frontend secret exposure markers can be detected.
+  - Public URL generation markers can be detected.
+  - Direct frontend Supabase/storage markers can be detected.
+  - Runtime enforcement and broader repository scanning remain future hardening work.
+  - Public launch remains blocked.

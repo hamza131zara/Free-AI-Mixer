@@ -12535,3 +12535,29 @@ Safety boundaries:
 - no service-role behavior was added
 - no public URL behavior was added
 - public launch remains blocked
+
+## Phase 176-B - Secret Exposure Guard Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- added reusable secret exposure guard boundary
+- detects service-role references
+- detects frontend service-role env names
+- detects public URL generation markers
+- detects direct frontend Supabase/storage markers
+- detects suspicious private key blocks
+- returns fail-closed unsafe decisions when exposure markers are found
+- remains not route-wired
+
+Safety boundaries:
+
+- no route behavior change was added
+- no frontend Supabase/storage access was added
+- no public URL behavior was added
+- no service-role behavior was added
+- no remote dependency was added
+- public launch remains blocked
