@@ -2496,3 +2496,9 @@ Still deferred:
   - No route runtime RLS enforcement is enabled.
   - No service-role behavior is added.
   - Public launch remains blocked.
+
+- Phase 176-A begins secrets and service-role exposure hardening with audit-only coverage:
+  - Frontend must not include Supabase service-role keys or direct storage access.
+  - Backend must not expose public URLs or log secrets.
+  - Signed URL generation must remain backend-owned.
+  - Public launch remains blocked.

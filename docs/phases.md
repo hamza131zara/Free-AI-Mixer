@@ -12512,3 +12512,26 @@ Safety boundaries:
 - no service-role behavior is added
 - no frontend Supabase/storage access is added
 - public launch remains blocked
+
+## Phase 176-A - Secrets + Service-Role Exposure Audit Pack
+
+Status:
+
+- audit pending verification
+
+Scope:
+
+- audits frontend for service-role, Supabase client, direct storage, and public URL exposure
+- audits backend storage and signed URL providers for public URL and secret logging risks
+- audits auth/readiness boundaries for service-role shortcuts and public launch flags
+- confirms signed URL behavior remains backend-owned
+- confirms frontend navigation remains descriptor-based
+
+Safety boundaries:
+
+- no implementation change was added
+- no route behavior change was added
+- no frontend Supabase/storage access was added
+- no service-role behavior was added
+- no public URL behavior was added
+- public launch remains blocked
