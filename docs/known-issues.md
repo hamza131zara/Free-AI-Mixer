@@ -2256,3 +2256,14 @@ Still deferred:
   - No frontend Supabase/storage access was added.
   - No signed URL or public URL handling was added.
   - Public artifact delivery remains blocked until backend readiness and final navigation/download phase are approved.
+
+- Phase 156 adds artifact delivery ready-state backend precondition audit coverage:
+  - Descriptor route ready state remains blocked by default.
+  - workspaceMembershipOrRlsReady remains false in route wiring.
+  - providerConfigured remains false in route wiring.
+  - artifactReady remains false in route wiring.
+  - Backend-mediated helper can only return ready when every precondition is explicitly true.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Public artifact delivery remains blocked until ready-state preconditions are implemented safely.

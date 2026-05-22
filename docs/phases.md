@@ -11290,3 +11290,58 @@ Scope:
 - phase153: expected pass
 - typecheck: expected pass
 - build: expected pass
+
+## Phase 156 - Artifact Delivery Ready-State Backend Preconditions Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- artifact delivery ready-state backend preconditions audit only
+- no ready descriptor enablement
+- no production storage provider
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 156 completion summary
+
+- Added docs/security/phase156-artifact-delivery-ready-state-backend-preconditions-audit.md
+- Audited backend preconditions required before descriptor route can return ready
+- Confirmed descriptor route remains blocked from ready state by default
+- Confirmed backend-mediated delivery helper fails closed unless every condition is explicitly true
+- Confirmed current route keeps workspace/RLS readiness blocked
+- Confirmed current route keeps storage provider readiness blocked
+- Confirmed current route keeps artifact readiness blocked
+- Confirmed no signed URL generation was added
+- Confirmed no public URL generation was added
+- Confirmed no frontend browser download/navigation behavior was added
+
+### Recommended next phase
+
+- Phase 157 should add a pure backend ready-state precondition helper only.
+- The helper should fail closed and produce structured unavailable reasons.
+- Route ready-state integration should remain deferred unless separately audited.
+
+### Verification
+
+- phase156: expected focused pass
+- phase155: expected pass
+- phase154: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No descriptor route ready state was enabled
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
