@@ -12186,3 +12186,56 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+## Phase 172 - Descriptor Route Production Storage Provider Integration Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- descriptor route optional production storage provider injection
+- route storage readiness can use injected backend-only provider
+- provider verification remains authorization-gated
+- route remains unavailable-by-default because workspace/RLS readiness is still blocked
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 172 completion summary
+
+- Added optional productionStorageProvider route option
+- Passed productionStorageProvider into resolveProductionStorageReadiness(...)
+- Confirmed injected Supabase production storage provider is accepted by the route but not called while workspace/RLS readiness remains blocked
+- Confirmed descriptor route still returns workspace_or_rls_not_ready after provider verification
+- Confirmed unauthenticated requester is rejected before provider verification
+- Confirmed no signed/public URL behavior was added
+- Confirmed no frontend browser download/navigation behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Recommended next phase
+
+- Phase 173 should merge signed URL safety strategy, backend signed URL provider boundary, Supabase signed URL implementation, and descriptor route signed URL integration.
+- Phase 173 is high risk and must stay backend-only/auth-gated.
+
+### Verification
+
+- phase172: expected focused pass
+- phase171: expected pass
+- phase170: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Route can accept backend-only provider injection
+- Route remains unavailable by default
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
+

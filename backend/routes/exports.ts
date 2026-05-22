@@ -5,6 +5,7 @@ import {
 } from "../artifacts/productionStorageProviderIntegration";
 import type {
   ProductionArtifactStorageReference,
+  ProductionStorageProvider,
   ProductionStorageProviderKind,
 } from "../artifacts/productionStorageProvider";
 import {
@@ -277,6 +278,7 @@ const isSafeArtifactDeliveryMetadata = (artifactMetadata: unknown): boolean => {
   );
 };
 export interface ExportRouterOptions {
+  productionStorageProvider?: ProductionStorageProvider;
   rendererAdapter?: RendererAdapter;
   pathPolicy?: RenderOutputPathPolicy;
   artifactAccessProvider?: ArtifactAccessProvider;
@@ -780,6 +782,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       const productionStorageReadiness = await resolveProductionStorageReadiness({
         artifactId,
         storageRef: getProductionStorageRefFromArtifactMetadata(artifactMetadata),
+        provider: options?.productionStorageProvider,
       });
 
       const readyPreconditionsDecision = decideArtifactDeliveryReadyPreconditions({
@@ -845,6 +848,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
   return router;
 };
+
 
 
 

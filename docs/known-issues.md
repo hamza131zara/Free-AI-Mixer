@@ -2417,3 +2417,12 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - No frontend Supabase/storage access was added.
   - Public artifact delivery remains blocked until route integration and signed delivery are implemented safely.
+- Phase 172 wires descriptor route to optional production storage provider injection:
+  - Route passes productionStorageProvider into resolveProductionStorageReadiness(...).
+  - Provider verification remains blocked while workspace/RLS readiness is blocked.
+  - workspaceMembershipOrRlsReady still blocks ready state.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - No frontend Supabase/storage access was added.
+  - Public artifact delivery remains blocked until signed delivery is implemented safely.
+

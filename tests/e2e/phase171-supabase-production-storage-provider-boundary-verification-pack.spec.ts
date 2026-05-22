@@ -251,3 +251,4 @@ test.describe("phase171 supabase production storage provider boundary verificati
     expect(frontendSource).not.toContain(".click()");
   });
 });
+

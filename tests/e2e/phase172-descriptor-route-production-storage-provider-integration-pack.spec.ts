@@ -5,12 +5,8 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { createExportRouter } from "../../backend/routes/exports";
 import type { ExportJobRegistry } from "../../backend/registry/exportJobRegistry";
-import {
-  resolveProductionStorageReadiness,
-} from "../../backend/artifacts/productionStorageProviderIntegration";
-import type {
-  ProductionStorageProvider,
-} from "../../backend/artifacts/productionStorageProvider";
+import type { ProductionStorageProvider } from "../../backend/artifacts/productionStorageProvider";
+import { createSupabaseProductionStorageProvider } from "../../backend/artifacts/supabaseProductionStorageProvider";
 
 const projectRoot = process.cwd();
 
@@ -22,12 +18,12 @@ const readIfExists = (relativePath: string): string => {
   return existsSync(fullPath) ? readFileSync(fullPath, "utf8") : "";
 };
 
-const baseRecord = {
-  jobId: "job-phase170",
-  requestId: "request-phase170",
-  timelineId: "timeline-phase170",
-  ownerId: "owner-phase170",
-  workspaceId: "workspace-phase170",
+const record = {
+  jobId: "job-phase172",
+  requestId: "request-phase172",
+  timelineId: "timeline-phase172",
+  ownerId: "owner-phase172",
+  workspaceId: "workspace-phase172",
   status: "submitted",
   renderSettings: {
     format: "mp4",
@@ -39,9 +35,9 @@ const baseRecord = {
   updatedAt: new Date().toISOString(),
   artifacts: [
     {
-      artifactId: "artifact-phase170",
+      artifactId: "artifact-phase172",
       status: "available",
-      filename: "phase170.mp4",
+      filename: "phase172.mp4",
       mimeType: "video/mp4",
       sizeBytes: 1024,
       storageRef: {
@@ -55,15 +51,8 @@ const baseRecord = {
   ],
 };
 
-const createFakeRegistry = (
-  recordOverride: Record<string, unknown> = {},
-): ExportJobRegistry => {
-  const record = {
-    ...baseRecord,
-    ...recordOverride,
-  };
-
-  return ({
+const createFakeRegistry = (): ExportJobRegistry =>
+  ({
     create: async (input: any) => ({
       ...record,
       requestId: input.requestId,
@@ -77,29 +66,28 @@ const createFakeRegistry = (
     getByRequestId: async () => undefined,
     getByStatus: async () => [record],
     claim: async () => {
-      throw new Error("claim should not be called in phase170");
+      throw new Error("claim should not be called in phase172");
     },
     markRendering: async () => {
-      throw new Error("markRendering should not be called in phase170");
+      throw new Error("markRendering should not be called in phase172");
     },
     markFinalizing: async () => {
-      throw new Error("markFinalizing should not be called in phase170");
+      throw new Error("markFinalizing should not be called in phase172");
     },
     markSuccess: async () => {
-      throw new Error("markSuccess should not be called in phase170");
+      throw new Error("markSuccess should not be called in phase172");
     },
     markError: async () => {
-      throw new Error("markError should not be called in phase170");
+      throw new Error("markError should not be called in phase172");
     },
     transition: async () => {
-      throw new Error("transition should not be called in phase170");
+      throw new Error("transition should not be called in phase172");
     },
   }) as unknown as ExportJobRegistry;
-};
 
 const requesterContextResolver = () => ({
-  ownerId: baseRecord.ownerId,
-  workspaceId: baseRecord.workspaceId,
+  ownerId: record.ownerId,
+  workspaceId: record.workspaceId,
   authMode: "local_dev_fallback" as const,
 });
 
@@ -107,7 +95,7 @@ const withTestServer = async (
   options: {
     authorizationMode?: "disabled" | "enforce";
     trustedRequesterContext?: unknown;
-    recordOverride?: Record<string, unknown>;
+    productionStorageProvider?: ProductionStorageProvider;
   },
   run: (baseUrl: string) => Promise<void>,
 ): Promise<void> => {
@@ -122,9 +110,12 @@ const withTestServer = async (
   }
 
   app.use(
-    createExportRouter(createFakeRegistry(options.recordOverride), {
+    createExportRouter(createFakeRegistry(), {
       requesterContextResolver,
       ...(options.authorizationMode ? { authorizationMode: options.authorizationMode } : {}),
+      ...(options.productionStorageProvider
+        ? { productionStorageProvider: options.productionStorageProvider }
+        : {}),
     }),
   );
 
@@ -157,151 +148,50 @@ const withTestServer = async (
   }
 };
 
-const validStorageRef = {
-  provider: "supabase_storage" as const,
-  bucket: "exports",
-  objectKey: "workspace/job/artifact.mp4",
-  contentType: "video/mp4",
-  sizeBytes: 1024,
-};
+test.describe("phase172 descriptor route production storage provider integration pack", () => {
+  test("descriptor route accepts injected production storage provider but does not call it while workspace rls readiness is blocked", async () => {
+    let verifyCalls = 0;
 
-test.describe("phase170 production storage readiness regression provider selection pack", () => {
-  test("provider selection audit chooses Supabase Storage while keeping implementation deferred", async () => {
-    const auditSource = readSource(
-      "docs/security/phase170-production-storage-readiness-regression-provider-selection.md",
-    );
+    const productionStorageProvider = createSupabaseProductionStorageProvider({
+      env: {
+        FREE_AI_MIXER_SUPABASE_URL: "https://example.supabase.co",
+        FREE_AI_MIXER_SUPABASE_STORAGE_BACKEND_KEY: "backend-storage-key",
+      },
+      objectVerifier: {
+        verifyObject: async ({ storageRef }) => {
+          verifyCalls += 1;
 
-    expect(auditSource).toContain("Status: regression + provider selection audit only");
-    expect(auditSource).toContain("Missing storageRef cannot produce ready delivery");
-    expect(auditSource).toContain("Recommended first provider");
-    expect(auditSource).toContain("Supabase Storage");
-    expect(auditSource).toContain("Phase 171 - Supabase Production Storage Provider Boundary + Verification Pack");
-    expect(auditSource).toContain("not generate signed URLs yet");
-    expect(auditSource).toContain("not add frontend Supabase/storage access");
-  });
-
-  test("production storage readiness regressions fail closed for missing invalid not-configured and object missing states", async () => {
-    await expect(
-      resolveProductionStorageReadiness({
-        artifactId: "artifact-phase170",
-      }),
-    ).resolves.toEqual({
-      kind: "unavailable",
-      reason: "missing_storage_ref",
-      providerConfigured: false,
-      providerCanResolve: false,
-    });
-
-    await expect(
-      resolveProductionStorageReadiness({
-        artifactId: "artifact-phase170",
-        storageRef: {
-          provider: "supabase_storage",
-          bucket: "exports",
-          objectKey: "../artifact.mp4",
+          return {
+            kind: "verified",
+            provider: storageRef.provider,
+            bucket: storageRef.bucket,
+            objectKey: storageRef.objectKey,
+            contentType: storageRef.contentType,
+            sizeBytes: storageRef.sizeBytes,
+          };
         },
-      }),
-    ).resolves.toEqual({
-      kind: "unavailable",
-      reason: "invalid_storage_ref",
-      providerConfigured: false,
-      providerCanResolve: false,
-    });
-
-    await expect(
-      resolveProductionStorageReadiness({
-        artifactId: "artifact-phase170",
-        storageRef: validStorageRef,
-      }),
-    ).resolves.toEqual({
-      kind: "unavailable",
-      reason: "provider_not_configured",
-      providerConfigured: false,
-      providerCanResolve: false,
-    });
-
-    const objectMissingProvider: ProductionStorageProvider = {
-      verifyObject: async () => ({
-        kind: "unavailable",
-        reason: "object_not_found",
-      }),
-    };
-
-    await expect(
-      resolveProductionStorageReadiness({
-        artifactId: "artifact-phase170",
-        storageRef: validStorageRef,
-        provider: objectMissingProvider,
-      }),
-    ).resolves.toEqual({
-      kind: "unavailable",
-      reason: "object_not_found",
-      providerConfigured: false,
-      providerCanResolve: false,
-    });
-  });
-
-  test("descriptor route storage readiness remains blocked before delivery shortcuts can exist", async () => {
-    await withTestServer(
-      {
-        authorizationMode: "enforce",
       },
-      async (baseUrl) => {
-        const response = await fetch(
-          `${baseUrl}/exports/${baseRecord.jobId}/artifacts/artifact-phase170/delivery`,
-          {
-            headers: {
-              "x-user-id": baseRecord.ownerId,
-              "x-workspace-id": baseRecord.workspaceId,
-            },
-          },
-        );
-
-        expect(response.status).toBe(401);
-        const payload = await response.json();
-        expect(payload.code).toBe("unauthorized");
-      },
-    );
+    });
 
     await withTestServer(
       {
         authorizationMode: "enforce",
+        productionStorageProvider,
         trustedRequesterContext: {
           kind: "authenticated",
-          userId: "other-owner",
-          workspaceId: baseRecord.workspaceId,
+          userId: record.ownerId,
+          workspaceId: record.workspaceId,
           authProvider: "jwt",
-          authSubject: "other-owner",
+          authSubject: record.ownerId,
         },
       },
       async (baseUrl) => {
         const response = await fetch(
-          `${baseUrl}/exports/${baseRecord.jobId}/artifacts/artifact-phase170/delivery`,
-        );
-
-        expect(response.status).toBe(403);
-        const payload = await response.json();
-        expect(payload.code).toBe("forbidden");
-      },
-    );
-
-    await withTestServer(
-      {
-        authorizationMode: "enforce",
-        trustedRequesterContext: {
-          kind: "authenticated",
-          userId: baseRecord.ownerId,
-          workspaceId: baseRecord.workspaceId,
-          authProvider: "jwt",
-          authSubject: baseRecord.ownerId,
-        },
-      },
-      async (baseUrl) => {
-        const response = await fetch(
-          `${baseUrl}/exports/${baseRecord.jobId}/artifacts/artifact-phase170/delivery`,
+          `${baseUrl}/exports/${record.jobId}/artifacts/artifact-phase172/delivery`,
         );
 
         expect(response.status).toBe(200);
+
         const payload = await response.json();
         expect(payload).toEqual({
           kind: "artifact_delivery_unavailable",
@@ -310,9 +200,46 @@ test.describe("phase170 production storage readiness regression provider selecti
       },
     );
 
+    expect(verifyCalls).toBe(0);
+  });
+
+  test("descriptor route does not call production storage provider before authorization succeeds", async () => {
+    const throwingProvider: ProductionStorageProvider = {
+      verifyObject: async () => {
+        throw new Error("provider should not be called before authorization");
+      },
+    };
+
+    await withTestServer(
+      {
+        authorizationMode: "enforce",
+        productionStorageProvider: throwingProvider,
+      },
+      async (baseUrl) => {
+        const response = await fetch(
+          `${baseUrl}/exports/${record.jobId}/artifacts/artifact-phase172/delivery`,
+          {
+            headers: {
+              "x-user-id": record.ownerId,
+              "x-workspace-id": record.workspaceId,
+            },
+          },
+        );
+
+        expect(response.status).toBe(401);
+
+        const payload = await response.json();
+        expect(payload.code).toBe("unauthorized");
+      },
+    );
+  });
+
+  test("descriptor route provider integration adds no signed public url frontend storage or navigation behavior", async () => {
     const routeSource = readSource("backend/routes/exports.ts");
 
     const backendArtifactSource =
+      readSource("backend/artifacts/supabaseProductionStorageProvider.ts") +
+      "\n" +
       readSource("backend/artifacts/productionStorageProviderIntegration.ts") +
       "\n" +
       readSource("backend/artifacts/productionStorageProvider.ts") +
@@ -344,14 +271,10 @@ test.describe("phase170 production storage readiness regression provider selecti
       "\n" +
       readSource("src/services/artifactDownloadUiState.ts");
 
+    expect(routeSource).toContain("productionStorageProvider?: ProductionStorageProvider");
+    expect(routeSource).toContain("provider: options?.productionStorageProvider");
     expect(routeSource).toContain("resolveProductionStorageReadiness");
-    expect(routeSource).toContain("productionStorageReadiness.providerConfigured");
-    expect(routeSource).toContain("productionStorageReadiness.providerCanResolve");
     expect(routeSource).toContain("workspaceMembershipOrRlsReady: false");
-
-    expect(readIfExists("backend/artifacts/supabaseProductionStorageProvider.ts")).toContain("createSupabaseProductionStorageProvider");
-    expect(readIfExists("backend/artifacts/s3ProductionStorageProvider.ts")).toBe("");
-    expect(readIfExists("backend/artifacts/r2ProductionStorageProvider.ts")).toBe("");
 
     expect(routeSource).not.toContain('req.headers["x-user-id"]');
     expect(routeSource).not.toContain('req.headers["x-workspace-id"]');
@@ -379,5 +302,4 @@ test.describe("phase170 production storage readiness regression provider selecti
     expect(frontendSource).not.toContain(".click()");
   });
 });
-
 
