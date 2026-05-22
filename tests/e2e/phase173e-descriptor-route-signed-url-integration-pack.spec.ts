@@ -12,59 +12,60 @@ const readIfExists = (relativePath: string): string => {
   return existsSync(fullPath) ? readFileSync(fullPath, "utf8") : "";
 };
 
-test.describe("phase173d descriptor route signed url integration audit pack", () => {
-  test("descriptor route has signed url provider wiring after phase173e but remains backend gated", async () => {
+test.describe("phase173e descriptor route signed url integration pack", () => {
+  test("descriptor route wires signed url provider only behind ready preconditions", async () => {
     const routeSource = readSource("backend/routes/exports.ts");
 
-    expect(routeSource).toContain("delivery");
-
-    expect(routeSource).not.toContain("createSupabaseSignedUrlDeliveryProvider");
-    expect(routeSource).not.toContain("supabaseSignedUrlDeliveryProvider");
     expect(routeSource).toContain("SignedUrlDeliveryProvider");
     expect(routeSource).toContain("createSignedUrlDeliveryNotConfiguredProvider");
     expect(routeSource).toContain("signedUrlDeliveryProvider");
     expect(routeSource).toContain("generateSignedUrl");
+    expect(routeSource).toContain("isSignedUrlDeliveryReady");
     expect(routeSource).toContain("signedUrlResult.deliveryMode");
     expect(routeSource).toContain("signedUrl");
-    expect(routeSource).not.toContain("resolveSignedUrlExpiresAt");
-    expect(routeSource).not.toContain("createSignedUrl(");
+
+    expect(routeSource).toContain("decideArtifactDeliveryReadyPreconditions");
+    expect(routeSource).toContain('readyPreconditionsDecision.kind !== "ready"');
+    expect(routeSource).toContain("resolveProductionStorageReadiness");
+    expect(routeSource).toContain("productionStorageReadiness.providerConfigured");
+    expect(routeSource).toContain("productionStorageReadiness.providerCanResolve");
+
+    expect(routeSource.indexOf('readyPreconditionsDecision.kind !== "ready"')).toBeLessThan(
+      routeSource.indexOf("generateSignedUrl"),
+    );
+
+    expect(routeSource).not.toContain("createSupabaseSignedUrlDeliveryProvider");
+    expect(routeSource).not.toContain("@supabase/supabase-js");
+    expect(routeSource).not.toContain("createClient(");
+    expect(routeSource).not.toContain(".storage.from(");
     expect(routeSource).not.toContain("getPublicUrl");
     expect(routeSource).not.toContain("service_role");
     expect(routeSource).not.toContain("SERVICE_ROLE");
   });
 
-  test("signed url provider remains backend artifact boundary only and requires later route integration phase", async () => {
-    const signedUrlBoundarySource = readSource(
-      "backend/artifacts/signedUrlDeliveryProvider.ts",
+  test("descriptor route keeps unauthorized unavailable and unsafe states before signed url generation", async () => {
+    const routeSource = readSource("backend/routes/exports.ts");
+
+    expect(routeSource).toContain("getExportRouteAuthorizationFailure");
+    expect(routeSource).toContain("sendExportRouteAuthorizationFailure");
+    expect(routeSource).toContain("workspaceMembershipOrRlsReady: false");
+    expect(routeSource).toContain("safeMetadataOnly: isSafeArtifactDeliveryMetadata");
+    expect(routeSource).toContain("getProductionStorageRefFromArtifactMetadata");
+    expect(routeSource).toContain("artifact_delivery_unavailable");
+    expect(routeSource).toContain("storage_not_configured");
+
+    expect(routeSource.indexOf("getExportRouteAuthorizationFailure")).toBeLessThan(
+      routeSource.indexOf("generateSignedUrl"),
     );
-    const supabaseSignedUrlProviderSource = readSource(
-      "backend/artifacts/supabaseSignedUrlDeliveryProvider.ts",
+    expect(routeSource.indexOf("resolveProductionStorageReadiness")).toBeLessThan(
+      routeSource.indexOf("generateSignedUrl"),
     );
-    const productionStorageSource =
-      readSource("backend/artifacts/productionStorageProvider.ts") +
-      "\n" +
-      readSource("backend/artifacts/productionStorageProviderIntegration.ts") +
-      "\n" +
-      readSource("backend/artifacts/supabaseProductionStorageProvider.ts");
 
-    expect(signedUrlBoundarySource).toContain("SignedUrlDeliveryProvider");
-    expect(signedUrlBoundarySource).toContain("backend_signed_url");
-    expect(signedUrlBoundarySource).toContain("MAX_SIGNED_URL_EXPIRES_IN_SECONDS");
-
-    expect(supabaseSignedUrlProviderSource).toContain(
-      "createSupabaseSignedUrlDeliveryProvider",
-    );
-    expect(supabaseSignedUrlProviderSource).toContain("signObjectUrl");
-    expect(supabaseSignedUrlProviderSource).toContain("SignedUrlDeliveryProvider");
-
-    expect(productionStorageSource).toContain("supabase_storage");
-
-    expect(supabaseSignedUrlProviderSource).not.toContain("@supabase/supabase-js");
-    expect(supabaseSignedUrlProviderSource).not.toContain("createClient(");
-    expect(supabaseSignedUrlProviderSource).not.toContain(".storage.from(");
-    expect(supabaseSignedUrlProviderSource).not.toContain("getPublicUrl");
-    expect(supabaseSignedUrlProviderSource).not.toContain("service_role");
-    expect(supabaseSignedUrlProviderSource).not.toContain("SERVICE_ROLE");
+    expect(routeSource).not.toContain('req.headers["x-user-id"]');
+    expect(routeSource).not.toContain('req.headers["x-workspace-id"]');
+    expect(routeSource).not.toContain("fakeSession");
+    expect(routeSource).not.toContain("mockAuthenticatedUser");
+    expect(routeSource).not.toContain("production_ready_public_delivery");
   });
 
   test("frontend still has no signed url navigation storage client or public delivery behavior", async () => {

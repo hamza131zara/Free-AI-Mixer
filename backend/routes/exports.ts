@@ -3,6 +3,11 @@ import { resolveBackendMediatedArtifactDelivery } from "../artifacts/backendMedi
 import {
   resolveProductionStorageReadiness,
 } from "../artifacts/productionStorageProviderIntegration";
+import {
+  createSignedUrlDeliveryNotConfiguredProvider,
+  isSignedUrlDeliveryReady,
+  type SignedUrlDeliveryProvider,
+} from "../artifacts/signedUrlDeliveryProvider";
 import type {
   ProductionArtifactStorageReference,
   ProductionStorageProvider,
@@ -279,6 +284,7 @@ const isSafeArtifactDeliveryMetadata = (artifactMetadata: unknown): boolean => {
 };
 export interface ExportRouterOptions {
   productionStorageProvider?: ProductionStorageProvider;
+  signedUrlDeliveryProvider?: SignedUrlDeliveryProvider;
   rendererAdapter?: RendererAdapter;
   pathPolicy?: RenderOutputPathPolicy;
   artifactAccessProvider?: ArtifactAccessProvider;
@@ -296,6 +302,8 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
   // Artifact access provider: use injected or default to not-configured
   const artifactAccessProvider = options?.artifactAccessProvider ?? createNotConfiguredArtifactAccessProvider();
+  const signedUrlDeliveryProvider =
+    options?.signedUrlDeliveryProvider ?? createSignedUrlDeliveryNotConfiguredProvider();
   const requesterContextResolver =
     options?.requesterContextResolver ?? resolveExportRequesterContext;
 
@@ -779,9 +787,12 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         (artifact) => getArtifactDeliveryMetadataId(artifact) === artifactId,
       );
 
+      const productionStorageRef =
+        getProductionStorageRefFromArtifactMetadata(artifactMetadata);
+
       const productionStorageReadiness = await resolveProductionStorageReadiness({
         artifactId,
-        storageRef: getProductionStorageRefFromArtifactMetadata(artifactMetadata),
+        storageRef: productionStorageRef,
         provider: options?.productionStorageProvider,
       });
 
@@ -802,52 +813,76 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         },
       });
 
-      const descriptor =
-        readyPreconditionsDecision.kind === "ready"
-          ? resolveBackendMediatedArtifactDelivery({
-              jobId,
-              artifactId,
-              requester: {
-                userId: record.ownerId,
-                workspaceId: record.workspaceId,
-              },
-              authorization: {
-                ownerOrWorkspaceAccessAllowed: true,
-                workspaceMembershipOrRlsReady: true,
-              },
-              storage: {
-                providerConfigured: true,
-                artifactReady: true,
-              },
-            })
-          : {
-              kind: "unavailable" as const,
-              reason: mapReadyPreconditionUnavailableReasonToDeliveryReason(
-                readyPreconditionsDecision.reason,
-              ),
-            };
-
-      if (descriptor.kind === "unavailable") {
+      if (readyPreconditionsDecision.kind !== "ready") {
         response.status(200).json({
           kind: "artifact_delivery_unavailable",
-          reason: descriptor.reason,
+          reason: mapReadyPreconditionUnavailableReasonToDeliveryReason(
+            readyPreconditionsDecision.reason,
+          ),
+        });
+        return;
+      }
+
+      const backendMediatedDescriptor = resolveBackendMediatedArtifactDelivery({
+        jobId,
+        artifactId,
+        requester: {
+          userId: record.ownerId,
+          workspaceId: record.workspaceId,
+        },
+        authorization: {
+          ownerOrWorkspaceAccessAllowed: true,
+          workspaceMembershipOrRlsReady: true,
+        },
+        storage: {
+          providerConfigured: true,
+          artifactReady: true,
+        },
+      });
+
+      if (backendMediatedDescriptor.kind === "unavailable") {
+        response.status(200).json({
+          kind: "artifact_delivery_unavailable",
+          reason: backendMediatedDescriptor.reason,
+        });
+        return;
+      }
+
+      if (!productionStorageRef) {
+        response.status(200).json({
+          kind: "artifact_delivery_unavailable",
+          reason: "artifact_not_ready",
+        });
+        return;
+      }
+
+      const signedUrlResult = await signedUrlDeliveryProvider.generateSignedUrl({
+        artifactId,
+        storageRef: productionStorageRef,
+      });
+
+      if (!isSignedUrlDeliveryReady(signedUrlResult)) {
+        response.status(200).json({
+          kind: "artifact_delivery_unavailable",
+          reason: "storage_not_configured",
         });
         return;
       }
 
       response.status(200).json({
         kind: "artifact_delivery_ready",
-        deliveryMode: descriptor.deliveryMode,
-        jobId: descriptor.jobId,
-        artifactId: descriptor.artifactId,
-        backendRoutePath: descriptor.backendRoutePath,
-        expiresAt: descriptor.expiresAt,
+        deliveryMode: signedUrlResult.deliveryMode,
+        jobId: backendMediatedDescriptor.jobId,
+        artifactId: signedUrlResult.artifactId,
+        signedUrl: signedUrlResult.signedUrl,
+        expiresAt: signedUrlResult.expiresAt,
       });
     },
   );
 
   return router;
 };
+
 
 
 

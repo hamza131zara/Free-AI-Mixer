@@ -247,10 +247,13 @@ test.describe("phase173c supabase signed url provider pack", () => {
     expect(providerSource).not.toContain("SERVICE_ROLE");
 
     expect(routeSource).not.toContain("createSupabaseSignedUrlDeliveryProvider");
-    expect(routeSource).not.toContain("SignedUrlDeliveryProvider");
-    expect(routeSource).not.toContain("generateSignedUrl");
-    expect(routeSource).not.toContain("backend_signed_url");
-    expect(routeSource).not.toContain("signedUrl");
+    expect(routeSource).toContain("SignedUrlDeliveryProvider");
+    expect(routeSource).toContain("createSignedUrlDeliveryNotConfiguredProvider");
+    expect(routeSource).toContain("signedUrlDeliveryProvider");
+    expect(routeSource).toContain("generateSignedUrl");
+    expect(routeSource).toContain("signedUrlResult.deliveryMode");
+    expect(routeSource).toContain("signedUrl");
+    expect(routeSource).toContain('readyPreconditionsDecision.kind !== "ready"');
     expect(routeSource).not.toContain("getPublicUrl");
     expect(routeSource).not.toContain("service_role");
     expect(routeSource).not.toContain("SERVICE_ROLE");
@@ -268,3 +271,7 @@ test.describe("phase173c supabase signed url provider pack", () => {
     expect(frontendSource + optionalFrontendSource).not.toContain(".click()");
   });
 });
+
+
+
+

@@ -12354,3 +12354,30 @@ Scope:
 - No frontend Supabase/storage access was added
 - No public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 173-E - Descriptor Route Signed URL Integration Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- wired descriptor route to the generic backend signed URL provider boundary
+- added optional signedUrlDeliveryProvider route option
+- default route behavior uses fail-closed createSignedUrlDeliveryNotConfiguredProvider()
+- signed URL generation is attempted only after ready preconditions pass
+- signed URL generation remains backend-mediated
+- route does not import Supabase signed URL provider directly
+- route does not use frontend Supabase/storage
+- route does not generate public URLs
+- route does not add frontend browser download/navigation
+
+Safety boundaries:
+
+- unauthorized/forbidden/unavailable states must not generate signed URLs
+- workspace/RLS readiness still blocks delivery readiness
+- missing/unsafe artifact metadata still blocks delivery readiness
+- production storage readiness still runs before signed URL generation
+- no frontend window.open/location.href/anchor download behavior was added
+- public artifact delivery remains blocked until frontend download/navigation and production hardening phases

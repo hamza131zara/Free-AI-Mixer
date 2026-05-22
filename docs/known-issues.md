@@ -2447,3 +2447,12 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - No frontend Supabase/storage access was added.
   - Public artifact delivery remains blocked.
+
+- Phase 173-E wires descriptor route to the backend signed URL provider boundary, but public artifact delivery remains blocked:
+  - The route defaults to a fail-closed signed URL provider when none is injected.
+  - Supabase signed URL provider is not directly route-wired.
+  - Signed URL generation is gated behind backend ready preconditions.
+  - Workspace/RLS readiness still prevents unsafe ready delivery.
+  - No frontend download/navigation behavior exists yet.
+  - No public URLs or direct frontend storage access exist.
+  - Phase 174 is still required before browser download/navigation.
