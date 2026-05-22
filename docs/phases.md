@@ -12066,3 +12066,62 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+## Phase 170 - Production Storage Readiness Regression + Provider Selection Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- production storage readiness regression coverage
+- first production storage provider selection audit
+- no Supabase Storage provider implementation
+- no S3/R2 provider implementation
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 170 completion summary
+
+- Added docs/security/phase170-production-storage-readiness-regression-provider-selection.md
+- Added storage readiness regression coverage after Phase 169 route wiring
+- Confirmed missing storageRef cannot produce ready delivery
+- Confirmed invalid storageRef cannot produce ready delivery
+- Confirmed not-configured provider cannot produce ready delivery
+- Confirmed object-not-found provider result cannot produce ready delivery
+- Confirmed unauthenticated requester cannot reach storage readiness
+- Confirmed mismatched requester cannot reach storage readiness
+- Confirmed workspace/RLS readiness still blocks ready state
+- Selected Supabase Storage as the first recommended production provider strategy
+- Confirmed no Supabase/S3/R2 provider implementation was added
+- Confirmed no signed/public URL behavior was added
+- Confirmed no frontend browser download/navigation behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Recommended next phase
+
+- Phase 171 should add a backend-only Supabase Production Storage Provider Boundary + Verification Pack.
+- Phase 171 should verify object existence/metadata only.
+- Phase 171 should not generate signed URLs or public URLs.
+
+### Verification
+
+- phase170: expected focused pass
+- phase169: expected pass
+- phase168: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Regression + audit merged phase
+- No real production storage provider was added
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred

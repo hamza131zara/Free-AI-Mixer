@@ -2397,3 +2397,14 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - No frontend Supabase/storage access was added.
   - Public artifact delivery remains blocked until real provider and workspace/RLS readiness are implemented safely.
+- Phase 170 adds production storage readiness regression and provider selection coverage:
+  - Missing/invalid storage refs fail closed.
+  - Not-configured and object-not-found provider states fail closed.
+  - Unauthenticated and mismatched requesters cannot reach storage readiness.
+  - workspaceMembershipOrRlsReady still blocks ready state.
+  - Supabase Storage is selected as the first recommended production provider strategy.
+  - No Supabase/S3/R2 provider was added.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - No frontend Supabase/storage access was added.
+  - Public artifact delivery remains blocked until provider verification and signed delivery are implemented safely.
