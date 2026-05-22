@@ -2472,3 +2472,11 @@ Still deferred:
   - Browser navigation remains user-triggered only.
   - Direct frontend Supabase/storage access remains blocked.
   - Security hardening phases 175-177 and operational phases 178-181 remain required.
+
+- Phase 175-A starts production Auth/RLS finalization with audit-only coverage:
+  - Workspace/RLS readiness still blocks unsafe delivery readiness.
+  - Production RLS finalization remains pending.
+  - No trusted-header auth shortcut is allowed.
+  - No frontend Supabase/storage access is allowed.
+  - No service-role frontend behavior is allowed.
+  - Public launch remains blocked.
