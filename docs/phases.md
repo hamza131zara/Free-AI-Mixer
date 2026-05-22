@@ -11729,3 +11729,57 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+## Phase 164 - Production Storage Provider Strategy Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- production storage provider strategy audit only
+- no production storage provider implementation
+- no Supabase Storage provider implementation
+- no S3/R2 provider implementation
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 164 completion summary
+
+- Added docs/security/phase164-production-storage-provider-strategy-audit.md
+- Audited production storage provider options
+- Recommended backend-only production storage provider boundary
+- Confirmed existing production provider boundary remains fail-closed
+- Confirmed not-configured behavior remains safe
+- Confirmed no Supabase/S3/R2 production provider was implemented
+- Confirmed no signed URL generation was added
+- Confirmed no public URL generation was added
+- Confirmed no frontend browser download/navigation behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Recommended next phase
+
+- Phase 165 should add a production storage provider boundary only.
+- Phase 165 should still avoid signed URLs, public URLs, frontend storage access, and browser navigation/download.
+
+### Verification
+
+- phase164: expected focused pass
+- phase163: expected pass
+- phase162: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No production storage provider was added
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred

@@ -2338,3 +2338,11 @@ Still deferred:
   - No frontend Supabase/storage access was added.
   - No signed URL or public URL handling was added.
   - Public artifact delivery remains blocked until backend ready-state and production storage provider readiness are approved.
+- Phase 164 adds production storage provider strategy audit coverage:
+  - Production storage provider implementation remains deferred.
+  - Existing production provider boundary remains fail-closed.
+  - No Supabase/S3/R2 production provider was added.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - No frontend Supabase/storage access was added.
+  - Public artifact delivery remains blocked until provider boundary and readiness are implemented safely.
