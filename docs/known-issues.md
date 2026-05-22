@@ -2488,3 +2488,11 @@ Still deferred:
   - realVerificationEnabled remains false.
   - Trusted-header shortcuts remain forbidden.
   - Public launch remains blocked.
+
+- Phase 175-C adds production RLS readiness validation, but runtime RLS rollout remains pending:
+  - The RLS policy draft can be validated offline.
+  - Remote RLS smoke remains opt-in and disabled by default.
+  - No Supabase CLI migration is applied.
+  - No route runtime RLS enforcement is enabled.
+  - No service-role behavior is added.
+  - Public launch remains blocked.

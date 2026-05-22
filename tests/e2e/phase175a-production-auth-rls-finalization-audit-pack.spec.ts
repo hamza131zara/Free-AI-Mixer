@@ -71,7 +71,7 @@ test.describe("phase175a production auth rls finalization audit pack", () => {
     );
     expect(routeSource).toContain("workspaceMembershipOrRlsReady: true");
     expect(routeSource.indexOf("workspaceMembershipOrRlsReady: true")).toBeGreaterThan(
-      routeSource.indexOf("readyPreconditionsDecision.kind !== `"ready`""),
+      routeSource.indexOf('readyPreconditionsDecision.kind !== "ready"'),
     );
     expect(routeSource).not.toContain("production_ready_public_delivery");
     expect(routeSource).not.toContain("public_launch_enabled");
@@ -112,5 +112,6 @@ test.describe("phase175a production auth rls finalization audit pack", () => {
     expect(frontendSource).not.toContain("VITE_SUPABASE_SERVICE_ROLE");
   });
 });
+
 
 

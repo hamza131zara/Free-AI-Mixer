@@ -12486,3 +12486,29 @@ Safety boundaries:
 - no remote Supabase dependency is required by default
 - no service-role behavior was added
 - no public artifact delivery behavior was added
+
+## Phase 175-C - Production RLS Configuration Readiness Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- added production RLS readiness boundary
+- validates the existing docs-only Supabase RLS policy draft
+- validates required RLS policy names and table security requirements through the existing draft verifier
+- keeps remote RLS smoke opt-in only
+- supports requiring remote smoke readiness without running it by default
+- fails closed for missing draft, invalid draft, and missing opt-in remote smoke env
+- adds no route behavior changes
+- applies no Supabase migrations
+
+Safety boundaries:
+
+- no Supabase CLI command is run
+- no migration is applied
+- no route runtime RLS enforcement is enabled
+- no service-role behavior is added
+- no frontend Supabase/storage access is added
+- public launch remains blocked
