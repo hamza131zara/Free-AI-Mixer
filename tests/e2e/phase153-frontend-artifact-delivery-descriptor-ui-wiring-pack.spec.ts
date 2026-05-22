@@ -131,8 +131,8 @@ test.describe("phase153 frontend artifact delivery descriptor ui wiring pack", (
     expect(descriptorComponentSource).toContain("ArtifactDeliveryDescriptorAction");
     expect(routeSource).toContain('"/exports/:jobId/artifacts/:artifactId/delivery"');
 
-    // Phase 153 adds a safe reusable UI wiring component only.
-    expect(timelinePanelSource).not.toContain("ArtifactDeliveryDescriptorAction");
+    // Phase 153 added a reusable UI wiring component; Phase 155 wires it into the panel safely.
+    expect(timelinePanelSource).toContain("ArtifactDeliveryDescriptorAction");
     expect(timelinePanelSource).not.toContain("useArtifactDeliveryDescriptorStore");
 
     expect(frontendSource).not.toContain("@supabase/supabase-js");
@@ -152,3 +152,5 @@ test.describe("phase153 frontend artifact delivery descriptor ui wiring pack", (
     expect(artifactSource).not.toContain("production_ready_public_delivery");
   });
 });
+
+

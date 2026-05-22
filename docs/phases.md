@@ -11257,3 +11257,36 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 155 - Timeline Export Panel Descriptor UI Wiring Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- TimelineExportPanel descriptor UI wiring
+- render/dispatch-only descriptor action wiring
+- no direct fetch calls in React components
+- no stream/download URL construction in React components
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no signed URL handling
+- no public artifact delivery enablement
+
+### Phase 155 completion summary
+
+- Wired ArtifactDeliveryDescriptorAction into TimelineExportPanel artifact rendering
+- Confirmed panel uses artifact.id and exportHandle.jobId
+- Confirmed panel uses descriptor UI component instead of direct descriptor fetch
+- Confirmed no browser navigation or download behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Verification
+
+- phase155: expected focused pass
+- phase154: expected pass
+- phase153: expected pass
+- typecheck: expected pass
+- build: expected pass

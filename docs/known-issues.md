@@ -2246,3 +2246,13 @@ Still deferred:
   - No frontend Supabase/storage access was added.
   - No signed URL or public URL handling was added.
   - Public artifact delivery remains blocked until panel wiring and backend readiness are approved.
+
+- Phase 155 wires TimelineExportPanel to artifact delivery descriptor UI:
+  - Panel renders ArtifactDeliveryDescriptorAction for artifact metadata.
+  - Panel uses artifact.id and exportHandle.jobId.
+  - Panel does not call descriptor fetch directly.
+  - No window.open or location.href behavior was added.
+  - No anchor download behavior was added.
+  - No frontend Supabase/storage access was added.
+  - No signed URL or public URL handling was added.
+  - Public artifact delivery remains blocked until backend readiness and final navigation/download phase are approved.

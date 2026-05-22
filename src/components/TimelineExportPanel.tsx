@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+﻿import { useMemo } from "react";
+import { ArtifactDeliveryDescriptorAction } from "./ArtifactDeliveryDescriptorAction";
 import {
   type ExportArtifactAccessState,
   selectExportCanSubmit,
@@ -68,6 +69,9 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
     resolvedTimelineId
       ? state.jobsByTimelineId[resolvedTimelineId]?.artifactAccessByArtifactId
       : undefined,
+  );
+  const exportHandle = useExportStore((state) =>
+    resolvedTimelineId ? state.jobsByTimelineId[resolvedTimelineId]?.handle : undefined,
   );
   const isSubmitting = useExportStore((state) =>
     resolvedTimelineId ? !!state.isSubmittingByTimelineId[resolvedTimelineId] : false,
@@ -250,6 +254,15 @@ export function TimelineExportPanel({ timelineId, clipCount }: TimelineExportPan
                     />
                   </div>
                 ) : null}
+                {exportHandle ? (
+                  <div data-testid={`timeline-export-artifact-delivery-${artifact.id}`}>
+                    {/* Phase 155 artifact delivery descriptor UI wiring. */}
+                    <ArtifactDeliveryDescriptorAction
+                      jobId={exportHandle.jobId}
+                      artifactId={artifact.id}
+                    />
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -299,3 +312,4 @@ function ArtifactAccessStatus({ accessState }: ArtifactAccessStatusProps) {
     </p>
   );
 }
+

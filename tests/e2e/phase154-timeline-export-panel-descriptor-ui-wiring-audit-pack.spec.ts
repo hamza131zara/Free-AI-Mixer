@@ -47,8 +47,8 @@ test.describe("phase154 timeline export panel descriptor ui wiring audit pack", 
     expect(descriptorActionSource).toContain("ArtifactDownloadAction");
     expect(descriptorActionSource).toContain("requestArtifactDeliveryDescriptor");
 
-    // Phase 154 is audit-only. Main panel wiring remains deferred.
-    expect(timelinePanelSource).not.toContain("ArtifactDeliveryDescriptorAction");
+    // Phase 154 is audit-only. Main panel wiring exists after Phase 155, but remains render/dispatch-only.
+    expect(timelinePanelSource).toContain("ArtifactDeliveryDescriptorAction");
     expect(timelinePanelSource).not.toContain("useArtifactDeliveryDescriptorStore");
     expect(timelinePanelSource).not.toContain("requestArtifactDeliveryDescriptor");
     expect(timelinePanelSource).not.toContain("getArtifactDeliveryDescriptor");
@@ -113,3 +113,5 @@ test.describe("phase154 timeline export panel descriptor ui wiring audit pack", 
     expect(routeSource).not.toContain("mockAuthenticatedUser");
   });
 });
+
+
