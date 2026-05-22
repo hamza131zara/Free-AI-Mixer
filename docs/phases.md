@@ -12641,3 +12641,29 @@ Safety boundaries:
 - no service-role behavior was added
 - public launch remains blocked until Phase 181
 
+
+## Phase 179 - Logging, Monitoring + Error Handling Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- added production observability boundary
+- added structured log event redaction helper
+- added monitoring readiness decision helper
+- documented backend error mapping expectations
+- documented render/export failure visibility
+- documented download failure visibility
+- documented monitoring plan
+- verified sensitive data is not allowed in logs
+
+Safety boundaries:
+
+- no route behavior change was added
+- no remote monitoring provider was added
+- no service-role behavior was added
+- no frontend Supabase/storage access was added
+- public launch remains blocked until Phase 181
+

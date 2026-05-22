@@ -2530,3 +2530,11 @@ Still deferred:
   - No real secrets are committed.
   - Public launch remains blocked until Phase 181 final go/no-go.
 
+
+- Phase 179 adds logging, monitoring, and error handling readiness coverage:
+  - Structured log redaction boundary exists.
+  - Monitoring plan is documented.
+  - Backend, render/export, and download failure visibility are covered by readiness tests.
+  - No sensitive data should be logged.
+  - Public launch remains blocked until Phase 181 final go/no-go.
+
