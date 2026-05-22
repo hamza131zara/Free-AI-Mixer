@@ -2515,3 +2515,10 @@ Still deferred:
   - Selected backend artifact/auth/readiness files are scanned with the secret exposure guard.
   - Docs remain explicit that public launch is blocked.
   - Runtime enforcement and full-repository CI scanning remain future hardening work.
+
+- Phase 177 adds production security and abuse regression coverage:
+  - Unauthorized and forbidden states remain blocked.
+  - Expired descriptors remain blocked.
+  - Unsafe metadata and unsafe navigation targets remain blocked.
+  - Rate-limit strategy exists as a boundary, not runtime route enforcement.
+  - Public launch remains blocked until operational phases 178-181 are complete.
