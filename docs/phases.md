@@ -11672,3 +11672,60 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+## Phase 163 - Browser Download/Navigation Implementation Strategy Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- browser download/navigation strategy boundary only
+- pure frontend decision helper
+- no actual window.open behavior
+- no actual location.href behavior
+- no anchor download behavior
+- no document.createElement behavior
+- no programmatic click behavior
+- no signed URL generation
+- no public URL generation
+- no direct frontend Supabase client
+- no frontend storage access
+- no production storage provider
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 163 completion summary
+
+- Added src/services/artifactDownloadNavigationStrategy.ts
+- Added decideArtifactDownloadNavigation(...)
+- Added isArtifactDownloadDescriptorExpired(...)
+- Confirmed browser navigation is blocked by default
+- Confirmed unavailable descriptors remain blocked
+- Confirmed expired descriptors remain blocked
+- Confirmed permitted decision requires explicit allowBrowserNavigation and unexpired backend-mediated descriptor
+- Confirmed no browser navigation/download implementation was added
+- Confirmed no frontend Supabase/storage access was added
+- Confirmed no signed/public URL behavior was added
+- Confirmed backend descriptor route remains unavailable-by-default
+
+### Recommended next phase
+
+- Phase 164 should audit production storage provider strategy.
+- Real browser navigation/download should remain blocked until backend ready-state and production provider readiness are approved.
+
+### Verification
+
+- phase163: expected focused pass
+- phase162: expected pass
+- phase161: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Strategy-only merged phase
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred

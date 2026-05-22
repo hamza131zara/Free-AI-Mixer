@@ -2328,3 +2328,13 @@ Still deferred:
   - No frontend Supabase/storage access was added.
   - No signed URL or public URL handling was added.
   - Public artifact delivery remains blocked until backend readiness and download/navigation implementation are separately approved.
+- Phase 163 adds browser download/navigation implementation strategy coverage:
+  - Pure frontend navigation decision helper exists.
+  - Browser navigation remains blocked by default.
+  - Expired/unavailable descriptors remain blocked.
+  - No window.open or location.href behavior was added.
+  - No anchor download behavior was added.
+  - No document.createElement/programmatic click behavior was added.
+  - No frontend Supabase/storage access was added.
+  - No signed URL or public URL handling was added.
+  - Public artifact delivery remains blocked until backend ready-state and production storage provider readiness are approved.
