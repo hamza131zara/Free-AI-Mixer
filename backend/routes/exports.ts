@@ -1,6 +1,13 @@
 ﻿import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
 import { resolveBackendMediatedArtifactDelivery } from "../artifacts/backendMediatedArtifactDelivery";
 import {
+  resolveProductionStorageReadiness,
+} from "../artifacts/productionStorageProviderIntegration";
+import type {
+  ProductionArtifactStorageReference,
+  ProductionStorageProviderKind,
+} from "../artifacts/productionStorageProvider";
+import {
   decideArtifactDeliveryReadyPreconditions,
   type ArtifactDeliveryReadyUnavailableReason,
 } from "../artifacts/artifactDeliveryReadyPreconditions";
@@ -178,6 +185,51 @@ const normalizeArtifactDeliveryReadyStatus = (
   return "unknown";
 };
 
+const isProductionStorageProviderKind = (
+  provider: unknown,
+): provider is ProductionStorageProviderKind =>
+  provider === "supabase_storage" || provider === "s3" || provider === "r2";
+
+const getProductionStorageRefFromArtifactMetadata = (
+  artifactMetadata: unknown,
+): ProductionArtifactStorageReference | undefined => {
+  if (!artifactMetadata || typeof artifactMetadata !== "object") {
+    return undefined;
+  }
+
+  const metadata = artifactMetadata as Record<string, unknown>;
+  const candidate = metadata.storageRef;
+
+  if (!candidate || typeof candidate !== "object") {
+    return undefined;
+  }
+
+  const storageRef = candidate as Record<string, unknown>;
+
+  if (
+    !isProductionStorageProviderKind(storageRef.provider) ||
+    typeof storageRef.bucket !== "string" ||
+    typeof storageRef.objectKey !== "string"
+  ) {
+    return undefined;
+  }
+
+  const normalized: ProductionArtifactStorageReference = {
+    provider: storageRef.provider,
+    bucket: storageRef.bucket,
+    objectKey: storageRef.objectKey,
+  };
+
+  if (typeof storageRef.contentType === "string") {
+    normalized.contentType = storageRef.contentType;
+  }
+
+  if (typeof storageRef.sizeBytes === "number") {
+    normalized.sizeBytes = storageRef.sizeBytes;
+  }
+
+  return normalized;
+};
 const getArtifactDeliveryMetadataId = (
   artifactMetadata: unknown,
 ): string | undefined => {
@@ -725,6 +777,11 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         (artifact) => getArtifactDeliveryMetadataId(artifact) === artifactId,
       );
 
+      const productionStorageReadiness = await resolveProductionStorageReadiness({
+        artifactId,
+        storageRef: getProductionStorageRefFromArtifactMetadata(artifactMetadata),
+      });
+
       const readyPreconditionsDecision = decideArtifactDeliveryReadyPreconditions({
         authorization: {
           ownerOrWorkspaceAccessAllowed: options?.authorizationMode === "enforce",
@@ -737,8 +794,8 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
           safeMetadataOnly: isSafeArtifactDeliveryMetadata(artifactMetadata),
         },
         storage: {
-          providerConfigured: false,
-          providerCanResolve: false,
+          providerConfigured: productionStorageReadiness.providerConfigured,
+          providerCanResolve: productionStorageReadiness.providerCanResolve,
         },
       });
 
@@ -788,6 +845,8 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
   return router;
 };
+
+
 
 
 

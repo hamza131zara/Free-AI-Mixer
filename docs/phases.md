@@ -12011,3 +12011,58 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+## Phase 169 - Descriptor Route Production Storage Readiness Integration Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- descriptor route integration with resolveProductionStorageReadiness(...)
+- storage readiness now feeds ready-state preconditions
+- unavailable-by-default route behavior
+- no Supabase Storage provider implementation
+- no S3/R2 provider implementation
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 169 completion summary
+
+- Wired descriptor route to resolveProductionStorageReadiness(...)
+- Added safe backend artifact metadata storageRef extraction
+- Added production storage readiness into providerConfigured/providerCanResolve preconditions
+- Confirmed not-configured provider keeps route unavailable
+- Confirmed route still rejects unauthenticated requesters before storage readiness matters
+- Confirmed workspace/RLS readiness still blocks ready state
+- Confirmed no Supabase/S3/R2 production provider implementation was added
+- Confirmed no signed/public URL behavior was added
+- Confirmed no frontend browser download/navigation behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Recommended next phase
+
+- Phase 170 should add route ready-state regression coverage after production storage readiness wiring.
+- Regression should prove missing/invalid/not-configured provider states cannot return ready.
+
+### Verification
+
+- phase169: expected focused pass
+- phase168: expected pass
+- phase167: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Descriptor route is wired to storage readiness but unavailable by default
+- No real production storage provider was added
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred

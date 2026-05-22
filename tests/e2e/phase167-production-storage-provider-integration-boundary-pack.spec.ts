@@ -165,12 +165,12 @@ test.describe("phase167 production storage provider integration boundary pack", 
     expect(integrationSource).toContain("providerCanResolve");
 
     expect(routeSource).toContain("decideArtifactDeliveryReadyPreconditions");
-    expect(routeSource).toContain("providerConfigured: false");
-    expect(routeSource).toContain("providerCanResolve: false");
+    expect(routeSource).toContain("productionStorageReadiness.providerConfigured");
+    expect(routeSource).toContain("productionStorageReadiness.providerCanResolve");
 
-    // Phase 167 is boundary-only. Route/provider integration remains deferred.
-    expect(routeSource).not.toContain("resolveProductionStorageReadiness");
-    expect(routeSource).not.toContain("ProductionStorageProvider");
+    // Phase 167 is boundary-only. Route/provider readiness integration exists after Phase 169 and remains unavailable-by-default through not-configured storage readiness plus workspace/RLS blocking.
+    expect(routeSource).toContain("resolveProductionStorageReadiness");
+    expect(routeSource).toContain("ProductionStorageProviderKind");
     expect(routeSource).not.toContain("verifyObject(");
     expect(routeSource).not.toContain("isValidProductionArtifactStorageReference");
 
@@ -200,3 +200,7 @@ test.describe("phase167 production storage provider integration boundary pack", 
     expect(frontendSource).not.toContain(".click()");
   });
 });
+
+
+
+

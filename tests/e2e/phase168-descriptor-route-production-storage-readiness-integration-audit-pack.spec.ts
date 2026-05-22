@@ -156,12 +156,12 @@ test.describe("phase168 descriptor route production storage readiness integratio
     expect(integrationSource).toContain("providerCanResolve");
 
     expect(routeSource).toContain("decideArtifactDeliveryReadyPreconditions");
-    expect(routeSource).toContain("providerConfigured: false");
-    expect(routeSource).toContain("providerCanResolve: false");
+    expect(routeSource).toContain("productionStorageReadiness.providerConfigured");
+    expect(routeSource).toContain("productionStorageReadiness.providerCanResolve");
 
-    // Phase 168 is audit-only. Descriptor route storage readiness integration remains deferred.
-    expect(routeSource).not.toContain("resolveProductionStorageReadiness");
-    expect(routeSource).not.toContain("ProductionStorageProvider");
+    // Phase 168 was audit-only. Phase 169 now uses type-only production storage route imports and storage readiness integration, while remaining unavailable-by-default through not-configured storage readiness plus workspace/RLS blocking.
+    expect(routeSource).toContain("resolveProductionStorageReadiness");
+    expect(routeSource).toContain("ProductionStorageProviderKind");
     expect(routeSource).not.toContain("verifyObject(");
     expect(routeSource).not.toContain("isValidProductionArtifactStorageReference");
 
@@ -191,3 +191,7 @@ test.describe("phase168 descriptor route production storage readiness integratio
     expect(frontendSource).not.toContain(".click()");
   });
 });
+
+
+
+
