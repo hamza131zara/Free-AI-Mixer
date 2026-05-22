@@ -2480,3 +2480,11 @@ Still deferred:
   - No frontend Supabase/storage access is allowed.
   - No service-role frontend behavior is allowed.
   - Public launch remains blocked.
+
+- Phase 175-B adds production JWT auth configuration readiness, but runtime auth rollout remains pending:
+  - JWT provider, issuer, audience, and JWKS URI can be validated.
+  - JWKS construction can be checked without route rollout.
+  - routeRuntimeEnabled remains false.
+  - realVerificationEnabled remains false.
+  - Trusted-header shortcuts remain forbidden.
+  - Public launch remains blocked.

@@ -12460,3 +12460,29 @@ Safety boundaries:
 - no public launch behavior was added
 - no service-role shortcut was added
 - no frontend storage access was added
+
+## Phase 175-B - Production Auth/JWT Configuration Finalization Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- added production JWT auth readiness boundary
+- validates provider, issuer, audience, and JWKS URI configuration
+- validates remote JWKS construction boundary
+- fails closed for missing provider, missing issuer, missing audience, missing JWKS URI, unsupported key mode, and invalid JWKS URI
+- keeps route runtime auth rollout disabled
+- keeps real verification rollout disabled
+- adds no route behavior changes
+- adds no frontend auth/storage behavior
+
+Safety boundaries:
+
+- no trusted-header shortcut was added
+- no route authorization behavior was changed
+- no RLS policy was applied
+- no remote Supabase dependency is required by default
+- no service-role behavior was added
+- no public artifact delivery behavior was added
