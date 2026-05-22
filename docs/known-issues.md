@@ -2522,3 +2522,11 @@ Still deferred:
   - Unsafe metadata and unsafe navigation targets remain blocked.
   - Rate-limit strategy exists as a boundary, not runtime route enforcement.
   - Public launch remains blocked until operational phases 178-181 are complete.
+
+- Phase 178 adds production environment and deployment pipeline readiness documentation:
+  - Production env variables are documented with placeholders only.
+  - Build/start commands are verified through readiness tests.
+  - Supabase project checklist is documented.
+  - No real secrets are committed.
+  - Public launch remains blocked until Phase 181 final go/no-go.
+

@@ -12613,3 +12613,31 @@ Safety boundaries:
 - no service-role behavior was added
 - no remote dependency was added
 - public launch remains blocked
+
+## Phase 178 - Production Environment + Deployment Pipeline Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- added production deployment readiness boundary
+- added production deployment documentation
+- documents frontend build command
+- documents backend start command
+- documents required production environment variables
+- documents backend/frontend hosting strategy
+- documents Supabase project checklist
+- confirms no secrets should be committed
+- keeps public launch disabled
+
+Safety boundaries:
+
+- no deployment was executed
+- no remote dependency was added
+- no route behavior change was added
+- no frontend Supabase/storage access was added
+- no service-role behavior was added
+- public launch remains blocked until Phase 181
+
