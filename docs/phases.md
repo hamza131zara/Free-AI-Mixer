@@ -11619,3 +11619,56 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+## Phase 162 - Browser Download/Navigation Final Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- browser download/navigation final audit only
+- no window.open behavior
+- no location.href behavior
+- no anchor download behavior
+- no document.createElement("a") behavior
+- no programmatic click behavior
+- no signed URL generation
+- no public URL generation
+- no direct frontend Supabase client
+- no frontend storage access
+- no production storage provider
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 162 completion summary
+
+- Added docs/security/phase162-browser-download-navigation-final-audit.md
+- Audited future browser download/navigation safety requirements
+- Confirmed frontend can represent backend-mediated ready descriptor state
+- Confirmed unavailable descriptor states remain disabled
+- Confirmed no browser navigation or download behavior was added
+- Confirmed no frontend Supabase/storage access was added
+- Confirmed no signed/public URL behavior was added
+- Confirmed backend descriptor route remains unavailable-by-default
+
+### Recommended next phase
+
+- Phase 163 should only implement browser download/navigation if backend descriptor readiness is approved.
+- If readiness remains blocked, Phase 163 should keep download behavior disabled or add another regression/audit layer.
+
+### Verification
+
+- phase162: expected focused pass
+- phase161: expected pass
+- phase160: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred

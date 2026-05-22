@@ -2318,3 +2318,13 @@ Still deferred:
   - No frontend Supabase/storage access was added.
   - No signed URL or public URL handling was added.
   - Public artifact delivery remains blocked until browser download/navigation is separately audited.
+
+- Phase 162 adds browser download/navigation final audit coverage:
+  - Browser download/navigation remains deferred.
+  - Frontend can represent backend-mediated ready descriptor state truthfully.
+  - No window.open or location.href behavior was added.
+  - No anchor download behavior was added.
+  - No document.createElement/programmatic click behavior was added.
+  - No frontend Supabase/storage access was added.
+  - No signed URL or public URL handling was added.
+  - Public artifact delivery remains blocked until backend readiness and download/navigation implementation are separately approved.
