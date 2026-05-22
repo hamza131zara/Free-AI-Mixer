@@ -2267,3 +2267,14 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - Direct frontend Supabase/storage access remains forbidden.
   - Public artifact delivery remains blocked until ready-state preconditions are implemented safely.
+
+- Phase 157 adds artifact delivery ready-state precondition boundary coverage:
+  - Pure backend precondition helper exists.
+  - Helper fails closed for missing authorization, workspace/RLS readiness, metadata, artifact readiness, storage config, and provider availability.
+  - Helper can return ready only when every condition is explicitly true.
+  - Helper is not wired into the descriptor route yet.
+  - Descriptor route ready state remains blocked by default.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Public artifact delivery remains blocked until route integration is audited and implemented safely.

@@ -11345,3 +11345,61 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 157 - Artifact Delivery Ready-State Preconditions Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- pure backend artifact delivery ready-state precondition helper
+- no route integration
+- no descriptor route ready-state enablement
+- no production storage provider
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 157 completion summary
+
+- Added backend/artifacts/artifactDeliveryReadyPreconditions.ts
+- Added decideArtifactDeliveryReadyPreconditions(...)
+- Confirmed authorization blocker fails closed
+- Confirmed workspace/RLS blocker fails closed
+- Confirmed missing artifact metadata fails closed
+- Confirmed artifact id mismatch fails closed
+- Confirmed not-ready artifact status fails closed
+- Confirmed unsafe artifact metadata fails closed
+- Confirmed unconfigured storage fails closed
+- Confirmed unavailable provider fails closed
+- Confirmed ready result only when every condition is explicitly true
+- Confirmed helper is not route-wired yet
+- Confirmed descriptor route remains blocked from ready state by default
+
+### Recommended next phase
+
+- Phase 158 should audit descriptor route integration with the new precondition helper.
+- Route integration should remain unavailable-by-default unless the audit approves a controlled setup.
+
+### Verification
+
+- phase157: expected focused pass
+- phase156: expected pass
+- phase155: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Boundary-only merged phase
+- No descriptor route ready state was enabled
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
