@@ -12294,3 +12294,63 @@ Scope:
 - No frontend Supabase/storage access was added
 - No public URL handling was added
 - Public artifact delivery remains deferred
+## Phase 173-B - Backend Signed URL Provider Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only signed URL provider boundary
+- fail-closed not-configured provider
+- short-lived expiry helper
+- signed URL ready/unavailable result types
+- no Supabase signed URL implementation
+- no descriptor route signed URL integration
+- no signed URL generation from real storage provider
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 173-B completion summary
+
+- Added backend/artifacts/signedUrlDeliveryProvider.ts
+- Added SignedUrlDeliveryProvider boundary
+- Added SignedUrlDeliveryRequest and SignedUrlDeliveryResult types
+- Added createSignedUrlDeliveryNotConfiguredProvider(...)
+- Added short-lived signed URL TTL validation
+- Added resolveSignedUrlExpiresAt(...)
+- Confirmed invalid storage refs fail closed
+- Confirmed invalid expiry values fail closed
+- Confirmed not-configured provider fails closed
+- Confirmed provider boundary is not route-wired
+- Confirmed no Supabase signed URL implementation was added
+- Confirmed no descriptor route signed URL integration was added
+- Confirmed no frontend browser download/navigation behavior was added
+
+### Recommended next checkpoint inside Phase 173
+
+- Phase 173-C should add Supabase signed URL provider implementation behind the backend-only boundary.
+- It must remain not route-wired until separately integrated.
+- It must never expose backend storage keys or service-role values.
+
+### Verification
+
+- phase173b: expected focused pass
+- phase173a: expected pass
+- phase172: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Boundary-only checkpoint inside merged Phase 173
+- No descriptor route signed URL behavior was added
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No public URL handling was added
+- Public artifact delivery remains deferred

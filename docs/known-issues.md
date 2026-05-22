@@ -2436,3 +2436,14 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - No frontend Supabase/storage access was added.
   - Public artifact delivery remains blocked.
+- Phase 173-B adds backend signed URL provider boundary coverage:
+  - SignedUrlDeliveryProvider boundary exists.
+  - Not-configured signed URL provider fails closed.
+  - Invalid storage refs and invalid expiry values fail closed.
+  - Signed URL TTL is capped at 300 seconds.
+  - Provider boundary is not route-wired yet.
+  - No Supabase signed URL implementation was added.
+  - No descriptor route signed URL integration was added.
+  - No browser download/navigation behavior was added.
+  - No frontend Supabase/storage access was added.
+  - Public artifact delivery remains blocked.
