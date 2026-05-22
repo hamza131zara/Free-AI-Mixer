@@ -12561,3 +12561,27 @@ Safety boundaries:
 - no service-role behavior was added
 - no remote dependency was added
 - public launch remains blocked
+
+## Phase 176-C - Secret Exposure Repository Regression Pack
+
+Status:
+
+- regression pending verification
+
+Scope:
+
+- added repository-level regression coverage using the Phase 176-B secret exposure guard
+- scans selected frontend artifact delivery/download/navigation source groups
+- scans selected backend artifact/auth/readiness source groups
+- checks docs for blocked launch posture and absence of explicit secret env assignment examples
+- confirms backend signed URL behavior remains backend-owned
+- confirms frontend navigation remains descriptor-based
+
+Safety boundaries:
+
+- no route behavior change was added
+- no frontend Supabase/storage access was added
+- no public URL behavior was added
+- no service-role behavior was added
+- no remote dependency was added
+- public launch remains blocked

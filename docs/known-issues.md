@@ -2509,3 +2509,9 @@ Still deferred:
   - Direct frontend Supabase/storage markers can be detected.
   - Runtime enforcement and broader repository scanning remain future hardening work.
   - Public launch remains blocked.
+
+- Phase 176-C adds repository-level secret exposure regression coverage:
+  - Selected frontend delivery/navigation files are scanned with the secret exposure guard.
+  - Selected backend artifact/auth/readiness files are scanned with the secret exposure guard.
+  - Docs remain explicit that public launch is blocked.
+  - Runtime enforcement and full-repository CI scanning remain future hardening work.
