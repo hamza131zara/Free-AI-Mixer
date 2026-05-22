@@ -2465,3 +2465,10 @@ Still deferred:
   - No direct frontend Supabase/storage access exists.
   - No public URL generation exists.
   - Controlled E2E delivery smoke and production hardening are still required before launch.
+
+- Phase 174-C adds controlled artifact delivery smoke coverage, but this is not a public launch approval:
+  - The smoke uses mocked/backend-approved descriptor payloads.
+  - Remote production storage is not required by default.
+  - Browser navigation remains user-triggered only.
+  - Direct frontend Supabase/storage access remains blocked.
+  - Security hardening phases 175-177 and operational phases 178-181 remain required.

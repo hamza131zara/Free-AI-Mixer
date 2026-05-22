@@ -12409,3 +12409,28 @@ Safety boundaries:
 - no automatic download/navigation was added
 - no service-role behavior was added
 - download/navigation uses only backend-approved descriptor data
+
+## Phase 174-C - Controlled E2E Artifact Delivery Smoke Pack
+
+Status:
+
+- smoke pending verification
+
+Scope:
+
+- added controlled E2E-style smoke coverage for backend-approved signed URL descriptor flow
+- verifies descriptor payload parsing
+- verifies descriptor store state update
+- verifies navigation decision remains blocked unless browser navigation is explicitly allowed
+- verifies user-triggered navigation uses injected window.open only
+- verifies unavailable, expired, and unsafe descriptors remain blocked
+- no remote production dependency is required by default
+
+Safety boundaries:
+
+- no direct frontend Supabase client was added
+- no direct frontend storage access was added
+- no public URL generation was added
+- no service-role behavior was added
+- no automatic download/navigation was added
+- public launch remains blocked pending security and operational readiness phases
