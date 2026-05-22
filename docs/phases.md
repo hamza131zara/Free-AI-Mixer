@@ -11567,3 +11567,55 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 161 - Frontend Ready Descriptor UI Regression Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- frontend ready descriptor UI regression coverage
+- no frontend browser download/navigation behavior
+- no window.open behavior
+- no location.href behavior
+- no anchor download behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no signed URL handling
+- no public URL handling
+- no descriptor route behavior change
+- no public artifact delivery enablement
+
+### Phase 161 completion summary
+
+- Added regression coverage for backend-mediated ready descriptor parsing
+- Added regression coverage for ready descriptor store-to-download mapping
+- Added regression coverage for ready download UI state
+- Confirmed unavailable/error/idle states do not become fake ready descriptors
+- Confirmed frontend still does not call window.open or location.href
+- Confirmed frontend still does not create anchor-download behavior
+- Confirmed frontend still does not use Supabase/storage directly
+- Confirmed backend route remains unavailable-by-default
+
+### Recommended next phase
+
+- Phase 162 should audit browser download/navigation behavior.
+- Real navigation/download should remain blocked until backend route/provider readiness is production-safe.
+
+### Verification
+
+- phase161: expected focused pass
+- phase160: expected pass
+- phase159: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Regression-only merged phase
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred

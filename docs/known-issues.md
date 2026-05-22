@@ -2309,3 +2309,12 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - Direct frontend Supabase/storage access remains forbidden.
   - Public artifact delivery remains blocked until frontend ready-state UX and production provider readiness are approved.
+
+- Phase 161 adds frontend ready descriptor UI regression coverage:
+  - Frontend can represent backend-mediated ready descriptor state truthfully.
+  - Unavailable/error/idle states do not become fake ready descriptors.
+  - No window.open or location.href behavior was added.
+  - No anchor download behavior was added.
+  - No frontend Supabase/storage access was added.
+  - No signed URL or public URL handling was added.
+  - Public artifact delivery remains blocked until browser download/navigation is separately audited.
