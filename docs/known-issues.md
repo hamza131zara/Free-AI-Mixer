@@ -2278,3 +2278,14 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - Direct frontend Supabase/storage access remains forbidden.
   - Public artifact delivery remains blocked until route integration is audited and implemented safely.
+
+- Phase 158 adds descriptor route ready-state integration audit coverage:
+  - Descriptor route is not wired to decideArtifactDeliveryReadyPreconditions(...) yet.
+  - Descriptor route ready state remains blocked by default.
+  - workspaceMembershipOrRlsReady remains false in route wiring.
+  - providerConfigured remains false in route wiring.
+  - artifactReady remains false in route wiring.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Public artifact delivery remains blocked until route integration is implemented safely.

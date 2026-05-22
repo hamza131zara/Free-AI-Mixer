@@ -11403,3 +11403,59 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 158 - Descriptor Route Ready-State Integration Audit Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- descriptor route ready-state integration audit only
+- no route integration with precondition helper
+- no descriptor route ready-state enablement
+- no production storage provider
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 158 completion summary
+
+- Added docs/security/phase158-descriptor-route-ready-state-integration-audit.md
+- Audited future descriptor route integration with decideArtifactDeliveryReadyPreconditions(...)
+- Confirmed precondition helper is ready for future route integration
+- Confirmed descriptor route is not wired to precondition helper yet
+- Confirmed descriptor route remains blocked from ready state by default
+- Confirmed current route keeps workspace/RLS readiness blocked
+- Confirmed current route keeps storage provider readiness blocked
+- Confirmed current route keeps artifact readiness blocked
+- Confirmed no signed URL generation was added
+- Confirmed no public URL generation was added
+- Confirmed no frontend browser download/navigation behavior was added
+
+### Recommended next phase
+
+- Phase 159 should integrate decideArtifactDeliveryReadyPreconditions(...) into the descriptor route.
+- Integration should remain unavailable-by-default unless a focused test-controlled setup explicitly satisfies all prerequisites.
+
+### Verification
+
+- phase158: expected focused pass
+- phase157: expected pass
+- phase156: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only merged phase
+- No descriptor route ready state was enabled
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
