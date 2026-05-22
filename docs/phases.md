@@ -11783,3 +11783,62 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+## Phase 165 - Production Storage Provider Boundary Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only production storage provider boundary
+- not-configured production storage provider only
+- storage reference validation helper
+- no route integration
+- no Supabase Storage implementation
+- no S3/R2 implementation
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 165 completion summary
+
+- Added backend/artifacts/productionStorageProvider.ts
+- Added ProductionStorageProvider interface
+- Added ProductionArtifactStorageReference type
+- Added ProductionStorageObjectVerificationResult type
+- Added createProductionStorageNotConfiguredProvider(...)
+- Added isValidProductionArtifactStorageReference(...)
+- Added isProductionStorageObjectVerified(...)
+- Confirmed not-configured provider fails closed
+- Confirmed unsafe local path-like object keys are rejected
+- Confirmed production storage boundary is not route-wired
+- Confirmed no signed/public URL behavior was added
+- Confirmed no frontend browser download/navigation behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Recommended next phase
+
+- Phase 166 should audit production storage provider route/precondition integration.
+- Integration should remain unavailable-by-default until a real provider is safely implemented.
+
+### Verification
+
+- phase165: expected focused pass
+- phase164: expected pass
+- phase163: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Boundary-only merged phase
+- No production storage provider implementation was added
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred

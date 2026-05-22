@@ -2346,3 +2346,13 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - No frontend Supabase/storage access was added.
   - Public artifact delivery remains blocked until provider boundary and readiness are implemented safely.
+- Phase 165 adds production storage provider boundary coverage:
+  - ProductionStorageProvider interface exists.
+  - Not-configured production storage provider fails closed.
+  - Storage reference validation rejects local path-like object keys.
+  - Provider boundary is not route-wired yet.
+  - No Supabase/S3/R2 production provider was added.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - No frontend Supabase/storage access was added.
+  - Public artifact delivery remains blocked until provider integration and readiness are implemented safely.
