@@ -1,12 +1,9 @@
-﻿export type ArtifactDownloadDescriptor =
+﻿import type { ArtifactDeliveryUnavailableReason } from "./artifactDeliveryDescriptorService";
+
+export type ArtifactDownloadDescriptor =
   | {
       kind: "unavailable";
-      reason:
-        | "authorization_required"
-        | "workspace_or_rls_not_ready"
-        | "storage_not_configured"
-        | "artifact_not_ready"
-        | "not_configured";
+      reason: ArtifactDeliveryUnavailableReason;
     }
   | {
       kind: "ready";
@@ -15,42 +12,34 @@
       artifactId: string;
       backendRoutePath: string;
       expiresAt: string;
+    }
+  | {
+      kind: "ready";
+      deliveryMode: "backend_signed_url";
+      jobId: string;
+      artifactId: string;
+      signedUrl: string;
+      expiresAt: string;
     };
 
 export type ArtifactDownloadUiState =
   | {
       kind: "disabled";
-      label: "Download unavailable";
-      reason:
-        | "no_descriptor"
-        | "authorization_required"
-        | "workspace_or_rls_not_ready"
-        | "storage_not_configured"
-        | "artifact_not_ready"
-        | "not_configured";
+      label: string;
     }
   | {
       kind: "ready";
-      label: "Download artifact";
+      label: string;
       descriptor: Extract<ArtifactDownloadDescriptor, { kind: "ready" }>;
     };
 
 export const getArtifactDownloadUiState = (
   descriptor?: ArtifactDownloadDescriptor,
 ): ArtifactDownloadUiState => {
-  if (!descriptor) {
+  if (!descriptor || descriptor.kind === "unavailable") {
     return {
       kind: "disabled",
       label: "Download unavailable",
-      reason: "no_descriptor",
-    };
-  }
-
-  if (descriptor.kind === "unavailable") {
-    return {
-      kind: "disabled",
-      label: "Download unavailable",
-      reason: descriptor.reason,
     };
   }
 

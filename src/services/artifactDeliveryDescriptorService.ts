@@ -19,6 +19,14 @@ export type ArtifactDeliveryDescriptorServiceResult =
       expiresAt: string;
     }
   | {
+      kind: "ready";
+      deliveryMode: "backend_signed_url";
+      jobId: string;
+      artifactId: string;
+      signedUrl: string;
+      expiresAt: string;
+    }
+  | {
       kind: "error";
       reason:
         | "invalid_request"
@@ -83,10 +91,8 @@ export const parseArtifactDeliveryDescriptorPayload = (
 
   if (payload.kind === "artifact_delivery_ready") {
     if (
-      payload.deliveryMode !== "backend_mediated" ||
       typeof payload.jobId !== "string" ||
       typeof payload.artifactId !== "string" ||
-      typeof payload.backendRoutePath !== "string" ||
       typeof payload.expiresAt !== "string"
     ) {
       return {
@@ -95,13 +101,45 @@ export const parseArtifactDeliveryDescriptorPayload = (
       };
     }
 
+    if (payload.deliveryMode === "backend_mediated") {
+      if (typeof payload.backendRoutePath !== "string") {
+        return {
+          kind: "error",
+          reason: "invalid_response",
+        };
+      }
+
+      return {
+        kind: "ready",
+        deliveryMode: "backend_mediated",
+        jobId: payload.jobId,
+        artifactId: payload.artifactId,
+        backendRoutePath: payload.backendRoutePath,
+        expiresAt: payload.expiresAt,
+      };
+    }
+
+    if (payload.deliveryMode === "backend_signed_url") {
+      if (typeof payload.signedUrl !== "string") {
+        return {
+          kind: "error",
+          reason: "invalid_response",
+        };
+      }
+
+      return {
+        kind: "ready",
+        deliveryMode: "backend_signed_url",
+        jobId: payload.jobId,
+        artifactId: payload.artifactId,
+        signedUrl: payload.signedUrl,
+        expiresAt: payload.expiresAt,
+      };
+    }
+
     return {
-      kind: "ready",
-      deliveryMode: "backend_mediated",
-      jobId: payload.jobId,
-      artifactId: payload.artifactId,
-      backendRoutePath: payload.backendRoutePath,
-      expiresAt: payload.expiresAt,
+      kind: "error",
+      reason: "invalid_response",
     };
   }
 

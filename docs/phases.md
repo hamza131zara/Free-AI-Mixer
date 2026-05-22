@@ -12381,3 +12381,31 @@ Safety boundaries:
 - production storage readiness still runs before signed URL generation
 - no frontend window.open/location.href/anchor download behavior was added
 - public artifact delivery remains blocked until frontend download/navigation and production hardening phases
+
+## Phase 174-B - Frontend Download Navigation Implementation Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- implemented user-triggered frontend download navigation through backend-approved descriptors
+- added support for backend_signed_url descriptor parsing
+- carried backend_signed_url descriptors through the descriptor store
+- mapped backend_signed_url descriptors into ArtifactDownloadAction
+- added descriptor-based navigation helper with injected window support for tests
+- browser navigation is allowed only after explicit user click and descriptor validation
+- expired descriptors are blocked
+- unavailable descriptors are blocked
+- invalid or unsafe navigation targets are blocked
+
+Safety boundaries:
+
+- no direct frontend Supabase client was added
+- no direct frontend storage access was added
+- no public URL generation was added
+- no manually constructed storage URLs were added
+- no automatic download/navigation was added
+- no service-role behavior was added
+- download/navigation uses only backend-approved descriptor data

@@ -13,7 +13,7 @@ const readIfExists = (relativePath: string): string => {
 };
 
 test.describe("phase174a frontend download navigation audit pack", () => {
-  test("frontend download navigation remains blocked before implementation phase", async () => {
+  test("frontend download navigation is implemented only through descriptor strategy", async () => {
     const navigationSource = readSource("src/services/artifactDownloadNavigationStrategy.ts");
     const actionSource = readSource("src/components/ArtifactDownloadAction.tsx");
     const descriptorActionSource = readSource("src/components/ArtifactDeliveryDescriptorAction.tsx");
@@ -28,12 +28,15 @@ test.describe("phase174a frontend download navigation audit pack", () => {
       "\n" +
       panelSource;
 
-    expect(combinedFrontendSource).not.toContain("window.open");
+    expect(navigationSource).toContain("navigateToArtifactDownloadDescriptor");
+    expect(navigationSource).toContain("allowBrowserNavigation");
+    expect(navigationSource).toContain("isArtifactDownloadDescriptorExpired");
+    expect(navigationSource).toContain("targetWindow.open");
+    expect(descriptorActionSource).toContain("handleRequestDownload");
+
     expect(combinedFrontendSource).not.toContain("location.href");
     expect(combinedFrontendSource).not.toContain("document.createElement");
     expect(combinedFrontendSource).not.toContain(".click()");
-    expect(combinedFrontendSource).not.toContain("backend_signed_url");
-    expect(combinedFrontendSource).not.toContain("signedUrl");
   });
 
   test("frontend still has no direct supabase storage or public url behavior", async () => {
@@ -59,9 +62,10 @@ test.describe("phase174a frontend download navigation audit pack", () => {
     expect(frontendSource).not.toContain("SERVICE_ROLE");
   });
 
-  test("backend signed url descriptor exists but frontend navigation implementation is deferred", async () => {
+  test("backend signed url descriptor exists and frontend navigation remains backend descriptor based", async () => {
     const routeSource = readSource("backend/routes/exports.ts");
     const descriptorServiceSource = readSource("src/services/artifactDeliveryDescriptorService.ts");
+    const navigationSource = readSource("src/services/artifactDownloadNavigationStrategy.ts");
 
     expect(routeSource).toContain("signedUrlDeliveryProvider");
     expect(routeSource).toContain("generateSignedUrl");
@@ -69,9 +73,11 @@ test.describe("phase174a frontend download navigation audit pack", () => {
     expect(routeSource).toContain("artifact_delivery_ready");
 
     expect(descriptorServiceSource).toContain("artifact_delivery_ready");
-    expect(descriptorServiceSource).not.toContain("window.open");
-    expect(descriptorServiceSource).not.toContain("location.href");
-    expect(descriptorServiceSource).not.toContain("document.createElement");
-    expect(descriptorServiceSource).not.toContain(".click()");
+    expect(descriptorServiceSource).toContain("backend_signed_url");
+    expect(descriptorServiceSource).toContain("signedUrl");
+
+    expect(navigationSource).toContain("descriptor.signedUrl");
+    expect(navigationSource).not.toContain("getPublicUrl");
+    expect(navigationSource).not.toContain("createSignedUrl");
   });
 });

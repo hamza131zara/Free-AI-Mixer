@@ -2456,3 +2456,12 @@ Still deferred:
   - No frontend download/navigation behavior exists yet.
   - No public URLs or direct frontend storage access exist.
   - Phase 174 is still required before browser download/navigation.
+
+- Phase 174-B adds user-triggered frontend download navigation, but production launch remains blocked:
+  - Navigation only uses backend-approved descriptors.
+  - backend_signed_url descriptors can be parsed and carried through the frontend store.
+  - Browser navigation is triggered only from the download button flow.
+  - Expired, unavailable, and unsafe descriptors are blocked.
+  - No direct frontend Supabase/storage access exists.
+  - No public URL generation exists.
+  - Controlled E2E delivery smoke and production hardening are still required before launch.

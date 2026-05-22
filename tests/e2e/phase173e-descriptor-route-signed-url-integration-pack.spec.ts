@@ -96,14 +96,15 @@ test.describe("phase173e descriptor route signed url integration pack", () => {
     expect(combinedFrontendSource).not.toContain(".storage.from(");
     expect(combinedFrontendSource).not.toContain("createSignedUrl");
     expect(combinedFrontendSource).not.toContain("getPublicUrl");
-    expect(combinedFrontendSource).not.toContain("signedUrl");
-    expect(combinedFrontendSource).not.toContain("backend_signed_url");
-    expect(combinedFrontendSource).not.toContain("window.open");
+    expect(combinedFrontendSource).toContain("signedUrl");
+    expect(combinedFrontendSource).toContain("backend_signed_url");
+    expect(combinedFrontendSource).toContain("targetWindow.open");
     expect(combinedFrontendSource).not.toContain("location.href");
     expect(combinedFrontendSource).not.toContain("document.createElement");
     expect(combinedFrontendSource).not.toContain(".click()");
   });
 });
+
 
 
 

@@ -20,14 +20,7 @@ export type ArtifactDeliveryDescriptorStoreEntry =
       artifactId: string;
       reason: Extract<ArtifactDeliveryDescriptorServiceResult, { kind: "unavailable" }>["reason"];
     }
-  | {
-      kind: "ready";
-      deliveryMode: "backend_mediated";
-      jobId: string;
-      artifactId: string;
-      backendRoutePath: string;
-      expiresAt: string;
-    }
+  | Extract<ArtifactDeliveryDescriptorServiceResult, { kind: "ready" }>
   | {
       kind: "error";
       jobId: string;
@@ -75,14 +68,7 @@ const mapServiceResultToStoreEntry = (
   }
 
   if (result.kind === "ready") {
-    return {
-      kind: "ready",
-      deliveryMode: result.deliveryMode,
-      jobId: result.jobId,
-      artifactId: result.artifactId,
-      backendRoutePath: result.backendRoutePath,
-      expiresAt: result.expiresAt,
-    };
+    return result;
   }
 
   const errorEntry: ArtifactDeliveryDescriptorStoreEntry = {

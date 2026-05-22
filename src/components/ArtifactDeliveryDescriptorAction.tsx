@@ -1,5 +1,6 @@
 ﻿import { ArtifactDownloadAction } from "./ArtifactDownloadAction";
 import type { ArtifactDownloadDescriptor } from "../services/artifactDownloadUiState";
+import { navigateToArtifactDownloadDescriptor } from "../services/artifactDownloadNavigationStrategy";
 import {
   buildArtifactDeliveryDescriptorStoreKey,
   useArtifactDeliveryDescriptorStore,
@@ -17,13 +18,24 @@ export interface ArtifactDeliveryDescriptorActionProps {
 export const mapDescriptorStoreEntryToDownloadDescriptor = (
   entry: ArtifactDeliveryDescriptorStoreEntry,
 ): ArtifactDownloadDescriptor | undefined => {
-  if (entry.kind === "ready") {
+  if (entry.kind === "ready" && entry.deliveryMode === "backend_mediated") {
     return {
       kind: "ready",
       deliveryMode: entry.deliveryMode,
       jobId: entry.jobId,
       artifactId: entry.artifactId,
       backendRoutePath: entry.backendRoutePath,
+      expiresAt: entry.expiresAt,
+    };
+  }
+
+  if (entry.kind === "ready" && entry.deliveryMode === "backend_signed_url") {
+    return {
+      kind: "ready",
+      deliveryMode: entry.deliveryMode,
+      jobId: entry.jobId,
+      artifactId: entry.artifactId,
+      signedUrl: entry.signedUrl,
       expiresAt: entry.expiresAt,
     };
   }
@@ -59,6 +71,20 @@ export const ArtifactDeliveryDescriptorAction = ({
   const downloadDescriptor =
     mapDescriptorStoreEntryToDownloadDescriptor(descriptorState);
 
+  const handleRequestDownload = (
+    descriptor: Extract<ArtifactDownloadDescriptor, { kind: "ready" }>,
+  ) => {
+    if (onRequestDownload) {
+      onRequestDownload(descriptor);
+      return;
+    }
+
+    void navigateToArtifactDownloadDescriptor({
+      descriptor,
+      allowBrowserNavigation: true,
+    });
+  };
+
   return (
     <div
       data-testid={`artifact-delivery-descriptor-action-${artifactId}`}
@@ -89,7 +115,7 @@ export const ArtifactDeliveryDescriptorAction = ({
       <ArtifactDownloadAction
         artifactId={artifactId}
         descriptor={downloadDescriptor}
-        onRequestDownload={onRequestDownload}
+        onRequestDownload={handleRequestDownload}
       />
     </div>
   );
