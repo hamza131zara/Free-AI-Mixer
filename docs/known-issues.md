@@ -2538,3 +2538,11 @@ Still deferred:
   - No sensitive data should be logged.
   - Public launch remains blocked until Phase 181 final go/no-go.
 
+
+- Phase 180 adds storage policy, backup, and recovery readiness coverage:
+  - Storage buckets must remain private by default.
+  - Signed URLs remain short-lived and backend-generated.
+  - Artifact retention and failed artifact cleanup are documented but not automated.
+  - Database backup and restore expectations are documented.
+  - Public launch remains blocked until Phase 181 final go/no-go.
+

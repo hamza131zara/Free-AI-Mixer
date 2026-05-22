@@ -12667,3 +12667,31 @@ Safety boundaries:
 - no frontend Supabase/storage access was added
 - public launch remains blocked until Phase 181
 
+
+## Phase 180 - Storage Policy, Backup + Recovery Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- added storage backup and recovery readiness boundary
+- added storage recovery documentation
+- documents private storage bucket policy expectations
+- documents signed URL TTL policy
+- documents artifact retention strategy
+- documents failed artifact cleanup expectations
+- documents database backup expectations
+- documents database restore plan
+- documents disaster recovery notes
+
+Safety boundaries:
+
+- no Supabase CLI command was run
+- no remote backup or restore operation was run
+- no artifact cleanup operation was run
+- no public bucket behavior was added
+- no frontend Supabase/storage access was added
+- public launch remains blocked until Phase 181
+
