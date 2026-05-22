@@ -1,5 +1,9 @@
 ﻿import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
 import { resolveBackendMediatedArtifactDelivery } from "../artifacts/backendMediatedArtifactDelivery";
+import {
+  decideArtifactDeliveryReadyPreconditions,
+  type ArtifactDeliveryReadyUnavailableReason,
+} from "../artifacts/artifactDeliveryReadyPreconditions";
 import { Router } from "express";
 import type { NextFunction, Request, Response } from "express";
 import { promises as fs } from "node:fs";
@@ -144,6 +148,81 @@ const sendExportRouteAuthorizationFailure = (
     code: failure.code,
     message: failure.message,
   });
+};
+
+const mapReadyPreconditionUnavailableReasonToDeliveryReason = (
+  reason: ArtifactDeliveryReadyUnavailableReason,
+): "authorization_required" | "workspace_or_rls_not_ready" | "storage_not_configured" | "artifact_not_ready" => {
+  if (reason === "authorization_required") {
+    return "authorization_required";
+  }
+
+  if (reason === "workspace_or_rls_not_ready") {
+    return "workspace_or_rls_not_ready";
+  }
+
+  if (reason === "storage_not_configured" || reason === "provider_unavailable") {
+    return "storage_not_configured";
+  }
+
+  return "artifact_not_ready";
+};
+
+const normalizeArtifactDeliveryReadyStatus = (
+  status: unknown,
+): "available" | "ready" | "pending" | "failed" | "unknown" => {
+  if (status === "available" || status === "ready" || status === "pending" || status === "failed") {
+    return status;
+  }
+
+  return "unknown";
+};
+
+const getArtifactDeliveryMetadataId = (
+  artifactMetadata: unknown,
+): string | undefined => {
+  if (!artifactMetadata || typeof artifactMetadata !== "object") {
+    return undefined;
+  }
+
+  const metadata = artifactMetadata as Record<string, unknown>;
+
+  if (typeof metadata.id === "string") {
+    return metadata.id;
+  }
+
+  if (typeof metadata.artifactId === "string") {
+    return metadata.artifactId;
+  }
+
+  return undefined;
+};
+
+const getArtifactDeliveryMetadataStatus = (
+  artifactMetadata: unknown,
+): "available" | "ready" | "pending" | "failed" | "unknown" => {
+  if (!artifactMetadata || typeof artifactMetadata !== "object") {
+    return "unknown";
+  }
+
+  const metadata = artifactMetadata as Record<string, unknown>;
+
+  return normalizeArtifactDeliveryReadyStatus(metadata.status);
+};
+const isSafeArtifactDeliveryMetadata = (artifactMetadata: unknown): boolean => {
+  if (!artifactMetadata) {
+    return false;
+  }
+
+  const serializedMetadata = JSON.stringify(artifactMetadata);
+
+  return (
+    !serializedMetadata.includes("filePath") &&
+    !serializedMetadata.includes("localPath") &&
+    !serializedMetadata.includes("filesystemPath") &&
+    !serializedMetadata.includes("directoryPath") &&
+    !serializedMetadata.includes("rootPath")
+  );
 };
 export interface ExportRouterOptions {
   rendererAdapter?: RendererAdapter;
@@ -642,22 +721,51 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         return;
       }
 
-      const descriptor = resolveBackendMediatedArtifactDelivery({
-        jobId,
-        artifactId,
-        requester: {
-          userId: record.ownerId,
-          workspaceId: record.workspaceId,
-        },
+      const artifactMetadata = (record.artifacts ?? []).find(
+        (artifact) => getArtifactDeliveryMetadataId(artifact) === artifactId,
+      );
+
+      const readyPreconditionsDecision = decideArtifactDeliveryReadyPreconditions({
         authorization: {
           ownerOrWorkspaceAccessAllowed: options?.authorizationMode === "enforce",
           workspaceMembershipOrRlsReady: false,
         },
+        artifact: {
+          metadataExists: Boolean(artifactMetadata),
+          artifactIdMatches: Boolean(artifactMetadata),
+          status: getArtifactDeliveryMetadataStatus(artifactMetadata),
+          safeMetadataOnly: isSafeArtifactDeliveryMetadata(artifactMetadata),
+        },
         storage: {
           providerConfigured: false,
-          artifactReady: false,
+          providerCanResolve: false,
         },
       });
+
+      const descriptor =
+        readyPreconditionsDecision.kind === "ready"
+          ? resolveBackendMediatedArtifactDelivery({
+              jobId,
+              artifactId,
+              requester: {
+                userId: record.ownerId,
+                workspaceId: record.workspaceId,
+              },
+              authorization: {
+                ownerOrWorkspaceAccessAllowed: true,
+                workspaceMembershipOrRlsReady: true,
+              },
+              storage: {
+                providerConfigured: true,
+                artifactReady: true,
+              },
+            })
+          : {
+              kind: "unavailable" as const,
+              reason: mapReadyPreconditionUnavailableReasonToDeliveryReason(
+                readyPreconditionsDecision.reason,
+              ),
+            };
 
       if (descriptor.kind === "unavailable") {
         response.status(200).json({
@@ -680,6 +788,8 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
   return router;
 };
+
+
 
 
 

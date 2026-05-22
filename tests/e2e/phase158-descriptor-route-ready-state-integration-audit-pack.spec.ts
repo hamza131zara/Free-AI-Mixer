@@ -144,11 +144,11 @@ test.describe("phase158 descriptor route ready state integration audit pack", ()
     expect(routeSource).toContain('"/exports/:jobId/artifacts/:artifactId/delivery"');
     expect(routeSource).toContain("resolveBackendMediatedArtifactDelivery");
 
-    // Phase 158 is audit-only. Route integration remains deferred.
-    expect(routeSource).not.toContain("decideArtifactDeliveryReadyPreconditions");
+    // Phase 158 is audit-only. Route integration exists after Phase 159, but remains unavailable-by-default.
+    expect(routeSource).toContain("decideArtifactDeliveryReadyPreconditions");
     expect(routeSource).toContain("workspaceMembershipOrRlsReady: false");
     expect(routeSource).toContain("providerConfigured: false");
-    expect(routeSource).toContain("artifactReady: false");
+    expect(routeSource).toContain("providerCanResolve: false");
 
     expect(routeSource).not.toContain('req.headers["x-user-id"]');
     expect(routeSource).not.toContain('req.headers["x-workspace-id"]');
@@ -176,3 +176,4 @@ test.describe("phase158 descriptor route ready state integration audit pack", ()
     expect(frontendSource).not.toContain(".click()");
   });
 });
+

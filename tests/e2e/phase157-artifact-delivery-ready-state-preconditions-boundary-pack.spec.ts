@@ -194,11 +194,11 @@ test.describe("phase157 artifact delivery ready state preconditions boundary pac
     expect(preconditionsSource).toContain("unsafe_artifact_metadata");
     expect(preconditionsSource).toContain("provider_unavailable");
 
-    // Phase 157 is boundary-only. Route integration remains deferred.
-    expect(routeSource).not.toContain("decideArtifactDeliveryReadyPreconditions");
+    // Phase 157 is boundary-only. Route integration exists after Phase 159, but remains unavailable-by-default.
+    expect(routeSource).toContain("decideArtifactDeliveryReadyPreconditions");
     expect(routeSource).toContain("workspaceMembershipOrRlsReady: false");
     expect(routeSource).toContain("providerConfigured: false");
-    expect(routeSource).toContain("artifactReady: false");
+    expect(routeSource).toContain("providerCanResolve: false");
 
     expect(routeSource).not.toContain('req.headers["x-user-id"]');
     expect(routeSource).not.toContain('req.headers["x-workspace-id"]');
@@ -226,3 +226,4 @@ test.describe("phase157 artifact delivery ready state preconditions boundary pac
     expect(frontendSource).not.toContain(".click()");
   });
 });
+

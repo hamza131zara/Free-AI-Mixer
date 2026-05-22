@@ -2289,3 +2289,14 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - Direct frontend Supabase/storage access remains forbidden.
   - Public artifact delivery remains blocked until route integration is implemented safely.
+
+- Phase 159 wires descriptor route to artifact delivery ready-state preconditions:
+  - Descriptor route now calls decideArtifactDeliveryReadyPreconditions(...).
+  - Route remains unavailable by default.
+  - workspaceMembershipOrRlsReady remains false in route wiring.
+  - providerConfigured/providerCanResolve remain false in route wiring.
+  - Ready descriptor cannot be reached without future approved readiness wiring.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Public artifact delivery remains blocked until ready-state regression and production provider readiness are approved.

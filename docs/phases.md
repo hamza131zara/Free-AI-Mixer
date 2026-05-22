@@ -11459,3 +11459,56 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 159 - Descriptor Route Ready-State Integration Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- descriptor route integration with artifact delivery ready-state precondition helper
+- unavailable-by-default route behavior
+- no production storage provider
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 159 completion summary
+
+- Wired descriptor route to decideArtifactDeliveryReadyPreconditions(...)
+- Added route-local precondition unavailable reason mapping
+- Added route-local artifact delivery metadata safety checks
+- Confirmed descriptor route remains unavailable by default
+- Confirmed enforced matching requester still cannot reach ready state without workspace/RLS/provider readiness
+- Confirmed route keeps workspace/RLS readiness blocked
+- Confirmed route keeps provider readiness blocked
+- Confirmed no signed URL generation was added
+- Confirmed no public URL generation was added
+- Confirmed no frontend browser download/navigation behavior was added
+
+### Recommended next phase
+
+- Phase 160 should add route ready-state regression coverage.
+- Regression should prove unauthorized, workspace mismatch, missing metadata, unsafe metadata, unconfigured provider, and not-ready artifacts cannot return ready.
+
+### Verification
+
+- phase159: expected focused pass
+- phase158: expected pass
+- phase157: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Descriptor route is integrated with precondition helper but unavailable by default
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred
