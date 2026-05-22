@@ -12239,3 +12239,58 @@ Scope:
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
 
+## Phase 173-A - Signed URL Delivery Safety Audit Only
+
+Status:
+
+- complete
+
+Scope:
+
+- signed URL delivery safety audit only
+- no signed URL provider interface
+- no Supabase signed URL implementation
+- no descriptor route signed URL integration
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 173-A completion summary
+
+- Added docs/security/phase173a-signed-url-delivery-safety-audit.md
+- Audited backend-only signed URL delivery requirements
+- Defined short-lived signed URL requirements
+- Defined unauthorized/forbidden/unavailable fail-closed cases
+- Defined no fake signed URL/no fake ready descriptor requirements
+- Confirmed no signed URL provider exists yet
+- Confirmed no Supabase signed URL implementation exists yet
+- Confirmed descriptor route does not return signed URLs
+- Confirmed no frontend browser download/navigation behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Recommended next checkpoint inside Phase 173
+
+- Phase 173-B should add a backend-only signed URL provider boundary.
+- The provider boundary should fail closed by default.
+- No descriptor route signed URL integration should be added until the boundary is verified.
+
+### Verification
+
+- phase173a: expected focused pass
+- phase172: expected pass
+- phase171: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Audit-only checkpoint inside merged Phase 173
+- No signed URL behavior was added
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No public URL handling was added
+- Public artifact delivery remains deferred

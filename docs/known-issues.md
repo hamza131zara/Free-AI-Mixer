@@ -2426,3 +2426,13 @@ Still deferred:
   - No frontend Supabase/storage access was added.
   - Public artifact delivery remains blocked until signed delivery is implemented safely.
 
+- Phase 173-A adds signed URL delivery safety audit coverage:
+  - Signed URL generation remains deferred.
+  - Signed URL provider boundary remains deferred.
+  - Descriptor route signed URL integration remains deferred.
+  - Signed URLs must be backend-only and short-lived when implemented later.
+  - Unauthorized/forbidden/unavailable states must not generate signed URLs.
+  - Fake signed URLs and fake ready descriptors remain forbidden.
+  - No browser download/navigation behavior was added.
+  - No frontend Supabase/storage access was added.
+  - Public artifact delivery remains blocked.
