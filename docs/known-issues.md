@@ -2408,3 +2408,12 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - No frontend Supabase/storage access was added.
   - Public artifact delivery remains blocked until provider verification and signed delivery are implemented safely.
+- Phase 171 adds Supabase production storage provider boundary + verification coverage:
+  - Backend-only Supabase provider boundary exists.
+  - Object verification is injectable/tested and fails closed.
+  - Missing config, invalid refs, object missing, and provider unavailable states fail closed.
+  - Provider is not route-wired yet.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - No frontend Supabase/storage access was added.
+  - Public artifact delivery remains blocked until route integration and signed delivery are implemented safely.

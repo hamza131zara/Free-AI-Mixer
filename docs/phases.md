@@ -12125,3 +12125,64 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+## Phase 171 - Supabase Production Storage Provider Boundary + Verification Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- backend-only Supabase production storage provider boundary
+- object existence/metadata verification only
+- missing config fails closed
+- invalid storage refs fail closed
+- unsupported provider fails closed
+- object-not-found fails closed
+- provider-unavailable fails closed
+- no route wiring
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 171 completion summary
+
+- Added backend/artifacts/supabaseProductionStorageProvider.ts
+- Added createSupabaseProductionStorageProvider(...)
+- Added SupabaseProductionStorageClient boundary for injected backend-only verification
+- Confirmed missing config fails closed
+- Confirmed invalid/local-path-like storage refs fail closed
+- Confirmed unsupported provider fails closed
+- Confirmed object-not-found and provider-unavailable states fail closed
+- Confirmed verified object metadata can map to ProductionStorageObjectVerificationResult
+- Confirmed provider is not route-wired yet
+- Confirmed no signed/public URL behavior was added
+- Confirmed no frontend browser download/navigation behavior was added
+- Confirmed no frontend Supabase/storage access was added
+
+### Recommended next phase
+
+- Phase 172 should audit and then integrate Supabase provider verification into descriptor route readiness.
+- Phase 172 must preserve authorization, workspace/RLS, artifact metadata, and provider checks.
+- Signed/public URL behavior must remain deferred.
+
+### Verification
+
+- phase171: expected focused pass
+- phase170: expected pass
+- phase169: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Provider boundary + verification only
+- No route wiring was added
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred

@@ -349,7 +349,7 @@ test.describe("phase170 production storage readiness regression provider selecti
     expect(routeSource).toContain("productionStorageReadiness.providerCanResolve");
     expect(routeSource).toContain("workspaceMembershipOrRlsReady: false");
 
-    expect(readIfExists("backend/artifacts/supabaseProductionStorageProvider.ts")).toBe("");
+    expect(readIfExists("backend/artifacts/supabaseProductionStorageProvider.ts")).toContain("createSupabaseProductionStorageProvider");
     expect(readIfExists("backend/artifacts/s3ProductionStorageProvider.ts")).toBe("");
     expect(readIfExists("backend/artifacts/r2ProductionStorageProvider.ts")).toBe("");
 
@@ -379,3 +379,4 @@ test.describe("phase170 production storage readiness regression provider selecti
     expect(frontendSource).not.toContain(".click()");
   });
 });
+
