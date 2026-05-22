@@ -2366,3 +2366,14 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - No frontend Supabase/storage access was added.
   - Public artifact delivery remains blocked until provider integration is implemented safely.
+- Phase 167 adds production storage provider integration boundary coverage:
+  - resolveProductionStorageReadiness(...) exists.
+  - Missing/invalid storage refs fail closed.
+  - Not-configured production storage provider fails closed.
+  - Verified provider result can map to providerConfigured/providerCanResolve readiness.
+  - Integration helper is not route-wired yet.
+  - No Supabase/S3/R2 provider was added.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - No frontend Supabase/storage access was added.
+  - Public artifact delivery remains blocked until route integration and real provider readiness are implemented safely.
