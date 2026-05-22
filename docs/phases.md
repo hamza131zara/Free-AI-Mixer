@@ -11512,3 +11512,58 @@ Scope:
 - No frontend Supabase/storage access was added
 - No signed/public URL handling was added
 - Public artifact delivery remains deferred
+
+## Phase 160 - Artifact Delivery Ready-State Regression Pack
+
+Status:
+
+- complete
+
+Scope:
+
+- artifact delivery ready-state regression coverage
+- no descriptor route behavior change
+- no production storage provider
+- no signed URL generation
+- no public URL generation
+- no browser download/navigation behavior
+- no direct frontend Supabase client
+- no frontend storage access
+- no service-role shortcut
+- no public artifact delivery enablement
+
+### Phase 160 completion summary
+
+- Added regression coverage for unauthenticated descriptor route access
+- Added regression coverage for owner/workspace mismatch
+- Added regression coverage for missing artifact metadata
+- Added regression coverage for artifact id mismatch
+- Added regression coverage for not-ready artifact status
+- Added regression coverage for unsafe artifact metadata
+- Added regression coverage for unconfigured provider/storage
+- Confirmed descriptor route remains unavailable by default
+- Confirmed no signed URL generation was added
+- Confirmed no public URL generation was added
+- Confirmed no frontend browser download/navigation behavior was added
+
+### Recommended next phase
+
+- Phase 161 should audit frontend ready descriptor UI behavior.
+- The frontend may display ready descriptor state, but must still avoid browser navigation/download.
+
+### Verification
+
+- phase160: expected focused pass
+- phase159: expected pass
+- phase158: expected pass
+- typecheck: expected pass
+- build: expected pass
+
+### Safety boundaries
+
+- Regression-only merged phase
+- No descriptor route ready state was enabled
+- No frontend download/navigation behavior was added
+- No frontend Supabase/storage access was added
+- No signed/public URL handling was added
+- Public artifact delivery remains deferred

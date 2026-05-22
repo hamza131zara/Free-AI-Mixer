@@ -2300,3 +2300,12 @@ Still deferred:
   - No browser download/navigation behavior was added.
   - Direct frontend Supabase/storage access remains forbidden.
   - Public artifact delivery remains blocked until ready-state regression and production provider readiness are approved.
+
+- Phase 160 adds artifact delivery ready-state regression coverage:
+  - Unauthenticated and mismatched requesters cannot reach ready state.
+  - Missing metadata, id mismatch, not-ready status, unsafe metadata, and provider blockers fail closed.
+  - Descriptor route remains unavailable by default.
+  - No signed URL or public URL behavior was added.
+  - No browser download/navigation behavior was added.
+  - Direct frontend Supabase/storage access remains forbidden.
+  - Public artifact delivery remains blocked until frontend ready-state UX and production provider readiness are approved.
