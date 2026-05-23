@@ -12,11 +12,6 @@ const viewportCases = [
 
 const placeholderRoutes = [
   {
-    path: "/templates",
-    testId: "templates-page",
-    heading: "Templates are not enabled yet",
-  },
-  {
     path: "/credits",
     testId: "credits-page",
     heading: "Credits are not enabled yet",
@@ -160,6 +155,7 @@ test.describe("product phase 1 navigation shell", () => {
     await page.getByRole("button", { name: "Templates", exact: true }).click();
     await expect(page).toHaveURL(/\/templates$/);
     await expect(page.getByTestId("templates-page")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Templates gallery shell" })).toBeVisible();
 
     await page.getByRole("button", { name: "Credits", exact: true }).click();
     await expect(page).toHaveURL(/\/credits$/);

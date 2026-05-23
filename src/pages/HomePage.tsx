@@ -27,6 +27,13 @@ export function HomePage() {
             <button
               type="button"
               className="secondary"
+              onClick={() => navigateTo("/templates")}
+            >
+              Browse Templates
+            </button>
+            <button
+              type="button"
+              className="secondary"
               onClick={() => navigateTo("/pricing")}
             >
               Review Pricing Policy
@@ -96,10 +103,11 @@ export function HomePage() {
           </p>
         </article>
         <article className="info-card">
-          <p className="info-card-label">Audio setup</p>
+          <p className="info-card-label">Onboarding flow</p>
           <p>
-            Audio is optional and provider-capability based. It is not treated as a
-            separate early mandatory setup step in this shell phase.
+            A first-run onboarding shell can guide users from provider setup to
+            templates, mixer, export, and history without inventing fake account or
+            download state.
           </p>
         </article>
       </div>

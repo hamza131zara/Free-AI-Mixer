@@ -10,6 +10,8 @@ import { ProjectsPage } from "./pages/ProjectsPage";
 import { ExportHistoryPage } from "./pages/ExportHistoryPage";
 import { CreditsPage } from "./pages/CreditsPage";
 import { PricingPage } from "./pages/PricingPage";
+import { TemplatesPage } from "./pages/TemplatesPage";
+import { OnboardingPage } from "./pages/OnboardingPage";
 import { selectCurrentRoute, useNavigationStore } from "./store/navigationStore";
 
 const renderRouteContent = (routeId: string) => {
@@ -33,6 +35,10 @@ const renderRouteContent = (routeId: string) => {
     return <MixerPage />;
   }
 
+  if (routeId === "templates") {
+    return <TemplatesPage />;
+  }
+
   if (routeId === "provider-settings") {
     return <ProviderSettingsPage />;
   }
@@ -51,6 +57,10 @@ const renderRouteContent = (routeId: string) => {
 
   if (routeId === "pricing") {
     return <PricingPage />;
+  }
+
+  if (routeId === "onboarding") {
+    return <OnboardingPage />;
   }
 
   return <PlaceholderPage />;

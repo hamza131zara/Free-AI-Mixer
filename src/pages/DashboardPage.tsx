@@ -17,6 +17,11 @@ const notEnabledYetCards = [
     body:
       "Provider key setup and real credits remain separate later product phases.",
   },
+  {
+    title: "Templates and onboarding",
+    body:
+      "Templates, first-run onboarding, and template-driven generation stay planning-only until later product phases.",
+  },
 ] as const;
 
 export function DashboardPage() {
@@ -68,6 +73,20 @@ export function DashboardPage() {
                 Go to login
               </button>
             )}
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => navigateTo("/templates")}
+            >
+              Browse templates
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => navigateTo("/onboarding")}
+            >
+              Review onboarding
+            </button>
           </div>
         </div>
 

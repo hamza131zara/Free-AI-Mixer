@@ -16,6 +16,7 @@ export interface AppRouteDefinition {
     | "provider-settings"
     | "credits"
     | "pricing"
+    | "onboarding"
     | "help"
     | "privacy"
     | "terms";
@@ -30,7 +31,9 @@ export interface AppRouteDefinition {
     | "placeholder"
     | "auth"
     | "dashboard"
-    | "provider-settings";
+    | "provider-settings"
+    | "templates"
+    | "onboarding";
   status: string;
   sections: NavigationSection[];
 }
@@ -149,12 +152,12 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "templates",
     path: "/templates",
     label: "Templates",
-    eyebrow: "Coming later",
-    title: "Templates are not enabled yet",
+    eyebrow: "Product Phase 9",
+    title: "Templates gallery shell",
     description:
-      "Template browsing, starter packs, and template creation are coming in a later product phase.",
-    kind: "placeholder",
-    status: "Not enabled yet",
+      "This route now shows a read-only template gallery shell with static planning metadata, input requirements, and draft estimates.",
+    kind: "templates",
+    status: "Gallery shell only",
     sections: [
       {
         title: "Credit model",
@@ -162,9 +165,14 @@ export const appRoutes: AppRouteDefinition[] = [
           "Templates will use the same global credit wallet as mixer generation, export flows, and approved download-related platform actions when credits are implemented later.",
       },
       {
+        title: "Static sample content",
+        body:
+          "Template examples in this phase are clearly labeled as static sample content only. They are not generated output.",
+      },
+      {
         title: "Current limitation",
         body:
-          "This phase does not implement template generation, template editing, or fake ready-to-use template catalogs.",
+          "This phase does not implement template generation, template editing, fake ready-to-use outputs, downloads, or project saves.",
       },
     ],
   },
@@ -294,6 +302,29 @@ export const appRoutes: AppRouteDefinition[] = [
     ],
   },
   {
+    id: "onboarding",
+    path: "/onboarding",
+    label: "Onboarding",
+    eyebrow: "Product Phase 9",
+    title: "First-run onboarding shell",
+    description:
+      "This route explains BYOK setup, platform credit policy, templates-to-mixer flow, and backend-gated downloads without inventing account completion or live providers.",
+    kind: "onboarding",
+    status: "Planning shell only",
+    sections: [
+      {
+        title: "What it explains",
+        body:
+          "Onboarding can explain provider setup, platform credits versus provider cost, templates, mixer, exports, and history flow using honest product copy only.",
+      },
+      {
+        title: "Current limitation",
+        body:
+          "This phase does not show fake connected providers, fake balances, fake account completion, or fake ready downloads.",
+      },
+    ],
+  },
+  {
     id: "help",
     path: "/help",
     label: "Help",
@@ -358,6 +389,7 @@ export const primaryNavigationItems = appRoutes.filter(
   (route) =>
     route.id !== "login" &&
     route.id !== "signup" &&
+    route.id !== "onboarding" &&
     route.id !== "privacy" &&
     route.id !== "terms",
 );
