@@ -8,6 +8,8 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { ProviderSettingsPage } from "./pages/ProviderSettingsPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ExportHistoryPage } from "./pages/ExportHistoryPage";
+import { CreditsPage } from "./pages/CreditsPage";
+import { PricingPage } from "./pages/PricingPage";
 import { selectCurrentRoute, useNavigationStore } from "./store/navigationStore";
 
 const renderRouteContent = (routeId: string) => {
@@ -41,6 +43,14 @@ const renderRouteContent = (routeId: string) => {
 
   if (routeId === "exports") {
     return <ExportHistoryPage />;
+  }
+
+  if (routeId === "credits") {
+    return <CreditsPage />;
+  }
+
+  if (routeId === "pricing") {
+    return <PricingPage />;
   }
 
   return <PlaceholderPage />;

@@ -17,8 +17,8 @@ export function HomePage() {
           <h1>Free AI Mixer now has a real navigation shell.</h1>
           <p className="marketing-description">
             The existing mixer workbench stays available on its own route, while the
-            rest of the SaaS surface is now mapped into honest placeholder pages
-            instead of pretending unfinished product modules already exist.
+            rest of the SaaS surface is now mapped into honest product-boundary
+            pages instead of pretending unfinished product modules already exist.
           </p>
           <div className="hero-actions">
             <button type="button" onClick={() => navigateTo("/mixer")}>
@@ -29,7 +29,7 @@ export function HomePage() {
               className="secondary"
               onClick={() => navigateTo("/pricing")}
             >
-              View Pricing Placeholder
+              Review Pricing Policy
             </button>
           </div>
         </div>

@@ -246,12 +246,12 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "credits",
     path: "/credits",
     label: "Credits",
-    eyebrow: "Coming later",
+    eyebrow: "Product Phase 8",
     title: "Credits are not enabled yet",
     description:
-      "A real platform credit wallet, ledger, and usage history are coming in a later product phase.",
+      "This route now shows planned credit policy and ledger-readiness boundaries without fabricating a balance, purchase flow, or fake premium state.",
     kind: "placeholder",
-    status: "Not enabled yet",
+    status: "Policy boundary only",
     sections: [
       {
         title: "Planned platform model",
@@ -266,7 +266,7 @@ export const appRoutes: AppRouteDefinition[] = [
       {
         title: "Current limitation",
         body:
-          "No live credit balance, ledger, refill state, or fake remaining-credit value is shown in this phase.",
+          "No live credit balance, ledger mutation, refill state, or fake remaining-credit value is shown in this phase.",
       },
     ],
   },
@@ -274,17 +274,17 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "pricing",
     path: "/pricing",
     label: "Pricing",
-    eyebrow: "Coming later",
+    eyebrow: "Product Phase 8",
     title: "Pricing is not enabled yet",
     description:
-      "Commercial plans, subscriptions, and billing decisions are coming in a later product phase.",
+      "This route now shows draft pricing and billing-boundary policy only. Checkout, subscriptions, and payment processing stay disabled.",
     kind: "placeholder",
-    status: "Not enabled yet",
+    status: "Draft policy only",
     sections: [
       {
         title: "What can be stated now",
         body:
-          "BYOK users will still pay provider generation cost through their own API keys. Platform credits, subscriptions, and billing rules are not finalized in this phase.",
+          "BYOK users will still pay provider generation cost through their own API keys. Platform credits, subscriptions, and billing rules remain draft planning only in this phase.",
       },
       {
         title: "Current limitation",

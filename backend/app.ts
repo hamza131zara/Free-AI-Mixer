@@ -7,6 +7,8 @@ import { createAuthRouter } from "./routes/auth";
 import { createGenerationRouter } from "./routes/generation";
 import { createProviderSettingsRouter } from "./routes/providerSettings";
 import { createProjectHistoryRouter } from "./routes/projectHistory";
+import { createCreditsRouter } from "./routes/credits";
+import { createBillingRouter } from "./routes/billing";
 import { createExportRouter } from "./routes/exports";
 import { createBackendDependencies } from "./composition/backendDependencies";
 import { createRenderWorkerLifecycle } from "./workers/renderWorkerLifecycle";
@@ -87,6 +89,8 @@ export const createApp = (): Express => {
   app.use(createGenerationRouter({ runtimeConfig: authRuntimeConfig }));
   app.use(createProviderSettingsRouter({ runtimeConfig: authRuntimeConfig }));
   app.use(createProjectHistoryRouter({ runtimeConfig: authRuntimeConfig }));
+  app.use(createCreditsRouter({ runtimeConfig: authRuntimeConfig }));
+  app.use(createBillingRouter());
   app.use(createExportRouter(backendDeps.registry, exportRouterOptions));
   app.use(exportErrorHandler);
 
