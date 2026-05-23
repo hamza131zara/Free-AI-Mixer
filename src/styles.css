@@ -172,7 +172,8 @@ button.icon-button {
 .marketing-page,
 .placeholder-page,
 .auth-page,
-.dashboard-page {
+.dashboard-page,
+.provider-settings-page {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
   padding: 40px 0 56px;
@@ -263,7 +264,9 @@ button.icon-button {
 .route-card-grid,
 .placeholder-grid,
 .info-card-grid,
-.note-grid {
+.note-grid,
+.provider-card-grid,
+.capability-chip-list {
   display: grid;
   gap: 16px;
 }
@@ -277,17 +280,41 @@ button.icon-button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.provider-card-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .placeholder-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .route-card,
-.info-card {
+.info-card,
+.provider-card {
   border: 1px solid rgba(215, 222, 230, 0.9);
   border-radius: 16px;
   padding: 20px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+}
+
+.capability-chip-list {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  margin-top: 16px;
+}
+
+.capability-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: rgba(248, 250, 252, 0.95);
+  color: #334155;
+  font-size: 0.84rem;
+  font-weight: 700;
 }
 
 .app-shell {
@@ -557,7 +584,8 @@ dd {
   .marketing-page,
   .placeholder-page,
   .auth-page,
-  .dashboard-page {
+  .dashboard-page,
+  .provider-settings-page {
     width: min(100% - 24px, 1180px);
   }
 
@@ -623,7 +651,8 @@ dd {
   .route-card-grid,
   .info-card-grid,
   .note-grid,
-  .placeholder-grid {
+  .placeholder-grid,
+  .provider-card-grid {
     grid-template-columns: 1fr;
   }
 
@@ -645,7 +674,8 @@ dd {
   .marketing-page,
   .placeholder-page,
   .auth-page,
-  .dashboard-page {
+  .dashboard-page,
+  .provider-settings-page {
     width: min(100% - 20px, 1180px);
     padding-top: 24px;
   }
@@ -655,7 +685,8 @@ dd {
   .auth-panel,
   .dashboard-copy,
   .route-card,
-  .info-card {
+  .info-card,
+  .provider-card {
     padding: 18px;
   }
 

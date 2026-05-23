@@ -5,6 +5,7 @@ import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { ProviderSettingsPage } from "./pages/ProviderSettingsPage";
 import { selectCurrentRoute, useNavigationStore } from "./store/navigationStore";
 
 const renderRouteContent = (routeId: string) => {
@@ -26,6 +27,10 @@ const renderRouteContent = (routeId: string) => {
 
   if (routeId === "mixer") {
     return <MixerPage />;
+  }
+
+  if (routeId === "provider-settings") {
+    return <ProviderSettingsPage />;
   }
 
   return <PlaceholderPage />;

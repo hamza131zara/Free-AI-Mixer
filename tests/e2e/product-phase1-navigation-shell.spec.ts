@@ -27,11 +27,6 @@ const placeholderRoutes = [
     heading: "Export history is not enabled yet",
   },
   {
-    path: "/settings/providers",
-    testId: "provider-settings-page",
-    heading: "Provider settings are not enabled yet",
-  },
-  {
     path: "/credits",
     testId: "credits-page",
     heading: "Credits are not enabled yet",
@@ -170,12 +165,12 @@ test.describe("product phase 1 navigation shell", () => {
     await expect(page.getByText("2500 daily Free AI Mixer platform credits")).toBeVisible();
 
     await page.goto("/settings/providers", { waitUntil: "load" });
-    await expect(page.getByText("Provider settings are not enabled yet")).toBeVisible();
+    await expect(page.getByText("Provider settings and routing foundation")).toBeVisible();
     await expect(
-      page.getByText("No provider keys can be connected, stored, validated, or shown as active"),
+      page.getByText("Secure API key connection is not enabled yet.", { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByText("multiple API keys do not multiply those daily credits"),
+      page.getByText("Multiple API keys do not multiply daily platform credits."),
     ).toBeVisible();
   });
 

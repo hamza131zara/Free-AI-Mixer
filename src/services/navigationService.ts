@@ -24,7 +24,13 @@ export interface AppRouteDefinition {
   eyebrow: string;
   title: string;
   description: string;
-  kind: "home" | "workbench" | "placeholder" | "auth" | "dashboard";
+  kind:
+    | "home"
+    | "workbench"
+    | "placeholder"
+    | "auth"
+    | "dashboard"
+    | "provider-settings";
   status: string;
   sections: NavigationSection[];
 }
@@ -212,12 +218,12 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "provider-settings",
     path: "/settings/providers",
     label: "Provider Settings",
-    eyebrow: "Coming later",
-    title: "Provider settings are not enabled yet",
+    eyebrow: "Product Phase 3",
+    title: "Provider settings and routing foundation",
     description:
-      "BYOK onboarding, provider capability setup, and secure account-linked provider configuration are coming in a later product phase.",
-    kind: "placeholder",
-    status: "Not enabled yet",
+      "This route now shows provider catalog and routing metadata through protected backend-owned state. Secure key connection and live validation remain disabled.",
+    kind: "provider-settings",
+    status: "Read-only foundation",
     sections: [
       {
         title: "BYOK model",
