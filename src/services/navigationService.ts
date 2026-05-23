@@ -1,3 +1,5 @@
+import type { RouteSeoMetadata } from "../types/seo";
+
 export interface NavigationSection {
   title: string;
   body: string;
@@ -17,9 +19,13 @@ export interface AppRouteDefinition {
     | "credits"
     | "pricing"
     | "onboarding"
+    | "admin"
     | "help"
     | "privacy"
-    | "terms";
+    | "terms"
+    | "cookies"
+    | "acceptable-use"
+    | "data-retention";
   path: string;
   label: string;
   eyebrow: string;
@@ -33,9 +39,13 @@ export interface AppRouteDefinition {
     | "dashboard"
     | "provider-settings"
     | "templates"
-    | "onboarding";
+    | "onboarding"
+    | "admin"
+    | "help"
+    | "legal";
   status: string;
   sections: NavigationSection[];
+  seo: RouteSeoMetadata;
 }
 
 export const appRoutes: AppRouteDefinition[] = [
@@ -46,7 +56,7 @@ export const appRoutes: AppRouteDefinition[] = [
     eyebrow: "Product Phase 1",
     title: "Free AI Mixer is moving from workbench to product shell",
     description:
-      "The mixer workbench is live locally today. Account, templates, credits, billing, and support surfaces are being added in later product phases.",
+      "The mixer workbench is live locally today. Account, templates, credits, billing, admin, and support operations are being added in later product phases.",
     kind: "home",
     status: "Workbench live locally",
     sections: [
@@ -58,7 +68,7 @@ export const appRoutes: AppRouteDefinition[] = [
       {
         title: "What is not enabled yet",
         body:
-          "Dashboard, templates, project history, provider settings, credits, pricing, support, privacy, and terms are now routed into the shell, but most of those areas are still placeholder pages in this product phase.",
+          "Dashboard, templates, project history, provider settings, credits, pricing, admin, support, and legal routes are now mapped into the shell, but many of those areas are still readiness-only pages in this product phase.",
       },
       {
         title: "Product notes",
@@ -66,6 +76,15 @@ export const appRoutes: AppRouteDefinition[] = [
           "Future BYOK users may later get 2500 daily Free AI Mixer platform credits. BYOK users still pay provider generation cost through their own API keys, multiple API keys do not multiply daily credits, and audio remains optional based on provider capability instead of being a separate early setup.",
       },
     ],
+    seo: {
+      title: "Free AI Mixer | Home",
+      description:
+        "Free AI Mixer product shell with truthful routes for templates, credits, onboarding, and the preserved mixer workbench.",
+      canonicalPath: "/",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
   },
   {
     id: "dashboard",
@@ -89,6 +108,15 @@ export const appRoutes: AppRouteDefinition[] = [
           "Workspace switching, durable project history, export history, provider settings, and credits remain separate product phases and stay clearly marked as not enabled yet.",
       },
     ],
+    seo: {
+      title: "Dashboard | Free AI Mixer",
+      description:
+        "Protected dashboard boundary for backend-verified session status only.",
+      canonicalPath: "/dashboard",
+      indexable: false,
+      includeInSitemap: false,
+      robots: "noindex,nofollow",
+    },
   },
   {
     id: "login",
@@ -112,6 +140,15 @@ export const appRoutes: AppRouteDefinition[] = [
           "This phase does not add provider key setup, billing, credits, workspace switching, or public launch auth flows.",
       },
     ],
+    seo: {
+      title: "Log In | Free AI Mixer",
+      description:
+        "Backend-auth login boundary for Free AI Mixer.",
+      canonicalPath: "/login",
+      indexable: false,
+      includeInSitemap: false,
+      robots: "noindex,nofollow",
+    },
   },
   {
     id: "signup",
@@ -135,6 +172,15 @@ export const appRoutes: AppRouteDefinition[] = [
           "No fake onboarding state, fake workspace creation, or fake welcome dashboard is created in this product phase.",
       },
     ],
+    seo: {
+      title: "Sign Up | Free AI Mixer",
+      description:
+        "Backend-auth signup boundary for Free AI Mixer.",
+      canonicalPath: "/signup",
+      indexable: false,
+      includeInSitemap: false,
+      robots: "noindex,nofollow",
+    },
   },
   {
     id: "mixer",
@@ -147,6 +193,15 @@ export const appRoutes: AppRouteDefinition[] = [
     kind: "workbench",
     status: "Available now",
     sections: [],
+    seo: {
+      title: "Mixer Workbench | Free AI Mixer",
+      description:
+        "Live local mixer workbench for scene generation, queueing, timeline editing, and export requests.",
+      canonicalPath: "/mixer",
+      indexable: false,
+      includeInSitemap: false,
+      robots: "noindex,nofollow",
+    },
   },
   {
     id: "templates",
@@ -175,6 +230,15 @@ export const appRoutes: AppRouteDefinition[] = [
           "This phase does not implement template generation, template editing, fake ready-to-use outputs, downloads, or project saves.",
       },
     ],
+    seo: {
+      title: "Templates Gallery | Free AI Mixer",
+      description:
+        "Static template gallery shell with planning metadata, input requirements, and draft credit estimate ranges.",
+      canonicalPath: "/templates",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
   },
   {
     id: "projects",
@@ -198,6 +262,15 @@ export const appRoutes: AppRouteDefinition[] = [
           "This page does not fake saved projects, cloud timestamps, collaboration, or ownership from localStorage.",
       },
     ],
+    seo: {
+      title: "Projects | Free AI Mixer",
+      description:
+        "Protected project library boundary with honest empty-state behavior.",
+      canonicalPath: "/projects",
+      indexable: false,
+      includeInSitemap: false,
+      robots: "noindex,nofollow",
+    },
   },
   {
     id: "exports",
@@ -221,6 +294,15 @@ export const appRoutes: AppRouteDefinition[] = [
           "Real account-level export history, artifact rows, retention, and recovery tooling still depend on later persistence and production delivery phases.",
       },
     ],
+    seo: {
+      title: "History | Free AI Mixer",
+      description:
+        "Protected export history boundary without fabricated artifacts or downloads.",
+      canonicalPath: "/history",
+      indexable: false,
+      includeInSitemap: false,
+      robots: "noindex,nofollow",
+    },
   },
   {
     id: "provider-settings",
@@ -249,6 +331,15 @@ export const appRoutes: AppRouteDefinition[] = [
           "No provider keys can be connected, stored, validated, or shown as active in this product phase.",
       },
     ],
+    seo: {
+      title: "Provider Settings | Free AI Mixer",
+      description:
+        "Read-only provider settings and routing foundation for BYOK planning.",
+      canonicalPath: "/settings/providers",
+      indexable: false,
+      includeInSitemap: false,
+      robots: "noindex,nofollow",
+    },
   },
   {
     id: "credits",
@@ -277,6 +368,15 @@ export const appRoutes: AppRouteDefinition[] = [
           "No live credit balance, ledger mutation, refill state, or fake remaining-credit value is shown in this phase.",
       },
     ],
+    seo: {
+      title: "Credits Policy | Free AI Mixer",
+      description:
+        "Draft credit policy page explaining BYOK platform credits, wallet rules, and truthful reservation planning.",
+      canonicalPath: "/credits",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
   },
   {
     id: "pricing",
@@ -300,6 +400,15 @@ export const appRoutes: AppRouteDefinition[] = [
           "This page does not show fake plans, fake checkout buttons, or fake entitlements.",
       },
     ],
+    seo: {
+      title: "Pricing Draft | Free AI Mixer",
+      description:
+        "Draft pricing and billing-readiness page with truthful BYOK cost separation and planning-only estimates.",
+      canonicalPath: "/pricing",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
   },
   {
     id: "onboarding",
@@ -323,22 +432,63 @@ export const appRoutes: AppRouteDefinition[] = [
           "This phase does not show fake connected providers, fake balances, fake account completion, or fake ready downloads.",
       },
     ],
+    seo: {
+      title: "Onboarding | Free AI Mixer",
+      description:
+        "First-run onboarding shell explaining BYOK provider setup, platform credits, templates, mixer, exports, and history.",
+      canonicalPath: "/onboarding",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "admin",
+    path: "/admin",
+    label: "Admin",
+    eyebrow: "Product Phase 10",
+    title: "Admin readiness shell",
+    description:
+      "This route is reserved for future backend-verified platform admin tools and stays fail closed in this product phase.",
+    kind: "admin",
+    status: "Not enabled yet",
+    sections: [
+      {
+        title: "Current limitation",
+        body:
+          "Admin and moderator tools are not enabled yet. This route does not show fake metrics, fake users, fake moderation queues, or fake revenue.",
+      },
+      {
+        title: "Access model later",
+        body:
+          "Any platform admin or platform moderator access must be backend-verified later and must never rely on frontend-only role truth.",
+      },
+    ],
+    seo: {
+      title: "Admin Readiness | Free AI Mixer",
+      description:
+        "Fail-closed admin readiness shell for future backend-verified platform operations.",
+      canonicalPath: "/admin",
+      indexable: false,
+      includeInSitemap: false,
+      robots: "noindex,nofollow",
+    },
   },
   {
     id: "help",
     path: "/help",
     label: "Help",
-    eyebrow: "Coming later",
-    title: "Help and support are not enabled yet",
+    eyebrow: "Product Phase 10",
+    title: "Help and support shell",
     description:
-      "A public support path, product guidance, and launch-ready help content are coming in a later product phase.",
-    kind: "placeholder",
-    status: "Not enabled yet",
+      "This route now provides truthful setup guidance, troubleshooting notes, and support-readiness copy without fake ticket submission.",
+    kind: "help",
+    status: "Support shell only",
     sections: [
       {
-        title: "What will land here",
+        title: "What this shell can explain",
         body:
-          "Later phases should add setup guidance, known limitations, support/contact paths, and user-safe troubleshooting for BYOK, exports, and credits.",
+          "BYOK setup help, export and download readiness boundaries, credits and billing draft policy, and safe product troubleshooting can be documented here now.",
       },
       {
         title: "Current limitation",
@@ -346,42 +496,150 @@ export const appRoutes: AppRouteDefinition[] = [
           "This phase does not add live chat, ticketing, fake support forms, or fake SLA claims.",
       },
     ],
+    seo: {
+      title: "Help | Free AI Mixer",
+      description:
+        "Help and support shell with truthful guidance for BYOK setup, exports, credits, and downloads.",
+      canonicalPath: "/help",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
   },
   {
     id: "privacy",
     path: "/privacy",
     label: "Privacy",
-    eyebrow: "Coming later",
-    title: "Privacy page is not enabled yet",
+    eyebrow: "Product Phase 10",
+    title: "Privacy policy draft",
     description:
-      "A production privacy policy will be added in a later product phase alongside auth, billing, and public launch preparation.",
-    kind: "placeholder",
-    status: "Not enabled yet",
+      "This route provides draft privacy-readiness language only and does not pretend final legal review is complete.",
+    kind: "legal",
+    status: "Draft legal-readiness only",
     sections: [
       {
         title: "Current limitation",
         body:
-          "This placeholder does not pretend a final privacy policy already exists. Legal review and production policy text are still pending.",
+          "This page is not a lawyer-approved privacy policy. It stays narrowly aligned to current product behavior and draft readiness topics only.",
       },
     ],
+    seo: {
+      title: "Privacy Draft | Free AI Mixer",
+      description:
+        "Draft privacy-readiness page covering current product boundaries, BYOK considerations, and future policy work.",
+      canonicalPath: "/privacy",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
   },
   {
     id: "terms",
     path: "/terms",
     label: "Terms",
-    eyebrow: "Coming later",
-    title: "Terms page is not enabled yet",
+    eyebrow: "Product Phase 10",
+    title: "Terms draft",
     description:
-      "Production terms of service will be added in a later product phase alongside launch and billing preparation.",
-    kind: "placeholder",
-    status: "Not enabled yet",
+      "This route provides draft terms-readiness language only and does not present a final public contract.",
+    kind: "legal",
+    status: "Draft legal-readiness only",
     sections: [
       {
         title: "Current limitation",
         body:
-          "This placeholder does not present fake legal acceptance or a final public contract. That work belongs to a later product phase.",
+          "This page does not present fake legal acceptance, final billing commitments, or launch-ready contractual claims.",
       },
     ],
+    seo: {
+      title: "Terms Draft | Free AI Mixer",
+      description:
+        "Draft terms-readiness page for Free AI Mixer with truthful BYOK, credit, and service-boundary language.",
+      canonicalPath: "/terms",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cookies",
+    path: "/cookies",
+    label: "Cookies",
+    eyebrow: "Product Phase 10",
+    title: "Cookies and local storage draft",
+    description:
+      "This route explains draft cookie and browser-storage behavior without overclaiming consent or compliance coverage.",
+    kind: "legal",
+    status: "Draft legal-readiness only",
+    sections: [
+      {
+        title: "Current limitation",
+        body:
+          "This page is draft-only and does not claim a final consent-management or regional-compliance implementation already exists.",
+      },
+    ],
+    seo: {
+      title: "Cookies Draft | Free AI Mixer",
+      description:
+        "Draft cookies and browser-storage page for Free AI Mixer.",
+      canonicalPath: "/cookies",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "acceptable-use",
+    path: "/acceptable-use",
+    label: "Acceptable Use",
+    eyebrow: "Product Phase 10",
+    title: "Acceptable use draft",
+    description:
+      "This route describes draft acceptable-use expectations for BYOK, uploads, and generated content without claiming final policy approval.",
+    kind: "legal",
+    status: "Draft legal-readiness only",
+    sections: [
+      {
+        title: "Current limitation",
+        body:
+          "This page is not a final moderation or policy-enforcement program. It only documents draft expectations and future safety boundaries.",
+      },
+    ],
+    seo: {
+      title: "Acceptable Use Draft | Free AI Mixer",
+      description:
+        "Draft acceptable-use page for Free AI Mixer covering uploads, generated content, and BYOK responsibilities.",
+      canonicalPath: "/acceptable-use",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "data-retention",
+    path: "/data-retention",
+    label: "Data Retention",
+    eyebrow: "Product Phase 10",
+    title: "Data retention draft",
+    description:
+      "This route explains draft retention expectations for artifacts, metadata, and platform records without claiming final policy enforcement.",
+    kind: "legal",
+    status: "Draft legal-readiness only",
+    sections: [
+      {
+        title: "Current limitation",
+        body:
+          "Retention details are still draft policy only. This page does not claim final automated cleanup or legal review is complete.",
+      },
+    ],
+    seo: {
+      title: "Data Retention Draft | Free AI Mixer",
+      description:
+        "Draft data-retention page for Free AI Mixer covering artifacts, metadata, and planned retention boundaries.",
+      canonicalPath: "/data-retention",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
   },
 ];
 
@@ -390,12 +648,21 @@ export const primaryNavigationItems = appRoutes.filter(
     route.id !== "login" &&
     route.id !== "signup" &&
     route.id !== "onboarding" &&
+    route.id !== "admin" &&
     route.id !== "privacy" &&
-    route.id !== "terms",
+    route.id !== "terms" &&
+    route.id !== "cookies" &&
+    route.id !== "acceptable-use" &&
+    route.id !== "data-retention",
 );
 
 export const secondaryNavigationItems = appRoutes.filter(
-  (route) => route.id === "privacy" || route.id === "terms",
+  (route) =>
+    route.id === "privacy" ||
+    route.id === "terms" ||
+    route.id === "cookies" ||
+    route.id === "acceptable-use" ||
+    route.id === "data-retention",
 );
 
 export const authNavigationItems = appRoutes.filter(

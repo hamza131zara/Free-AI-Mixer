@@ -54,7 +54,8 @@ export function HomePage() {
             <h2>SaaS modules later</h2>
             <p>
               Dashboard, templates, project history, provider settings, credits,
-              billing, and support are coming in later product phases.
+              billing, and real support/admin operations are coming in later
+              product phases. Help and legal pages stay shell-only for now.
             </p>
           </article>
           <article className="info-card">

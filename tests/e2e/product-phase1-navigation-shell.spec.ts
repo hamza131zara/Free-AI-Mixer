@@ -24,17 +24,17 @@ const placeholderRoutes = [
   {
     path: "/help",
     testId: "help-page",
-    heading: "Help and support are not enabled yet",
+    heading: "Help and support shell",
   },
   {
     path: "/privacy",
     testId: "privacy-page",
-    heading: "Privacy page is not enabled yet",
+    heading: "Privacy policy draft",
   },
   {
     path: "/terms",
     testId: "terms-page",
-    heading: "Terms page is not enabled yet",
+    heading: "Terms draft",
   },
 ] as const;
 
@@ -93,7 +93,7 @@ test.describe("product phase 1 navigation shell", () => {
         await expect(page.getByTestId(route.testId)).toBeVisible();
         await expect(page.getByRole("heading", { name: route.heading })).toBeVisible();
         await expect(page.getByTestId(route.testId)).toContainText(
-          /not enabled yet|coming in a later product phase/i,
+          /not enabled yet|coming in a later product phase|draft legal-readiness only|support shell only/i,
         );
       });
     }
