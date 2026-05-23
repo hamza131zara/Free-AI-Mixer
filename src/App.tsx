@@ -1,25 +1,23 @@
-import { SceneComposer } from "./components/SceneComposer";
-import { SceneQueue } from "./components/SceneQueue";
-import { SceneStatus } from "./components/SceneStatus";
-import { TimelinePanel } from "./components/TimelinePanel";
+import { AppShell } from "./components/AppShell";
+import { MixerPage } from "./pages/MixerPage";
+import { HomePage } from "./pages/HomePage";
+import { PlaceholderPage } from "./pages/PlaceholderPage";
+import { selectCurrentRoute, useNavigationStore } from "./store/navigationStore";
+
+const renderRouteContent = (routeId: string) => {
+  if (routeId === "home") {
+    return <HomePage />;
+  }
+
+  if (routeId === "mixer") {
+    return <MixerPage />;
+  }
+
+  return <PlaceholderPage />;
+};
 
 export function App() {
-  return (
-    <main className="app-shell">
-      <section className="workspace">
-        <div className="workspace-header">
-          <div>
-            <p className="eyebrow">AI Scene Generation</p>
-            <h1>Free AI Mixer</h1>
-          </div>
-        </div>
-        <SceneStatus />
-        <div className="workspace-grid">
-          <SceneComposer />
-          <SceneQueue />
-        </div>
-      </section>
-      <TimelinePanel />
-    </main>
-  );
+  const currentRoute = useNavigationStore(selectCurrentRoute);
+
+  return <AppShell>{renderRouteContent(currentRoute.id)}</AppShell>;
 }

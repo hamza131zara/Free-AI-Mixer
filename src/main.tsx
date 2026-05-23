@@ -1,7 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { initializeNavigationStore } from "./store/navigationStore";
 import "./styles.css";
+
+initializeNavigationStore();
 
 createRoot(document.getElementById("root") as HTMLElement).render(
   <StrictMode>

@@ -102,13 +102,13 @@ const seedSceneStore = async (
   );
 };
 
-const gotoAppAndAssertShell = async (
+const gotoMixerAndAssertShell = async (
   page: Page,
 ): Promise<{ elapsedMs: number; diagnostics: RuntimeDiagnostics }> => {
   const diagnostics = attachRuntimeDiagnostics(page);
   const startedAt = Date.now();
 
-  await page.goto("/", { waitUntil: "load" });
+  await page.goto("/mixer", { waitUntil: "load" });
   await expect(page.getByRole("heading", { name: "Free AI Mixer" })).toBeVisible();
   await expect(page.getByText("AI Scene Generation")).toBeVisible();
 
@@ -138,7 +138,7 @@ test.describe("post181 launch qa smoke", () => {
   test("main app render finishes locally without initial console or page error spam", async ({
     page,
   }) => {
-    const { elapsedMs, diagnostics } = await gotoAppAndAssertShell(page);
+    const { elapsedMs, diagnostics } = await gotoMixerAndAssertShell(page);
 
     await expect(page.getByRole("button", { name: "Add Scene" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Generate All" })).toBeVisible();
@@ -184,7 +184,7 @@ test.describe("post181 launch qa smoke", () => {
           height: viewport.height,
         });
 
-        await page.goto("/", { waitUntil: "load" });
+        await page.goto("/mixer", { waitUntil: "load" });
 
         await expect(page.getByRole("heading", { name: "Free AI Mixer" })).toBeVisible();
         await expect(page.getByRole("button", { name: "Add Scene" })).toBeVisible();
@@ -201,7 +201,7 @@ test.describe("post181 launch qa smoke", () => {
     page,
   }) => {
     await seedSceneStore(page, [createSuccessfulScene("launch-qa-success-scene")]);
-    await gotoAppAndAssertShell(page);
+    await gotoMixerAndAssertShell(page);
 
     await page.getByLabel("Prompt").fill("Post-181 launch QA scene");
     await page.getByLabel("Style").selectOption("cinematic");
