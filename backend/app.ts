@@ -5,6 +5,7 @@ import path from "node:path";
 import { exportErrorHandler } from "./errors/exportErrors";
 import { createAuthRouter } from "./routes/auth";
 import { createProviderSettingsRouter } from "./routes/providerSettings";
+import { createProjectHistoryRouter } from "./routes/projectHistory";
 import { createExportRouter } from "./routes/exports";
 import { createBackendDependencies } from "./composition/backendDependencies";
 import { createRenderWorkerLifecycle } from "./workers/renderWorkerLifecycle";
@@ -80,6 +81,7 @@ export const createApp = (): Express => {
   app.use(createTrustedAuthMiddleware({ runtimeConfig: authRuntimeConfig }));
   app.use(createAuthRouter({ runtimeConfig: authRuntimeConfig }));
   app.use(createProviderSettingsRouter({ runtimeConfig: authRuntimeConfig }));
+  app.use(createProjectHistoryRouter({ runtimeConfig: authRuntimeConfig }));
   app.use(createExportRouter(backendDeps.registry, exportRouterOptions));
   app.use(exportErrorHandler);
 

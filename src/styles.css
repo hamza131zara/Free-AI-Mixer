@@ -173,7 +173,9 @@ button.icon-button {
 .placeholder-page,
 .auth-page,
 .dashboard-page,
-.provider-settings-page {
+.provider-settings-page,
+.projects-page,
+.export-history-page {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
   padding: 40px 0 56px;
@@ -585,7 +587,9 @@ dd {
   .placeholder-page,
   .auth-page,
   .dashboard-page,
-  .provider-settings-page {
+  .provider-settings-page,
+  .projects-page,
+  .export-history-page {
     width: min(100% - 24px, 1180px);
   }
 
@@ -675,7 +679,9 @@ dd {
   .placeholder-page,
   .auth-page,
   .dashboard-page,
-  .provider-settings-page {
+  .provider-settings-page,
+  .projects-page,
+  .export-history-page {
     width: min(100% - 20px, 1180px);
     padding-top: 24px;
   }

@@ -172,45 +172,45 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "projects",
     path: "/projects",
     label: "Projects",
-    eyebrow: "Coming later",
-    title: "Projects are not enabled yet",
+    eyebrow: "Product Phase 4",
+    title: "Project library boundary",
     description:
-      "A durable project library, history, and multi-session project management are coming in a later product phase.",
-    kind: "placeholder",
-    status: "Not enabled yet",
+      "This route now protects future account-owned saved projects without inventing cloud persistence from browser-local timelines.",
+    kind: "dashboard",
+    status: "Protected empty state",
     sections: [
       {
-        title: "What will land here",
+        title: "What this route shows",
         body:
-          "Projects will eventually show saved work, reusable timelines, and durable account-linked history instead of the current browser-local workbench persistence only.",
+          "Projects can appear here only after a verified backend session and real account-owned persistence exist. Browser-local timelines remain editor convenience only.",
       },
       {
         title: "Current limitation",
         body:
-          "This shell page does not fake project history, project collaboration, or cloud persistence.",
+          "This page does not fake saved projects, cloud timestamps, collaboration, or ownership from localStorage.",
       },
     ],
   },
   {
     id: "exports",
     path: "/history",
-    label: "Exports",
-    eyebrow: "Coming later",
-    title: "Export history is not enabled yet",
+    label: "History",
+    eyebrow: "Product Phase 4",
+    title: "Export history boundary",
     description:
-      "Durable export history, account-linked artifact history, and user-facing recovery flows are coming in a later product phase.",
-    kind: "placeholder",
-    status: "Not enabled yet",
+      "This route now protects future account-owned export history without inventing completed videos, artifacts, or download rows.",
+    kind: "dashboard",
+    status: "Protected empty state",
     sections: [
       {
         title: "What exists today",
         body:
-          "The Mixer workbench still owns the current request-export and artifact descriptor flow. This route does not invent completed exports or public artifact history.",
+          "The Mixer workbench still owns current export requests and artifact descriptor checks. This route does not invent account history from browser-local export handles.",
       },
       {
         title: "What is deferred",
         body:
-          "Real account-level export history, download history, and recovery tooling depend on later auth, persistence, and production artifact delivery phases.",
+          "Real account-level export history, artifact rows, retention, and recovery tooling still depend on later persistence and production delivery phases.",
       },
     ],
   },

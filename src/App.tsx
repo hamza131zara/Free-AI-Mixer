@@ -6,6 +6,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ProviderSettingsPage } from "./pages/ProviderSettingsPage";
+import { ProjectsPage } from "./pages/ProjectsPage";
+import { ExportHistoryPage } from "./pages/ExportHistoryPage";
 import { selectCurrentRoute, useNavigationStore } from "./store/navigationStore";
 
 const renderRouteContent = (routeId: string) => {
@@ -31,6 +33,14 @@ const renderRouteContent = (routeId: string) => {
 
   if (routeId === "provider-settings") {
     return <ProviderSettingsPage />;
+  }
+
+  if (routeId === "projects") {
+    return <ProjectsPage />;
+  }
+
+  if (routeId === "exports") {
+    return <ExportHistoryPage />;
   }
 
   return <PlaceholderPage />;

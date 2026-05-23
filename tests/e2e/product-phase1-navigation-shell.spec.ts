@@ -17,16 +17,6 @@ const placeholderRoutes = [
     heading: "Templates are not enabled yet",
   },
   {
-    path: "/projects",
-    testId: "projects-page",
-    heading: "Projects are not enabled yet",
-  },
-  {
-    path: "/history",
-    testId: "exports-page",
-    heading: "Export history is not enabled yet",
-  },
-  {
     path: "/credits",
     testId: "credits-page",
     heading: "Credits are not enabled yet",
@@ -112,6 +102,52 @@ test.describe("product phase 1 navigation shell", () => {
         );
       });
     }
+  });
+
+  test("projects and history routes render protected shell pages", async ({ page }) => {
+    await page.route("**/auth/session", async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          kind: "auth_unavailable",
+          status: "auth_not_configured",
+          message: "Authentication is not configured on this backend yet.",
+        }),
+      });
+    });
+
+    await page.route("**/project-library/projects", async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          kind: "project_library_unavailable",
+          status: "auth_not_configured",
+          message: "Authentication is not configured on this backend yet.",
+        }),
+      });
+    });
+
+    await page.route("**/project-library/history", async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          kind: "export_history_unavailable",
+          status: "auth_not_configured",
+          message: "Authentication is not configured on this backend yet.",
+        }),
+      });
+    });
+
+    await page.goto("/projects", { waitUntil: "load" });
+    await expect(page.getByTestId("projects-page")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Project library boundary" })).toBeVisible();
+
+    await page.goto("/history", { waitUntil: "load" });
+    await expect(page.getByTestId("export-history-page")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Export history boundary" })).toBeVisible();
   });
 
   test("navigation works across routes", async ({ page }) => {
