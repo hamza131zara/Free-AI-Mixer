@@ -1,12 +1,16 @@
-﻿export type ArtifactDeliveryReadyUnavailableReason =
+export type ArtifactDeliveryReadyUnavailableReason =
   | "authorization_required"
   | "workspace_or_rls_not_ready"
   | "artifact_metadata_missing"
   | "artifact_id_mismatch"
   | "artifact_not_ready"
+  | "artifact_expired"
   | "unsafe_artifact_metadata"
+  | "storage_ref_missing"
+  | "invalid_storage_ref"
   | "storage_not_configured"
-  | "provider_unavailable";
+  | "provider_unavailable"
+  | "signed_url_not_configured";
 
 export interface ArtifactDeliveryReadyPreconditionsInput {
   authorization: {
@@ -16,12 +20,17 @@ export interface ArtifactDeliveryReadyPreconditionsInput {
   artifact: {
     metadataExists: boolean;
     artifactIdMatches: boolean;
-    status: "available" | "ready" | "pending" | "failed" | "unknown";
+    status: "available" | "ready" | "pending" | "failed" | "expired" | "unknown";
     safeMetadataOnly: boolean;
   };
   storage: {
+    storageRefExists?: boolean;
+    storageRefValid?: boolean;
     providerConfigured: boolean;
     providerCanResolve: boolean;
+  };
+  signedDelivery?: {
+    providerConfigured: boolean;
   };
 }
 
@@ -32,19 +41,19 @@ export type ArtifactDeliveryReadyPreconditionsDecision =
     }
   | {
       kind: "ready";
-      deliveryMode: "backend_mediated";
+      deliveryMode: "backend_signed_url";
     };
 
 /**
- * Phase 157 pure backend precondition boundary.
+ * Phase 157/7 pure backend precondition boundary.
  *
- * This helper decides whether a backend-mediated artifact delivery descriptor
- * is allowed to become ready.
+ * This helper decides whether an artifact delivery descriptor is allowed to
+ * become ready for backend-issued signed delivery.
  *
  * It intentionally does not:
  * - read route requests
  * - trust headers
- * - query storage
+ * - query storage directly
  * - generate signed URLs
  * - generate public URLs
  * - expose local file paths
@@ -82,6 +91,13 @@ export const decideArtifactDeliveryReadyPreconditions = (
     };
   }
 
+  if (input.artifact.status === "expired") {
+    return {
+      kind: "unavailable",
+      reason: "artifact_expired",
+    };
+  }
+
   if (input.artifact.status !== "available" && input.artifact.status !== "ready") {
     return {
       kind: "unavailable",
@@ -93,6 +109,20 @@ export const decideArtifactDeliveryReadyPreconditions = (
     return {
       kind: "unavailable",
       reason: "unsafe_artifact_metadata",
+    };
+  }
+
+  if (input.storage.storageRefExists === false) {
+    return {
+      kind: "unavailable",
+      reason: "storage_ref_missing",
+    };
+  }
+
+  if (input.storage.storageRefValid === false) {
+    return {
+      kind: "unavailable",
+      reason: "invalid_storage_ref",
     };
   }
 
@@ -110,8 +140,15 @@ export const decideArtifactDeliveryReadyPreconditions = (
     };
   }
 
+  if (input.signedDelivery && !input.signedDelivery.providerConfigured) {
+    return {
+      kind: "unavailable",
+      reason: "signed_url_not_configured",
+    };
+  }
+
   return {
     kind: "ready",
-    deliveryMode: "backend_mediated",
+    deliveryMode: "backend_signed_url",
   };
 };

@@ -1,5 +1,4 @@
 ﻿import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
-import { resolveBackendMediatedArtifactDelivery } from "../artifacts/backendMediatedArtifactDelivery";
 import {
   resolveProductionStorageReadiness,
 } from "../artifacts/productionStorageProviderIntegration";
@@ -17,6 +16,7 @@ import {
   decideArtifactDeliveryReadyPreconditions,
   type ArtifactDeliveryReadyUnavailableReason,
 } from "../artifacts/artifactDeliveryReadyPreconditions";
+import { resolveArtifactDeliveryRuntimeAuthorization } from "../artifacts/artifactDeliveryRuntimeAuthorization";
 import { Router } from "express";
 import type { NextFunction, Request, Response } from "express";
 import { promises as fs } from "node:fs";
@@ -47,11 +47,16 @@ import {
 import type { ArtifactAccessProvider } from "../artifacts/artifactAccessProvider";
 import { createNotConfiguredArtifactAccessProvider } from "../artifacts/notConfiguredArtifactAccessProvider";
 import type { ArtifactStorageRefResolver } from "../artifacts/artifactStorageRefResolver";
+import {
+  createNotConfiguredProductionArtifactStorageRefResolver,
+  type ProductionArtifactStorageRefResolver,
+} from "../artifacts/productionArtifactStorageRefResolver";
 import type { RenderInputSnapshotStore } from "../renderer/renderInputSnapshotStore";
 import {
   resolveExportRequesterContext,
   type ExportRequesterContextResolver,
 } from "../requester/exportRequesterContext";
+import type { WorkspaceMembershipRepository } from "../auth/workspaceMembership";
 
 const isRouteExecutionEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_ROUTE_EXECUTION === "1";
@@ -170,7 +175,7 @@ const sendExportRouteAuthorizationFailure = (
 
 const mapReadyPreconditionUnavailableReasonToDeliveryReason = (
   reason: ArtifactDeliveryReadyUnavailableReason,
-): "authorization_required" | "workspace_or_rls_not_ready" | "storage_not_configured" | "artifact_not_ready" => {
+): "authorization_required" | "workspace_or_rls_not_ready" | "storage_not_configured" | "artifact_not_ready" | "not_configured" => {
   if (reason === "authorization_required") {
     return "authorization_required";
   }
@@ -179,7 +184,16 @@ const mapReadyPreconditionUnavailableReasonToDeliveryReason = (
     return "workspace_or_rls_not_ready";
   }
 
-  if (reason === "storage_not_configured" || reason === "provider_unavailable") {
+  if (reason === "signed_url_not_configured") {
+    return "not_configured";
+  }
+
+  if (
+    reason === "storage_not_configured" ||
+    reason === "provider_unavailable" ||
+    reason === "storage_ref_missing" ||
+    reason === "invalid_storage_ref"
+  ) {
     return "storage_not_configured";
   }
 
@@ -188,8 +202,14 @@ const mapReadyPreconditionUnavailableReasonToDeliveryReason = (
 
 const normalizeArtifactDeliveryReadyStatus = (
   status: unknown,
-): "available" | "ready" | "pending" | "failed" | "unknown" => {
-  if (status === "available" || status === "ready" || status === "pending" || status === "failed") {
+): "available" | "ready" | "pending" | "failed" | "expired" | "unknown" => {
+  if (
+    status === "available" ||
+    status === "ready" ||
+    status === "pending" ||
+    status === "failed" ||
+    status === "expired"
+  ) {
     return status;
   }
 
@@ -241,6 +261,29 @@ const getProductionStorageRefFromArtifactMetadata = (
 
   return normalized;
 };
+
+const resolveProductionStorageRef = async ({
+  artifactId,
+  artifactMetadata,
+  jobId,
+  resolver,
+  workspaceId,
+}: {
+  artifactId: string;
+  artifactMetadata: unknown;
+  jobId: string;
+  resolver: ProductionArtifactStorageRefResolver;
+  workspaceId: string;
+}): Promise<ProductionArtifactStorageReference | undefined> => {
+  const durableRef = await resolver.resolveStorageRef({
+    workspaceId,
+    jobId,
+    artifactId,
+  });
+
+  return durableRef ?? getProductionStorageRefFromArtifactMetadata(artifactMetadata);
+};
+
 const getArtifactDeliveryMetadataId = (
   artifactMetadata: unknown,
 ): string | undefined => {
@@ -263,7 +306,7 @@ const getArtifactDeliveryMetadataId = (
 
 const getArtifactDeliveryMetadataStatus = (
   artifactMetadata: unknown,
-): "available" | "ready" | "pending" | "failed" | "unknown" => {
+): "available" | "ready" | "pending" | "failed" | "expired" | "unknown" => {
   if (!artifactMetadata || typeof artifactMetadata !== "object") {
     return "unknown";
   }
@@ -282,6 +325,10 @@ const isSafeArtifactDeliveryMetadata = (artifactMetadata: unknown): boolean => {
   return (
     !serializedMetadata.includes("filePath") &&
     !serializedMetadata.includes("localPath") &&
+    !serializedMetadata.includes("signedUrl") &&
+    !serializedMetadata.includes("publicUrl") &&
+    !serializedMetadata.includes("downloadUrl") &&
+    !serializedMetadata.includes("\"url\"") &&
     !serializedMetadata.includes("filesystemPath") &&
     !serializedMetadata.includes("directoryPath") &&
     !serializedMetadata.includes("rootPath")
@@ -290,6 +337,8 @@ const isSafeArtifactDeliveryMetadata = (artifactMetadata: unknown): boolean => {
 export interface ExportRouterOptions {
   productionStorageProvider?: ProductionStorageProvider;
   signedUrlDeliveryProvider?: SignedUrlDeliveryProvider;
+  productionArtifactStorageRefResolver?: ProductionArtifactStorageRefResolver;
+  workspaceMembershipRepository?: WorkspaceMembershipRepository;
   rendererAdapter?: RendererAdapter;
   pathPolicy?: RenderOutputPathPolicy;
   artifactAccessProvider?: ArtifactAccessProvider;
@@ -311,6 +360,9 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
   const artifactAccessProvider = options?.artifactAccessProvider ?? createNotConfiguredArtifactAccessProvider();
   const signedUrlDeliveryProvider =
     options?.signedUrlDeliveryProvider ?? createSignedUrlDeliveryNotConfiguredProvider();
+  const productionArtifactStorageRefResolver =
+    options?.productionArtifactStorageRefResolver ??
+    createNotConfiguredProductionArtifactStorageRefResolver();
   const requesterContextResolver =
     options?.requesterContextResolver ?? resolveExportRequesterContext;
 
@@ -816,12 +868,37 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         return;
       }
 
+      if (record.status !== "success") {
+        response.status(200).json({
+          kind: "artifact_delivery_unavailable",
+          reason: "artifact_not_ready",
+        });
+        return;
+      }
+
+      const trustedRequesterContext = getRequesterContextFromRequest(request);
+
       const artifactMetadata = (record.artifacts ?? []).find(
         (artifact) => getArtifactDeliveryMetadataId(artifact) === artifactId,
       );
 
-      const productionStorageRef =
-        getProductionStorageRefFromArtifactMetadata(artifactMetadata);
+      const runtimeAuthorization = await resolveArtifactDeliveryRuntimeAuthorization({
+        requesterContext: trustedRequesterContext,
+        exportOwnerScope: {
+          ownerId: record.ownerId,
+          workspaceId: record.workspaceId,
+        },
+        authorizationMode: options?.authorizationMode ?? "disabled",
+        workspaceMembershipRepository: options?.workspaceMembershipRepository,
+      });
+
+      const productionStorageRef = await resolveProductionStorageRef({
+        artifactId,
+        artifactMetadata,
+        jobId,
+        resolver: productionArtifactStorageRefResolver,
+        workspaceId: record.workspaceId,
+      });
 
       const productionStorageReadiness = await resolveProductionStorageReadiness({
         artifactId,
@@ -831,18 +908,26 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
 
       const readyPreconditionsDecision = decideArtifactDeliveryReadyPreconditions({
         authorization: {
-          ownerOrWorkspaceAccessAllowed: options?.authorizationMode === "enforce",
-          workspaceMembershipOrRlsReady: false,
+          ownerOrWorkspaceAccessAllowed:
+            runtimeAuthorization.ownerOrWorkspaceAccessAllowed,
+          workspaceMembershipOrRlsReady:
+            runtimeAuthorization.workspaceMembershipOrRlsReady,
         },
         artifact: {
           metadataExists: Boolean(artifactMetadata),
-          artifactIdMatches: Boolean(artifactMetadata),
+          artifactIdMatches:
+            getArtifactDeliveryMetadataId(artifactMetadata) === artifactId,
           status: getArtifactDeliveryMetadataStatus(artifactMetadata),
           safeMetadataOnly: isSafeArtifactDeliveryMetadata(artifactMetadata),
         },
         storage: {
+          storageRefExists: productionStorageReadiness.storageRefExists,
+          storageRefValid: productionStorageReadiness.storageRefValid,
           providerConfigured: productionStorageReadiness.providerConfigured,
           providerCanResolve: productionStorageReadiness.providerCanResolve,
+        },
+        signedDelivery: {
+          providerConfigured: Boolean(options?.signedUrlDeliveryProvider),
         },
       });
 
@@ -856,35 +941,10 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         return;
       }
 
-      const backendMediatedDescriptor = resolveBackendMediatedArtifactDelivery({
-        jobId,
-        artifactId,
-        requester: {
-          userId: record.ownerId,
-          workspaceId: record.workspaceId,
-        },
-        authorization: {
-          ownerOrWorkspaceAccessAllowed: true,
-          workspaceMembershipOrRlsReady: true,
-        },
-        storage: {
-          providerConfigured: true,
-          artifactReady: true,
-        },
-      });
-
-      if (backendMediatedDescriptor.kind === "unavailable") {
-        response.status(200).json({
-          kind: "artifact_delivery_unavailable",
-          reason: backendMediatedDescriptor.reason,
-        });
-        return;
-      }
-
       if (!productionStorageRef) {
         response.status(200).json({
           kind: "artifact_delivery_unavailable",
-          reason: "artifact_not_ready",
+          reason: "storage_not_configured",
         });
         return;
       }
@@ -905,7 +965,7 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
       response.status(200).json({
         kind: "artifact_delivery_ready",
         deliveryMode: signedUrlResult.deliveryMode,
-        jobId: backendMediatedDescriptor.jobId,
+        jobId,
         artifactId: signedUrlResult.artifactId,
         signedUrl: signedUrlResult.signedUrl,
         expiresAt: signedUrlResult.expiresAt,

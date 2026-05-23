@@ -19,13 +19,19 @@ export type ProductionStorageReadinessDecision =
   | {
       kind: "unavailable";
       reason: ProductionStorageReadinessUnavailableReason;
-      providerConfigured: false;
-      providerCanResolve: false;
+      storageRefExists: boolean;
+      storageRefValid: boolean;
+      providerConfigured: boolean;
+      providerCanResolve: boolean;
+      objectVerified: false;
     }
   | {
       kind: "ready";
+      storageRefExists: true;
+      storageRefValid: true;
       providerConfigured: true;
       providerCanResolve: true;
+      objectVerified: true;
       verification: Extract<ProductionStorageObjectVerificationResult, { kind: "verified" }>;
     };
 
@@ -68,8 +74,11 @@ export const resolveProductionStorageReadiness = async ({
     return {
       kind: "unavailable",
       reason: "missing_storage_ref",
+      storageRefExists: false,
+      storageRefValid: false,
       providerConfigured: false,
       providerCanResolve: false,
+      objectVerified: false,
     };
   }
 
@@ -77,8 +86,11 @@ export const resolveProductionStorageReadiness = async ({
     return {
       kind: "unavailable",
       reason: "invalid_storage_ref",
+      storageRefExists: true,
+      storageRefValid: false,
       providerConfigured: false,
       providerCanResolve: false,
+      objectVerified: false,
     };
   }
 
@@ -91,15 +103,21 @@ export const resolveProductionStorageReadiness = async ({
     return {
       kind: "unavailable",
       reason: mapStorageVerificationUnavailableReason(verification.reason),
-      providerConfigured: false,
+      storageRefExists: true,
+      storageRefValid: true,
+      providerConfigured: verification.reason !== "not_configured",
       providerCanResolve: false,
+      objectVerified: false,
     };
   }
 
   return {
     kind: "ready",
+    storageRefExists: true,
+    storageRefValid: true,
     providerConfigured: true,
     providerCanResolve: true,
+    objectVerified: true,
     verification,
   };
 };
