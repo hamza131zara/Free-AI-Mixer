@@ -3,6 +3,7 @@ import { createTrustedAuthMiddleware } from "./auth/trustedAuthMiddleware";
 import express, { type Express } from "express";
 import path from "node:path";
 import { exportErrorHandler } from "./errors/exportErrors";
+import { createAuthRouter } from "./routes/auth";
 import { createExportRouter } from "./routes/exports";
 import { createBackendDependencies } from "./composition/backendDependencies";
 import { createRenderWorkerLifecycle } from "./workers/renderWorkerLifecycle";
@@ -14,6 +15,7 @@ const isLocalDevArtifactStreamEnabled = (): boolean =>
 export const createApp = (): Express => {
   const app = express();
   const backendDeps = createBackendDependencies();
+  const authRuntimeConfig = readTrustedAuthProviderRuntimeConfig();
 
   const lifecycle = createRenderWorkerLifecycle(
     backendDeps.registry,
@@ -74,7 +76,8 @@ export const createApp = (): Express => {
 
   app.use(express.json());
 
-  app.use(createTrustedAuthMiddleware({ runtimeConfig: readTrustedAuthProviderRuntimeConfig() }));
+  app.use(createTrustedAuthMiddleware({ runtimeConfig: authRuntimeConfig }));
+  app.use(createAuthRouter({ runtimeConfig: authRuntimeConfig }));
   app.use(createExportRouter(backendDeps.registry, exportRouterOptions));
   app.use(exportErrorHandler);
 

@@ -1,8 +1,10 @@
 import { Menu, X } from "lucide-react";
 import {
+  authNavigationItems,
   primaryNavigationItems,
   secondaryNavigationItems,
 } from "../services/navigationService";
+import { useAuthStore } from "../store/authStore";
 import { selectCurrentRoute, useNavigationStore } from "../store/navigationStore";
 
 const isActivePath = (currentPath: string, targetPath: string): boolean =>
@@ -14,6 +16,9 @@ export function AppNavigation() {
   const navigateTo = useNavigationStore((state) => state.navigateTo);
   const toggleMobileMenu = useNavigationStore((state) => state.toggleMobileMenu);
   const closeMobileMenu = useNavigationStore((state) => state.closeMobileMenu);
+  const authStatus = useAuthStore((state) => state.status);
+  const pendingAction = useAuthStore((state) => state.pendingAction);
+  const logout = useAuthStore((state) => state.logout);
 
   return (
     <header className="site-header">
@@ -73,6 +78,35 @@ export function AppNavigation() {
                 {route.label}
               </button>
             ))}
+          </div>
+          <div className="nav-group nav-group-auth">
+            {authStatus === "authenticated" ? (
+              <button
+                type="button"
+                className="nav-link"
+                onClick={() => {
+                  void logout();
+                }}
+                disabled={pendingAction === "logout"}
+              >
+                {pendingAction === "logout" ? "Logging out..." : "Log out"}
+              </button>
+            ) : (
+              authNavigationItems.map((route) => (
+                <button
+                  key={route.id}
+                  type="button"
+                  className={
+                    isActivePath(currentRoute.path, route.path)
+                      ? "nav-link nav-link-active"
+                      : "nav-link"
+                  }
+                  onClick={() => navigateTo(route.path)}
+                >
+                  {route.label}
+                </button>
+              ))
+            )}
           </div>
           <button type="button" className="nav-dismiss" onClick={closeMobileMenu}>
             Close menu

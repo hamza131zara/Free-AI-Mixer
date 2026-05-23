@@ -12,11 +12,6 @@ const viewportCases = [
 
 const placeholderRoutes = [
   {
-    path: "/dashboard",
-    testId: "dashboard-page",
-    heading: "Dashboard is not enabled yet",
-  },
-  {
     path: "/templates",
     testId: "templates-page",
     heading: "Templates are not enabled yet",
@@ -158,10 +153,11 @@ test.describe("product phase 1 navigation shell", () => {
         if (viewport.name === "mobile") {
           await page.getByRole("button", { name: "Toggle navigation" }).click();
           await expect(page.getByRole("button", { name: "Dashboard", exact: true })).toBeVisible();
-          await page.getByRole("button", { name: "Close menu" }).click();
+          await expect(page.getByRole("button", { name: "Log in", exact: true })).toBeVisible();
         } else {
           await expect(page.getByRole("button", { name: "Dashboard", exact: true })).toBeVisible();
           await expect(page.getByRole("button", { name: "Mixer", exact: true })).toBeVisible();
+          await expect(page.getByRole("button", { name: "Log in", exact: true })).toBeVisible();
         }
       });
     }

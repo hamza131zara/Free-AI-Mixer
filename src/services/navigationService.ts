@@ -7,6 +7,8 @@ export interface AppRouteDefinition {
   id:
     | "home"
     | "dashboard"
+    | "login"
+    | "signup"
     | "mixer"
     | "templates"
     | "projects"
@@ -22,7 +24,7 @@ export interface AppRouteDefinition {
   eyebrow: string;
   title: string;
   description: string;
-  kind: "home" | "workbench" | "placeholder";
+  kind: "home" | "workbench" | "placeholder" | "auth" | "dashboard";
   status: string;
   sections: NavigationSection[];
 }
@@ -60,22 +62,68 @@ export const appRoutes: AppRouteDefinition[] = [
     id: "dashboard",
     path: "/dashboard",
     label: "Dashboard",
-    eyebrow: "Coming later",
-    title: "Dashboard is not enabled yet",
+    eyebrow: "Product Phase 2",
+    title: "Account dashboard boundary",
     description:
-      "Authentication, account summaries, workspace switching, and saved dashboard views are coming in a later product phase.",
-    kind: "placeholder",
-    status: "Not enabled yet",
+      "This dashboard now checks backend session truth. It stays limited until real auth, persistence, and workspace features are fully enabled in later product phases.",
+    kind: "dashboard",
+    status: "Auth boundary only",
     sections: [
       {
-        title: "What will land here",
+        title: "What lands here in this phase",
         body:
-          "This area will eventually show account-aware summaries, recent projects, export activity, and setup prompts once auth and durable user data are implemented.",
+          "The dashboard can show backend-verified session status and account identity only when a real authenticated session exists. It does not fabricate projects, credits, or provider setup.",
       },
       {
-        title: "Why it is still a placeholder",
+        title: "What still waits for later phases",
         body:
-          "This phase adds only the navigation shell and information architecture. It does not add auth, user state, fake dashboards, or fake project analytics.",
+          "Workspace switching, durable project history, export history, provider settings, and credits remain separate product phases and stay clearly marked as not enabled yet.",
+      },
+    ],
+  },
+  {
+    id: "login",
+    path: "/login",
+    label: "Log in",
+    eyebrow: "Product Phase 2",
+    title: "Log in route",
+    description:
+      "This route asks the backend auth boundary for real session support. If auth is not configured, the page stays honest and unavailable instead of faking a login.",
+    kind: "auth",
+    status: "Auth boundary only",
+    sections: [
+      {
+        title: "What this route does",
+        body:
+          "Login requests are sent to the backend auth boundary only. No demo session, local fake user, or trusted-header shortcut is allowed here.",
+      },
+      {
+        title: "What this route does not do",
+        body:
+          "This phase does not add provider key setup, billing, credits, workspace switching, or public launch auth flows.",
+      },
+    ],
+  },
+  {
+    id: "signup",
+    path: "/signup",
+    label: "Sign up",
+    eyebrow: "Product Phase 2",
+    title: "Sign up route",
+    description:
+      "This route keeps signup fail closed unless a real backend auth provider is configured. It does not fabricate an account or session locally.",
+    kind: "auth",
+    status: "Auth boundary only",
+    sections: [
+      {
+        title: "What this route does",
+        body:
+          "Signup requests go through the backend auth boundary only. Account identity can be shown later only if the backend verifies it.",
+      },
+      {
+        title: "What this route does not do",
+        body:
+          "No fake onboarding state, fake workspace creation, or fake welcome dashboard is created in this product phase.",
       },
     ],
   },
@@ -302,12 +350,18 @@ export const appRoutes: AppRouteDefinition[] = [
 
 export const primaryNavigationItems = appRoutes.filter(
   (route) =>
+    route.id !== "login" &&
+    route.id !== "signup" &&
     route.id !== "privacy" &&
     route.id !== "terms",
 );
 
 export const secondaryNavigationItems = appRoutes.filter(
   (route) => route.id === "privacy" || route.id === "terms",
+);
+
+export const authNavigationItems = appRoutes.filter(
+  (route) => route.id === "login" || route.id === "signup",
 );
 
 const routeMap = new Map(appRoutes.map((route) => [route.path, route]));
