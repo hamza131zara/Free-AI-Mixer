@@ -34,6 +34,7 @@ export interface RenderOutputTarget {
 }
 
 export interface RenderInputSnapshot {
+  snapshotVersion?: typeof renderInputSnapshotVersion;
   jobId: string;
   timelineId: string;
   renderSettings: ExportRenderSettings;
@@ -42,6 +43,8 @@ export interface RenderInputSnapshot {
   mediaRefs: MediaRenderRef[];
   outputTarget: RenderOutputTarget;
 }
+
+export const renderInputSnapshotVersion = 1 as const;
 
 export class RenderInputSnapshotError extends Error {
   constructor(message: string) {
@@ -58,6 +61,7 @@ export const validateRenderInputSnapshot = (
   }
 
   const candidate = input as Record<string, unknown>;
+  const snapshotVersion = readSnapshotVersion(candidate.snapshotVersion);
 
   const jobId = readNonEmptyString(candidate.jobId, "jobId");
   const timelineId = readNonEmptyString(candidate.timelineId, "timelineId");
@@ -82,6 +86,7 @@ export const validateRenderInputSnapshot = (
   rejectUnsafeTopLevelFields(candidate);
 
   return {
+    snapshotVersion,
     jobId,
     timelineId,
     renderSettings,
@@ -90,6 +95,22 @@ export const validateRenderInputSnapshot = (
     mediaRefs,
     outputTarget,
   };
+};
+
+const readSnapshotVersion = (
+  value: unknown,
+): typeof renderInputSnapshotVersion => {
+  if (value === undefined) {
+    return renderInputSnapshotVersion;
+  }
+
+  if (value !== renderInputSnapshotVersion) {
+    throw new RenderInputSnapshotError(
+      `snapshotVersion must be ${renderInputSnapshotVersion}.`,
+    );
+  }
+
+  return renderInputSnapshotVersion;
 };
 
 export const createRenderInputSnapshot = (

@@ -1,6 +1,7 @@
 import type { ExportJobRegistry } from "../registry/exportJobRegistry";
 import type { RendererAdapter } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
+import type { RenderInputSnapshotStore } from "../renderer/renderInputSnapshotStore";
 import {
   createRenderWorkerLoop,
   type RenderWorkerLoopController,
@@ -12,6 +13,7 @@ const getWorkerStartupEnabled = (): boolean =>
 
 export interface RenderWorkerStartupOptions extends RenderWorkerLoopOptions {
   workerId?: string;
+  snapshotStore?: RenderInputSnapshotStore;
 }
 
 export interface RenderWorkerStartupStatus {

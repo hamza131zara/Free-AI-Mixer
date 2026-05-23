@@ -7,6 +7,10 @@ import {
   saveExportHandle,
   type PersistedExportHandle,
 } from "../services/exportHandleStorage";
+import {
+  buildTimelineExportSnapshot,
+  ExportSnapshotBuilderError,
+} from "../services/exportSnapshotService";
 import type {
   ExportArtifactAccessDescriptor,
   ExportArtifactRef,
@@ -22,6 +26,7 @@ import type {
 } from "../types/exportJob";
 import type { TimelineId } from "../types/timeline";
 import { useTimelineStore } from "./timelineStore";
+import { useSceneStore } from "./sceneStore";
 
 const exportStorePersistKey = "free-ai-mixer-exports";
 const emptyExportArtifacts: ExportArtifactRef[] = [];
@@ -228,11 +233,16 @@ export const useExportStore = create<ExportStoreState>()(
         }));
 
         try {
+          const snapshot = buildTimelineExportSnapshot(
+            timeline,
+            useSceneStore.getState().scenes,
+          );
           const request: TimelineExportRequest = {
             requestId,
             timelineId,
             renderSettings,
             requestedAt,
+            snapshot,
           };
 
           const startResult = await exportAgent.startExport(request, {
@@ -249,10 +259,19 @@ export const useExportStore = create<ExportStoreState>()(
             throw error;
           }
 
+          const failureCode =
+            error instanceof ExportSnapshotBuilderError
+              ? error.code
+              : "transport_exception";
+          const failureMessage =
+            error instanceof ExportSnapshotBuilderError
+              ? error.message
+              : "Export request failed.";
+
           const failureState = createFailureState(
             timelineId,
-            "Export request failed.",
-            "transport_exception",
+            failureMessage,
+            failureCode,
             {
               cause:
                 error instanceof Error

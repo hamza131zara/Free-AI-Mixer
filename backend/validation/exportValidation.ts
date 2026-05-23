@@ -16,6 +16,7 @@ export const exportSubmitRequestSchema = z
     timelineId: z.string().trim().min(1),
     renderSettings: renderSettingsSchema,
     requestedAt: z.string().trim().min(1),
+    snapshot: z.unknown().optional(),
     metadata: z.unknown().optional(),
   })
   .strict();
@@ -27,7 +28,7 @@ export const exportJobParamsSchema = z
   .strict();
 
 export const parseSubmitBody = (value: unknown): ExportSubmitRequestBody =>
-  exportSubmitRequestSchema.parse(value);
+  exportSubmitRequestSchema.parse(value) as ExportSubmitRequestBody;
 
 export const parseJobIdParams = (value: unknown): { jobId: string } =>
   exportJobParamsSchema.parse(value);

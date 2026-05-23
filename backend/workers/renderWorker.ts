@@ -2,6 +2,7 @@ import type { ExportJobRegistry } from "../registry/exportJobRegistry";
 import { executeRenderJob } from "../renderer/executeRenderJob";
 import type { RendererAdapter, VerifiedArtifactRefPayload } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
+import type { RenderInputSnapshotStore } from "../renderer/renderInputSnapshotStore";
 import type {
   BackendExportJobRecord,
   BackendExportLifecycleStatus,
@@ -16,6 +17,7 @@ const TERMINAL_STATUSES: BackendExportLifecycleStatus[] = [
 export interface RenderWorkerOptions {
   workerId?: string;
   onVerifiedArtifactRef?: (payload: VerifiedArtifactRefPayload) => void;
+  snapshotStore?: RenderInputSnapshotStore;
 }
 
 export interface RenderWorkerDrainResult {
@@ -53,7 +55,7 @@ export const drainRenderWorkerOnce = async (
       continue;
     }
 
-    const snapshotInput = buildSnapshotInput(job);
+    const snapshotInput = buildSnapshotInput(job, options?.snapshotStore);
 
     try {
       const result = await executeRenderJob({
@@ -118,6 +120,7 @@ export interface RenderWorkerLoopOptions {
   workerId?: string;
   pollIntervalMs?: number;
   onVerifiedArtifactRef?: (payload: VerifiedArtifactRefPayload) => void;
+  snapshotStore?: RenderInputSnapshotStore;
 }
 
 export interface RenderWorkerLoopStatus {
@@ -134,30 +137,34 @@ export interface RenderWorkerLoopController {
   getStatus(): RenderWorkerLoopStatus;
 }
 
-const buildSnapshotInput = (job: BackendExportJobRecord) => ({
-  jobId: job.jobId,
-  timelineId: job.timelineId,
-  renderSettings: job.renderSettings,
-  timelineSnapshot: {
+const buildSnapshotInput = (
+  job: BackendExportJobRecord,
+  snapshotStore?: RenderInputSnapshotStore,
+) =>
+  snapshotStore?.get(job.jobId) ?? {
+    jobId: job.jobId,
     timelineId: job.timelineId,
-    clips: [
-      {
-        clipId: `clip-${job.jobId}`,
-        sceneRefId: "scene-0",
-        startMs: 0,
-        durationMs: 1000,
-        order: 0,
-      },
-    ],
-  },
-  sceneRefs: [{ sceneId: "scene-0", role: "primary" }],
-  mediaRefs: [],
-  outputTarget: {
-    jobFolderKey: job.jobId,
-    artifactBaseName: "output",
-    format: job.renderSettings.format,
-  },
-});
+    renderSettings: job.renderSettings,
+    timelineSnapshot: {
+      timelineId: job.timelineId,
+      clips: [
+        {
+          clipId: `clip-${job.jobId}`,
+          sceneRefId: "scene-0",
+          startMs: 0,
+          durationMs: 1000,
+          order: 0,
+        },
+      ],
+    },
+    sceneRefs: [{ sceneId: "scene-0", role: "primary" }],
+    mediaRefs: [],
+    outputTarget: {
+      jobFolderKey: job.jobId,
+      artifactBaseName: "output",
+      format: job.renderSettings.format,
+    },
+  };
 
 export const createRenderWorkerLoop = (
   registry: ExportJobRegistry,
@@ -187,7 +194,11 @@ export const createRenderWorkerLoop = (
 
     draining = true;
     try {
-      await drainRenderWorkerOnce(registry, rendererAdapter, pathPolicy, { workerId, onVerifiedArtifactRef: options?.onVerifiedArtifactRef });
+      await drainRenderWorkerOnce(registry, rendererAdapter, pathPolicy, {
+        workerId,
+        onVerifiedArtifactRef: options?.onVerifiedArtifactRef,
+        snapshotStore: options?.snapshotStore,
+      });
     } catch {
       // Contain errors - do not crash the loop
     } finally {

@@ -1,4 +1,5 @@
 import type { TimelineId } from "./timeline";
+import type { TimelineExportSnapshot } from "./exportSnapshot";
 
 // Phase 5.1A contract types only.
 // No export implementation exists yet.
@@ -169,5 +170,6 @@ export interface TimelineExportRequest {
   timelineId: TimelineId;
   renderSettings: ExportRenderSettings;
   requestedAt: string;
+  snapshot?: TimelineExportSnapshot;
   metadata?: unknown;
 }

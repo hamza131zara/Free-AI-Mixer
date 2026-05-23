@@ -19,6 +19,10 @@ import {
   type RenderWorkerDrainResult,
   type RenderWorkerOptions,
 } from "../workers/renderWorker";
+import {
+  createInMemoryRenderInputSnapshotStore,
+  type RenderInputSnapshotStore,
+} from "../renderer/renderInputSnapshotStore";
 
 export interface BackendDependencies {
   registry: ExportJobRegistry;
@@ -32,6 +36,8 @@ export interface BackendDependencies {
   artifactStorageRefResolver: ArtifactStorageRefResolver;
   /** Internal DB-backed repository composition boundary. Unwired by default. */
   repositoryComposition: BackendRepositoryComposition;
+  /** Internal render snapshot store (process-memory only) */
+  renderInputSnapshotStore: RenderInputSnapshotStore;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -91,6 +97,8 @@ export const createBackendDependencies = (): BackendDependencies => {
     resolve: (jobId, artifactId) => artifactStorageRefStore.get(jobId, artifactId),
   };
 
+  const renderInputSnapshotStore = createInMemoryRenderInputSnapshotStore();
+
   return {
     registry,
     rendererAdapter,
@@ -99,6 +107,7 @@ export const createBackendDependencies = (): BackendDependencies => {
     onVerifiedArtifactRef,
     artifactStorageRefResolver,
     repositoryComposition,
+    renderInputSnapshotStore,
   };
 };
 
@@ -114,5 +123,6 @@ export const drainBackendWorkerOnce = async (
       ...options,
       onVerifiedArtifactRef:
         options?.onVerifiedArtifactRef ?? dependencies.onVerifiedArtifactRef,
+      snapshotStore: dependencies.renderInputSnapshotStore,
     },
   );

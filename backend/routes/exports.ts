@@ -40,9 +40,14 @@ import { toJobHandle } from "../contracts/exportHttpTypes";
 import { executeRenderJob } from "../renderer/executeRenderJob";
 import type { RendererAdapter, VerifiedArtifactRefPayload } from "../renderer/singleProcessRenderHarness";
 import type { RenderOutputPathPolicy } from "../renderer/outputPathPolicy";
+import {
+  buildRenderInputSnapshot,
+  RenderInputSnapshotBuilderError,
+} from "../renderer/renderInputSnapshotBuilder";
 import type { ArtifactAccessProvider } from "../artifacts/artifactAccessProvider";
 import { createNotConfiguredArtifactAccessProvider } from "../artifacts/notConfiguredArtifactAccessProvider";
 import type { ArtifactStorageRefResolver } from "../artifacts/artifactStorageRefResolver";
+import type { RenderInputSnapshotStore } from "../renderer/renderInputSnapshotStore";
 import {
   resolveExportRequesterContext,
   type ExportRequesterContextResolver,
@@ -294,6 +299,8 @@ export interface ExportRouterOptions {
   artifactStorageRefResolver?: ArtifactStorageRefResolver;
   /** Internal callback for ref registration. Used by POST /exports/:jobId/execute. */
   onVerifiedArtifactRef?: (payload: VerifiedArtifactRefPayload) => void;
+  /** Internal process-memory store for truthful render snapshots. */
+  renderInputSnapshotStore?: RenderInputSnapshotStore;
 }
 
 export const createExportRouter = (registry: ExportJobRegistry, options?: ExportRouterOptions): Router => {
@@ -325,6 +332,31 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
           ownerId: requesterContext.ownerId,
           workspaceId: requesterContext.workspaceId,
         });
+
+      if (body.snapshot && options?.renderInputSnapshotStore) {
+        try {
+          const snapshot = buildRenderInputSnapshot({
+            jobId: record.jobId,
+            timelineId: record.timelineId,
+            renderSettings: record.renderSettings,
+            snapshotSource: body.snapshot,
+          });
+          options.renderInputSnapshotStore.set(record.jobId, snapshot);
+        } catch (error) {
+          if (error instanceof RenderInputSnapshotBuilderError) {
+            response.status(422).json({
+              kind: "failure",
+              failure: {
+                code: error.code,
+                message: error.message,
+              },
+            });
+            return;
+          }
+
+          throw error;
+        }
+      }
 
       response.status(202).json({
         kind: "accepted_job",
@@ -669,30 +701,31 @@ export const createExportRouter = (registry: ExportJobRegistry, options?: Export
         return;
       }
 
-      const snapshotInput = {
-        jobId: record.jobId,
-        timelineId: record.timelineId,
-        renderSettings: record.renderSettings,
-        timelineSnapshot: {
+      const snapshotInput =
+        options?.renderInputSnapshotStore?.get(record.jobId) ?? {
+          jobId: record.jobId,
           timelineId: record.timelineId,
-          clips: [
-            {
-              clipId: `clip-${record.jobId}`,
-              sceneRefId: "scene-0",
-              startMs: 0,
-              durationMs: 1000,
-              order: 0,
-            },
-          ],
-        },
-        sceneRefs: [{ sceneId: "scene-0", role: "primary" }],
-        mediaRefs: [],
-        outputTarget: {
-          jobFolderKey: record.jobId,
-          artifactBaseName: "output",
-          format: record.renderSettings.format,
-        },
-      };
+          renderSettings: record.renderSettings,
+          timelineSnapshot: {
+            timelineId: record.timelineId,
+            clips: [
+              {
+                clipId: `clip-${record.jobId}`,
+                sceneRefId: "scene-0",
+                startMs: 0,
+                durationMs: 1000,
+                order: 0,
+              },
+            ],
+          },
+          sceneRefs: [{ sceneId: "scene-0", role: "primary" }],
+          mediaRefs: [],
+          outputTarget: {
+            jobFolderKey: record.jobId,
+            artifactBaseName: "output",
+            format: record.renderSettings.format,
+          },
+        };
 
       const timeoutMs = getRouteExecutionTimeout();
       const renderPromise = executeRenderJob({

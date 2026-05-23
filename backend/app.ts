@@ -25,16 +25,19 @@ export const createApp = (): Express => {
     backendDeps.rendererAdapter,
     backendDeps.pathPolicy,
     backendDeps.onVerifiedArtifactRef,
+    backendDeps.renderInputSnapshotStore,
   );
   lifecycle.init();
   app.locals.renderWorkerLifecycle = lifecycle;
 
   const exportRouterOptions: {
     onVerifiedArtifactRef: typeof backendDeps.onVerifiedArtifactRef;
+    renderInputSnapshotStore: typeof backendDeps.renderInputSnapshotStore;
     artifactStorageRefResolver?: typeof backendDeps.artifactStorageRefResolver;
     artifactAccessProvider?: ReturnType<typeof createLocalDevArtifactAccessProvider>;
   } = {
     onVerifiedArtifactRef: backendDeps.onVerifiedArtifactRef,
+    renderInputSnapshotStore: backendDeps.renderInputSnapshotStore,
     ...(isLocalDevArtifactStreamEnabled()
       ? {
         artifactStorageRefResolver: backendDeps.artifactStorageRefResolver,
