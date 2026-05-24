@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { getAdminReadinessStatus } from "../services/adminReadinessService";
+import { getAdminReadinessSummary } from "../services/adminReadinessService";
 import type { AdminStatusSummary } from "../types/adminRoles";
 
 export interface AdminReadinessStoreState {
@@ -19,7 +19,7 @@ export const useAdminReadinessStore = create<AdminReadinessStoreState>((set) => 
   pendingAction: null,
   refreshStatus: async () => {
     set({ pendingAction: "refresh" });
-    const result = await getAdminReadinessStatus();
+    const result = await getAdminReadinessSummary();
     set({
       status: result.status,
       message: result.message,

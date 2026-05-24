@@ -1,3 +1,8 @@
+import type {
+  AdminAnalyticsReadinessSummary,
+  AdminMetricCatalogSummary,
+} from "./adminAnalytics";
+
 export const platformRoles = [
   "platform_admin",
   "platform_moderator",
@@ -24,4 +29,6 @@ export interface AdminStatusSummary {
   noindexRequired: true;
   verifiedAdminSessionRequired: true;
   platformRolesConfigured: false;
+  analyticsReadiness?: AdminAnalyticsReadinessSummary;
+  metricCatalog?: AdminMetricCatalogSummary;
 }
