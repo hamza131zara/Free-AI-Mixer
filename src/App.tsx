@@ -19,6 +19,12 @@ import { TermsPage } from "./pages/TermsPage";
 import { CookiesPage } from "./pages/CookiesPage";
 import { AcceptableUsePage } from "./pages/AcceptableUsePage";
 import { DataRetentionPage } from "./pages/DataRetentionPage";
+import { AiToolsPage } from "./pages/AiToolsPage";
+import { AiToolDetailPage } from "./pages/AiToolDetailPage";
+import { AiToolComparePage } from "./pages/AiToolComparePage";
+import { AiToolComparisonDetailPage } from "./pages/AiToolComparisonDetailPage";
+import { AiNewsPage } from "./pages/AiNewsPage";
+import { AiNewsDetailPage } from "./pages/AiNewsDetailPage";
 import { SeoMetadata } from "./components/SeoMetadata";
 import { selectCurrentRoute, useNavigationStore } from "./store/navigationStore";
 
@@ -45,6 +51,30 @@ const renderRouteContent = (routeId: string) => {
 
   if (routeId === "templates") {
     return <TemplatesPage />;
+  }
+
+  if (routeId === "ai-tools") {
+    return <AiToolsPage />;
+  }
+
+  if (routeId === "ai-tool-detail") {
+    return <AiToolDetailPage />;
+  }
+
+  if (routeId === "compare") {
+    return <AiToolComparePage />;
+  }
+
+  if (routeId === "compare-detail") {
+    return <AiToolComparisonDetailPage />;
+  }
+
+  if (routeId === "ai-news") {
+    return <AiNewsPage />;
+  }
+
+  if (routeId === "ai-news-detail") {
+    return <AiNewsDetailPage />;
   }
 
   if (routeId === "provider-settings") {

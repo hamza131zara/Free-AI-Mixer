@@ -25,7 +25,13 @@ export interface AppRouteDefinition {
     | "terms"
     | "cookies"
     | "acceptable-use"
-    | "data-retention";
+    | "data-retention"
+    | "ai-tools"
+    | "ai-tool-detail"
+    | "compare"
+    | "compare-detail"
+    | "ai-news"
+    | "ai-news-detail";
   path: string;
   label: string;
   eyebrow: string;
@@ -42,7 +48,8 @@ export interface AppRouteDefinition {
     | "onboarding"
     | "admin"
     | "help"
-    | "legal";
+    | "legal"
+    | "editorial";
   status: string;
   sections: NavigationSection[];
   seo: RouteSeoMetadata;
@@ -237,6 +244,165 @@ export const appRoutes: AppRouteDefinition[] = [
       canonicalPath: "/templates",
       indexable: true,
       includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "ai-tools",
+    path: "/ai-tools",
+    label: "AI Tools",
+    eyebrow: "Product Phase 11",
+    title: "AI tools directory shell",
+    description:
+      "This route shows a static editorial catalog of AI tools with source links, review dates, and honest integration status notes.",
+    kind: "editorial",
+    status: "Editorial catalog only",
+    sections: [
+      {
+        title: "What exists here",
+        body:
+          "This directory can list source-linked editorial summaries of AI tools, capabilities, and limitations without claiming live provider integration or user reviews.",
+      },
+      {
+        title: "Current limitation",
+        body:
+          "No fake rankings, fake ratings, fake popularity metrics, or runtime generation behavior are added in this phase.",
+      },
+    ],
+    seo: {
+      title: "AI Tools Directory | Free AI Mixer",
+      description:
+        "Static editorial AI tools directory with honest capability summaries, source links, and review-date metadata.",
+      canonicalPath: "/ai-tools",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "ai-tool-detail",
+    path: "/ai-tools/:slug",
+    label: "AI Tool Detail",
+    eyebrow: "Product Phase 11",
+    title: "AI tool editorial detail",
+    description:
+      "This route shows source-linked editorial detail for a tool without fake ratings, fake reviews, or live provider execution.",
+    kind: "editorial",
+    status: "Editorial detail only",
+    sections: [],
+    seo: {
+      title: "AI Tool Detail | Free AI Mixer",
+      description:
+        "Editorial AI tool detail page with source links, caveats, and truthful integration-status language.",
+      canonicalPath: "/ai-tools",
+      indexable: true,
+      includeInSitemap: false,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "compare",
+    path: "/compare",
+    label: "Compare",
+    eyebrow: "Product Phase 11",
+    title: "AI tools comparison shell",
+    description:
+      "This route shows editorial comparison summaries with caveats, source links, and no fake benchmark scores.",
+    kind: "editorial",
+    status: "Editorial comparison only",
+    sections: [
+      {
+        title: "What exists here",
+        body:
+          "Comparison pages can summarize workflow differences and caveats between AI tools without inventing ratings, reviews, or popularity claims.",
+      },
+      {
+        title: "Current limitation",
+        body:
+          "No comparison page in this phase triggers generation, provider execution, or pricing commitments.",
+      },
+    ],
+    seo: {
+      title: "AI Tools Compare | Free AI Mixer",
+      description:
+        "Editorial AI tools comparison index with source-linked caveats and truthful comparison summaries.",
+      canonicalPath: "/compare",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "compare-detail",
+    path: "/compare/:slug",
+    label: "Comparison Detail",
+    eyebrow: "Product Phase 11",
+    title: "AI tools comparison detail",
+    description:
+      "This route shows editorial comparison detail without fake reviews, fake ratings, or fake best-of claims.",
+    kind: "editorial",
+    status: "Editorial comparison detail",
+    sections: [],
+    seo: {
+      title: "AI Tools Comparison Detail | Free AI Mixer",
+      description:
+        "Editorial AI tools comparison detail page with caveats, sources, and truthful workflow framing.",
+      canonicalPath: "/compare",
+      indexable: true,
+      includeInSitemap: false,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "ai-news",
+    path: "/ai-news",
+    label: "AI News",
+    eyebrow: "Product Phase 11",
+    title: "AI news editorial shell",
+    description:
+      "This route shows a manual editorial AI news shell with source links and last-checked metadata instead of fake live freshness.",
+    kind: "editorial",
+    status: "Editorial feed shell only",
+    sections: [
+      {
+        title: "What exists here",
+        body:
+          "This feed can show short editorial summaries with source attribution and last-checked dates.",
+      },
+      {
+        title: "Current limitation",
+        body:
+          "No scraping, live ingestion, or fake latest-news claims are enabled in this phase.",
+      },
+    ],
+    seo: {
+      title: "AI News | Free AI Mixer",
+      description:
+        "Manual editorial AI news shell with source attribution and last-checked metadata.",
+      canonicalPath: "/ai-news",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "ai-news-detail",
+    path: "/ai-news/:slug",
+    label: "AI News Detail",
+    eyebrow: "Product Phase 11",
+    title: "AI news editorial detail",
+    description:
+      "This route shows a short editorial news detail page with source attribution and no fake live-feed claims.",
+    kind: "editorial",
+    status: "Editorial detail only",
+    sections: [],
+    seo: {
+      title: "AI News Detail | Free AI Mixer",
+      description:
+        "Editorial AI news detail page with visible source links, last-checked metadata, and truthful caveats.",
+      canonicalPath: "/ai-news",
+      indexable: true,
+      includeInSitemap: false,
       robots: "index,follow",
     },
   },
@@ -653,7 +819,13 @@ export const primaryNavigationItems = appRoutes.filter(
     route.id !== "terms" &&
     route.id !== "cookies" &&
     route.id !== "acceptable-use" &&
-    route.id !== "data-retention",
+    route.id !== "data-retention" &&
+    route.id !== "ai-tools" &&
+    route.id !== "ai-tool-detail" &&
+    route.id !== "compare" &&
+    route.id !== "compare-detail" &&
+    route.id !== "ai-news" &&
+    route.id !== "ai-news-detail",
 );
 
 export const secondaryNavigationItems = appRoutes.filter(
@@ -669,7 +841,20 @@ export const authNavigationItems = appRoutes.filter(
   (route) => route.id === "login" || route.id === "signup",
 );
 
-const routeMap = new Map(appRoutes.map((route) => [route.path, route]));
+const exactRouteMap = new Map(
+  appRoutes
+    .filter((route) => !route.path.includes(":"))
+    .map((route) => [route.path, route]),
+);
+
+const dynamicRoutes = appRoutes
+  .filter((route) => route.path.includes(":"))
+  .map((route) => ({
+    route,
+    expression: new RegExp(
+      `^${route.path.replace(/:[^/]+/g, "[^/]+")}$`,
+    ),
+  }));
 
 export const normalizeAppPath = (pathname: string): string => {
   if (!pathname || pathname === "//") {
@@ -680,8 +865,18 @@ export const normalizeAppPath = (pathname: string): string => {
     ? pathname.slice(0, -1)
     : pathname;
 
-  return routeMap.has(sanitizedPath) ? sanitizedPath : "/";
+  if (exactRouteMap.has(sanitizedPath)) {
+    return sanitizedPath;
+  }
+
+  if (dynamicRoutes.some((route) => route.expression.test(sanitizedPath))) {
+    return sanitizedPath;
+  }
+
+  return "/";
 };
 
 export const getRouteByPath = (pathname: string): AppRouteDefinition =>
-  routeMap.get(normalizeAppPath(pathname)) ?? appRoutes[0];
+  exactRouteMap.get(normalizeAppPath(pathname)) ??
+  dynamicRoutes.find((route) => route.expression.test(normalizeAppPath(pathname)))?.route ??
+  appRoutes[0];

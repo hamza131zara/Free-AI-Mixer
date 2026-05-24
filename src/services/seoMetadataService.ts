@@ -34,14 +34,11 @@ export const getRouteSeoMetadata = (
   route: AppRouteDefinition,
 ): RouteSeoMetadata => route.seo;
 
-export const applyRouteSeoMetadata = (
-  route: AppRouteDefinition,
-): void => {
+export const applySeoMetadata = (metadata: RouteSeoMetadata): void => {
   if (typeof document === "undefined" || typeof window === "undefined") {
     return;
   }
 
-  const metadata = getRouteSeoMetadata(route);
   document.title = metadata.title;
   ensureMetaElement("description").setAttribute("content", metadata.description);
   ensureMetaElement("robots").setAttribute("content", metadata.robots);
@@ -49,6 +46,12 @@ export const applyRouteSeoMetadata = (
     "href",
     resolveCanonicalUrl(metadata.canonicalPath, window.location.origin),
   );
+};
+
+export const applyRouteSeoMetadata = (
+  route: AppRouteDefinition,
+): void => {
+  applySeoMetadata(getRouteSeoMetadata(route));
 };
 
 export const buildPublicSitemapInventory = (): SitemapRouteEntry[] =>

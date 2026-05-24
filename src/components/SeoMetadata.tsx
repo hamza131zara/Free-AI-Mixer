@@ -1,15 +1,24 @@
 import { useEffect } from "react";
 import type { AppRouteDefinition } from "../services/navigationService";
-import { applyRouteSeoMetadata } from "../services/seoMetadataService";
+import { applyRouteSeoMetadata, applySeoMetadata } from "../services/seoMetadataService";
+import type { RouteSeoMetadata } from "../types/seo";
 
 export interface SeoMetadataProps {
-  route: AppRouteDefinition;
+  route?: AppRouteDefinition;
+  metadata?: RouteSeoMetadata;
 }
 
-export function SeoMetadata({ route }: SeoMetadataProps) {
+export function SeoMetadata({ route, metadata }: SeoMetadataProps) {
   useEffect(() => {
-    applyRouteSeoMetadata(route);
-  }, [route]);
+    if (metadata) {
+      applySeoMetadata(metadata);
+      return;
+    }
+
+    if (route) {
+      applyRouteSeoMetadata(route);
+    }
+  }, [metadata, route]);
 
   return null;
 }

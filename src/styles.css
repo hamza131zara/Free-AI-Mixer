@@ -175,6 +175,12 @@ button.icon-button {
 .dashboard-page,
 .provider-settings-page,
 .templates-page,
+.ai-tools-page,
+.ai-tool-detail-page,
+.ai-tool-compare-page,
+.ai-tool-comparison-detail-page,
+.ai-news-page,
+.ai-news-detail-page,
 .onboarding-page,
 .admin-page,
 .help-page,
@@ -278,9 +284,30 @@ button.icon-button {
 .capability-chip-list,
 .template-gallery-grid,
 .template-filter-grid,
-.template-detail-stack {
+.template-detail-stack,
+.editorial-list {
   display: grid;
   gap: 16px;
+}
+
+.editorial-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.hero-actions a {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  padding: 0 16px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .route-card-grid {
@@ -604,6 +631,12 @@ dd {
   .dashboard-page,
   .provider-settings-page,
   .templates-page,
+  .ai-tools-page,
+  .ai-tool-detail-page,
+  .ai-tool-compare-page,
+  .ai-tool-comparison-detail-page,
+  .ai-news-page,
+  .ai-news-detail-page,
   .onboarding-page,
   .admin-page,
   .help-page,
@@ -705,6 +738,12 @@ dd {
   .dashboard-page,
   .provider-settings-page,
   .templates-page,
+  .ai-tools-page,
+  .ai-tool-detail-page,
+  .ai-tool-compare-page,
+  .ai-tool-comparison-detail-page,
+  .ai-news-page,
+  .ai-news-detail-page,
   .onboarding-page,
   .admin-page,
   .help-page,

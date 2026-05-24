@@ -2,7 +2,6 @@ import { primaryNavigationItems } from "../services/navigationService";
 import { useNavigationStore } from "../store/navigationStore";
 
 const featuredRouteIds = new Set(["mixer", "templates", "pricing"]);
-
 export function HomePage() {
   const navigateTo = useNavigationStore((state) => state.navigateTo);
   const featuredRoutes = primaryNavigationItems.filter((route) =>
@@ -111,6 +110,44 @@ export function HomePage() {
             download state.
           </p>
         </article>
+      </div>
+
+      <div className="page-section">
+        <div className="section-header">
+          <p className="eyebrow">Editorial SEO foundation</p>
+          <h2>Public content can grow without pretending it is live data</h2>
+        </div>
+        <div className="route-card-grid">
+          {[
+            {
+              path: "/ai-tools",
+              label: "AI Tools",
+              description:
+                "Static editorial directory with source-linked tool summaries and honest unknown fields.",
+            },
+            {
+              path: "/compare",
+              label: "Compare",
+              description:
+                "Editorial tool comparisons with caveats, source links, and no fake ratings or reviews.",
+            },
+            {
+              path: "/ai-news",
+              label: "AI News",
+              description:
+                "Manual editorial news shell with source attribution and last-checked dates instead of fake latest claims.",
+            },
+          ].map((route) => (
+            <article key={route.path} className="route-card">
+              <p className="route-card-path">{route.path}</p>
+              <h3>{route.label}</h3>
+              <p>{route.description}</p>
+              <button type="button" className="secondary" onClick={() => navigateTo(route.path)}>
+                Open {route.label}
+              </button>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );
