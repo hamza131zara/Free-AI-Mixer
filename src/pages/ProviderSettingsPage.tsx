@@ -4,12 +4,24 @@ import { useProviderSettingsStore } from "../store/providerSettingsStore";
 import { useNavigationStore } from "../store/navigationStore";
 
 const productPolicyCards = [
+  "Bring your own API key to use your provider balance or free trial credits through Free AI Mixer later.",
   "BYOK means users pay provider generation cost through their own API keys later.",
-  "Free BYOK users may later get 2500 daily Free AI Mixer platform credits.",
+  "Provider balance and credits belong to the user’s provider account. Free AI Mixer does not grant or multiply provider credits.",
+  "Free AI Mixer platform credits and limits are separate from provider usage.",
+  "Adding multiple API keys does not multiply platform credits.",
   "Multiple API keys do not multiply daily platform credits.",
+  "Multiple provider keys only add more provider options, capabilities, and fallback choices.",
   "Multiple providers only increase routing and fallback options.",
-  "Templates, mixer, exports, and downloads will share one global credit wallet later.",
+  "Fallback may use additional provider balance only if fallback is explicitly enabled.",
+  "Templates, mixer, exports, storage, downloads, and queue priority may later share one global Free AI Mixer platform wallet.",
   "Audio is optional and provider-capability based, not a separate early setup.",
+] as const;
+
+const providerActionLabels = [
+  "Add key",
+  "Replace key",
+  "Remove key",
+  "Test connection",
 ] as const;
 
 export function ProviderSettingsPage() {
@@ -32,12 +44,12 @@ export function ProviderSettingsPage() {
     <section className="provider-settings-page" data-testid="provider-settings-page">
       <div className="placeholder-hero">
         <div className="dashboard-copy">
-          <p className="eyebrow">Product Phase 3</p>
-          <h1>Provider settings and routing foundation</h1>
+          <p className="eyebrow">Product Phase 14</p>
+          <h1>Secure BYOK provider settings readiness</h1>
           <p className="placeholder-description">
-            This page only reads backend-owned provider metadata and settings
-            status. Secure API key connection, real provider validation, and
-            routing execution are not enabled yet.
+            This page reads backend-owned provider metadata, connection summaries,
+            and routing policy readiness only. Secure API key storage, live
+            provider validation, and execution are still disabled in this phase.
           </p>
           <div className="hero-actions">
             <button
@@ -80,7 +92,7 @@ export function ProviderSettingsPage() {
             <p>Authentication is not configured on this backend yet.</p>
           ) : null}
           {accessStatus === "authenticated" ? (
-            <p>Connection summaries stay read-only and unconnected in this phase.</p>
+            <p>Connection summaries stay metadata-only and not_connected until secure backend key storage exists.</p>
           ) : null}
         </div>
       </div>
@@ -99,6 +111,9 @@ export function ProviderSettingsPage() {
               <p className="info-card-label">{provider.id}</p>
               <h3>{provider.displayName}</h3>
               <p>{provider.summary}</p>
+              <p>
+                <strong>Status:</strong> {provider.status}
+              </p>
               <div className="capability-chip-list">
                 {provider.capabilities.map((capability) => (
                   <span
@@ -110,6 +125,15 @@ export function ProviderSettingsPage() {
                   </span>
                 ))}
               </div>
+              <p>
+                <strong>Provider cost:</strong> {provider.costNote}
+              </p>
+              <p>
+                <strong>Platform policy:</strong> {provider.platformLimitNote}
+              </p>
+              <p>
+                <strong>Security note:</strong> {provider.securityNote}
+              </p>
             </article>
           ))}
           {providers.length === 0 && catalogStatus !== "ready" ? (
@@ -124,7 +148,7 @@ export function ProviderSettingsPage() {
       <div className="page-section">
         <div className="section-header">
           <p className="eyebrow">Routing policy</p>
-          <h2>Future routing metadata only</h2>
+          <h2>Manual, priority, auto, and fallback readiness</h2>
         </div>
         <div className="placeholder-grid">
           <article className="info-card" data-testid="provider-routing-card">
@@ -133,8 +157,8 @@ export function ProviderSettingsPage() {
               Current default: <strong>{routingPreferences?.mode ?? "auto"}</strong>
             </p>
             <p>
-              Supported preferences are manual, auto, cheapest, fastest, and
-              highest quality.
+              Supported routing modes are manual, priority, and auto. Routing stays
+              single-provider-per-attempt only.
             </p>
           </article>
           <article className="info-card" data-testid="provider-fallback-card">
@@ -144,7 +168,18 @@ export function ProviderSettingsPage() {
               <strong>{routingPreferences?.fallback.enabled ? "enabled" : "disabled"}</strong>
               {" "}by default.
             </p>
-            <p>Ordered fallback lists are supported later. No implicit multi-provider burning is allowed.</p>
+            <p>
+              Fallback requires explicit opt-in. Ordered fallback lists are supported later,
+              and the platform must never fan out to all providers at once.
+            </p>
+          </article>
+          <article className="info-card">
+            <h3>Recommended video priority</h3>
+            <p>{routingPreferences?.recommendedVideoPriority.join(" → ")}</p>
+          </article>
+          <article className="info-card">
+            <h3>Recommended image/card/template priority</h3>
+            <p>{routingPreferences?.recommendedImagePriority.join(" → ")}</p>
           </article>
         </div>
       </div>
@@ -168,6 +203,17 @@ export function ProviderSettingsPage() {
                 Last validation status:{" "}
                 <strong>{connection.lastValidationStatus ?? "not_enabled_yet"}</strong>
               </p>
+              <p>
+                Keys will later be encrypted backend-side, never shown again after
+                submission, and never stored in the browser.
+              </p>
+              <div className="hero-actions">
+                {providerActionLabels.map((label) => (
+                  <button key={`${connection.providerId}-${label}`} type="button" className="secondary" disabled>
+                    {label}
+                  </button>
+                ))}
+              </div>
             </article>
           ))}
           {connections.length === 0 ? (
@@ -198,6 +244,9 @@ export function ProviderSettingsPage() {
           </article>
           <article className="info-card">
             <p>Routing execution is not enabled yet.</p>
+          </article>
+          <article className="info-card">
+            <p>API key fields are not persisted in localStorage or sessionStorage in this product phase.</p>
           </article>
         </div>
       </div>

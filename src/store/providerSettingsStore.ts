@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import {
   getProviderCatalog,
+  getProviderConnections,
+  getProviderRoutingPolicy,
   getProviderSettingsStatus,
 } from "../services/providerSettingsService";
 import type {
@@ -29,9 +31,12 @@ const unknownCatalogMessage = "Loading supported provider catalog.";
 
 const defaultRoutingPreferences: ProviderRoutingPreferences = {
   mode: "auto",
+  recommendedVideoPriority: ["runway", "luma", "google", "openai", "replicate"],
+  recommendedImagePriority: ["openai", "stability", "google", "replicate"],
   fallback: {
     enabled: false,
     orderedProviderIds: [],
+    requiresExplicitOptIn: true,
   },
 };
 
@@ -91,16 +96,28 @@ export const useProviderSettingsStore = create<ProviderSettingsStoreState>((set)
   pendingAction: null,
   refreshProviderSettings: async () => {
     set({ pendingAction: "refresh" });
-    const [catalogResult, statusResult] = await Promise.all([
+    const [catalogResult, statusResult, connectionsResult, routingPolicyResult] = await Promise.all([
       getProviderCatalog(),
       getProviderSettingsStatus(),
+      getProviderConnections(),
+      getProviderRoutingPolicy(),
     ]);
+
+    const statusProjection = applyStatusResult(statusResult);
+    const resolvedConnections =
+      connectionsResult.connections.length > 0
+        ? connectionsResult.connections
+        : statusProjection.connections;
+    const resolvedRoutingPreferences =
+      routingPolicyResult.routingPreferences ?? statusProjection.routingPreferences;
 
     set({
       catalogStatus: catalogResult.providers.length > 0 ? "ready" : "unavailable",
       catalogMessage: catalogResult.message,
       providers: catalogResult.providers,
-      ...applyStatusResult(statusResult),
+      ...statusProjection,
+      routingPreferences: resolvedRoutingPreferences,
+      connections: resolvedConnections,
       pendingAction: null,
     });
   },

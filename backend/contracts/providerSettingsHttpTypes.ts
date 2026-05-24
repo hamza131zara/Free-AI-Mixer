@@ -8,20 +8,19 @@ export type BackendSupportedProviderId =
 
 export type BackendProviderCapability =
   | "image_generation"
+  | "image_editing"
   | "video_generation"
-  | "native_video_audio"
+  | "image_to_video"
+  | "text_to_video"
+  | "video_to_video"
+  | "audio_generation"
   | "text_to_speech"
-  | "music_generation"
-  | "sound_effects"
-  | "upscale"
-  | "template_generation_candidate";
+  | "template_generation_candidate"
+  | "card_generation_candidate"
+  | "prompt_text_intelligence"
+  | "model_marketplace";
 
-export type BackendProviderRoutingPreference =
-  | "manual"
-  | "auto"
-  | "cheapest"
-  | "fastest"
-  | "highest_quality";
+export type BackendProviderRoutingPreference = "manual" | "priority" | "auto";
 
 export type BackendProviderConnectionStatus = "not_connected" | "unavailable";
 
@@ -36,16 +35,25 @@ export interface BackendProviderCatalogEntry {
   capabilities: BackendProviderCapability[];
   supportsByok: true;
   summary: string;
+  officialWebsite: string;
+  docsUrl: string;
+  securityNote: string;
+  costNote: string;
+  platformLimitNote: string;
+  status: "available" | "planned" | "not_enabled";
 }
 
 export interface BackendProviderFallbackPreference {
   enabled: boolean;
   orderedProviderIds: BackendSupportedProviderId[];
+  requiresExplicitOptIn: true;
 }
 
 export interface BackendProviderRoutingPreferences {
   mode: BackendProviderRoutingPreference;
   manualProviderId?: BackendSupportedProviderId;
+  recommendedVideoPriority: BackendSupportedProviderId[];
+  recommendedImagePriority: BackendSupportedProviderId[];
   fallback: BackendProviderFallbackPreference;
 }
 
@@ -61,6 +69,34 @@ export interface BackendProviderCatalogResponse {
   message: string;
   providers: BackendProviderCatalogEntry[];
 }
+
+export interface BackendProviderConnectionsResponse {
+  kind: "provider_settings_connections";
+  message: string;
+  connections: BackendRedactedProviderConnectionSummary[];
+}
+
+export interface BackendProviderRoutingPolicyResponse {
+  kind: "provider_settings_routing_policy";
+  message: string;
+  routingPreferences: BackendProviderRoutingPreferences;
+}
+
+export type BackendProviderConnectionMutationResponse =
+  | {
+      kind: "provider_settings_mutation_unavailable";
+      status:
+        | "auth_not_configured"
+        | "auth_provider_unavailable"
+        | "secure_provider_key_storage_not_enabled";
+      message: string;
+    }
+  | {
+      kind: "provider_settings_sign_in_required";
+      status: "unauthenticated";
+      reason: "missing_credentials" | "invalid_credentials";
+      message: string;
+    };
 
 export type BackendProviderSettingsStatusResponse =
   | {

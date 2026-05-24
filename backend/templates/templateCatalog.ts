@@ -166,7 +166,7 @@ const templateCatalog: BackendTemplateDetail[] = [
     useCase: "Testimonial short with lightweight branding.",
     acceptedAssetTypes: ["image", "video", "logo"],
     outputType: "short_video",
-    providerCapabilityRequirements: ["video_generation", "native_video_audio"],
+    providerCapabilityRequirements: ["video_generation", "audio_generation"],
     draftCreditEstimate: {
       label: "250-400 credits",
       planningOnly: true,
