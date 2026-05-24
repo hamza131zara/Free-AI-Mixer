@@ -1,6 +1,10 @@
 import type { WorkspaceRole } from "../auth/accountContracts";
 import type { BackendRequesterContext } from "../auth/requesterContext";
 import type { WorkspaceMembershipRole } from "../auth/workspaceMembership";
+import {
+  normalizeWorkspaceRole,
+  type CanonicalWorkspaceRole,
+} from "../auth/workspaceRoleNormalization";
 
 export type ProviderKeyAction =
   | "view_provider_catalog"
@@ -13,10 +17,7 @@ export type ProviderKeyAction =
   | "view_masked_key_fingerprint";
 
 export type ProviderKeyActorRole =
-  | "workspace_owner"
-  | "workspace_admin"
-  | "workspace_member"
-  | "workspace_viewer"
+  | CanonicalWorkspaceRole
   | "platform_admin"
   | "moderator";
 
@@ -70,23 +71,17 @@ export const normalizeProviderKeyActorRole = (
     return undefined;
   }
 
+  if (role === "platform_admin" || role === "moderator") {
+    return role;
+  }
+
+  const normalizedRole = normalizeWorkspaceRole(role);
+
+  if (normalizedRole !== "unknown") {
+    return normalizedRole;
+  }
+
   switch (role) {
-    case "workspace_owner":
-    case "workspace_admin":
-    case "workspace_member":
-    case "workspace_viewer":
-    case "platform_admin":
-    case "moderator":
-      return role;
-    case "owner":
-      return "workspace_owner";
-    case "admin":
-      return "workspace_admin";
-    case "editor":
-    case "member":
-      return "workspace_member";
-    case "viewer":
-      return "workspace_viewer";
     default:
       return undefined;
   }

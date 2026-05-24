@@ -5,6 +5,7 @@ import {
   decideWorkspaceMembershipAccess,
   type WorkspaceMembershipRepository,
 } from "../auth/workspaceMembership";
+import { decideRequesterContext } from "../auth/requesterContextDecision";
 import {
   decideProviderKeyAuthorization,
   type ProviderKeyAction,
@@ -107,14 +108,14 @@ const getMutationUnavailableForAuthState = (
   request: Request,
   runtimeConfig: TrustedAuthProviderRuntimeConfig,
 ): ProviderMutationBoundaryDecision | undefined => {
-  const requesterContext = getRequesterContextFromRequest(request);
+  const requesterDecision = decideRequesterContext(getRequesterContextFromRequest(request));
 
-  if (requesterContext.kind === "authenticated") {
+  if (requesterDecision.kind === "verified_authenticated") {
     return undefined;
   }
 
   if (
-    requesterContext.reason === "auth_not_configured" ||
+    requesterDecision.kind === "auth_not_configured" ||
     runtimeConfig.kind === "auth_provider_not_configured"
   ) {
     return {
@@ -126,7 +127,10 @@ const getMutationUnavailableForAuthState = (
 
   return {
     kind: "sign_in_required",
-    reason: requesterContext.reason,
+    reason:
+      requesterDecision.kind === "invalid_credentials"
+        ? "invalid_credentials"
+        : "missing_credentials",
     message: "Sign in is required before provider settings can be managed.",
   };
 };

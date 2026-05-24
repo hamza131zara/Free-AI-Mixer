@@ -23,6 +23,7 @@ export interface SafeStructuredLogEvent {
 const sensitiveKeyParts = [
   "authorization",
   "cookie",
+  "session",
   "token",
   "secret",
   "service_role",
@@ -37,6 +38,8 @@ const sensitiveKeyParts = [
   "rawtext",
   "rawprompt",
   "path",
+  "x-user-id",
+  "x-workspace-id",
 ] as const;
 
 const signedUrlTokens = [
@@ -77,7 +80,8 @@ const isLikelySecretValue = (value: string): boolean => {
     normalized.startsWith("sk-") ||
     normalized.includes("service_role") ||
     normalized.includes("bearer ") ||
-    normalized.includes("supabase_service_role")
+    normalized.includes("supabase_service_role") ||
+    /^[a-z0-9_-]+\.[a-z0-9_-]+\.[a-z0-9_-]+$/i.test(value)
   );
 };
 
