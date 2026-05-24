@@ -27,7 +27,13 @@ export type ProviderConnectionStatus = "not_connected" | "unavailable";
 export type ProviderValidationStatus =
   | "not_enabled_yet"
   | "not_validated"
-  | "validation_unavailable";
+  | "validation_unavailable"
+  | "validation_failed"
+  | "validated";
+
+export type ProviderConnectionUnavailableReason =
+  | "secure_provider_key_storage_not_enabled"
+  | "workspace_permission_not_verified";
 
 export interface ProviderCatalogEntry {
   id: SupportedProviderId;
@@ -61,7 +67,17 @@ export interface RedactedProviderConnectionSummary {
   providerId: SupportedProviderId;
   status: ProviderConnectionStatus;
   maskedKeySummary?: string;
+  maskedFingerprint?: string;
+  keyFingerprintSuffix?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  lastVerifiedAt?: string;
   lastValidationStatus?: ProviderValidationStatus;
+  verificationStatus?: ProviderValidationStatus;
+  needsReverification?: boolean;
+  managedByWorkspaceRole?: "workspace_owner" | "workspace_admin";
+  canManage?: boolean;
+  unavailableReason?: ProviderConnectionUnavailableReason;
 }
 
 export interface ProviderCatalogResult {
@@ -89,13 +105,20 @@ export type ProviderMutationAvailabilityResult =
       code:
         | "auth_not_configured"
         | "auth_provider_unavailable"
-        | "secure_provider_key_storage_not_enabled";
+        | "secure_provider_key_storage_not_enabled"
+        | "workspace_permission_not_verified";
       message: string;
     }
   | {
       kind: "sign_in_required";
       status: "unauthenticated";
       reason: "missing_credentials" | "invalid_credentials";
+      message: string;
+    }
+  | {
+      kind: "forbidden";
+      status: "forbidden";
+      code: "workspace_owner_or_admin_required";
       message: string;
     };
 

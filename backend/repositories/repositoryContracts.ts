@@ -15,6 +15,11 @@ import type {
 } from "../contracts/exportHttpTypes";
 
 export type BackendProviderKeyStatus = "active" | "rotated" | "disabled";
+export type BackendProviderKeyVerificationStatus =
+  | "not_validated"
+  | "validated"
+  | "validation_failed"
+  | "needs_reverification";
 
 export interface BackendEncryptedSecretPayload {
   encryptedPayload: string;
@@ -26,6 +31,11 @@ export interface BackendProviderKeyRecord
   extends BackendWorkspaceProviderKeyOwnership {
   encryptedSecret: BackendEncryptedSecretPayload;
   status: BackendProviderKeyStatus;
+  maskedFingerprint?: string;
+  keyFingerprintSuffix?: string;
+  lastVerifiedAt?: string;
+  verificationStatus?: BackendProviderKeyVerificationStatus;
+  needsReverification?: boolean;
   rotatedAt?: string;
   disabledAt?: string;
 }

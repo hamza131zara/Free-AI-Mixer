@@ -59,13 +59,19 @@ type BackendProviderConnectionMutationResponse =
       status:
         | "auth_not_configured"
         | "auth_provider_unavailable"
-        | "secure_provider_key_storage_not_enabled";
+        | "secure_provider_key_storage_not_enabled"
+        | "workspace_permission_not_verified";
       message?: string;
     }
   | {
       kind: "provider_settings_sign_in_required";
       status: "unauthenticated";
       reason: "missing_credentials" | "invalid_credentials";
+      message?: string;
+    }
+  | {
+      kind: "provider_settings_forbidden";
+      status: "workspace_owner_or_admin_required";
       message?: string;
     };
 
@@ -254,6 +260,17 @@ export const requestUnavailableProviderConnectionMutation = async (
         status: "unauthenticated",
         reason: payload.reason,
         message: payload.message ?? "Sign in is required before provider settings can be managed.",
+      };
+    }
+
+    if (payload.kind === "provider_settings_forbidden") {
+      return {
+        kind: "forbidden",
+        status: "forbidden",
+        code: payload.status,
+        message:
+          payload.message ??
+          "Workspace owner or workspace admin permission is required before provider keys can be managed.",
       };
     }
 

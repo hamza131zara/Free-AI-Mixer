@@ -27,7 +27,13 @@ export type BackendProviderConnectionStatus = "not_connected" | "unavailable";
 export type BackendProviderValidationStatus =
   | "not_enabled_yet"
   | "not_validated"
-  | "validation_unavailable";
+  | "validation_unavailable"
+  | "validation_failed"
+  | "validated";
+
+export type BackendProviderConnectionUnavailableReason =
+  | "secure_provider_key_storage_not_enabled"
+  | "workspace_permission_not_verified";
 
 export interface BackendProviderCatalogEntry {
   id: BackendSupportedProviderId;
@@ -61,7 +67,17 @@ export interface BackendRedactedProviderConnectionSummary {
   providerId: BackendSupportedProviderId;
   status: BackendProviderConnectionStatus;
   maskedKeySummary?: string;
+  maskedFingerprint?: string;
+  keyFingerprintSuffix?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  lastVerifiedAt?: string;
   lastValidationStatus?: BackendProviderValidationStatus;
+  verificationStatus?: BackendProviderValidationStatus;
+  needsReverification?: boolean;
+  managedByWorkspaceRole?: "workspace_owner" | "workspace_admin";
+  canManage?: boolean;
+  unavailableReason?: BackendProviderConnectionUnavailableReason;
 }
 
 export interface BackendProviderCatalogResponse {
@@ -88,13 +104,19 @@ export type BackendProviderConnectionMutationResponse =
       status:
         | "auth_not_configured"
         | "auth_provider_unavailable"
-        | "secure_provider_key_storage_not_enabled";
+        | "secure_provider_key_storage_not_enabled"
+        | "workspace_permission_not_verified";
       message: string;
     }
   | {
       kind: "provider_settings_sign_in_required";
       status: "unauthenticated";
       reason: "missing_credentials" | "invalid_credentials";
+      message: string;
+    }
+  | {
+      kind: "provider_settings_forbidden";
+      status: "workspace_owner_or_admin_required";
       message: string;
     };
 
