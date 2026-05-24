@@ -11,6 +11,7 @@ export type JwtVerificationConfiguration =
         | "missing_issuer"
         | "missing_audience"
         | "missing_jwks_uri"
+        | "missing_allowed_algorithms"
         | "unsupported_key_mode";
     }
   | {
@@ -19,6 +20,7 @@ export type JwtVerificationConfiguration =
       issuer: string;
       audience: string;
       jwksUri: string;
+      allowedAlgorithms: string[];
     };
 
 export interface JwtVerificationConfigurationEnv {
@@ -27,6 +29,7 @@ export interface JwtVerificationConfigurationEnv {
   FREE_AI_MIXER_AUTH_AUDIENCE?: string;
   FREE_AI_MIXER_AUTH_JWKS_URI?: string;
   FREE_AI_MIXER_AUTH_JWT_KEY_MODE?: string;
+  FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS?: string;
 }
 
 /**
@@ -53,6 +56,10 @@ export const readJwtVerificationConfiguration = (
   const jwksUri = env.FREE_AI_MIXER_AUTH_JWKS_URI?.trim();
   const keyMode =
     env.FREE_AI_MIXER_AUTH_JWT_KEY_MODE?.trim().toLowerCase() || "remote_jwks";
+  const allowedAlgorithms = (env.FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
 
   if (!issuer) {
     return {
@@ -82,12 +89,20 @@ export const readJwtVerificationConfiguration = (
     };
   }
 
+  if (allowedAlgorithms.length === 0) {
+    return {
+      kind: "jwt_verification_not_configured",
+      reason: "missing_allowed_algorithms",
+    };
+  }
+
   return {
     kind: "jwt_verification_configured",
     keyMode: "remote_jwks",
     issuer,
     audience,
     jwksUri,
+    allowedAlgorithms,
   };
 };
 

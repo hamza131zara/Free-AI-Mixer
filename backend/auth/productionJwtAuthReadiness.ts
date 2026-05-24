@@ -12,6 +12,7 @@ export type ProductionJwtAuthReadinessUnavailableReason =
   | "missing_issuer"
   | "missing_audience"
   | "missing_jwks_uri"
+  | "missing_allowed_algorithms"
   | "unsupported_key_mode"
   | "invalid_jwks_uri"
   | "jwks_not_constructed";
@@ -32,6 +33,7 @@ export type ProductionJwtAuthReadinessDecision =
       audience: string;
       jwksUri: string;
       keyMode: "remote_jwks";
+      allowedAlgorithms: string[];
       providerConfigured: true;
       jwksConfigured: true;
       routeRuntimeEnabled: false;
@@ -119,6 +121,7 @@ export const resolveProductionJwtAuthReadiness = (
     audience: config.audience,
     jwksUri: jwksConstruction.jwksUri,
     keyMode: config.keyMode,
+    allowedAlgorithms: config.allowedAlgorithms,
     providerConfigured: true,
     jwksConfigured: true,
     routeRuntimeEnabled: false,

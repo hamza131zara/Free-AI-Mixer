@@ -58,6 +58,7 @@ test.describe("phase175b production auth jwt configuration finalization boundary
         FREE_AI_MIXER_AUTH_PROVIDER: "jwt",
         FREE_AI_MIXER_AUTH_ISSUER: "https://auth.example",
         FREE_AI_MIXER_AUTH_AUDIENCE: "free-ai-mixer",
+        FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS: "RS256",
         FREE_AI_MIXER_AUTH_JWT_KEY_MODE: "static_public_key",
         FREE_AI_MIXER_AUTH_JWKS_URI: "https://auth.example/.well-known/jwks.json",
       }),
@@ -75,6 +76,7 @@ test.describe("phase175b production auth jwt configuration finalization boundary
         FREE_AI_MIXER_AUTH_PROVIDER: "jwt",
         FREE_AI_MIXER_AUTH_ISSUER: "https://auth.example",
         FREE_AI_MIXER_AUTH_AUDIENCE: "free-ai-mixer",
+        FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS: "RS256",
         FREE_AI_MIXER_AUTH_JWKS_URI: "not a url",
       }),
     ).toEqual({
@@ -94,6 +96,7 @@ test.describe("phase175b production auth jwt configuration finalization boundary
         FREE_AI_MIXER_AUTH_ISSUER: "https://auth.example",
         FREE_AI_MIXER_AUTH_AUDIENCE: "free-ai-mixer",
         FREE_AI_MIXER_AUTH_JWKS_URI: "https://auth.example/.well-known/jwks.json",
+        FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS: "RS256,ES256",
       }),
     ).toEqual({
       kind: "ready",
@@ -102,6 +105,7 @@ test.describe("phase175b production auth jwt configuration finalization boundary
       audience: "free-ai-mixer",
       jwksUri: "https://auth.example/.well-known/jwks.json",
       keyMode: "remote_jwks",
+      allowedAlgorithms: ["RS256", "ES256"],
       providerConfigured: true,
       jwksConfigured: true,
       routeRuntimeEnabled: false,

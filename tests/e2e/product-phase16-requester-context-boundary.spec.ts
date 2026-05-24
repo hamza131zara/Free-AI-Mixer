@@ -111,8 +111,10 @@ test.describe("product phase 16 requester context boundary", () => {
         FREE_AI_MIXER_AUTH_AUDIENCE: "free-ai-mixer",
         FREE_AI_MIXER_AUTH_JWKS_URI: "https://issuer.example.com/.well-known/jwks.json",
         FREE_AI_MIXER_AUTH_JWT_KEY_MODE: "remote_jwks",
+        FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS: "RS256",
         FREE_AI_MIXER_CORS_ALLOWED_ORIGINS: "https://app.example.com",
         VITE_SUPABASE_URL: "https://project.supabase.co",
+        VITE_SUPABASE_ANON_KEY: "sb_publishable_test_key",
       }),
     ).toMatchObject({
       kind: "ready",

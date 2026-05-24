@@ -2,6 +2,18 @@
 
 This file is the concise delivery roadmap for Free AI Mixer. Detailed technical truth lives in [PROJECT_BIBLE.md](../PROJECT_BIBLE.md). Canonical phase numbering lives in [docs/phases.md](./phases.md).
 
+## Phase 18 Recommendation
+
+Admin Analytics + Platform Metrics should stay in a future readiness-only audit
+phase until all of the following are real and verified:
+- production auth with verified `platform_admin` identity
+- real app user and workspace database truth
+- real event logging and aggregation
+- real credits, billing, generation, export, and artifact ownership data
+
+Do not ship fake dashboard counts, fake trend cards, or synthetic platform
+health metrics before those prerequisites exist.
+
 ## Current Direction
 
 The platform is being built in this order:
