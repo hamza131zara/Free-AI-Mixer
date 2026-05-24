@@ -11,6 +11,9 @@ import { ExportHistoryPage } from "./pages/ExportHistoryPage";
 import { CreditsPage } from "./pages/CreditsPage";
 import { PricingPage } from "./pages/PricingPage";
 import { TemplatesPage } from "./pages/TemplatesPage";
+import { CardsPage } from "./pages/CardsPage";
+import { CardCategoryPage } from "./pages/CardCategoryPage";
+import { CardTemplateEditorPage } from "./pages/CardTemplateEditorPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { AdminPage } from "./pages/AdminPage";
 import { HelpPage } from "./pages/HelpPage";
@@ -51,6 +54,29 @@ const renderRouteContent = (routeId: string) => {
 
   if (routeId === "templates") {
     return <TemplatesPage />;
+  }
+
+  if (routeId === "cards") {
+    return <CardsPage />;
+  }
+
+  if (
+    routeId === "cards-birthday" ||
+    routeId === "cards-wedding" ||
+    routeId === "cards-invitation" ||
+    routeId === "cards-eid" ||
+    routeId === "cards-christmas" ||
+    routeId === "cards-holi" ||
+    routeId === "cards-halloween" ||
+    routeId === "cards-business" ||
+    routeId === "cards-visiting" ||
+    routeId === "cards-gift"
+  ) {
+    return <CardCategoryPage />;
+  }
+
+  if (routeId === "cards-template-detail") {
+    return <CardTemplateEditorPage />;
   }
 
   if (routeId === "ai-tools") {

@@ -1,7 +1,7 @@
 import { primaryNavigationItems } from "../services/navigationService";
 import { useNavigationStore } from "../store/navigationStore";
 
-const featuredRouteIds = new Set(["mixer", "templates", "pricing"]);
+const featuredRouteIds = new Set(["mixer", "templates", "pricing", "cards"]);
 export function HomePage() {
   const navigateTo = useNavigationStore((state) => state.navigateTo);
   const featuredRoutes = primaryNavigationItems.filter((route) =>
@@ -147,6 +147,36 @@ export function HomePage() {
               </button>
             </article>
           ))}
+        </div>
+      </div>
+
+      <div className="page-section">
+        <div className="section-header">
+          <p className="eyebrow">Card Generator MVP</p>
+          <h2>Static card templates with local preview only</h2>
+        </div>
+        <div className="info-card-grid">
+          <article className="info-card">
+            <p className="info-card-label">Static MVP</p>
+            <p>
+              Card Generator starts with static templates, editable text fields,
+              and local live preview only.
+            </p>
+          </article>
+          <article className="info-card">
+            <p className="info-card-label">Not enabled yet</p>
+            <p>
+              Downloads, share links, QR codes, AI generation, and project saving
+              are not enabled in this phase.
+            </p>
+          </article>
+          <article className="info-card">
+            <p className="info-card-label">Safety</p>
+            <p>
+              Decorative card templates stay separate from any financial-card,
+              payment-card, or official-document design.
+            </p>
+          </article>
         </div>
       </div>
     </section>

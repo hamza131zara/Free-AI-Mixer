@@ -175,6 +175,9 @@ button.icon-button {
 .dashboard-page,
 .provider-settings-page,
 .templates-page,
+.cards-page,
+.card-category-page,
+.card-template-editor-page,
 .ai-tools-page,
 .ai-tool-detail-page,
 .ai-tool-compare-page,
@@ -399,6 +402,63 @@ h1 {
   grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
   gap: 20px;
   align-items: start;
+}
+
+.card-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.card-preview-frame {
+  display: grid;
+  gap: 14px;
+  min-height: 320px;
+  border: 2px solid;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.card-preview-portrait {
+  aspect-ratio: 4 / 5;
+}
+
+.card-preview-landscape {
+  aspect-ratio: 16 / 9;
+}
+
+.card-preview-square {
+  aspect-ratio: 1 / 1;
+}
+
+.card-preview-kicker {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.card-preview-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.card-preview-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.card-preview-meta span {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .scene-composer,
@@ -631,6 +691,9 @@ dd {
   .dashboard-page,
   .provider-settings-page,
   .templates-page,
+  .cards-page,
+  .card-category-page,
+  .card-template-editor-page,
   .ai-tools-page,
   .ai-tool-detail-page,
   .ai-tool-compare-page,
@@ -725,6 +788,10 @@ dd {
     grid-template-columns: 1fr;
   }
 
+  .card-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
   .scene-status {
     align-items: flex-start;
     flex-direction: column;
@@ -738,6 +805,9 @@ dd {
   .dashboard-page,
   .provider-settings-page,
   .templates-page,
+  .cards-page,
+  .card-category-page,
+  .card-template-editor-page,
   .ai-tools-page,
   .ai-tool-detail-page,
   .ai-tool-compare-page,

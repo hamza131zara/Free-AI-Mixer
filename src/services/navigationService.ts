@@ -31,7 +31,19 @@ export interface AppRouteDefinition {
     | "compare"
     | "compare-detail"
     | "ai-news"
-    | "ai-news-detail";
+    | "ai-news-detail"
+    | "cards"
+    | "cards-birthday"
+    | "cards-wedding"
+    | "cards-invitation"
+    | "cards-eid"
+    | "cards-christmas"
+    | "cards-holi"
+    | "cards-halloween"
+    | "cards-business"
+    | "cards-visiting"
+    | "cards-gift"
+    | "cards-template-detail";
   path: string;
   label: string;
   eyebrow: string;
@@ -49,7 +61,8 @@ export interface AppRouteDefinition {
     | "admin"
     | "help"
     | "legal"
-    | "editorial";
+    | "editorial"
+    | "cards";
   status: string;
   sections: NavigationSection[];
   seo: RouteSeoMetadata;
@@ -401,6 +414,269 @@ export const appRoutes: AppRouteDefinition[] = [
       description:
         "Editorial AI news detail page with visible source links, last-checked metadata, and truthful caveats.",
       canonicalPath: "/ai-news",
+      indexable: true,
+      includeInSitemap: false,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards",
+    path: "/cards",
+    label: "Cards",
+    eyebrow: "Product Phase 12",
+    title: "Card Generator static template MVP",
+    description:
+      "This route shows static card templates with local editable preview only. Downloads, sharing, QR, AI generation, and project saving are not enabled yet.",
+    kind: "cards",
+    status: "Static local preview MVP",
+    sections: [
+      {
+        title: "What exists here",
+        body:
+          "The cards module can show decorative static templates, local editable fields, and a live local preview without creating backend jobs or account-owned records.",
+      },
+      {
+        title: "Current limitation",
+        body:
+          "No downloads, no share links, no QR codes, no hosted public pages, and no AI generation are enabled in this phase.",
+      },
+    ],
+    seo: {
+      title: "Card Generator | Free AI Mixer",
+      description:
+        "Static card template MVP with local preview only for greetings, invitations, and business-style cards.",
+      canonicalPath: "/cards",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards-birthday",
+    path: "/cards/birthday",
+    label: "Birthday Cards",
+    eyebrow: "Product Phase 12",
+    title: "Birthday card templates",
+    description:
+      "Static birthday card templates with local preview only and no download or sharing features enabled.",
+    kind: "cards",
+    status: "Category shell only",
+    sections: [],
+    seo: {
+      title: "Birthday Cards | Free AI Mixer",
+      description:
+        "Static birthday card template gallery with local preview only.",
+      canonicalPath: "/cards/birthday",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards-wedding",
+    path: "/cards/wedding",
+    label: "Wedding Cards",
+    eyebrow: "Product Phase 12",
+    title: "Wedding card templates",
+    description:
+      "Static wedding and invitation card templates with local preview only.",
+    kind: "cards",
+    status: "Category shell only",
+    sections: [],
+    seo: {
+      title: "Wedding Cards | Free AI Mixer",
+      description:
+        "Static wedding invitation card templates with local preview only.",
+      canonicalPath: "/cards/wedding",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards-invitation",
+    path: "/cards/invitations",
+    label: "Invitations",
+    eyebrow: "Product Phase 12",
+    title: "Invitation card templates",
+    description:
+      "Static invitation card templates with local preview only and no fake share or download behavior.",
+    kind: "cards",
+    status: "Category shell only",
+    sections: [],
+    seo: {
+      title: "Invitation Cards | Free AI Mixer",
+      description:
+        "Static invitation card template gallery with local preview only.",
+      canonicalPath: "/cards/invitations",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards-eid",
+    path: "/cards/eid",
+    label: "Eid Cards",
+    eyebrow: "Product Phase 12",
+    title: "Eid card templates",
+    description:
+      "Static Eid greeting card templates with local preview only.",
+    kind: "cards",
+    status: "Category shell only",
+    sections: [],
+    seo: {
+      title: "Eid Cards | Free AI Mixer",
+      description:
+        "Static Eid greeting card template gallery with local preview only.",
+      canonicalPath: "/cards/eid",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards-christmas",
+    path: "/cards/christmas",
+    label: "Christmas Cards",
+    eyebrow: "Product Phase 12",
+    title: "Christmas card templates",
+    description:
+      "Static Christmas greeting card templates with local preview only.",
+    kind: "cards",
+    status: "Category shell only",
+    sections: [],
+    seo: {
+      title: "Christmas Cards | Free AI Mixer",
+      description:
+        "Static Christmas greeting card template gallery with local preview only.",
+      canonicalPath: "/cards/christmas",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards-holi",
+    path: "/cards/holi",
+    label: "Holi Cards",
+    eyebrow: "Product Phase 12",
+    title: "Holi card templates",
+    description:
+      "Static Holi greeting card templates with local preview only.",
+    kind: "cards",
+    status: "Category shell only",
+    sections: [],
+    seo: {
+      title: "Holi Cards | Free AI Mixer",
+      description:
+        "Static Holi greeting card template gallery with local preview only.",
+      canonicalPath: "/cards/holi",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards-halloween",
+    path: "/cards/halloween",
+    label: "Halloween Cards",
+    eyebrow: "Product Phase 12",
+    title: "Halloween card templates",
+    description:
+      "Static Halloween card templates with local preview only.",
+    kind: "cards",
+    status: "Category shell only",
+    sections: [],
+    seo: {
+      title: "Halloween Cards | Free AI Mixer",
+      description:
+        "Static Halloween card template gallery with local preview only.",
+      canonicalPath: "/cards/halloween",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards-business",
+    path: "/cards/business",
+    label: "Business Cards",
+    eyebrow: "Product Phase 12",
+    title: "Business card templates",
+    description:
+      "Static decorative business contact card templates with local preview only and no deceptive payment-card styling.",
+    kind: "cards",
+    status: "Category shell only",
+    sections: [],
+    seo: {
+      title: "Business Cards | Free AI Mixer",
+      description:
+        "Static decorative business card template gallery with local preview only.",
+      canonicalPath: "/cards/business",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards-visiting",
+    path: "/cards/visiting",
+    label: "Visiting Cards",
+    eyebrow: "Product Phase 12",
+    title: "Visiting card templates",
+    description:
+      "Static visiting card templates with local preview only and no deceptive financial-card design.",
+    kind: "cards",
+    status: "Category shell only",
+    sections: [],
+    seo: {
+      title: "Visiting Cards | Free AI Mixer",
+      description:
+        "Static visiting card template gallery with local preview only.",
+      canonicalPath: "/cards/visiting",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards-gift",
+    path: "/cards/gift",
+    label: "Gift Cards",
+    eyebrow: "Product Phase 12",
+    title: "Gift note card templates",
+    description:
+      "Static decorative gift note card templates with local preview only and no stored-value or redemption behavior.",
+    kind: "cards",
+    status: "Category shell only",
+    sections: [],
+    seo: {
+      title: "Gift Cards | Free AI Mixer",
+      description:
+        "Static decorative gift-note card template gallery with local preview only.",
+      canonicalPath: "/cards/gift",
+      indexable: true,
+      includeInSitemap: true,
+      robots: "index,follow",
+    },
+  },
+  {
+    id: "cards-template-detail",
+    path: "/cards/template/:slug",
+    label: "Card Template Detail",
+    eyebrow: "Product Phase 12",
+    title: "Card editor local preview shell",
+    description:
+      "This route shows a static card template with local editable preview only. No download, QR, share, save, or AI generation exists here.",
+    kind: "cards",
+    status: "Editor shell only",
+    sections: [],
+    seo: {
+      title: "Card Template | Free AI Mixer",
+      description:
+        "Static card template editor shell with local preview only.",
+      canonicalPath: "/cards",
       indexable: true,
       includeInSitemap: false,
       robots: "index,follow",
@@ -820,6 +1096,17 @@ export const primaryNavigationItems = appRoutes.filter(
     route.id !== "cookies" &&
     route.id !== "acceptable-use" &&
     route.id !== "data-retention" &&
+    route.id !== "cards-birthday" &&
+    route.id !== "cards-wedding" &&
+    route.id !== "cards-invitation" &&
+    route.id !== "cards-eid" &&
+    route.id !== "cards-christmas" &&
+    route.id !== "cards-holi" &&
+    route.id !== "cards-halloween" &&
+    route.id !== "cards-business" &&
+    route.id !== "cards-visiting" &&
+    route.id !== "cards-gift" &&
+    route.id !== "cards-template-detail" &&
     route.id !== "ai-tools" &&
     route.id !== "ai-tool-detail" &&
     route.id !== "compare" &&

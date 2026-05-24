@@ -10,6 +10,7 @@ import { createProjectHistoryRouter } from "./routes/projectHistory";
 import { createCreditsRouter } from "./routes/credits";
 import { createBillingRouter } from "./routes/billing";
 import { createTemplatesRouter } from "./routes/templates";
+import { createCardsRouter } from "./routes/cards";
 import { createAiToolsRouter } from "./routes/aiTools";
 import { createAiNewsRouter } from "./routes/aiNews";
 import { createAdminRouter } from "./routes/admin";
@@ -97,6 +98,7 @@ export const createApp = (): Express => {
   app.use(createCreditsRouter({ runtimeConfig: authRuntimeConfig }));
   app.use(createBillingRouter());
   app.use(createTemplatesRouter());
+  app.use(createCardsRouter());
   app.use(createAiToolsRouter());
   app.use(createAiNewsRouter());
   app.use(createAdminRouter({ runtimeConfig: authRuntimeConfig }));
