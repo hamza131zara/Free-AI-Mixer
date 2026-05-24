@@ -1,4 +1,8 @@
+import type { IncomingHttpHeaders } from "node:http";
 import type { Response } from "express";
+import type { BackendAuthenticatedRequesterContext } from "./requesterContext";
+import type { AsyncBackendRequesterContextResolver } from "./requesterContextResolver";
+import type { TrustedAuthProviderRuntimeConfig } from "./trustedAuthProviderRuntimeConfig";
 import type { CanonicalWorkspaceRole } from "./workspaceRoleNormalization";
 
 export type ProtectedRouteDeniedReason =
@@ -102,4 +106,126 @@ export const sendProtectedRouteGuardDecision = (
     code: decision.reason,
     message: decision.message,
   });
+};
+
+export type SelectedRouteAccessDeniedCode =
+  | "auth_not_configured"
+  | "auth_unavailable"
+  | "auth_required"
+  | "workspace_required"
+  | "workspace_runtime_not_configured";
+
+export type SelectedRouteAccessDecision =
+  | {
+      kind: "allowed";
+      requester: BackendAuthenticatedRequesterContext & {
+        appUserId: string;
+        workspaceId: string;
+        workspaceAuthority: "verified";
+      };
+    }
+  | {
+      kind: "denied";
+      code: SelectedRouteAccessDeniedCode;
+      statusCode: 401 | 403 | 503;
+      message: string;
+    };
+
+export interface SelectedRouteAccessResolverOptions {
+  headers?: IncomingHttpHeaders | Record<string, string | string[] | undefined>;
+  runtimeConfig: TrustedAuthProviderRuntimeConfig;
+  requesterResolver?: AsyncBackendRequesterContextResolver;
+}
+
+const getUnavailableSelectedRouteDecision = (
+  runtimeConfig: TrustedAuthProviderRuntimeConfig,
+): Extract<SelectedRouteAccessDecision, { kind: "denied" }> => {
+  if (runtimeConfig.kind === "auth_provider_not_configured") {
+    return {
+      kind: "denied",
+      code: "auth_not_configured",
+      statusCode: 503,
+      message: "Authentication is not configured on this backend yet.",
+    };
+  }
+
+  return {
+    kind: "denied",
+    code: "auth_unavailable",
+    statusCode: 503,
+    message: "Authentication is configured but not available for this protected route yet.",
+  };
+};
+
+export const resolveSelectedRouteAccess = async (
+  options: SelectedRouteAccessResolverOptions,
+): Promise<SelectedRouteAccessDecision> => {
+  if (!options.requesterResolver) {
+    return getUnavailableSelectedRouteDecision(options.runtimeConfig);
+  }
+
+  const requesterContext = await options.requesterResolver.resolve({
+    headers: options.headers,
+  });
+
+  if (requesterContext.kind !== "authenticated") {
+    if (requesterContext.reason === "auth_not_configured") {
+      return {
+        kind: "denied",
+        code: "auth_not_configured",
+        statusCode: 503,
+        message: "Authentication is not configured on this backend yet.",
+      };
+    }
+
+    return {
+      kind: "denied",
+      code: "auth_required",
+      statusCode: 401,
+      message: "Sign in is required before this protected route can continue.",
+    };
+  }
+
+  if (!requesterContext.appUserId) {
+    return {
+      kind: "denied",
+      code: "auth_required",
+      statusCode: 401,
+      message: "Sign in is required before this protected route can continue.",
+    };
+  }
+
+  if (
+    requesterContext.workspaceAuthority === "not_available" &&
+    requesterContext.workspaceAuthorityReason === "workspace_runtime_not_enabled"
+  ) {
+    return {
+      kind: "denied",
+      code: "workspace_runtime_not_configured",
+      statusCode: 503,
+      message: "Workspace authority is not configured on this backend yet.",
+    };
+  }
+
+  if (
+    requesterContext.workspaceAuthority !== "verified" ||
+    !requesterContext.workspaceId
+  ) {
+    return {
+      kind: "denied",
+      code: "workspace_required",
+      statusCode: 403,
+      message: "A verified workspace is required before this protected route can continue.",
+    };
+  }
+
+  return {
+    kind: "allowed",
+    requester: {
+      ...requesterContext,
+      appUserId: requesterContext.appUserId,
+      workspaceId: requesterContext.workspaceId,
+      workspaceAuthority: "verified",
+    },
+  };
 };

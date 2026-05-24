@@ -1,7 +1,8 @@
 import { Router } from "express";
 import type { Response } from "express";
+import type { AsyncBackendRequesterContextResolver } from "../auth/requesterContextResolver";
+import { resolveSelectedRouteAccess } from "../auth/protectedRouteGuards";
 import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProviderRuntimeConfig";
-import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
 import type {
   BackendExportHistoryResponse,
   BackendProjectLibraryResponse,
@@ -9,11 +10,8 @@ import type {
 
 export interface CreateProjectHistoryRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
+  routeAccessResolver?: AsyncBackendRequesterContextResolver;
 }
-
-const isAuthUnavailable = (
-  runtimeConfig: TrustedAuthProviderRuntimeConfig,
-): boolean => runtimeConfig.kind === "auth_provider_not_configured";
 
 const unavailableStatus = (
   runtimeConfig: TrustedAuthProviderRuntimeConfig,
@@ -42,73 +40,121 @@ export const createProjectHistoryRouter = (
 
   router.get(
     "/project-library/projects",
-    (request, response: Response<BackendProjectLibraryResponse>) => {
-      const requesterContext = getRequesterContextFromRequest(request);
-
-      if (requesterContext.kind === "authenticated") {
-        response.status(200).json({
-          kind: "project_library",
-          status: "authenticated",
-          message:
-            "Project library is available for this verified session, but durable saved projects are not enabled yet.",
-          activeWorkspaceId: requesterContext.workspaceId,
-          persistence: "not_enabled_yet",
-          projects: [],
+    (request, response: Response<BackendProjectLibraryResponse>, next) => {
+      void (async () => {
+        const accessDecision = await resolveSelectedRouteAccess({
+          headers: request.headers,
+          runtimeConfig: options.runtimeConfig,
+          requesterResolver: options.routeAccessResolver,
         });
-        return;
-      }
 
-      if (requesterContext.reason === "auth_not_configured" || isAuthUnavailable(options.runtimeConfig)) {
+        if (accessDecision.kind === "allowed") {
+          const requesterContext = accessDecision.requester;
+
+          response.status(200).json({
+            kind: "project_library",
+            status: "authenticated",
+            message:
+              "Project library is available for this verified session, but durable saved projects are not enabled yet.",
+            activeWorkspaceId: requesterContext.workspaceId,
+            persistence: "not_enabled_yet",
+            projects: [],
+          });
+          return;
+        }
+
+        if (accessDecision.code === "workspace_required") {
+          response.status(403).json({
+            kind: "project_library_forbidden",
+            status: "workspace_required",
+            message: accessDecision.message,
+          });
+          return;
+        }
+
+        if (accessDecision.code === "auth_required") {
+          response.status(401).json({
+            kind: "project_library_sign_in_required",
+            status: "unauthenticated",
+            reason: "invalid_credentials",
+            message:
+              "Sign in is required before account-owned saved projects can appear here.",
+          });
+          return;
+        }
+
         response.status(503).json({
           kind: "project_library_unavailable",
-          status: unavailableStatus(options.runtimeConfig),
-          message: unavailableMessage(options.runtimeConfig, "projects"),
+          status:
+            accessDecision.code === "workspace_runtime_not_configured"
+              ? "workspace_runtime_not_configured"
+              : unavailableStatus(options.runtimeConfig),
+          message:
+            accessDecision.code === "workspace_runtime_not_configured"
+              ? accessDecision.message
+              : unavailableMessage(options.runtimeConfig, "projects"),
         });
-        return;
-      }
-
-      response.status(401).json({
-        kind: "project_library_sign_in_required",
-        status: "unauthenticated",
-        reason: requesterContext.reason,
-        message: "Sign in is required before account-owned saved projects can appear here.",
-      });
+      })().catch(next);
     },
   );
 
   router.get(
     "/project-library/history",
-    (request, response: Response<BackendExportHistoryResponse>) => {
-      const requesterContext = getRequesterContextFromRequest(request);
-
-      if (requesterContext.kind === "authenticated") {
-        response.status(200).json({
-          kind: "export_history",
-          status: "authenticated",
-          message:
-            "Export history is available for this verified session, but durable account-linked history is not enabled yet.",
-          activeWorkspaceId: requesterContext.workspaceId,
-          historyState: "not_enabled_yet",
-          exports: [],
+    (request, response: Response<BackendExportHistoryResponse>, next) => {
+      void (async () => {
+        const accessDecision = await resolveSelectedRouteAccess({
+          headers: request.headers,
+          runtimeConfig: options.runtimeConfig,
+          requesterResolver: options.routeAccessResolver,
         });
-        return;
-      }
 
-      if (requesterContext.reason === "auth_not_configured" || isAuthUnavailable(options.runtimeConfig)) {
+        if (accessDecision.kind === "allowed") {
+          const requesterContext = accessDecision.requester;
+
+          response.status(200).json({
+            kind: "export_history",
+            status: "authenticated",
+            message:
+              "Export history is available for this verified session, but durable account-linked history is not enabled yet.",
+            activeWorkspaceId: requesterContext.workspaceId,
+            historyState: "not_enabled_yet",
+            exports: [],
+          });
+          return;
+        }
+
+        if (accessDecision.code === "workspace_required") {
+          response.status(403).json({
+            kind: "export_history_forbidden",
+            status: "workspace_required",
+            message: accessDecision.message,
+          });
+          return;
+        }
+
+        if (accessDecision.code === "auth_required") {
+          response.status(401).json({
+            kind: "export_history_sign_in_required",
+            status: "unauthenticated",
+            reason: "invalid_credentials",
+            message:
+              "Sign in is required before verified backend export history can appear here.",
+          });
+          return;
+        }
+
         response.status(503).json({
           kind: "export_history_unavailable",
-          status: unavailableStatus(options.runtimeConfig),
-          message: unavailableMessage(options.runtimeConfig, "history"),
+          status:
+            accessDecision.code === "workspace_runtime_not_configured"
+              ? "workspace_runtime_not_configured"
+              : unavailableStatus(options.runtimeConfig),
+          message:
+            accessDecision.code === "workspace_runtime_not_configured"
+              ? accessDecision.message
+              : unavailableMessage(options.runtimeConfig, "history"),
         });
-        return;
-      }
-
-      response.status(401).json({
-        kind: "export_history_sign_in_required",
-        status: "unauthenticated",
-        reason: requesterContext.reason,
-        message: "Sign in is required before verified backend export history can appear here.",
-      });
+      })().catch(next);
     },
   );
 

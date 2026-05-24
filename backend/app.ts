@@ -28,6 +28,12 @@ export const createApp = (): Express => {
   const app = express();
   const backendDeps = createBackendDependencies();
   const authRuntimeConfig = readTrustedAuthProviderRuntimeConfig();
+  const routeAccessResolver =
+    backendDeps.repositoryComposition.kind === "repository_composition_available"
+      ? createRepositoryBackedRequesterContextResolver({
+          repositories: backendDeps.repositoryComposition.createRepositories(),
+        })
+      : undefined;
 
   const lifecycle = createRenderWorkerLifecycle(
     backendDeps.registry,
@@ -94,20 +100,26 @@ export const createApp = (): Express => {
   app.use(
     createAuthRouter({
       runtimeConfig: authRuntimeConfig,
-      ...(backendDeps.repositoryComposition.kind ===
-      "repository_composition_available"
+      ...(routeAccessResolver
         ? {
-            requesterContextResolver:
-              createRepositoryBackedRequesterContextResolver({
-                repositories: backendDeps.repositoryComposition.createRepositories(),
-              }),
+            requesterContextResolver: routeAccessResolver,
           }
         : {}),
     }),
   );
   app.use(createGenerationRouter({ runtimeConfig: authRuntimeConfig }));
-  app.use(createProviderSettingsRouter({ runtimeConfig: authRuntimeConfig }));
-  app.use(createProjectHistoryRouter({ runtimeConfig: authRuntimeConfig }));
+  app.use(
+    createProviderSettingsRouter({
+      runtimeConfig: authRuntimeConfig,
+      ...(routeAccessResolver ? { routeAccessResolver } : {}),
+    }),
+  );
+  app.use(
+    createProjectHistoryRouter({
+      runtimeConfig: authRuntimeConfig,
+      ...(routeAccessResolver ? { routeAccessResolver } : {}),
+    }),
+  );
   app.use(createCreditsRouter({ runtimeConfig: authRuntimeConfig }));
   app.use(createBillingRouter());
   app.use(createTemplatesRouter());

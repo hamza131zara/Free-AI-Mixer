@@ -38,8 +38,16 @@ export type BackendProjectLibraryResponse =
       message: string;
     }
   | {
+      kind: "project_library_forbidden";
+      status: "workspace_required";
+      message: string;
+    }
+  | {
       kind: "project_library_unavailable";
-      status: "auth_not_configured" | "auth_provider_unavailable";
+      status:
+        | "auth_not_configured"
+        | "auth_provider_unavailable"
+        | "workspace_runtime_not_configured";
       message: string;
     };
 
@@ -59,7 +67,15 @@ export type BackendExportHistoryResponse =
       message: string;
     }
   | {
+      kind: "export_history_forbidden";
+      status: "workspace_required";
+      message: string;
+    }
+  | {
       kind: "export_history_unavailable";
-      status: "auth_not_configured" | "auth_provider_unavailable";
+      status:
+        | "auth_not_configured"
+        | "auth_provider_unavailable"
+        | "workspace_runtime_not_configured";
       message: string;
     };

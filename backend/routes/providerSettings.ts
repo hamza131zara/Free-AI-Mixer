@@ -1,11 +1,13 @@
 import { Router } from "express";
 import type { NextFunction, Request, Response } from "express";
+import type { AsyncBackendRequesterContextResolver } from "../auth/requesterContextResolver";
 import {
   createWorkspaceMembershipNotConfiguredRepository,
   decideWorkspaceMembershipAccess,
   type WorkspaceMembershipRepository,
 } from "../auth/workspaceMembership";
 import { decideRequesterContext } from "../auth/requesterContextDecision";
+import { resolveSelectedRouteAccess } from "../auth/protectedRouteGuards";
 import {
   decideProviderKeyAuthorization,
   type ProviderKeyAction,
@@ -28,6 +30,7 @@ export interface CreateProviderSettingsRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
   workspaceMembershipRepository?: WorkspaceMembershipRepository;
   providerSecretVault?: ProviderSecretVault;
+  routeAccessResolver?: AsyncBackendRequesterContextResolver;
 }
 
 type ProviderMutationBoundaryDecision =
@@ -270,46 +273,62 @@ export const createProviderSettingsRouter = (
 
   router.get(
     "/provider-settings/status",
-    (request, response: Response<BackendProviderSettingsStatusResponse>) => {
-      const requesterContext = getRequesterContextFromRequest(request);
+    (request, response: Response<BackendProviderSettingsStatusResponse>, next) => {
+      void (async () => {
+        const accessDecision = await resolveSelectedRouteAccess({
+          headers: request.headers,
+          runtimeConfig: options.runtimeConfig,
+          requesterResolver: options.routeAccessResolver,
+        });
 
-      if (requesterContext.kind === "authenticated") {
-        response.status(200).json({
-          kind: "provider_settings_status",
-          status: "authenticated",
+        if (accessDecision.kind === "allowed") {
+          response.status(200).json({
+            kind: "provider_settings_status",
+            status: "authenticated",
+            message:
+              "Provider settings foundation is available, but secure API key connection, real validation, and routing execution are not enabled yet.",
+            activeWorkspaceId: accessDecision.requester.workspaceId,
+            routingPreferences: defaultRoutingPreferences,
+            connections: buildConnectionSummaries(),
+          });
+          return;
+        }
+
+        if (accessDecision.code === "workspace_required") {
+          response.status(403).json({
+            kind: "provider_settings_access_required",
+            status: "workspace_required",
+            message: accessDecision.message,
+          });
+          return;
+        }
+
+        if (accessDecision.code === "auth_required") {
+          response.status(401).json({
+            kind: "provider_settings_sign_in_required",
+            status: "unauthenticated",
+            reason: "invalid_credentials",
+            message: "Sign in is required before provider settings can be managed.",
+          });
+          return;
+        }
+
+        response.status(503).json({
+          kind: "provider_settings_unavailable",
+          status:
+            accessDecision.code === "workspace_runtime_not_configured"
+              ? "workspace_runtime_not_configured"
+              : options.runtimeConfig.kind === "auth_provider_not_configured"
+                ? "auth_not_configured"
+                : "auth_provider_unavailable",
           message:
-            "Provider settings foundation is available, but secure API key connection, real validation, and routing execution are not enabled yet.",
-          activeWorkspaceId: requesterContext.workspaceId,
-          routingPreferences: defaultRoutingPreferences,
-          connections: buildConnectionSummaries(),
+            accessDecision.code === "workspace_runtime_not_configured"
+              ? accessDecision.message
+              : options.runtimeConfig.kind === "auth_provider_not_configured"
+                ? "Authentication is not configured on this backend yet."
+                : "Authentication is configured but not available for this protected route yet.",
         });
-        return;
-      }
-
-      if (requesterContext.reason === "auth_not_configured") {
-        response.status(503).json({
-          kind: "provider_settings_unavailable",
-          status: "auth_not_configured",
-          message: "Authentication is not configured on this backend yet.",
-        });
-        return;
-      }
-
-      if (options.runtimeConfig.kind === "auth_provider_not_configured") {
-        response.status(503).json({
-          kind: "provider_settings_unavailable",
-          status: "auth_not_configured",
-          message: "Authentication is not configured on this backend yet.",
-        });
-        return;
-      }
-
-      response.status(401).json({
-        kind: "provider_settings_sign_in_required",
-        status: "unauthenticated",
-        reason: requesterContext.reason,
-        message: "Sign in is required before provider settings can be managed.",
-      });
+      })().catch(next);
     },
   );
 
