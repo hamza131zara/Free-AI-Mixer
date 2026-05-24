@@ -1,6 +1,8 @@
 export const platformAdminRoles = [
   "platform_admin",
   "platform_moderator",
+  "support_agent",
+  "read_only_analyst",
 ] as const;
 
 export type BackendPlatformRole = (typeof platformAdminRoles)[number];
@@ -38,10 +40,18 @@ export const getPlatformRoleCapabilities = (
         "readiness_review",
         "platform_operations_readiness",
       ]
-    : [
-        "moderation_review",
-        "support_triage",
-      ];
+    : role === "platform_moderator"
+      ? [
+          "moderation_review",
+          "support_triage",
+        ]
+      : role === "support_agent"
+        ? [
+            "support_triage",
+          ]
+        : [
+            "analytics_read_only",
+          ];
 
 export const isPlatformRole = (
   role: string,

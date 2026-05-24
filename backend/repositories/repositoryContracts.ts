@@ -7,6 +7,7 @@ import type {
   BackendWorkspaceMembership,
   BackendWorkspaceProviderKeyOwnership,
 } from "../auth/accountContracts";
+import type { CanonicalPlatformRole } from "../auth/platformRoleNormalization";
 import type {
   BackendArtifactMetadata,
   BackendExportJobOwnerScope,
@@ -234,6 +235,18 @@ export interface BackendWorkspaceMembershipRecord {
   updatedAt?: string;
 }
 
+export type BackendPlatformRoleStatus = "active" | "disabled";
+
+export interface BackendPlatformRoleRecord {
+  userId: string;
+  role: Exclude<CanonicalPlatformRole, "unknown">;
+  status: BackendPlatformRoleStatus;
+  source: "platform_roles";
+  createdAt?: string;
+  updatedAt?: string;
+  disabledAt?: string;
+}
+
 export interface BackendUserAccountRepository {
   getByUserId(userId: string): Promise<BackendUserAccountRecord | undefined>;
   getByAuthSubject(
@@ -257,6 +270,10 @@ export interface BackendWorkspaceMembershipRepository {
   listMembershipsForWorkspace(
     workspaceId: string,
   ): Promise<BackendWorkspaceMembershipRecord[]>;
+}
+
+export interface BackendPlatformRoleRepository {
+  listRolesForUser(userId: string): Promise<BackendPlatformRoleRecord[]>;
 }
 
 export interface BackendProviderKeyRepository {

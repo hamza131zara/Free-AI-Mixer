@@ -10,6 +10,7 @@ const adminRoleNotes = [
   "Platform admin is a future backend-verified internal role only.",
   "Platform moderator is lower privilege than platform admin and cannot access secrets, signed delivery URLs, or unrestricted billing tools.",
   "Workspace roles are separate from platform roles and must not be treated as platform-wide privileges.",
+  "Platform admin verification is not enabled yet, so authenticated workspace owners and workspace admins still fail closed here.",
 ] as const;
 
 const readinessDependencyNotes = [
@@ -40,7 +41,7 @@ export function AdminPage() {
     <section className="admin-page" data-testid="admin-page">
       <div className="placeholder-hero">
         <div className="dashboard-copy">
-          <p className="eyebrow">Product Phase 18</p>
+          <p className="eyebrow">Product Phase 19</p>
           <h1>Admin readiness shell</h1>
           <p className="placeholder-description">
             This route is reserved for future backend-verified platform admin and
@@ -97,6 +98,7 @@ export function AdminPage() {
         <article className="info-card">
           <p>Admin tools are not enabled yet.</p>
           <p>Moderator tools are not enabled yet.</p>
+          <p>Platform admin verification is not enabled yet.</p>
           <p>
             {summary?.verifiedAdminSessionRequired
               ? "A verified backend session will be required later."

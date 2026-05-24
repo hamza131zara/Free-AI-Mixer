@@ -6,6 +6,8 @@ import type {
 export const platformRoles = [
   "platform_admin",
   "platform_moderator",
+  "support_agent",
+  "read_only_analyst",
 ] as const;
 
 export type PlatformRole = (typeof platformRoles)[number];

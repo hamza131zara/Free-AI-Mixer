@@ -1,5 +1,6 @@
 import type { BackendRequesterContext } from "../auth/requesterContext";
 import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProviderRuntimeConfig";
+import { decideAdminRouteGuard } from "./adminRouteGuards";
 
 export type AdminReadinessStatus =
   | "auth_not_configured"
@@ -52,6 +53,23 @@ export const resolveAdminReadiness = ({
       kind: "admin_sign_in_required",
       status: "sign_in_required",
       message: "A verified backend session is required before admin readiness can be reviewed.",
+      noindexRequired: true,
+      verifiedAdminSessionRequired: true,
+      platformRolesConfigured: false,
+    };
+  }
+
+  const routeGuardDecision = decideAdminRouteGuard({
+    action: "view_admin_status",
+    requesterContext,
+    adminToolsEnabled: false,
+  });
+
+  if (routeGuardDecision.kind === "denied") {
+    return {
+      kind: "admin_status",
+      status: "not_enabled_yet",
+      message: routeGuardDecision.message,
       noindexRequired: true,
       verifiedAdminSessionRequired: true,
       platformRolesConfigured: false,

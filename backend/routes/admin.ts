@@ -8,8 +8,10 @@ import type {
   BackendAdminReadinessResponse,
 } from "../contracts/adminAnalyticsHttpTypes";
 import { resolveAdminAnalyticsReadiness } from "../admin/adminAnalyticsReadiness";
+import { decideAdminRouteGuard } from "../admin/adminRouteGuards";
 import { resolveAdminMetricCatalog } from "../admin/adminMetricCatalog";
 import { resolveAdminReadiness } from "../admin/adminReadiness";
+import type { PlatformAdminAction } from "../authorization/platformAdminAuthorization";
 
 export interface CreateAdminRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
@@ -50,12 +52,14 @@ export const createAdminRouter = (
   const analyticsRouteRequirements: Record<
     BackendAdminAnalyticsUnavailableResponse["metricGroup"],
     {
+      action: PlatformAdminAction;
       requiredPrerequisites: string[];
       dependencyLabel: string;
       metricCatalogGroupId?: BackendAdminAnalyticsUnavailableResponse["metricCatalogGroupId"];
     }
   > = {
     overview: {
+      action: "view_admin_analytics_live",
       requiredPrerequisites: [
         "verified platform_admin auth",
         "real user/workspace database truth",
@@ -64,6 +68,7 @@ export const createAdminRouter = (
       dependencyLabel: "Unavailable until verified platform_admin and real data sources",
     },
     users: {
+      action: "view_platform_users_later",
       requiredPrerequisites: [
         "verified platform_admin auth",
         "real auth/users/workspaces",
@@ -72,6 +77,7 @@ export const createAdminRouter = (
       metricCatalogGroupId: "requires_real_auth_users_workspaces",
     },
     workspaces: {
+      action: "view_platform_users_later",
       requiredPrerequisites: [
         "verified platform_admin auth",
         "real auth/users/workspaces",
@@ -80,6 +86,7 @@ export const createAdminRouter = (
       metricCatalogGroupId: "requires_real_auth_users_workspaces",
     },
     providers: {
+      action: "view_admin_analytics_live",
       requiredPrerequisites: [
         "verified platform_admin auth",
         "BYOK vault/storage",
@@ -89,6 +96,7 @@ export const createAdminRouter = (
       metricCatalogGroupId: "requires_byok_provider_connections",
     },
     generation: {
+      action: "view_admin_analytics_live",
       requiredPrerequisites: [
         "verified platform_admin auth",
         "generation runtime",
@@ -97,6 +105,7 @@ export const createAdminRouter = (
       metricCatalogGroupId: "requires_generation_export_runtime",
     },
     exports: {
+      action: "view_admin_analytics_live",
       requiredPrerequisites: [
         "verified platform_admin auth",
         "export/render runtime",
@@ -105,6 +114,7 @@ export const createAdminRouter = (
       metricCatalogGroupId: "requires_generation_export_runtime",
     },
     credits: {
+      action: "view_admin_analytics_live",
       requiredPrerequisites: [
         "verified platform_admin auth",
         "credit ledger",
@@ -113,6 +123,7 @@ export const createAdminRouter = (
       metricCatalogGroupId: "requires_credits_billing",
     },
     billing: {
+      action: "view_billing_analytics_later",
       requiredPrerequisites: [
         "verified platform_admin auth",
         "billing runtime",
@@ -121,6 +132,7 @@ export const createAdminRouter = (
       metricCatalogGroupId: "requires_credits_billing",
     },
     storage: {
+      action: "view_admin_analytics_live",
       requiredPrerequisites: [
         "verified platform_admin auth",
         "storage provider",
@@ -129,6 +141,7 @@ export const createAdminRouter = (
       metricCatalogGroupId: "requires_storage_artifacts",
     },
     errors: {
+      action: "view_admin_analytics_live",
       requiredPrerequisites: [
         "verified platform_admin auth",
         "event logging pipeline",
@@ -149,14 +162,22 @@ export const createAdminRouter = (
       runtimeConfig: options.runtimeConfig,
     });
     const requirements = analyticsRouteRequirements[metricGroup];
+    const routeGuardDecision = decideAdminRouteGuard({
+      action: requirements.action,
+      requesterContext,
+      adminToolsEnabled: false,
+      liveAnalyticsEnabled: false,
+    });
 
     response.status(resolveStatusCode(readiness.status)).json({
       kind: "admin_analytics_unavailable",
       status: readiness.status,
       message:
-        readiness.status === "not_enabled_yet"
-          ? "Admin analytics are not enabled yet. Real platform admin auth and trusted backend data sources remain future work."
-          : readiness.message,
+        routeGuardDecision.kind === "denied"
+          ? routeGuardDecision.message
+          : readiness.status === "not_enabled_yet"
+            ? "Admin analytics are not enabled yet. Real platform admin auth and trusted backend data sources remain future work."
+            : readiness.message,
       metricGroup,
       requiredPrerequisites: requirements.requiredPrerequisites,
       dependencyLabel: requirements.dependencyLabel,
