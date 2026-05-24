@@ -1,4 +1,5 @@
-﻿import { readTrustedAuthProviderRuntimeConfig } from "./auth/trustedAuthProviderRuntimeConfig";
+import { readTrustedAuthProviderRuntimeConfig } from "./auth/trustedAuthProviderRuntimeConfig";
+import { createRepositoryBackedRequesterContextResolver } from "./auth/requesterContextResolver";
 import { createTrustedAuthMiddleware } from "./auth/trustedAuthMiddleware";
 import express, { type Express } from "express";
 import path from "node:path";
@@ -48,50 +49,62 @@ export const createApp = (): Express => {
     renderInputSnapshotStore: backendDeps.renderInputSnapshotStore,
     ...(isLocalDevArtifactStreamEnabled()
       ? {
-        artifactStorageRefResolver: backendDeps.artifactStorageRefResolver,
-        artifactAccessProvider: createLocalDevArtifactAccessProvider({
-          resolveArtifactStorageRef: (request) =>
-            backendDeps.artifactStorageRefResolver.resolve(
-              request.jobId,
-              request.artifactId,
-            ),
-          streamUrlForArtifact: (request) =>
-            `/exports/${encodeURIComponent(request.jobId)}/artifacts/${encodeURIComponent(request.artifactId)}/stream`,
-          isPathWithinRoot: (ref) => {
-            const normalizedRoot = path.resolve(ref.rootPath);
-            const normalizedFile = path.resolve(ref.filePath);
-            const normalizedDirectory = path.resolve(ref.directoryPath);
-            const fileRelative = path.relative(normalizedRoot, normalizedFile);
-            const directoryRelative = path.relative(normalizedRoot, normalizedDirectory);
+          artifactStorageRefResolver: backendDeps.artifactStorageRefResolver,
+          artifactAccessProvider: createLocalDevArtifactAccessProvider({
+            resolveArtifactStorageRef: (request) =>
+              backendDeps.artifactStorageRefResolver.resolve(
+                request.jobId,
+                request.artifactId,
+              ),
+            streamUrlForArtifact: (request) =>
+              `/exports/${encodeURIComponent(request.jobId)}/artifacts/${encodeURIComponent(request.artifactId)}/stream`,
+            isPathWithinRoot: (ref) => {
+              const normalizedRoot = path.resolve(ref.rootPath);
+              const normalizedFile = path.resolve(ref.filePath);
+              const normalizedDirectory = path.resolve(ref.directoryPath);
+              const fileRelative = path.relative(normalizedRoot, normalizedFile);
+              const directoryRelative = path.relative(normalizedRoot, normalizedDirectory);
 
-            if (
-              fileRelative.length === 0 ||
-              fileRelative.startsWith("..") ||
-              path.isAbsolute(fileRelative)
-            ) {
-              return false;
-            }
+              if (
+                fileRelative.length === 0 ||
+                fileRelative.startsWith("..") ||
+                path.isAbsolute(fileRelative)
+              ) {
+                return false;
+              }
 
-            if (
-              directoryRelative.length === 0 ||
-              directoryRelative.startsWith("..") ||
-              path.isAbsolute(directoryRelative)
-            ) {
-              return false;
-            }
+              if (
+                directoryRelative.length === 0 ||
+                directoryRelative.startsWith("..") ||
+                path.isAbsolute(directoryRelative)
+              ) {
+                return false;
+              }
 
-            return normalizedDirectory
-              === path.resolve(normalizedRoot, ref.jobSegment);
-          },
-        }),
-      }
+              return normalizedDirectory === path.resolve(normalizedRoot, ref.jobSegment);
+            },
+          }),
+        }
       : {}),
   };
 
   app.use(express.json());
 
   app.use(createTrustedAuthMiddleware({ runtimeConfig: authRuntimeConfig }));
-  app.use(createAuthRouter({ runtimeConfig: authRuntimeConfig }));
+  app.use(
+    createAuthRouter({
+      runtimeConfig: authRuntimeConfig,
+      ...(backendDeps.repositoryComposition.kind ===
+      "repository_composition_available"
+        ? {
+            requesterContextResolver:
+              createRepositoryBackedRequesterContextResolver({
+                repositories: backendDeps.repositoryComposition.createRepositories(),
+              }),
+          }
+        : {}),
+    }),
+  );
   app.use(createGenerationRouter({ runtimeConfig: authRuntimeConfig }));
   app.use(createProviderSettingsRouter({ runtimeConfig: authRuntimeConfig }));
   app.use(createProjectHistoryRouter({ runtimeConfig: authRuntimeConfig }));
@@ -108,7 +121,3 @@ export const createApp = (): Express => {
 
   return app;
 };
-
-
-
-

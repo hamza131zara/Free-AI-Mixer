@@ -20,6 +20,15 @@ export interface WorkspaceMembershipLookupReadinessDecision {
   inactiveMembershipFailsClosed: true;
 }
 
+export interface WorkspaceMembershipRuntimeGateEnv {
+  FREE_AI_MIXER_WORKSPACE_RUNTIME_ENABLED?: string;
+}
+
+export interface WorkspaceMembershipRuntimeGateDecision {
+  kind: "workspace_runtime_gate";
+  runtimeEnabled: boolean;
+}
+
 /**
  * Phase 17 workspace membership lookup contract.
  *
@@ -39,3 +48,10 @@ export const resolveWorkspaceMembershipLookupReadiness =
     missingMembershipFailsClosed: true,
     inactiveMembershipFailsClosed: true,
   });
+
+export const readWorkspaceMembershipRuntimeGate = (
+  env: WorkspaceMembershipRuntimeGateEnv = process.env,
+): WorkspaceMembershipRuntimeGateDecision => ({
+  kind: "workspace_runtime_gate",
+  runtimeEnabled: env.FREE_AI_MIXER_WORKSPACE_RUNTIME_ENABLED === "1",
+});

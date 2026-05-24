@@ -66,6 +66,19 @@ any broader auth or workspace runtime work:
 Do not enable frontend auth runtime, workspace authorization, route protection,
 or platform-admin runtime in the JWT-boundary-only phase.
 
+## Phase 23B Recommendation
+
+Requester-context enrichment should roll out as a backend-only bridge phase:
+- verified JWT proves identity only
+- app-user mapping comes from backend repository lookup
+- workspace authority comes from backend membership lookup only
+- `/auth/session` may reflect backend-derived identity and workspace state
+- route enforcement rollout remains deferred
+
+Do not add frontend Supabase auth, do not trust workspace claims or headers, and
+do not enable platform-role lookup or protected-route enforcement in the
+requester-context bridge phase.
+
 ## Current Direction
 
 The platform is being built in this order:

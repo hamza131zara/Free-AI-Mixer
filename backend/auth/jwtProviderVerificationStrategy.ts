@@ -117,6 +117,9 @@ export type JwtRemoteJwksConstructionResult =
 
 export interface JwtVerificationExecutionOptions {
   executeRealVerification?: boolean;
+  jwks?:
+    | ReturnType<typeof createRemoteJWKSet>
+    | ReturnType<typeof createLocalJwksForJwtVerification>;
 }
 
 export interface JwtBoundaryLocalJwksSet {
@@ -423,6 +426,7 @@ export const executeJwtVerificationWithJose = async (
     config,
     {
       executeRealVerification: options.executeRealVerification === true,
+      ...(options.jwks ? { jwks: options.jwks } : {}),
     },
   );
 

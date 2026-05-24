@@ -4,11 +4,13 @@ import type {
   BackendAuthMutationResponse,
   BackendAuthSessionResponse,
 } from "../contracts/authHttpTypes";
+import type { AsyncBackendRequesterContextResolver } from "../auth/requesterContextResolver";
 import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
 import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProviderRuntimeConfig";
 
 export interface CreateAuthRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
+  requesterContextResolver?: AsyncBackendRequesterContextResolver;
 }
 
 const authUnavailableResponse = (
@@ -36,27 +38,77 @@ const resolveConfiguredProviderUnavailableMessage = (
     ? "Authentication is not configured on this backend yet."
     : "Authentication is configured but login and signup are not enabled in this product phase.";
 
-const sendCurrentSession = (
+const resolveAuthenticatedSessionMessage = (
+  workspaceAuthority?: "verified" | "not_available",
+  workspaceAuthorityReason?:
+    | "workspace_runtime_not_enabled"
+    | "no_active_workspace_membership"
+    | "multiple_active_workspace_memberships",
+): string => {
+  if (workspaceAuthority === "verified") {
+    return "Backend session verified.";
+  }
+
+  if (workspaceAuthorityReason === "workspace_runtime_not_enabled") {
+    return "Backend identity verified. Workspace authority is not enabled on this backend yet.";
+  }
+
+  if (
+    workspaceAuthorityReason === "no_active_workspace_membership" ||
+    workspaceAuthorityReason === "multiple_active_workspace_memberships"
+  ) {
+    return "Backend identity verified. Workspace authority is not available yet.";
+  }
+
+  return "Backend session verified.";
+};
+
+const sendCurrentSession = async (
   request: Request,
   response: Response<BackendAuthSessionResponse>,
   runtimeConfig: TrustedAuthProviderRuntimeConfig,
-): void => {
-  const requesterContext = getRequesterContextFromRequest(request);
+  requesterContextResolver?: AsyncBackendRequesterContextResolver,
+): Promise<void> => {
+  const requesterContext = requesterContextResolver
+    ? await requesterContextResolver.resolve({
+        headers: request.headers,
+      })
+    : getRequesterContextFromRequest(request);
 
   if (requesterContext.kind === "authenticated") {
     response.status(200).json({
       kind: "authenticated_session",
       status: "authenticated",
-      message: "Backend session verified.",
+      message: resolveAuthenticatedSessionMessage(
+        requesterContext.workspaceAuthority,
+        requesterContext.workspaceAuthorityReason,
+      ),
       identity: {
         userId: requesterContext.userId,
+        ...(requesterContext.appUserId ? { appUserId: requesterContext.appUserId } : {}),
+        ...(requesterContext.supabaseUserId
+          ? { supabaseUserId: requesterContext.supabaseUserId }
+          : {}),
         ...(requesterContext.workspaceId ? { workspaceId: requesterContext.workspaceId } : {}),
+        ...(requesterContext.workspaceRole
+          ? { workspaceRole: requesterContext.workspaceRole }
+          : {}),
+        ...(requesterContext.workspaceAuthority
+          ? { workspaceAuthority: requesterContext.workspaceAuthority }
+          : {}),
+        ...(requesterContext.workspaceAuthorityReason
+          ? {
+              workspaceAuthorityReason:
+                requesterContext.workspaceAuthorityReason,
+            }
+          : {}),
         ...(requesterContext.authProvider
           ? { authProvider: requesterContext.authProvider }
           : {}),
         ...(requesterContext.authSubject
           ? { authSubject: requesterContext.authSubject }
           : {}),
+        ...(requesterContext.email ? { email: requesterContext.email } : {}),
       },
     });
     return;
@@ -100,8 +152,13 @@ export const createAuthRouter = (
 
   router.get(
     "/auth/session",
-    (request, response: Response<BackendAuthSessionResponse>) => {
-      sendCurrentSession(request, response, options.runtimeConfig);
+    (request, response: Response<BackendAuthSessionResponse>, next) => {
+      void sendCurrentSession(
+        request,
+        response,
+        options.runtimeConfig,
+        options.requesterContextResolver,
+      ).catch(next);
     },
   );
 

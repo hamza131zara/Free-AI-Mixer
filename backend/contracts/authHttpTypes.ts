@@ -1,8 +1,17 @@
 export interface BackendVerifiedSessionIdentity {
   userId: string;
+  appUserId?: string;
+  supabaseUserId?: string;
   workspaceId?: string;
+  workspaceRole?: string;
+  workspaceAuthority?: "verified" | "not_available";
+  workspaceAuthorityReason?:
+    | "workspace_runtime_not_enabled"
+    | "no_active_workspace_membership"
+    | "multiple_active_workspace_memberships";
   authProvider?: string;
   authSubject?: string;
+  email?: string;
 }
 
 export type AuthUnavailableStatus =
