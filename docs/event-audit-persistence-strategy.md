@@ -1,8 +1,35 @@
 # Event And Audit Persistence Strategy
 
 This document is a schema strategy only for future event and audit persistence.
-It does not add migrations, tables, runtime persistence, route hooks, worker
-hooks, admin analytics, or frontend data access.
+It does not execute migrations, create live tables, enable runtime persistence,
+add route hooks, add worker hooks, enable admin analytics, or allow frontend
+Supabase access.
+
+## Current Draft Status
+
+Phase 22 adds a migration draft file only:
+
+- `backend/db/migrations/0002_event_audit_persistence_draft.sql`
+
+That draft is repository-tracked and intentionally not executed by default.
+This phase does not:
+
+- apply the draft to local Postgres or local Supabase
+- apply the draft to remote Supabase
+- wire event or audit recorders into runtime
+- add repository adapters
+- add route or worker event hooks
+- make admin analytics real
+
+Recommended next order after this draft:
+
+1. local-only schema smoke
+2. repository adapter audit
+3. repository adapter implementation
+4. no-op to DB recorder switch audit
+5. route hook audit
+6. worker hook audit
+7. admin analytics aggregation audit
 
 ## Scope
 
@@ -95,6 +122,12 @@ Default access posture later:
 - moderator and support roles need narrow backend routes later, not direct
   table access
 
+Phase 22 draft note:
+
+- the migration draft enables RLS on both tables
+- it creates no permissive anon or authenticated client policies
+- backend/server-side access policies remain a later phase
+
 ## Indexing And Performance Strategy
 
 Start with minimal indexes only.
@@ -168,7 +201,7 @@ Recommended future order:
 
 1. schema strategy docs
 2. migration draft audit
-3. local migration implementation
+3. local-only schema smoke
 4. repository adapter audit
 5. repository adapter implementation
 6. no-op to DB recorder switch audit

@@ -40,6 +40,19 @@ all of the following are real and verified:
 Do not add migrations, route integration, runtime persistence, or real admin
 analytics in the schema-strategy phase.
 
+## Phase 22 Recommendation
+
+Database and persistence rollout should stay in a migration-draft-only phase
+until all of the following are real and verified:
+- separate `analytics_events` and `audit_log` draft migration text exists
+- default-deny RLS is defined without permissive client access
+- runtime recorders remain no-op by default
+- repository adapter rollout is still deferred
+- route and worker event hooks remain deferred
+
+Do not execute migrations, wire persistence into runtime, or activate admin
+analytics in the migration-draft phase.
+
 ## Current Direction
 
 The platform is being built in this order:
