@@ -27,6 +27,19 @@ until all of the following are real and verified:
 Do not persist fake events, synthetic security records, or placeholder success
 events before those prerequisites exist.
 
+## Phase 21 Recommendation
+
+Event and audit persistence should stay in a schema-strategy-only phase until
+all of the following are real and verified:
+- separate `analytics_events` and `audit_log` persistence strategy
+- default-deny RLS and backend-only access rules
+- append-only audit semantics
+- privacy-reviewed retention rules
+- route and worker hook rollout audits
+
+Do not add migrations, route integration, runtime persistence, or real admin
+analytics in the schema-strategy phase.
+
 ## Current Direction
 
 The platform is being built in this order:
