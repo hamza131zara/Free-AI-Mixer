@@ -157,11 +157,11 @@ test.describe("product phase 1 navigation shell", () => {
     await expect(page.getByTestId("templates-page")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Templates gallery shell" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Credits", exact: true }).click();
-    await expect(page).toHaveURL(/\/credits$/);
-    await expect(page.getByTestId("credits-page")).toBeVisible();
+    await page.getByRole("button", { name: "Cards", exact: true }).click();
+    await expect(page).toHaveURL(/\/cards$/);
+    await expect(page.getByTestId("cards-page")).toBeVisible();
 
-    await page.getByRole("button", { name: "Privacy", exact: true }).click();
+    await page.getByTestId("site-footer").getByRole("button", { name: "Privacy", exact: true }).click();
     await expect(page).toHaveURL(/\/privacy$/);
     await expect(page.getByTestId("privacy-page")).toBeVisible();
   });
@@ -179,10 +179,10 @@ test.describe("product phase 1 navigation shell", () => {
 
         if (viewport.name === "mobile") {
           await page.getByRole("button", { name: "Toggle navigation" }).click();
-          await expect(page.getByRole("button", { name: "Dashboard", exact: true })).toBeVisible();
+          await expect(page.getByRole("button", { name: "Cards", exact: true })).toBeVisible();
           await expect(page.getByRole("button", { name: "Log in", exact: true })).toBeVisible();
         } else {
-          await expect(page.getByRole("button", { name: "Dashboard", exact: true })).toBeVisible();
+          await expect(page.getByRole("button", { name: "Pricing", exact: true })).toBeVisible();
           await expect(page.getByRole("button", { name: "Mixer", exact: true })).toBeVisible();
           await expect(page.getByRole("button", { name: "Log in", exact: true })).toBeVisible();
         }

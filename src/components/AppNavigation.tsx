@@ -1,8 +1,10 @@
 import { Menu, X } from "lucide-react";
 import {
+  accountNavigationItems,
   authNavigationItems,
   primaryNavigationItems,
-  secondaryNavigationItems,
+  legalNavigationItems,
+  resourceNavigationItems,
 } from "../services/navigationService";
 import { useAuthStore } from "../store/authStore";
 import { selectCurrentRoute, useNavigationStore } from "../store/navigationStore";
@@ -47,7 +49,7 @@ export function AppNavigation() {
           className={mobileMenuOpen ? "site-nav site-nav-open" : "site-nav"}
           aria-label="Primary navigation"
         >
-          <div className="nav-group">
+          <div className="nav-group nav-group-primary">
             {primaryNavigationItems.map((route) => (
               <button
                 key={route.id}
@@ -63,23 +65,7 @@ export function AppNavigation() {
               </button>
             ))}
           </div>
-          <div className="nav-group nav-group-secondary">
-            {secondaryNavigationItems.map((route) => (
-              <button
-                key={route.id}
-                type="button"
-                className={
-                  isActivePath(currentRoute.path, route.path)
-                    ? "nav-link nav-link-active"
-                    : "nav-link"
-                }
-                onClick={() => navigateTo(route.path)}
-              >
-                {route.label}
-              </button>
-            ))}
-          </div>
-          <div className="nav-group nav-group-auth">
+          <div className="nav-group nav-group-auth nav-group-desktop-auth">
             {authStatus === "authenticated" ? (
               <button
                 type="button"
@@ -107,6 +93,114 @@ export function AppNavigation() {
                 </button>
               ))
             )}
+          </div>
+          <div className="mobile-nav-groups" data-testid="mobile-nav-groups">
+            <section className="mobile-nav-section">
+              <p className="mobile-nav-heading">Product</p>
+              <div className="nav-group">
+                {primaryNavigationItems.map((route) => (
+                  <button
+                    key={`mobile-product-${route.id}`}
+                    type="button"
+                    className={
+                      isActivePath(currentRoute.path, route.path)
+                        ? "nav-link nav-link-active"
+                        : "nav-link"
+                    }
+                    onClick={() => navigateTo(route.path)}
+                  >
+                    {route.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="mobile-nav-section">
+              <p className="mobile-nav-heading">Account</p>
+              <div className="nav-group">
+                {accountNavigationItems.map((route) => (
+                  <button
+                    key={`mobile-account-${route.id}`}
+                    type="button"
+                    className={
+                      isActivePath(currentRoute.path, route.path)
+                        ? "nav-link nav-link-active"
+                        : "nav-link"
+                    }
+                    onClick={() => navigateTo(route.path)}
+                  >
+                    {route.label}
+                  </button>
+                ))}
+                {authStatus === "authenticated" ? (
+                  <button
+                    type="button"
+                    className="nav-link"
+                    onClick={() => {
+                      void logout();
+                    }}
+                    disabled={pendingAction === "logout"}
+                  >
+                    {pendingAction === "logout" ? "Logging out..." : "Log out"}
+                  </button>
+                ) : (
+                  authNavigationItems.map((route) => (
+                    <button
+                      key={`mobile-auth-${route.id}`}
+                      type="button"
+                      className={
+                        isActivePath(currentRoute.path, route.path)
+                          ? "nav-link nav-link-active"
+                          : "nav-link"
+                      }
+                      onClick={() => navigateTo(route.path)}
+                    >
+                      {route.label}
+                    </button>
+                  ))
+                )}
+              </div>
+            </section>
+
+            <section className="mobile-nav-section">
+              <p className="mobile-nav-heading">Resources</p>
+              <div className="nav-group">
+                {resourceNavigationItems.map((route) => (
+                  <button
+                    key={`mobile-resource-${route.id}`}
+                    type="button"
+                    className={
+                      isActivePath(currentRoute.path, route.path)
+                        ? "nav-link nav-link-active"
+                        : "nav-link"
+                    }
+                    onClick={() => navigateTo(route.path)}
+                  >
+                    {route.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="mobile-nav-section">
+              <p className="mobile-nav-heading">Legal</p>
+              <div className="nav-group">
+                {legalNavigationItems.map((route) => (
+                  <button
+                    key={`mobile-legal-${route.id}`}
+                    type="button"
+                    className={
+                      isActivePath(currentRoute.path, route.path)
+                        ? "nav-link nav-link-active"
+                        : "nav-link"
+                    }
+                    onClick={() => navigateTo(route.path)}
+                  >
+                    {route.label}
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
           <button type="button" className="nav-dismiss" onClick={closeMobileMenu}>
             Close menu

@@ -1085,48 +1085,62 @@ export const appRoutes: AppRouteDefinition[] = [
   },
 ];
 
-export const primaryNavigationItems = appRoutes.filter(
-  (route) =>
-    route.id !== "login" &&
-    route.id !== "signup" &&
-    route.id !== "onboarding" &&
-    route.id !== "admin" &&
-    route.id !== "privacy" &&
-    route.id !== "terms" &&
-    route.id !== "cookies" &&
-    route.id !== "acceptable-use" &&
-    route.id !== "data-retention" &&
-    route.id !== "cards-birthday" &&
-    route.id !== "cards-wedding" &&
-    route.id !== "cards-invitation" &&
-    route.id !== "cards-eid" &&
-    route.id !== "cards-christmas" &&
-    route.id !== "cards-holi" &&
-    route.id !== "cards-halloween" &&
-    route.id !== "cards-business" &&
-    route.id !== "cards-visiting" &&
-    route.id !== "cards-gift" &&
-    route.id !== "cards-template-detail" &&
-    route.id !== "ai-tools" &&
-    route.id !== "ai-tool-detail" &&
-    route.id !== "compare" &&
-    route.id !== "compare-detail" &&
-    route.id !== "ai-news" &&
-    route.id !== "ai-news-detail",
-);
+const pickRoutesByIds = (
+  routeIds: AppRouteDefinition["id"][],
+): AppRouteDefinition[] =>
+  routeIds
+    .map((routeId) => appRoutes.find((route) => route.id === routeId))
+    .filter((route): route is AppRouteDefinition => Boolean(route));
 
-export const secondaryNavigationItems = appRoutes.filter(
-  (route) =>
-    route.id === "privacy" ||
-    route.id === "terms" ||
-    route.id === "cookies" ||
-    route.id === "acceptable-use" ||
-    route.id === "data-retention",
-);
+export const primaryNavigationItems = pickRoutesByIds([
+  "home",
+  "mixer",
+  "templates",
+  "cards",
+  "ai-tools",
+  "compare",
+  "ai-news",
+  "pricing",
+]);
 
-export const authNavigationItems = appRoutes.filter(
-  (route) => route.id === "login" || route.id === "signup",
-);
+export const accountNavigationItems = pickRoutesByIds([
+  "dashboard",
+  "projects",
+  "exports",
+  "provider-settings",
+  "credits",
+]);
+
+export const resourceNavigationItems = pickRoutesByIds([
+  "help",
+  "onboarding",
+]);
+
+export const legalNavigationItems = pickRoutesByIds([
+  "privacy",
+  "terms",
+  "cookies",
+  "acceptable-use",
+  "data-retention",
+]);
+
+export const productFooterItems = pickRoutesByIds([
+  "home",
+  "mixer",
+  "templates",
+  "cards",
+  "pricing",
+]);
+
+export const exploreFooterItems = pickRoutesByIds([
+  "ai-tools",
+  "compare",
+  "ai-news",
+]);
+
+export const secondaryNavigationItems = legalNavigationItems;
+
+export const authNavigationItems = pickRoutesByIds(["login", "signup"]);
 
 const exactRouteMap = new Map(
   appRoutes
