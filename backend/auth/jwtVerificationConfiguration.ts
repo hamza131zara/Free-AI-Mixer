@@ -30,6 +30,12 @@ export interface JwtVerificationConfigurationEnv {
   FREE_AI_MIXER_AUTH_JWKS_URI?: string;
   FREE_AI_MIXER_AUTH_JWT_KEY_MODE?: string;
   FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS?: string;
+  FREE_AI_MIXER_AUTH_RUNTIME_ENABLED?: string;
+}
+
+export interface JwtVerificationRuntimeGateDecision {
+  kind: "jwt_runtime_gate";
+  runtimeEnabled: boolean;
 }
 
 /**
@@ -112,3 +118,10 @@ export const isJwtVerificationConfigured = (
   JwtVerificationConfiguration,
   { kind: "jwt_verification_configured" }
 > => config.kind === "jwt_verification_configured";
+
+export const readJwtVerificationRuntimeGate = (
+  env: JwtVerificationConfigurationEnv = process.env,
+): JwtVerificationRuntimeGateDecision => ({
+  kind: "jwt_runtime_gate",
+  runtimeEnabled: env.FREE_AI_MIXER_AUTH_RUNTIME_ENABLED === "1",
+});

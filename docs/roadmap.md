@@ -53,6 +53,19 @@ until all of the following are real and verified:
 Do not execute migrations, wire persistence into runtime, or activate admin
 analytics in the migration-draft phase.
 
+## Phase 23A Recommendation
+
+Backend JWT verification should roll out as an isolated boundary phase before
+any broader auth or workspace runtime work:
+- backend JWT verification boundary may become real and env-gated
+- default tests should use mocked or local JWKS only
+- frontend Supabase auth client remains deferred
+- workspace membership lookup remains deferred
+- protected-route enforcement rollout remains deferred
+
+Do not enable frontend auth runtime, workspace authorization, route protection,
+or platform-admin runtime in the JWT-boundary-only phase.
+
 ## Current Direction
 
 The platform is being built in this order:
