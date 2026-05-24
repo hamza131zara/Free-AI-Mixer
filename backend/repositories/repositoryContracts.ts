@@ -14,6 +14,18 @@ import type {
   BackendExportLifecycleStatus,
   BackendExportJobRecord,
 } from "../contracts/exportHttpTypes";
+import type {
+  AuditTrailCategory,
+  AuditTrailType,
+} from "../observability/auditTrailContracts";
+import type {
+  EventActorKind,
+  EventLogCategory,
+  EventLogType,
+  EventOutcome,
+  EventSource,
+} from "../observability/eventLogContracts";
+import type { SafeEventMetadata } from "../observability/safeEventSanitizer";
 
 export type BackendProviderKeyStatus = "active" | "rotated" | "disabled";
 export type BackendProviderKeyVerificationStatus =
@@ -247,6 +259,42 @@ export interface BackendPlatformRoleRecord {
   disabledAt?: string;
 }
 
+export interface BackendAnalyticsEventRecord {
+  eventId: string;
+  eventType: EventLogType;
+  category: EventLogCategory;
+  occurredAt: string;
+  actorKind: EventActorKind;
+  actorUserId?: string;
+  workspaceId?: string;
+  actorRole?: string;
+  targetType?: string;
+  targetId?: string;
+  outcome: EventOutcome;
+  source: EventSource;
+  requestId?: string;
+  failureCode?: string;
+  metadata: SafeEventMetadata;
+}
+
+export interface BackendAuditLogRecord {
+  eventId: string;
+  eventType: AuditTrailType;
+  category: AuditTrailCategory;
+  occurredAt: string;
+  actorKind: EventActorKind;
+  actorUserId?: string;
+  workspaceId?: string;
+  actorRole?: string;
+  targetType?: string;
+  targetId?: string;
+  outcome: EventOutcome;
+  source: EventSource;
+  requestId?: string;
+  failureCode?: string;
+  metadata: SafeEventMetadata;
+}
+
 export interface BackendUserAccountRepository {
   getByUserId(userId: string): Promise<BackendUserAccountRecord | undefined>;
   getByAuthSubject(
@@ -274,6 +322,14 @@ export interface BackendWorkspaceMembershipRepository {
 
 export interface BackendPlatformRoleRepository {
   listRolesForUser(userId: string): Promise<BackendPlatformRoleRecord[]>;
+}
+
+export interface BackendAnalyticsEventRepository {
+  appendEvent(record: BackendAnalyticsEventRecord): Promise<BackendAnalyticsEventRecord>;
+}
+
+export interface BackendAuditLogRepository {
+  appendAuditRecord(record: BackendAuditLogRecord): Promise<BackendAuditLogRecord>;
 }
 
 export interface BackendProviderKeyRepository {

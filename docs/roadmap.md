@@ -14,6 +14,19 @@ phase until all of the following are real and verified:
 Do not ship fake dashboard counts, fake trend cards, or synthetic platform
 health metrics before those prerequisites exist.
 
+## Phase 20 Recommendation
+
+Event logging and audit trails should stay in a future readiness-only boundary
+until all of the following are real and verified:
+- production auth and backend-derived actor identity
+- platform-admin enforcement for privileged audit access
+- privacy-reviewed event taxonomy and retention policy
+- backend-owned persistence for analytics events and append-only audit records
+- real runtime truth for generation, export, credits, billing, and storage events
+
+Do not persist fake events, synthetic security records, or placeholder success
+events before those prerequisites exist.
+
 ## Current Direction
 
 The platform is being built in this order:
