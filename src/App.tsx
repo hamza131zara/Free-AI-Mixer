@@ -29,6 +29,7 @@ import { AiToolComparisonDetailPage } from "./pages/AiToolComparisonDetailPage";
 import { AiNewsPage } from "./pages/AiNewsPage";
 import { AiNewsDetailPage } from "./pages/AiNewsDetailPage";
 import { SeoMetadata } from "./components/SeoMetadata";
+import { ProtectedRouteShell } from "./components/ProtectedRouteShell";
 import { selectCurrentRoute, useNavigationStore } from "./store/navigationStore";
 
 const renderRouteContent = (routeId: string) => {
@@ -158,13 +159,31 @@ const renderRouteContent = (routeId: string) => {
   return <PlaceholderPage />;
 };
 
+const protectedRouteLabels: Partial<Record<string, string>> = {
+  dashboard: "Dashboard",
+  projects: "Projects",
+  "provider-settings": "Provider Settings",
+  credits: "Credits",
+};
+
+const renderRouteWithShell = (routeId: string) => {
+  const content = renderRouteContent(routeId);
+  const routeLabel = protectedRouteLabels[routeId];
+
+  if (!routeLabel) {
+    return content;
+  }
+
+  return <ProtectedRouteShell routeLabel={routeLabel}>{content}</ProtectedRouteShell>;
+};
+
 export function App() {
   const currentRoute = useNavigationStore(selectCurrentRoute);
 
   return (
     <AppShell>
       <SeoMetadata route={currentRoute} />
-      {renderRouteContent(currentRoute.id)}
+      {renderRouteWithShell(currentRoute.id)}
     </AppShell>
   );
 }
