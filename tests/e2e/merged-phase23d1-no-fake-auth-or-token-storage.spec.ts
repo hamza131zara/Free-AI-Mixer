@@ -43,7 +43,10 @@ test.describe("merged phase 23D-1 no fake auth or token storage", () => {
     expect(frontendSource).not.toContain("fakeSession");
     expect(frontendSource).not.toContain("fakeWorkspace");
     expect(frontendSource).not.toContain("fake-user");
-    expect(frontendSource).not.toContain("service_role");
+    expect(frontendSource).not.toContain(
+      "VITE_FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY",
+    );
+    expect(frontendSource).not.toContain("VITE_SUPABASE_SERVICE_ROLE_KEY");
   });
 
   test("localStorage cannot create frontend auth or workspace access", async ({

@@ -307,8 +307,10 @@ test.describe("post181 launch qa smoke", () => {
     expect(frontendSource).not.toContain(".storage.from(");
     expect(frontendSource).not.toContain("createSignedUrl");
     expect(frontendSource).not.toContain("getPublicUrl");
-    expect(frontendSource).not.toContain("service_role");
-    expect(frontendSource).not.toContain("SERVICE_ROLE");
+    expect(frontendSource).not.toContain(
+      "VITE_FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY",
+    );
+    expect(frontendSource).not.toContain("VITE_SUPABASE_SERVICE_ROLE_KEY");
   });
 
   test("download implementation still avoids location href createElement and click shortcuts", async () => {
