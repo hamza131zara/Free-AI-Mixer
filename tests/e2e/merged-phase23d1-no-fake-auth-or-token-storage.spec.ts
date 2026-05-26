@@ -39,7 +39,9 @@ test.describe("merged phase 23D-1 no fake auth or token storage", () => {
       .filter(
         (relativePath) =>
           relativePath !==
-          path.join("src", "services", "auth", "supabaseAuthClient.ts"),
+            path.join("src", "services", "auth", "supabaseAuthClient.ts") &&
+          relativePath !==
+            path.join("src", "services", "auth", "authRuntimeService.ts"),
       )
       .map((relativePath) => readSource(relativePath))
       .join("\n");
@@ -53,8 +55,6 @@ test.describe("merged phase 23D-1 no fake auth or token storage", () => {
     expect(createClientFiles).toEqual([
       path.join("src", "services", "auth", "supabaseAuthClient.ts"),
     ]);
-    expect(nonWrapperSource).not.toContain(".auth.signIn");
-    expect(nonWrapperSource).not.toContain(".auth.getSession");
     expect(frontendSource).not.toContain("localStorage.setItem(\"auth");
     expect(frontendSource).not.toContain("localStorage.setItem('auth");
     expect(frontendSource).not.toContain("sessionStorage.setItem(\"auth");

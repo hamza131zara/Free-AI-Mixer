@@ -28,8 +28,9 @@ export function LoginPage() {
           <p className="eyebrow">Product Phase 2</p>
           <h1>Log in</h1>
           <p className="placeholder-description">
-            This route checks the backend auth boundary. If auth is not configured,
-            the UI stays honest instead of inventing a session.
+            This route signs in through Supabase Auth only when the frontend auth
+            wrapper is configured, then waits for backend account verification and
+            setup before treating the session as real app access.
           </p>
           <form className="auth-form" onSubmit={(event) => handleCredentialsSubmit(event, login)}>
             <label className="field">
@@ -47,7 +48,7 @@ export function LoginPage() {
             </label>
             <div className="hero-actions">
               <button type="submit" disabled={pendingAction === "login"}>
-                {pendingAction === "login" ? "Checking backend auth..." : "Request login"}
+                {pendingAction === "login" ? "Signing in..." : "Log in"}
               </button>
               <button
                 type="button"
@@ -64,7 +65,7 @@ export function LoginPage() {
           <span className="status-kicker">Session state</span>
           <strong>{authStatus}</strong>
           <p>{authMessage}</p>
-          <p>No fake user or local-only login is created in this route.</p>
+          <p>No fake user, fake session, or frontend-owned workspace is created in this route.</p>
         </div>
       </div>
     </section>

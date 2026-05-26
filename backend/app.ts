@@ -5,6 +5,7 @@ import express, { type Express } from "express";
 import path from "node:path";
 import { exportErrorHandler } from "./errors/exportErrors";
 import { createAuthRouter } from "./routes/auth";
+import { createAccountRouter } from "./routes/account";
 import { createGenerationRouter } from "./routes/generation";
 import { createProviderSettingsRouter } from "./routes/providerSettings";
 import { createProjectHistoryRouter } from "./routes/projectHistory";
@@ -20,6 +21,8 @@ import { createExportRouter } from "./routes/exports";
 import { createBackendDependencies } from "./composition/backendDependencies";
 import { createRenderWorkerLifecycle } from "./workers/renderWorkerLifecycle";
 import { createLocalDevArtifactAccessProvider } from "./artifacts/localDevArtifactAccessProvider";
+import { readSupabaseConfigFromEnv } from "./config/supabaseConfig";
+import { createSupabaseClientFactory } from "./db/supabaseClientFactory";
 
 const isLocalDevArtifactStreamEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1";
@@ -28,11 +31,44 @@ export const createApp = (): Express => {
   const app = express();
   const backendDeps = createBackendDependencies();
   const authRuntimeConfig = readTrustedAuthProviderRuntimeConfig();
+  const supabaseClientFactory = createSupabaseClientFactory(
+    readSupabaseConfigFromEnv(),
+  );
   const routeAccessResolver =
     backendDeps.repositoryComposition.kind === "repository_composition_available"
       ? createRepositoryBackedRequesterContextResolver({
           repositories: backendDeps.repositoryComposition.createRepositories(),
         })
+      : undefined;
+  const accountBootstrapDependencies =
+    backendDeps.repositoryComposition.kind === "repository_composition_available" &&
+    supabaseClientFactory.kind === "supabase_client_factory"
+      ? (() => {
+          const repositories = backendDeps.repositoryComposition.createRepositories();
+          const adminHandle = supabaseClientFactory.createAdminClientHandle();
+
+          return {
+            userAccountRepository: repositories.userAccountRepository,
+            workspaceRepository: repositories.workspaceRepository,
+            workspaceMembershipRepository: repositories.workspaceMembershipRepository,
+            getVerifiedAuthUserProfile: async (userId: string) => {
+              const result = await adminHandle.client.auth.admin.getUserById(userId);
+
+              if (result.error) {
+                throw new Error(result.error.message);
+              }
+
+              const user = result.data.user;
+
+              return {
+                email: user.email,
+                emailVerified:
+                  typeof user.email_confirmed_at === "string" &&
+                  user.email_confirmed_at.trim().length > 0,
+              };
+            },
+          };
+        })()
       : undefined;
 
   const lifecycle = createRenderWorkerLifecycle(
@@ -103,6 +139,16 @@ export const createApp = (): Express => {
       ...(routeAccessResolver
         ? {
             requesterContextResolver: routeAccessResolver,
+          }
+        : {}),
+    }),
+  );
+  app.use(
+    createAccountRouter({
+      runtimeConfig: authRuntimeConfig,
+      ...(accountBootstrapDependencies
+        ? {
+            dependencies: accountBootstrapDependencies,
           }
         : {}),
     }),

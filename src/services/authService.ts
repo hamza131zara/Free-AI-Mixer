@@ -5,6 +5,45 @@ import type {
   VerifiedAccountIdentity,
 } from "../types/auth";
 
+interface BackendAccountBootstrapCompleteResponse {
+  kind: "account_bootstrap_complete";
+  status: "authenticated";
+  message?: string;
+  identity: VerifiedAccountIdentity;
+  bootstrap: {
+    appUserCreated: boolean;
+    workspaceCreated: boolean;
+    membershipCreated: boolean;
+  };
+}
+
+interface BackendEmailVerificationRequiredResponse {
+  kind: "email_verification_required";
+  status: "verification_required";
+  message?: string;
+}
+
+interface BackendWorkspaceBootstrapBlockedResponse {
+  kind: "workspace_bootstrap_blocked";
+  status: "workspace_selection_required";
+  reason: "multiple_active_memberships" | "workspace_selection_required";
+  message?: string;
+  identity: VerifiedAccountIdentity;
+}
+
+interface BackendInvalidBootstrapCredentialsResponse {
+  kind: "invalid_credentials";
+  status: "unauthenticated";
+  reason: "missing_credentials" | "invalid_credentials";
+  message?: string;
+}
+
+interface BackendBootstrapUnavailableResponse {
+  kind: "bootstrap_unavailable";
+  status: "auth_not_configured" | "auth_provider_unavailable" | "bootstrap_unavailable";
+  message?: string;
+}
+
 interface BackendAuthenticatedSessionResponse {
   kind: "authenticated_session";
   status: "authenticated";
@@ -37,10 +76,18 @@ type BackendAuthResponse =
   | BackendUnavailableSessionResponse
   | BackendLoggedOutResponse;
 
+export type BackendAccountBootstrapResponse =
+  | BackendAccountBootstrapCompleteResponse
+  | BackendEmailVerificationRequiredResponse
+  | BackendWorkspaceBootstrapBlockedResponse
+  | BackendInvalidBootstrapCredentialsResponse
+  | BackendBootstrapUnavailableResponse;
+
 const sessionEndpoint = "/auth/session";
 const loginEndpoint = "/auth/login";
 const signupEndpoint = "/auth/signup";
 const logoutEndpoint = "/auth/logout";
+const accountBootstrapEndpoint = "/account/bootstrap";
 
 const createSessionRequestHeaders = (
   accessToken?: string,
@@ -198,5 +245,21 @@ export const logoutFromBackendAuth = async (): Promise<AuthMutationResult> => {
     return mapBackendAuthResponseToSessionResult(payload);
   } catch {
     return toFallbackUnavailable();
+  }
+};
+
+export const bootstrapAccount = async (
+  accessToken: string,
+): Promise<BackendAccountBootstrapResponse | undefined> => {
+  try {
+    const response = await fetch(accountBootstrapEndpoint, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: createSessionRequestHeaders(accessToken),
+    });
+
+    return await parseJson<BackendAccountBootstrapResponse>(response);
+  } catch {
+    return undefined;
   }
 };

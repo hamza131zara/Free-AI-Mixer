@@ -7,6 +7,7 @@ import type {
   ProviderSettingsStatusResult,
   RedactedProviderConnectionSummary,
 } from "../types/providerSettings";
+import { fetchWithOptionalAccountBearer } from "./auth/authenticatedFetch";
 
 interface BackendProviderCatalogResponse {
   kind: "provider_catalog";
@@ -318,7 +319,7 @@ export const requestUnavailableProviderConnectionMutation = async (
 
 export const getProviderSettingsStatus = async (): Promise<ProviderSettingsStatusResult> => {
   try {
-    const response = await fetch(providerStatusEndpoint, {
+    const response = await fetchWithOptionalAccountBearer(providerStatusEndpoint, {
       method: "GET",
       credentials: "same-origin",
     });

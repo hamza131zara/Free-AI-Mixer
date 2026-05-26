@@ -2,6 +2,7 @@ import type {
   ProjectLibraryStatusResult,
   ProjectSummary,
 } from "../types/projectLibrary";
+import { fetchWithOptionalAccountBearer } from "./auth/authenticatedFetch";
 
 interface BackendAuthenticatedProjectLibraryResponse {
   kind: "project_library";
@@ -117,7 +118,7 @@ const mapResponse = (
 
 export const getProjectLibraryStatus = async (): Promise<ProjectLibraryStatusResult> => {
   try {
-    const response = await fetch(projectLibraryEndpoint, {
+    const response = await fetchWithOptionalAccountBearer(projectLibraryEndpoint, {
       method: "GET",
       credentials: "same-origin",
     });

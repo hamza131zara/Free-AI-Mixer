@@ -2,6 +2,7 @@ import type {
   CreditPolicyResult,
   CreditsStatusResult,
 } from "../types/credits";
+import { fetchWithOptionalAccountBearer } from "./auth/authenticatedFetch";
 
 interface BackendCreditPolicyDraftEstimate {
   id: CreditPolicyResult["policy"]["draftEstimates"][number]["id"];
@@ -148,7 +149,7 @@ export const getCreditPolicy = async (): Promise<CreditPolicyResult> => {
 
 export const getCreditsStatus = async (): Promise<CreditsStatusResult> => {
   try {
-    const response = await fetch(creditsStatusEndpoint, {
+    const response = await fetchWithOptionalAccountBearer(creditsStatusEndpoint, {
       method: "GET",
       credentials: "same-origin",
     });

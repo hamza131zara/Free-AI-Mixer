@@ -28,8 +28,9 @@ export function SignupPage() {
           <p className="eyebrow">Product Phase 2</p>
           <h1>Sign up</h1>
           <p className="placeholder-description">
-            Signup stays backend-owned. If the auth provider is not configured, this
-            route fails closed instead of creating a fake account.
+            Signup remains email-verification-first. This route may create the auth
+            provider account, but it does not claim Free AI Mixer account setup is complete
+            until a later verified backend bootstrap succeeds.
           </p>
           <form className="auth-form" onSubmit={(event) => handleCredentialsSubmit(event, signup)}>
             <label className="field">
@@ -47,7 +48,7 @@ export function SignupPage() {
             </label>
             <div className="hero-actions">
               <button type="submit" disabled={pendingAction === "signup"}>
-                {pendingAction === "signup" ? "Checking backend auth..." : "Request sign up"}
+                {pendingAction === "signup" ? "Creating account..." : "Sign up"}
               </button>
               <button
                 type="button"
@@ -64,7 +65,7 @@ export function SignupPage() {
           <span className="status-kicker">Session state</span>
           <strong>{authStatus}</strong>
           <p>{authMessage}</p>
-          <p>Workspace setup and onboarding stay disabled until later product phases.</p>
+          <p>Workspace setup stays backend-owned and begins only after a verified login/session.</p>
         </div>
       </div>
     </section>

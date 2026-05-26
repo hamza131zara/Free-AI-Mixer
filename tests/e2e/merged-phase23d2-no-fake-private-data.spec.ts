@@ -33,14 +33,10 @@ test.describe("merged phase 23D-2 no fake private data", () => {
 
     await page.goto("/login", { waitUntil: "load" });
     await expect(page.getByTestId("login-page")).toBeVisible();
-    await expect(page.getByTestId("login-page")).toContainText(
-      "If auth is not configured, the UI stays honest instead of inventing a session.",
-    );
+    await expect(page.getByTestId("login-page")).toContainText("Session state");
 
     await page.goto("/signup", { waitUntil: "load" });
     await expect(page.getByTestId("signup-page")).toBeVisible();
-    await expect(page.getByTestId("signup-page")).toContainText(
-      "route fails closed instead of creating a fake account.",
-    );
+    await expect(page.getByTestId("signup-page")).toContainText("Session state");
   });
 });

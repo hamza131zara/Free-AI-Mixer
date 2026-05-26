@@ -6,15 +6,33 @@ export type AuthStatus =
 
 export interface VerifiedAccountIdentity {
   userId: string;
+  appUserId?: string;
+  supabaseUserId?: string;
   workspaceId?: string;
+  workspaceRole?: string;
+  workspaceAuthority?: "verified" | "not_available";
+  workspaceAuthorityReason?:
+    | "workspace_runtime_not_enabled"
+    | "no_active_workspace_membership"
+    | "multiple_active_workspace_memberships";
   authProvider?: string;
   authSubject?: string;
+  email?: string;
 }
 
 export type AuthUnavailableCode =
   | "auth_not_configured"
   | "auth_provider_unavailable"
-  | "auth_service_unreachable";
+  | "auth_service_unreachable"
+  | "supabase_auth_not_configured"
+  | "email_verification_required"
+  | "workspace_bootstrap_blocked"
+  | "account_bootstrap_unavailable";
+
+export type AuthUnauthenticatedReason =
+  | "missing_credentials"
+  | "invalid_credentials"
+  | "email_verification_required";
 
 export type AuthSessionResult =
   | {
@@ -27,7 +45,7 @@ export type AuthSessionResult =
       kind: "unauthenticated";
       status: "unauthenticated";
       message: string;
-      reason: "missing_credentials" | "invalid_credentials";
+      reason: AuthUnauthenticatedReason;
     }
   | {
       kind: "unavailable";

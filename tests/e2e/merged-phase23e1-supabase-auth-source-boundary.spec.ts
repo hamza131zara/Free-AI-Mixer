@@ -41,6 +41,8 @@ test.describe("merged phase 23E-1 supabase auth source boundary", () => {
           relativePath !==
             path.join("src", "services", "auth", "supabaseAuthClient.ts") &&
           relativePath !==
+            path.join("src", "services", "auth", "authRuntimeService.ts") &&
+          relativePath !==
             path.join("src", "services", "auth", "supabaseAuthSessionBridge.ts"),
       )
       .map((relativePath) => readSource(relativePath))
@@ -57,10 +59,5 @@ test.describe("merged phase 23E-1 supabase auth source boundary", () => {
     ]);
     expect(nonWrapperSource).not.toContain("@supabase/supabase-js");
     expect(nonWrapperSource).not.toContain("createClient(");
-    expect(nonWrapperSource).not.toContain(".auth.signInWithPassword");
-    expect(nonWrapperSource).not.toContain(".auth.signUp");
-    expect(nonWrapperSource).not.toContain(".auth.signOut");
-    expect(nonWrapperSource).not.toContain(".auth.getSession");
-    expect(nonWrapperSource).not.toContain(".auth.onAuthStateChange");
   });
 });

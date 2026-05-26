@@ -2,6 +2,7 @@ import type {
   ExportHistoryStatusResult,
   ExportHistorySummary,
 } from "../types/exportHistory";
+import { fetchWithOptionalAccountBearer } from "./auth/authenticatedFetch";
 
 interface BackendAuthenticatedExportHistoryResponse {
   kind: "export_history";
@@ -117,7 +118,7 @@ const mapResponse = (
 
 export const getExportHistoryStatus = async (): Promise<ExportHistoryStatusResult> => {
   try {
-    const response = await fetch(exportHistoryEndpoint, {
+    const response = await fetchWithOptionalAccountBearer(exportHistoryEndpoint, {
       method: "GET",
       credentials: "same-origin",
     });

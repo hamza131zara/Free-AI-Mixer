@@ -84,7 +84,7 @@ export function ProtectedRouteShell({
             <p>Checking backend session status.</p>
           ) : null}
           {authStatus === "unauthenticated" ? (
-            <p>Login and signup are not live in this product phase.</p>
+            <p>Sign in through the configured auth provider before this page can show backend-owned data.</p>
           ) : null}
           {authStatus === "unavailable" ? <p>{authMessage}</p> : null}
         </div>

@@ -56,15 +56,24 @@ test.describe("merged phase 23E-3 auth session bearer scope", () => {
     ]);
   });
 
-  test("protected services remain free of bearer attachment", () => {
+  test("protected services keep bearer attachment scoped to the approved helper only", () => {
     const protectedServiceSource = [
       readSource("src/services/projectLibraryService.ts"),
       readSource("src/services/providerSettingsService.ts"),
       readSource("src/services/creditsService.ts"),
       readSource("src/services/exportHistoryService.ts"),
     ].join("\n");
+    const authenticatedFetchSource = readSource("src/services/auth/authenticatedFetch.ts");
 
     expect(protectedServiceSource).not.toContain("Authorization");
-    expect(protectedServiceSource).not.toContain("Bearer ");
+    expect(protectedServiceSource).not.toContain("Authorization: Bearer");
+    expect(authenticatedFetchSource).toContain("/project-library/projects");
+    expect(authenticatedFetchSource).toContain("/project-library/history");
+    expect(authenticatedFetchSource).toContain("/provider-settings/status");
+    expect(authenticatedFetchSource).toContain("/credits/status");
+    expect(authenticatedFetchSource).not.toContain("/generation/");
+    expect(authenticatedFetchSource).not.toContain("/exports/");
+    expect(authenticatedFetchSource).not.toContain("/admin/");
+    expect(authenticatedFetchSource).not.toContain("/billing/");
   });
 });

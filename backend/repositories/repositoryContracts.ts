@@ -301,6 +301,12 @@ export interface BackendUserAccountRepository {
     authProvider: BackendUserAccountIdentity["authProvider"],
     authSubject: string,
   ): Promise<BackendUserAccountRecord | undefined>;
+  createOrGetByAuthSubject(input: {
+    userId: string;
+    authProvider: BackendUserAccountIdentity["authProvider"];
+    authSubject: string;
+    email?: string;
+  }): Promise<BackendUserAccountRecord>;
 }
 
 export interface BackendWorkspaceRepository {
@@ -308,6 +314,11 @@ export interface BackendWorkspaceRepository {
     workspaceId: string,
   ): Promise<BackendWorkspaceRecord | undefined>;
   listForUser(userId: string): Promise<BackendWorkspaceRecord[]>;
+  createPersonalWorkspace(input: {
+    workspaceId: string;
+    userId: string;
+    name: string;
+  }): Promise<BackendWorkspaceRecord>;
 }
 
 export interface BackendWorkspaceMembershipRepository {
@@ -318,6 +329,15 @@ export interface BackendWorkspaceMembershipRepository {
   listMembershipsForWorkspace(
     workspaceId: string,
   ): Promise<BackendWorkspaceMembershipRecord[]>;
+  listMembershipsForUser(
+    userId: string,
+  ): Promise<BackendWorkspaceMembershipRecord[]>;
+  createOrGetMembership(input: {
+    workspaceId: string;
+    userId: string;
+    role: BackendWorkspaceMembershipRecord["role"];
+    status: BackendWorkspaceMembershipRecord["status"];
+  }): Promise<BackendWorkspaceMembershipRecord>;
 }
 
 export interface BackendPlatformRoleRepository {

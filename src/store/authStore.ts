@@ -2,10 +2,12 @@ import { create } from "zustand";
 import { initializeSupabaseAuthSessionBridge } from "../services/auth/supabaseAuthSessionBridge";
 import {
   getAuthSession,
-  loginWithBackendAuth,
-  logoutFromBackendAuth,
-  signupWithBackendAuth,
 } from "../services/authService";
+import {
+  loginWithSupabaseRuntime,
+  logoutFromAuthRuntime,
+  signUpWithSupabaseRuntime,
+} from "../services/auth/authRuntimeService";
 import type {
   AuthCredentialsInput,
   AuthMutationResult,
@@ -82,7 +84,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   },
   login: async (credentials) => {
     set({ pendingAction: "login" });
-    const result = await loginWithBackendAuth(credentials);
+    const result = await loginWithSupabaseRuntime(credentials);
     set({
       ...applySessionResult(result),
       pendingAction: null,
@@ -90,7 +92,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   },
   signup: async (credentials) => {
     set({ pendingAction: "signup" });
-    const result = await signupWithBackendAuth(credentials);
+    const result = await signUpWithSupabaseRuntime(credentials);
     set({
       ...applySessionResult(result),
       pendingAction: null,
@@ -98,7 +100,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   },
   logout: async () => {
     set({ pendingAction: "logout" });
-    const result = await logoutFromBackendAuth();
+    const result = await logoutFromAuthRuntime();
     set({
       ...applySessionResult(result),
       pendingAction: null,

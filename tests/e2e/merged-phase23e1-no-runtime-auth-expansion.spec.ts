@@ -8,8 +8,9 @@ const readSource = (relativePath: string): string =>
   readFileSync(path.join(projectRoot, relativePath), "utf8");
 
 test.describe("merged phase 23E-1 no runtime auth expansion", () => {
-  test("frontend auth remains backend-authoritative and bearer stays scoped to the backend session seam", () => {
+  test("frontend auth remains backend-authoritative and selected bearer stays tightly scoped", () => {
     const authServiceSource = readSource("src/services/authService.ts");
+    const authenticatedFetchSource = readSource("src/services/auth/authenticatedFetch.ts");
     const frontendAuthSources = [
       readSource("src/store/authStore.ts"),
       readSource("src/pages/LoginPage.tsx"),
@@ -27,10 +28,14 @@ test.describe("merged phase 23E-1 no runtime auth expansion", () => {
     expect(authServiceSource).toContain('"/auth/logout"');
     expect(authServiceSource).toContain("Authorization");
     expect(authServiceSource).toContain("Bearer ${trimmedToken}");
+    expect(authenticatedFetchSource).toContain("/project-library/projects");
+    expect(authenticatedFetchSource).toContain("/project-library/history");
+    expect(authenticatedFetchSource).toContain("/provider-settings/status");
+    expect(authenticatedFetchSource).toContain("/credits/status");
     expect(frontendAuthSources).toContain("Checking backend session status.");
-    expect(frontendAuthSources).toContain("Login and signup are not live in this product phase.");
+    expect(frontendAuthSources).toContain("No fake user, fake session, or frontend-owned workspace is created in this route.");
     expect(frontendAuthSources).not.toContain("Authorization");
-    expect(frontendAuthSources).not.toContain("Bearer ");
+    expect(frontendAuthSources).not.toContain("Authorization: Bearer");
     expect(frontendAuthSources).not.toContain("fakeUser");
     expect(frontendAuthSources).not.toContain("fakeSession");
     expect(frontendAuthSources).not.toContain("fakeWorkspace");
