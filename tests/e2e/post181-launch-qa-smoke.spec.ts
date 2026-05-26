@@ -298,13 +298,25 @@ test.describe("post181 launch qa smoke", () => {
   });
 
   test("frontend source still avoids direct supabase storage client usage", async () => {
-    const frontendSource = listFrontendSourceFiles("src")
+    const sourceFiles = listFrontendSourceFiles("src");
+    const frontendSource = sourceFiles
       .map((relativePath) => readSource(relativePath))
       .join("\n");
+    const supabaseImportFiles = sourceFiles.filter((relativePath) =>
+      readSource(relativePath).includes("@supabase/supabase-js"),
+    );
+    const createClientFiles = sourceFiles.filter((relativePath) =>
+      readSource(relativePath).includes("createClient("),
+    );
 
-    expect(frontendSource).not.toContain("@supabase/supabase-js");
-    expect(frontendSource).not.toContain("createClient(");
+    expect(supabaseImportFiles).toEqual([
+      path.join("src", "services", "auth", "supabaseAuthClient.ts"),
+    ]);
+    expect(createClientFiles).toEqual([
+      path.join("src", "services", "auth", "supabaseAuthClient.ts"),
+    ]);
     expect(frontendSource).not.toContain(".storage.from(");
+    expect(frontendSource).not.toContain(".from(");
     expect(frontendSource).not.toContain("createSignedUrl");
     expect(frontendSource).not.toContain("getPublicUrl");
     expect(frontendSource).not.toContain(

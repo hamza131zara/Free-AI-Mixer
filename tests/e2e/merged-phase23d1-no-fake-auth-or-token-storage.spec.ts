@@ -27,15 +27,34 @@ const readSource = (relativePath: string): string =>
   readFileSync(path.join(projectRoot, relativePath), "utf8");
 
 test.describe("merged phase 23D-1 no fake auth or token storage", () => {
-  test("frontend source still avoids Supabase auth client token persistence and fake auth shortcuts", () => {
-    const frontendSource = listFrontendSourceFiles("src")
+  test("frontend source still avoids fake auth shortcuts and keeps supabase isolated", () => {
+    const sourceFiles = listFrontendSourceFiles("src");
+    const supabaseImportFiles = sourceFiles.filter((relativePath) =>
+      readSource(relativePath).includes("@supabase/supabase-js"),
+    );
+    const createClientFiles = sourceFiles.filter((relativePath) =>
+      readSource(relativePath).includes("createClient("),
+    );
+    const nonWrapperSource = sourceFiles
+      .filter(
+        (relativePath) =>
+          relativePath !==
+          path.join("src", "services", "auth", "supabaseAuthClient.ts"),
+      )
+      .map((relativePath) => readSource(relativePath))
+      .join("\n");
+    const frontendSource = sourceFiles
       .map((relativePath) => readSource(relativePath))
       .join("\n");
 
-    expect(frontendSource).not.toContain("@supabase/supabase-js");
-    expect(frontendSource).not.toContain("createClient(");
-    expect(frontendSource).not.toContain(".auth.signIn");
-    expect(frontendSource).not.toContain(".auth.getSession");
+    expect(supabaseImportFiles).toEqual([
+      path.join("src", "services", "auth", "supabaseAuthClient.ts"),
+    ]);
+    expect(createClientFiles).toEqual([
+      path.join("src", "services", "auth", "supabaseAuthClient.ts"),
+    ]);
+    expect(nonWrapperSource).not.toContain(".auth.signIn");
+    expect(nonWrapperSource).not.toContain(".auth.getSession");
     expect(frontendSource).not.toContain("localStorage.setItem(\"auth");
     expect(frontendSource).not.toContain("localStorage.setItem('auth");
     expect(frontendSource).not.toContain("sessionStorage.setItem(\"auth");
