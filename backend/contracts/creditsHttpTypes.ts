@@ -53,7 +53,15 @@ export type BackendCreditsStatusResponse =
       message: string;
     }
   | {
+      kind: "credits_access_required";
+      status: "workspace_required";
+      message: string;
+    }
+  | {
       kind: "credits_unavailable";
-      status: "auth_not_configured" | "auth_provider_unavailable";
+      status:
+        | "auth_not_configured"
+        | "auth_provider_unavailable"
+        | "workspace_runtime_not_configured";
       message: string;
     };

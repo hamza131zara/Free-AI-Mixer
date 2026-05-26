@@ -48,13 +48,23 @@ interface BackendUnauthenticatedCreditsStatusResponse {
 
 interface BackendUnavailableCreditsStatusResponse {
   kind: "credits_unavailable";
-  status: "auth_not_configured" | "auth_provider_unavailable";
+  status:
+    | "auth_not_configured"
+    | "auth_provider_unavailable"
+    | "workspace_runtime_not_configured";
+  message?: string;
+}
+
+interface BackendForbiddenCreditsStatusResponse {
+  kind: "credits_access_required";
+  status: "workspace_required";
   message?: string;
 }
 
 type BackendCreditsStatusResponse =
   | BackendAuthenticatedCreditsStatusResponse
   | BackendUnauthenticatedCreditsStatusResponse
+  | BackendForbiddenCreditsStatusResponse
   | BackendUnavailableCreditsStatusResponse;
 
 const creditsPolicyEndpoint = "/credits/policy";
@@ -170,6 +180,17 @@ export const getCreditsStatus = async (): Promise<CreditsStatusResult> => {
       };
     }
 
+    if (payload.kind === "credits_access_required") {
+      return {
+        kind: "forbidden",
+        status: "forbidden",
+        code: "workspace_required",
+        message:
+          payload.message ??
+          "A verified workspace is required before workspace-owned credit status can be checked.",
+      };
+    }
+
     return {
       kind: "unavailable",
       status: "unavailable",
@@ -178,6 +199,8 @@ export const getCreditsStatus = async (): Promise<CreditsStatusResult> => {
         payload.message ??
         (payload.status === "auth_not_configured"
           ? "Authentication is not configured on this backend yet."
+          : payload.status === "workspace_runtime_not_configured"
+            ? "Workspace authority is not configured on this backend yet."
           : "Credits status is configured behind auth, but not available in this product phase."),
     };
   } catch {

@@ -120,7 +120,12 @@ export const createApp = (): Express => {
       ...(routeAccessResolver ? { routeAccessResolver } : {}),
     }),
   );
-  app.use(createCreditsRouter({ runtimeConfig: authRuntimeConfig }));
+  app.use(
+    createCreditsRouter({
+      runtimeConfig: authRuntimeConfig,
+      ...(routeAccessResolver ? { routeAccessResolver } : {}),
+    }),
+  );
   app.use(createBillingRouter());
   app.use(createTemplatesRouter());
   app.use(createCardsRouter());

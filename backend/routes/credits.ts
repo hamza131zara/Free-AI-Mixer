@@ -1,7 +1,8 @@
 import { Router } from "express";
 import type { Response } from "express";
+import type { AsyncBackendRequesterContextResolver } from "../auth/requesterContextResolver";
+import { resolveSelectedRouteAccess } from "../auth/protectedRouteGuards";
 import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProviderRuntimeConfig";
-import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
 import type {
   BackendCreditsPolicyResponse,
   BackendCreditsStatusResponse,
@@ -10,6 +11,7 @@ import { defaultCreditPolicy } from "../credits/creditPolicy";
 
 export interface CreateCreditsRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
+  routeAccessResolver?: AsyncBackendRequesterContextResolver;
 }
 
 const resolveUnavailableStatus = (
@@ -45,60 +47,64 @@ export const createCreditsRouter = (
 
   router.get(
     "/credits/status",
-    (request, response: Response<BackendCreditsStatusResponse>) => {
-      const requesterContext = getRequesterContextFromRequest(request);
+    (request, response: Response<BackendCreditsStatusResponse>, next) => {
+      void (async () => {
+        const accessDecision = await resolveSelectedRouteAccess({
+          headers: request.headers,
+          runtimeConfig: options.runtimeConfig,
+          requesterResolver: options.routeAccessResolver,
+        });
 
-      if (requesterContext.kind === "authenticated") {
-        response.status(200).json({
-          kind: "credits_status",
-          status: "authenticated",
-          message:
-            "Credits policy is visible for this verified session, but wallet mutation is not enabled yet.",
-          wallet: {
-            state: "not_enabled_yet",
-            scope: "workspace",
-            liveBalanceAvailable: false,
+        if (accessDecision.kind === "allowed") {
+          response.status(200).json({
+            kind: "credits_status",
+            status: "authenticated",
             message:
-              "A backend-derived wallet summary will appear here only after real credits and billing are implemented.",
-            activeWorkspaceId: requesterContext.workspaceId,
-          },
-        });
-        return;
-      }
+              "Credits policy is visible for this verified session, but wallet mutation is not enabled yet.",
+            wallet: {
+              state: "not_enabled_yet",
+              scope: "workspace",
+              liveBalanceAvailable: false,
+              message:
+                "A backend-derived wallet summary will appear here only after real credits and billing are implemented.",
+              activeWorkspaceId: accessDecision.requester.workspaceId,
+            },
+          });
+          return;
+        }
 
-      if (requesterContext.reason === "auth_not_configured") {
+        if (accessDecision.code === "workspace_required") {
+          response.status(403).json({
+            kind: "credits_access_required",
+            status: "workspace_required",
+            message: accessDecision.message,
+          });
+          return;
+        }
+
+        if (accessDecision.code === "auth_required") {
+          response.status(401).json({
+            kind: "credits_sign_in_required",
+            status: "unauthenticated",
+            reason: "invalid_credentials",
+            message:
+              "Sign in is required before workspace-owned credit status can be checked.",
+          });
+          return;
+        }
+
         response.status(503).json({
           kind: "credits_unavailable",
-          status: "auth_not_configured",
-          message: "Authentication is not configured on this backend yet.",
+          status:
+            accessDecision.code === "workspace_runtime_not_configured"
+              ? "workspace_runtime_not_configured"
+              : resolveUnavailableStatus(options.runtimeConfig),
+          message:
+            accessDecision.code === "workspace_runtime_not_configured"
+              ? accessDecision.message
+              : resolveUnavailableMessage(options.runtimeConfig),
         });
-        return;
-      }
-
-      if (options.runtimeConfig.kind === "auth_provider_not_configured") {
-        response.status(503).json({
-          kind: "credits_unavailable",
-          status: "auth_not_configured",
-          message: "Authentication is not configured on this backend yet.",
-        });
-        return;
-      }
-
-      if (options.runtimeConfig.kind === "auth_provider_configured") {
-        response.status(401).json({
-          kind: "credits_sign_in_required",
-          status: "unauthenticated",
-          reason: requesterContext.reason,
-          message: "Sign in is required before workspace-owned credit status can be checked.",
-        });
-        return;
-      }
-
-      response.status(503).json({
-        kind: "credits_unavailable",
-        status: resolveUnavailableStatus(options.runtimeConfig),
-        message: resolveUnavailableMessage(options.runtimeConfig),
-      });
+      })().catch(next);
     },
   );
 

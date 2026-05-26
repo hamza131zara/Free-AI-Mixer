@@ -60,9 +60,8 @@ test.describe("merged phase 23C-1 public and deferred routes unchanged", () => {
     }
   });
 
-  test("credits generation exports admin and billing route sources remain free of 23C-1 resolver wiring", () => {
+  test("generation exports admin and billing route sources remain free of 23C-1 resolver wiring", () => {
     const deferredSources = [
-      readSource("backend/routes/credits.ts"),
       readSource("backend/routes/generation.ts"),
       readSource("backend/routes/exports.ts"),
       readSource("backend/routes/admin.ts"),
