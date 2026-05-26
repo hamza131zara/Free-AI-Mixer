@@ -22,11 +22,18 @@ export type ProjectLibraryStatusResult =
       message: string;
     }
   | {
+      kind: "forbidden";
+      status: "forbidden";
+      code: "workspace_required";
+      message: string;
+    }
+  | {
       kind: "unavailable";
       status: "unavailable";
       code:
         | "auth_not_configured"
         | "auth_provider_unavailable"
+        | "workspace_runtime_not_configured"
         | "project_library_service_unreachable";
       message: string;
     };

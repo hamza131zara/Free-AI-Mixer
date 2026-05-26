@@ -21,13 +21,23 @@ interface BackendUnauthenticatedExportHistoryResponse {
 
 interface BackendUnavailableExportHistoryResponse {
   kind: "export_history_unavailable";
-  status: "auth_not_configured" | "auth_provider_unavailable";
+  status:
+    | "auth_not_configured"
+    | "auth_provider_unavailable"
+    | "workspace_runtime_not_configured";
+  message?: string;
+}
+
+interface BackendForbiddenExportHistoryResponse {
+  kind: "export_history_forbidden";
+  status: "workspace_required";
   message?: string;
 }
 
 type BackendExportHistoryResponse =
   | BackendAuthenticatedExportHistoryResponse
   | BackendUnauthenticatedExportHistoryResponse
+  | BackendForbiddenExportHistoryResponse
   | BackendUnavailableExportHistoryResponse;
 
 const exportHistoryEndpoint = "/project-library/history";
@@ -80,6 +90,17 @@ const mapResponse = (
     };
   }
 
+  if (payload.kind === "export_history_forbidden") {
+    return {
+      kind: "forbidden",
+      status: "forbidden",
+      code: "workspace_required",
+      message:
+        payload.message ??
+        "Workspace access is required before verified backend export history can appear here.",
+    };
+  }
+
   return {
     kind: "unavailable",
     status: "unavailable",
@@ -88,6 +109,8 @@ const mapResponse = (
       payload.message ??
       (payload.status === "auth_not_configured"
         ? "Authentication is not configured on this backend yet."
+        : payload.status === "workspace_runtime_not_configured"
+          ? "Workspace authority is not configured on this backend yet."
         : "Export history is configured behind auth, but not available in this product phase."),
   };
 };

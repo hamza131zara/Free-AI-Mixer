@@ -21,13 +21,23 @@ interface BackendUnauthenticatedProjectLibraryResponse {
 
 interface BackendUnavailableProjectLibraryResponse {
   kind: "project_library_unavailable";
-  status: "auth_not_configured" | "auth_provider_unavailable";
+  status:
+    | "auth_not_configured"
+    | "auth_provider_unavailable"
+    | "workspace_runtime_not_configured";
+  message?: string;
+}
+
+interface BackendForbiddenProjectLibraryResponse {
+  kind: "project_library_forbidden";
+  status: "workspace_required";
   message?: string;
 }
 
 type BackendProjectLibraryResponse =
   | BackendAuthenticatedProjectLibraryResponse
   | BackendUnauthenticatedProjectLibraryResponse
+  | BackendForbiddenProjectLibraryResponse
   | BackendUnavailableProjectLibraryResponse;
 
 const projectLibraryEndpoint = "/project-library/projects";
@@ -80,6 +90,17 @@ const mapResponse = (
     };
   }
 
+  if (payload.kind === "project_library_forbidden") {
+    return {
+      kind: "forbidden",
+      status: "forbidden",
+      code: "workspace_required",
+      message:
+        payload.message ??
+        "Workspace access is required before account-owned saved projects can appear here.",
+    };
+  }
+
   return {
     kind: "unavailable",
     status: "unavailable",
@@ -88,6 +109,8 @@ const mapResponse = (
       payload.message ??
       (payload.status === "auth_not_configured"
         ? "Authentication is not configured on this backend yet."
+        : payload.status === "workspace_runtime_not_configured"
+          ? "Workspace authority is not configured on this backend yet."
         : "Project library is configured behind auth, but not available in this product phase."),
   };
 };

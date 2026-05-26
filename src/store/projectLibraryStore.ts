@@ -3,7 +3,12 @@ import { getProjectLibraryStatus } from "../services/projectLibraryService";
 import type { ProjectSummary } from "../types/projectLibrary";
 
 export interface ProjectLibraryStoreState {
-  accessStatus: "unknown" | "authenticated" | "unauthenticated" | "unavailable";
+  accessStatus:
+    | "unknown"
+    | "authenticated"
+    | "unauthenticated"
+    | "forbidden"
+    | "unavailable";
   accessMessage: string;
   accessReasonCode?: string;
   activeWorkspaceId?: string;
@@ -45,6 +50,19 @@ export const useProjectLibraryStore = create<ProjectLibraryStoreState>((set) => 
         accessStatus: "unauthenticated",
         accessMessage: result.message,
         accessReasonCode: result.reason,
+        activeWorkspaceId: undefined,
+        persistence: "not_enabled_yet",
+        projects: [],
+        pendingAction: null,
+      });
+      return;
+    }
+
+    if (result.kind === "forbidden") {
+      set({
+        accessStatus: "forbidden",
+        accessMessage: result.message,
+        accessReasonCode: result.code,
         activeWorkspaceId: undefined,
         persistence: "not_enabled_yet",
         projects: [],

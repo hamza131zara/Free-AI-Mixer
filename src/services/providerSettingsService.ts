@@ -44,13 +44,23 @@ interface BackendUnauthenticatedProviderSettingsResponse {
 
 interface BackendUnavailableProviderSettingsResponse {
   kind: "provider_settings_unavailable";
-  status: "auth_not_configured" | "auth_provider_unavailable";
+  status:
+    | "auth_not_configured"
+    | "auth_provider_unavailable"
+    | "workspace_runtime_not_configured";
+  message?: string;
+}
+
+interface BackendForbiddenProviderSettingsResponse {
+  kind: "provider_settings_access_required";
+  status: "workspace_required";
   message?: string;
 }
 
 type BackendProviderSettingsResponse =
   | BackendAuthenticatedProviderSettingsResponse
   | BackendUnauthenticatedProviderSettingsResponse
+  | BackendForbiddenProviderSettingsResponse
   | BackendUnavailableProviderSettingsResponse;
 
 type BackendProviderConnectionMutationResponse =
@@ -151,6 +161,17 @@ const mapStatusResponse = (
     };
   }
 
+  if (payload.kind === "provider_settings_access_required") {
+    return {
+      kind: "forbidden",
+      status: "forbidden",
+      code: "workspace_required",
+      message:
+        payload.message ??
+        "Workspace access is required before this page can show backend-owned data.",
+    };
+  }
+
   return {
     kind: "unavailable",
     status: "unavailable",
@@ -159,6 +180,8 @@ const mapStatusResponse = (
       payload.message ??
       (payload.status === "auth_not_configured"
         ? "Authentication is not configured on this backend yet."
+        : payload.status === "workspace_runtime_not_configured"
+          ? "Workspace authority is not configured on this backend yet."
         : "Provider settings are configured behind auth, but not available in this product phase."),
   };
 };

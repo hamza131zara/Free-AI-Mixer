@@ -16,7 +16,12 @@ export interface ProviderSettingsStoreState {
   catalogStatus: "unknown" | "ready" | "unavailable";
   catalogMessage: string;
   providers: ProviderCatalogEntry[];
-  accessStatus: "unknown" | "authenticated" | "unauthenticated" | "unavailable";
+  accessStatus:
+    | "unknown"
+    | "authenticated"
+    | "unauthenticated"
+    | "forbidden"
+    | "unavailable";
   accessMessage: string;
   accessReasonCode?: string;
   activeWorkspaceId?: string;
@@ -67,6 +72,17 @@ const applyStatusResult = (
       accessStatus: "unauthenticated",
       accessMessage: result.message,
       accessReasonCode: result.reason,
+      activeWorkspaceId: undefined,
+      routingPreferences: defaultRoutingPreferences,
+      connections: [],
+    };
+  }
+
+  if (result.kind === "forbidden") {
+    return {
+      accessStatus: "forbidden",
+      accessMessage: result.message,
+      accessReasonCode: result.code,
       activeWorkspaceId: undefined,
       routingPreferences: defaultRoutingPreferences,
       connections: [],

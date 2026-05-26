@@ -138,11 +138,18 @@ export type ProviderSettingsStatusResult =
       message: string;
     }
   | {
+      kind: "forbidden";
+      status: "forbidden";
+      code: "workspace_required";
+      message: string;
+    }
+  | {
       kind: "unavailable";
       status: "unavailable";
       code:
         | "auth_not_configured"
         | "auth_provider_unavailable"
+        | "workspace_runtime_not_configured"
         | "provider_settings_service_unreachable";
       message: string;
     };

@@ -55,8 +55,15 @@ export function ProjectsPage() {
           {accessStatus === "unauthenticated" ? (
             <p>Sign in is required before account-owned saved projects can appear here.</p>
           ) : null}
+          {accessStatus === "forbidden" ? (
+            <p>Workspace access is required before this page can show backend-owned data.</p>
+          ) : null}
           {accessStatus === "unavailable" ? (
-            <p>Authentication is not configured on this backend yet.</p>
+            <p>
+              {accessMessage.includes("Workspace authority")
+                ? "Workspace authority is not configured on this backend yet."
+                : "Authentication is not configured on this backend yet."}
+            </p>
           ) : null}
           {accessStatus === "authenticated" ? (
             <p>
@@ -77,6 +84,14 @@ export function ProjectsPage() {
             <p>
               No account-owned project records are available yet. Browser-local
               timelines in the mixer are not treated as saved cloud projects.
+            </p>
+          </article>
+        ) : accessStatus === "forbidden" ? (
+          <article className="info-card" data-testid="projects-forbidden-state">
+            <h3>Workspace access is required</h3>
+            <p>
+              This route only shows backend-owned project summaries for a verified
+              workspace membership.
             </p>
           </article>
         ) : (

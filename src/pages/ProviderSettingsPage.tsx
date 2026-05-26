@@ -88,8 +88,15 @@ export function ProviderSettingsPage() {
           {accessStatus === "unauthenticated" ? (
             <p>Sign in is required before provider settings can be managed.</p>
           ) : null}
+          {accessStatus === "forbidden" ? (
+            <p>Workspace access is required before this page can show backend-owned data.</p>
+          ) : null}
           {accessStatus === "unavailable" ? (
-            <p>Authentication is not configured on this backend yet.</p>
+            <p>
+              {accessMessage.includes("Workspace authority")
+                ? "Workspace authority is not configured on this backend yet."
+                : "Authentication is not configured on this backend yet."}
+            </p>
           ) : null}
           {accessStatus === "authenticated" ? (
             <p>Connection summaries stay metadata-only and not_connected until secure backend key storage exists.</p>

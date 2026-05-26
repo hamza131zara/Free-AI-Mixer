@@ -3,7 +3,12 @@ import { getExportHistoryStatus } from "../services/exportHistoryService";
 import type { ExportHistorySummary } from "../types/exportHistory";
 
 export interface ExportHistoryStoreState {
-  accessStatus: "unknown" | "authenticated" | "unauthenticated" | "unavailable";
+  accessStatus:
+    | "unknown"
+    | "authenticated"
+    | "unauthenticated"
+    | "forbidden"
+    | "unavailable";
   accessMessage: string;
   accessReasonCode?: string;
   activeWorkspaceId?: string;
@@ -45,6 +50,19 @@ export const useExportHistoryStore = create<ExportHistoryStoreState>((set) => ({
         accessStatus: "unauthenticated",
         accessMessage: result.message,
         accessReasonCode: result.reason,
+        activeWorkspaceId: undefined,
+        historyState: "not_enabled_yet",
+        exports: [],
+        pendingAction: null,
+      });
+      return;
+    }
+
+    if (result.kind === "forbidden") {
+      set({
+        accessStatus: "forbidden",
+        accessMessage: result.message,
+        accessReasonCode: result.code,
         activeWorkspaceId: undefined,
         historyState: "not_enabled_yet",
         exports: [],
