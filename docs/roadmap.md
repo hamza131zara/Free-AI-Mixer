@@ -522,6 +522,39 @@ Status:
 - Production artifact hosting/signed URLs/download capability.
 - Production auto-start without env flags.
 
+## Phase 25 status
+
+- Phase 25: complete when the real auth runtime smoke/runbook pack is signed off.
+- Scope: docs/runbook, `.env.example` comments, and one opt-in real auth smoke spec only.
+- No runtime behavior changes are included in Phase 25.
+
+### What Phase 25 adds
+
+- `docs/real-auth-runtime-smoke-runbook.md` documents real auth setup, required env, smoke execution, safe failure states, and manual recovery guidance.
+- `tests/e2e/phase25-real-auth-runtime-smoke.spec.ts` is disabled by default and runs only when `FREE_AI_MIXER_RUN_REAL_AUTH_SMOKE=1`.
+- The smoke is run through the existing `test:e2e` script with the Phase 25 spec path; no extra npm script is required.
+
+### Preserved boundaries
+
+- No auth route behavior changes.
+- No `/account/bootstrap` behavior changes.
+- No Login or Signup behavior changes.
+- No bearer attachment expansion.
+- No migrations.
+- No real signup automation.
+- No automatic remote data cleanup.
+- No generation/export/billing/credits-ledger/admin/event/audit/analytics runtime expansion.
+
+### Still deferred after Phase 25
+
+- Active workspace selection.
+- Password reset.
+- OAuth.
+- Transactional bootstrap hardening.
+- Event/audit persistence wiring.
+- Admin analytics activation.
+- Vite bundle-size/performance hardening.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).

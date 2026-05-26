@@ -54,6 +54,29 @@ Target fix phase:
 
 ## Platform Gaps
 
+### Phase 25 Real Auth Runtime Smoke Is Manual And Opt-In
+
+Current state:
+
+- Phase 24 account bootstrap and real login runtime are signed off as a local/tested foundation.
+- Phase 25 adds only a runbook and an opt-in real auth smoke test.
+- The real auth smoke is disabled unless `FREE_AI_MIXER_RUN_REAL_AUTH_SMOKE=1`.
+- The smoke requires a dedicated verified Supabase test user.
+- The smoke may create or reuse the app user, `Personal Workspace`, and active owner membership for that dedicated user.
+- Signup is not automated by default because it can create real Supabase users and orphaned provider accounts.
+- Automatic cleanup is not included because destructive real-data behavior does not belong in the default smoke.
+- Active workspace selection remains deferred; multiple active memberships must block safely.
+- Password reset remains deferred.
+- OAuth remains deferred.
+- Event/audit persistence remains deferred.
+- Admin analytics remains deferred.
+- The Vite chunk-size warning remains a performance hardening item, not an auth blocker.
+
+Why it matters:
+
+- Real Supabase/JWKS/service-role/bootstrap behavior must be verified before deeper authenticated product features.
+- The smoke must stay manual, secret-safe, non-destructive, and CI-safe by default.
+
 ### Export Runtime Still Deferred
 
 Current state:
