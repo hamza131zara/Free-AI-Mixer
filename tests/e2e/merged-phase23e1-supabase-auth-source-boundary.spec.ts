@@ -39,7 +39,9 @@ test.describe("merged phase 23E-1 supabase auth source boundary", () => {
       .filter(
         (relativePath) =>
           relativePath !==
-          path.join("src", "services", "auth", "supabaseAuthClient.ts"),
+            path.join("src", "services", "auth", "supabaseAuthClient.ts") &&
+          relativePath !==
+            path.join("src", "services", "auth", "supabaseAuthSessionBridge.ts"),
       )
       .map((relativePath) => readSource(relativePath))
       .join("\n");

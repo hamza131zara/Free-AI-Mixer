@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { initializeSupabaseAuthSessionBridge } from "../services/auth/supabaseAuthSessionBridge";
 import {
   getAuthSession,
   loginWithBackendAuth,
@@ -19,7 +20,7 @@ export interface AuthStoreState {
   message: string;
   reasonCode?: string;
   pendingAction: "refresh" | "login" | "signup" | "logout" | null;
-  refreshSession: () => Promise<void>;
+  refreshSession: (accessToken?: string) => Promise<void>;
   login: (credentials: AuthCredentialsInput) => Promise<void>;
   signup: (credentials: AuthCredentialsInput) => Promise<void>;
   logout: () => Promise<void>;
@@ -71,9 +72,9 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   message: unknownMessage,
   reasonCode: undefined,
   pendingAction: null,
-  refreshSession: async () => {
+  refreshSession: async (accessToken) => {
     set({ pendingAction: "refresh" });
-    const result = await getAuthSession();
+    const result = await getAuthSession(accessToken);
     set({
       ...applySessionResult(result),
       pendingAction: null,
@@ -105,8 +106,24 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   },
 }));
 
+let authStoreInitialized = false;
+
 export const initializeAuthStore = (): void => {
-  void useAuthStore.getState().refreshSession();
+  if (authStoreInitialized) {
+    return;
+  }
+
+  authStoreInitialized = true;
+
+  void initializeSupabaseAuthSessionBridge({
+    refreshBackendSession: async (accessToken?: string) => {
+      await useAuthStore.getState().refreshSession(accessToken);
+    },
+  }).then((bridge) => {
+    if (bridge.kind === "supabase_auth_session_bridge_disabled") {
+      void useAuthStore.getState().refreshSession();
+    }
+  });
 };
 
 export const selectAuthStatus = (state: AuthStoreState): AuthStatus => state.status;

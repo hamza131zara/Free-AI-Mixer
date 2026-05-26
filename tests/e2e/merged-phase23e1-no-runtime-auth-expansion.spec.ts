@@ -8,9 +8,9 @@ const readSource = (relativePath: string): string =>
   readFileSync(path.join(projectRoot, relativePath), "utf8");
 
 test.describe("merged phase 23E-1 no runtime auth expansion", () => {
-  test("frontend auth remains backend-authoritative and no bearer bridge was added", () => {
+  test("frontend auth remains backend-authoritative and bearer stays scoped to the backend session seam", () => {
+    const authServiceSource = readSource("src/services/authService.ts");
     const frontendAuthSources = [
-      readSource("src/services/authService.ts"),
       readSource("src/store/authStore.ts"),
       readSource("src/pages/LoginPage.tsx"),
       readSource("src/pages/SignupPage.tsx"),
@@ -21,10 +21,12 @@ test.describe("merged phase 23E-1 no runtime auth expansion", () => {
       readSource("src/services/exportHistoryService.ts"),
     ].join("\n");
 
-    expect(frontendAuthSources).toContain('"/auth/session"');
-    expect(frontendAuthSources).toContain('"/auth/login"');
-    expect(frontendAuthSources).toContain('"/auth/signup"');
-    expect(frontendAuthSources).toContain('"/auth/logout"');
+    expect(authServiceSource).toContain('"/auth/session"');
+    expect(authServiceSource).toContain('"/auth/login"');
+    expect(authServiceSource).toContain('"/auth/signup"');
+    expect(authServiceSource).toContain('"/auth/logout"');
+    expect(authServiceSource).toContain("Authorization");
+    expect(authServiceSource).toContain("Bearer ${trimmedToken}");
     expect(frontendAuthSources).toContain("Checking backend session status.");
     expect(frontendAuthSources).toContain("Login and signup are not live in this product phase.");
     expect(frontendAuthSources).not.toContain("Authorization");

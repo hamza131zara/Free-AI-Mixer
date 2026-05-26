@@ -42,6 +42,24 @@ const loginEndpoint = "/auth/login";
 const signupEndpoint = "/auth/signup";
 const logoutEndpoint = "/auth/logout";
 
+const createSessionRequestHeaders = (
+  accessToken?: string,
+): HeadersInit | undefined => {
+  if (typeof accessToken !== "string") {
+    return undefined;
+  }
+
+  const trimmedToken = accessToken.trim();
+
+  if (trimmedToken.length === 0) {
+    return undefined;
+  }
+
+  return {
+    Authorization: `Bearer ${trimmedToken}`,
+  };
+};
+
 const toFallbackUnavailable = (
   message = "Authentication is currently unavailable because the backend auth boundary could not be reached.",
 ): AuthSessionResult => ({
@@ -128,11 +146,14 @@ const postCredentials = async (
   }
 };
 
-export const getAuthSession = async (): Promise<AuthSessionResult> => {
+export const getAuthSession = async (
+  accessToken?: string,
+): Promise<AuthSessionResult> => {
   try {
     const response = await fetch(sessionEndpoint, {
       method: "GET",
       credentials: "same-origin",
+      headers: createSessionRequestHeaders(accessToken),
     });
     const payload = await parseJson<BackendAuthResponse>(response);
 

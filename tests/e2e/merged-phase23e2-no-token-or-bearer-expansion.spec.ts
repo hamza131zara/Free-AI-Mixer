@@ -8,10 +8,10 @@ const readSource = (relativePath: string): string =>
   readFileSync(path.join(projectRoot, relativePath), "utf8");
 
 test.describe("merged phase 23E-2 no token or bearer expansion", () => {
-  test("wrapper phase adds no token persistence or bearer bridge", () => {
+  test("wrapper and bridge phases add no token persistence and keep bearer scoped to auth session only", () => {
+    const authServiceSource = readSource("src/services/authService.ts");
     const frontendSources = [
       readSource("src/services/auth/supabaseAuthClient.ts"),
-      readSource("src/services/authService.ts"),
       readSource("src/store/authStore.ts"),
       readSource("src/services/projectLibraryService.ts"),
       readSource("src/services/providerSettingsService.ts"),
@@ -23,6 +23,8 @@ test.describe("merged phase 23E-2 no token or bearer expansion", () => {
     expect(frontendSources).not.toContain("sessionStorage.setItem");
     expect(frontendSources).not.toContain("persist(");
     expect(frontendSources).not.toContain("createJSONStorage(");
+    expect(authServiceSource).toContain("Authorization");
+    expect(authServiceSource).toContain("Bearer ${trimmedToken}");
     expect(frontendSources).not.toContain("Authorization");
     expect(frontendSources).not.toContain("Bearer ");
     expect(frontendSources).not.toContain("bearerToken");
