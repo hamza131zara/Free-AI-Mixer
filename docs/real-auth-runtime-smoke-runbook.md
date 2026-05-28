@@ -49,6 +49,28 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-public-anon-key
 ```
 
+## Password Reset Redirect Setup
+
+Phase 27 added password reset and account recovery UX. The real auth smoke does not automate password reset, but beta environments must still configure the Supabase Auth redirect allow-list before testers use recovery flows.
+
+Add the app reset route to the Supabase Auth redirect allow-list.
+
+Local example:
+
+```text
+http://localhost:5173/reset-password
+```
+
+If Vite is configured to run on another local port, add that reset route too.
+
+Staging and production beta examples should use the real app domain reset route, for example:
+
+```text
+https://your-beta-domain.example/reset-password
+```
+
+Do not paste keys, tokens, passwords, JWTs, anon keys, or service-role keys into docs or logs. Password reset uses Supabase Auth only. The app does not store reset tokens, raw Supabase users, or raw Supabase sessions. After updating a password, the user signs in again normally.
+
 ## Opt-In Smoke Env
 
 The real auth smoke is disabled unless the explicit opt-in flag is set.
@@ -122,7 +144,7 @@ The smoke does not:
 - Automate signup.
 - Create real users by default.
 - Delete real Supabase data.
-- Verify password reset.
+- Automate password reset; run password reset manually with the private beta checklist.
 - Verify OAuth.
 - Unlock admin.
 - Exercise generation, export rendering, billing checkout, billing webhook, credits ledger mutation, event/audit persistence, or analytics.
@@ -139,7 +161,7 @@ The bootstrap path is intentionally idempotent. Automatic cleanup would add dest
 ## Deferred Items
 
 - Active workspace selection.
-- Password reset.
+- Automated password reset smoke.
 - OAuth.
 - Transactional account/workspace bootstrap.
 - Event/audit persistence wiring.

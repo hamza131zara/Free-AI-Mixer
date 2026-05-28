@@ -585,6 +585,29 @@ Status:
 - Admin analytics activation.
 - Vite bundle-size/performance hardening.
 
+## Phase 28 status
+
+- Phase 28: complete when the controlled private beta readiness docs/checklist pack is signed off.
+- Scope: docs-only controlled private beta checklist, tester instructions, manual QA commands, password reset redirect notes, operational recovery notes, beta disable/rollback guidance, and beta security checklist.
+- No runtime behavior changes are included in Phase 28.
+
+### What Phase 28 adds
+
+- `docs/private-beta-readiness-checklist.md` documents controlled beta readiness for 3-5 trusted testers only.
+- The checklist clarifies what is ready, what remains unavailable, tester expectations, manual QA, operational recovery, and rollback/disable guidance.
+- `docs/real-auth-runtime-smoke-runbook.md` now documents password reset redirect setup and no longer treats password reset UX as deferred.
+
+### Still deferred after Phase 28
+
+- Active workspace selection and team/invite/multi-workspace UX.
+- OAuth.
+- Real billing, checkout, webhooks, credits ledger, and credit mutation runtime.
+- BYOK/provider key storage.
+- Generation/export runtime expansion and public artifact delivery.
+- Event/audit persistence wiring.
+- Admin analytics.
+- Broader beta and public launch.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).

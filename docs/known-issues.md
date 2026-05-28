@@ -94,6 +94,21 @@ Why it matters:
 - Recovery UX must not become an implicit authenticated app session.
 - Workspace selection, OAuth, transactional bootstrap hardening, event/audit persistence, and admin analytics remain future work.
 
+### Phase 28 Controlled Private Beta Docs Are Checklist-Only
+
+Current state:
+
+- Controlled private beta documentation exists for 3-5 trusted testers only.
+- The private beta checklist covers tester instructions, manual QA commands, password reset redirect setup, operational recovery, beta disable/rollback guidance, and security boundaries.
+- The beta remains account/auth focused and must not imply real projects, credits, provider keys, billing, exports, admin analytics, or public launch readiness.
+- No runtime behavior, backend routes, migrations, auth logic, generation/export behavior, billing, credits ledger, event/audit persistence, or analytics changed in Phase 28.
+- Active workspace selection, team/invite/multi-workspace UX, OAuth, BYOK/provider key storage, billing, credits ledger, generation/export expansion, event/audit persistence, analytics, broader beta, and public launch remain deferred.
+
+Why it matters:
+
+- Controlled private beta can proceed only with clear expectations and manual checks.
+- The docs should reduce tester confusion without creating product claims the runtime cannot satisfy yet.
+
 ### Export Runtime Still Deferred
 
 Current state:
