@@ -4,6 +4,8 @@ import { HomePage } from "./pages/HomePage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ProviderSettingsPage } from "./pages/ProviderSettingsPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
@@ -47,6 +49,14 @@ const renderRouteContent = (routeId: string) => {
 
   if (routeId === "signup") {
     return <SignupPage />;
+  }
+
+  if (routeId === "forgot-password") {
+    return <ForgotPasswordPage />;
+  }
+
+  if (routeId === "reset-password") {
+    return <ResetPasswordPage />;
   }
 
   if (routeId === "mixer") {

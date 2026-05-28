@@ -66,7 +66,7 @@ Current state:
 - Signup is not automated by default because it can create real Supabase users and orphaned provider accounts.
 - Automatic cleanup is not included because destructive real-data behavior does not belong in the default smoke.
 - Active workspace selection remains deferred; multiple active memberships must block safely.
-- Password reset remains deferred.
+- Password reset/account recovery is covered by Phase 27 frontend UX and Supabase Auth wrapper methods.
 - OAuth remains deferred.
 - Event/audit persistence remains deferred.
 - Admin analytics remains deferred.
@@ -76,6 +76,23 @@ Why it matters:
 
 - Real Supabase/JWKS/service-role/bootstrap behavior must be verified before deeper authenticated product features.
 - The smoke must stay manual, secret-safe, non-destructive, and CI-safe by default.
+
+### Phase 27 Account Recovery UX Is Frontend/Auth-Only
+
+Current state:
+
+- Forgot-password and reset-password UX use Supabase Auth only.
+- Password reset does not add backend routes or migrations.
+- Reset/update flows do not store reset tokens, access tokens, raw Supabase users, or raw Supabase sessions in app state.
+- A successful password update signs out and asks the user to sign in again so `/auth/session` remains the canonical app-auth source.
+- Dashboard setup status and retry UX remain backend-derived from `/auth/session` plus user-triggered `/account/bootstrap`.
+- Multiple active workspace memberships still block safely; active workspace selection remains deferred.
+
+Why it matters:
+
+- Broader beta testers now have an account recovery path without weakening backend authority.
+- Recovery UX must not become an implicit authenticated app session.
+- Workspace selection, OAuth, transactional bootstrap hardening, event/audit persistence, and admin analytics remain future work.
 
 ### Export Runtime Still Deferred
 

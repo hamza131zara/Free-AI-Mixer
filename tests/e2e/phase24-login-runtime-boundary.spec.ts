@@ -113,6 +113,14 @@ test.describe("phase24 login runtime boundary", () => {
               hasSession: false,
             },
           }),
+          requestPasswordReset: async () => ({
+            ok: true,
+            data: undefined,
+          }),
+          updatePassword: async () => ({
+            ok: true,
+            data: undefined,
+          }),
         },
       }),
       logoutFromBackendAuth: async () => ({

@@ -38,6 +38,11 @@ export interface SupabaseAuthSignupCredentials
   emailRedirectTo?: string;
 }
 
+export interface SupabaseAuthPasswordResetInput {
+  email: string;
+  redirectTo?: string;
+}
+
 export interface SupabaseAuthSessionSnapshot {
   accessToken?: string;
   email?: string;
@@ -76,6 +81,10 @@ export interface SupabaseAuthClientHandle {
   signUp(
     credentials: SupabaseAuthSignupCredentials,
   ): Promise<SupabaseAuthMethodResult<SupabaseAuthSessionSnapshot>>;
+  requestPasswordReset(
+    input: SupabaseAuthPasswordResetInput,
+  ): Promise<SupabaseAuthMethodResult<undefined>>;
+  updatePassword(newPassword: string): Promise<SupabaseAuthMethodResult<undefined>>;
 }
 
 export type SupabaseAuthClientResult =
@@ -94,6 +103,10 @@ const DEFAULT_SIGN_UP_ERROR =
   "Supabase Auth sign-up could not be completed safely.";
 const DEFAULT_SIGN_OUT_ERROR =
   "Supabase Auth sign-out could not be completed safely.";
+const DEFAULT_PASSWORD_RESET_ERROR =
+  "Supabase Auth password reset request could not be completed safely.";
+const DEFAULT_PASSWORD_UPDATE_ERROR =
+  "Supabase Auth password update could not be completed safely.";
 const DEFAULT_GET_SESSION_ERROR =
   "Supabase Auth session lookup could not be completed safely.";
 const DEFAULT_GET_ACCESS_TOKEN_ERROR =
@@ -278,6 +291,48 @@ const createSupabaseAuthHandle = (
 
     return {
       data: normalizeSessionSnapshot(result.data.session),
+      ok: true,
+    };
+  },
+
+  async requestPasswordReset(input) {
+    const result = await client.auth.resetPasswordForEmail(input.email, {
+      redirectTo: input.redirectTo,
+    });
+
+    if (result.error) {
+      return {
+        errorMessage: normalizeErrorMessage(
+          result.error,
+          DEFAULT_PASSWORD_RESET_ERROR,
+        ),
+        ok: false,
+      };
+    }
+
+    return {
+      data: undefined,
+      ok: true,
+    };
+  },
+
+  async updatePassword(newPassword) {
+    const result = await client.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (result.error) {
+      return {
+        errorMessage: normalizeErrorMessage(
+          result.error,
+          DEFAULT_PASSWORD_UPDATE_ERROR,
+        ),
+        ok: false,
+      };
+    }
+
+    return {
+      data: undefined,
       ok: true,
     };
   },

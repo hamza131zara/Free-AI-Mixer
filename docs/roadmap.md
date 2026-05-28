@@ -548,7 +548,37 @@ Status:
 ### Still deferred after Phase 25
 
 - Active workspace selection.
-- Password reset.
+- OAuth.
+- Transactional bootstrap hardening.
+- Event/audit persistence wiring.
+- Admin analytics activation.
+- Vite bundle-size/performance hardening.
+
+## Phase 27 status
+
+- Phase 27: complete when the password reset and account recovery UX pack is signed off.
+- Scope: Supabase Auth password reset/update wrapper methods, forgot-password and reset-password pages, dashboard account status/retry UX, and focused regression coverage.
+- No backend route, database, bearer-scope, generation, export, billing, credits-ledger, admin, event/audit, or analytics runtime changes are included.
+
+### What Phase 27 adds
+
+- `/forgot-password` requests Supabase Auth reset instructions with neutral account-enumeration-safe copy.
+- `/reset-password` updates the password through the Supabase recovery session, signs out, and asks the user to sign in again.
+- Login links to account recovery.
+- Dashboard shows backend-derived account/session/workspace setup status and supports manual session refresh plus account bootstrap retry.
+- Multiple-active-workspace UX remains blocked but clearer; active workspace selection is still deferred.
+
+### Preserved boundaries
+
+- No reset tokens, access tokens, raw Supabase users, or raw Supabase sessions are stored in app state.
+- Frontend Supabase usage remains auth-only with no DB/storage access.
+- Service-role keys remain backend-only.
+- Backend `/auth/session` remains canonical for authenticated app state.
+- `/account/bootstrap` response does not directly grant app authentication without a follow-up session refresh.
+
+### Still deferred after Phase 27
+
+- Active workspace selection.
 - OAuth.
 - Transactional bootstrap hardening.
 - Event/audit persistence wiring.

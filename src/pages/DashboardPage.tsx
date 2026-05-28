@@ -24,14 +24,53 @@ const notEnabledYetCards = [
   },
 ] as const;
 
+const multipleWorkspaceBlockedCopy =
+  "Your account has more than one active workspace. Workspace selection is not available in this beta yet, so Free AI Mixer cannot choose one safely. Use a single-workspace beta account or contact support.";
+
+const getWorkspaceStatusLabel = (
+  identity: ReturnType<typeof useAuthStore.getState>["identity"],
+  reasonCode?: string,
+): string => {
+  if (identity?.workspaceAuthority === "verified") {
+    return "Workspace authority verified by backend membership.";
+  }
+
+  if (
+    identity?.workspaceAuthorityReason === "multiple_active_workspace_memberships" ||
+    reasonCode === "workspace_bootstrap_blocked"
+  ) {
+    return multipleWorkspaceBlockedCopy;
+  }
+
+  if (identity?.workspaceAuthorityReason === "no_active_workspace_membership") {
+    return "No active workspace membership is available yet. Retry account setup after your account is verified.";
+  }
+
+  if (identity?.workspaceAuthorityReason === "workspace_runtime_not_enabled") {
+    return "Workspace authority is not configured on this backend yet.";
+  }
+
+  return "Workspace authority is not available yet.";
+};
+
+const shouldShowRetrySetup = (authStatus: string, reasonCode?: string): boolean =>
+  authStatus === "unavailable" ||
+  reasonCode === "email_verification_required" ||
+  reasonCode === "workspace_bootstrap_blocked" ||
+  reasonCode === "account_bootstrap_unavailable";
+
 export function DashboardPage() {
   const authStatus = useAuthStore((state) => state.status);
   const authMessage = useAuthStore((state) => state.message);
   const identity = useAuthStore((state) => state.identity);
+  const reasonCode = useAuthStore((state) => state.reasonCode);
   const pendingAction = useAuthStore((state) => state.pendingAction);
   const refreshSession = useAuthStore((state) => state.refreshSession);
+  const retryAccountBootstrap = useAuthStore((state) => state.retryAccountBootstrap);
   const logout = useAuthStore((state) => state.logout);
   const navigateTo = useNavigationStore((state) => state.navigateTo);
+  const workspaceStatusLabel = getWorkspaceStatusLabel(identity, reasonCode);
+  const retrySetupVisible = shouldShowRetrySetup(authStatus, reasonCode);
 
   return (
     <section className="dashboard-page" data-testid="dashboard-page">
@@ -53,6 +92,18 @@ export function DashboardPage() {
             >
               {pendingAction === "refresh" ? "Refreshing..." : "Refresh session"}
             </button>
+            {retrySetupVisible ? (
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  void retryAccountBootstrap();
+                }}
+                disabled={pendingAction === "bootstrap"}
+              >
+                {pendingAction === "bootstrap" ? "Retrying setup..." : "Retry account setup"}
+              </button>
+            ) : null}
             {authStatus === "authenticated" ? (
               <button
                 type="button"
@@ -98,7 +149,10 @@ export function DashboardPage() {
             <p>Sign in is required before this dashboard can show verified account data.</p>
           ) : null}
           {authStatus === "unavailable" ? (
-            <p>Authentication is not configured on this backend yet.</p>
+            <p>
+              Authentication or account setup is unavailable. If you are signed in
+              with Supabase Auth, retry account setup after the backend is available.
+            </p>
           ) : null}
           {authStatus === "unknown" ? (
             <p>The frontend is still waiting for backend session verification.</p>
@@ -108,33 +162,34 @@ export function DashboardPage() {
 
       <div className="page-section">
         <div className="section-header">
-          <p className="eyebrow">Verified account</p>
-          <h2>Identity summary</h2>
+          <p className="eyebrow">Backend account status</p>
+          <h2>Session and setup summary</h2>
         </div>
-        {authStatus === "authenticated" && identity ? (
-          <article className="info-card" data-testid="verified-identity-card">
-            <p>
-              <strong>User ID:</strong> {identity.userId}
-            </p>
-            <p>
-              <strong>Workspace:</strong> {identity.workspaceId ?? "No workspace selected yet"}
-            </p>
-            <p>
-              <strong>Auth provider:</strong> {identity.authProvider ?? "Not reported"}
-            </p>
-            <p>
-              <strong>Auth subject:</strong> {identity.authSubject ?? "Not reported"}
-            </p>
-          </article>
-        ) : (
-          <article className="info-card" data-testid="dashboard-protected-state">
-            <h3>Verified account data is not available yet</h3>
-            <p>
-              This dashboard only shows account identity after backend session
-              verification succeeds.
-            </p>
-          </article>
-        )}
+        <article className="info-card" data-testid="dashboard-account-status-panel">
+          <p>
+            <strong>Backend session:</strong> {authStatus}
+          </p>
+          <p>
+            <strong>Setup state:</strong>{" "}
+            {authStatus === "authenticated" ? "Setup complete" : "Setup required"}
+          </p>
+          <p>
+            <strong>Email:</strong> {identity?.email ?? "Only shown after backend session verification"}
+          </p>
+          <p>
+            <strong>User ID:</strong> {identity?.userId ?? "Not available"}
+          </p>
+          <p>
+            <strong>Workspace:</strong> {identity?.workspaceId ?? "No backend-verified workspace"}
+          </p>
+          <p>
+            <strong>Workspace authority:</strong> {workspaceStatusLabel}
+          </p>
+          <p>
+            This panel uses backend /auth/session identity only. It does not infer
+            workspace or platform authority from Supabase metadata.
+          </p>
+        </article>
       </div>
 
       <div className="page-section">

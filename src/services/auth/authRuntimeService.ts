@@ -7,6 +7,7 @@ import {
 import {
   getSupabaseAuthClient,
   type SupabaseAuthPasswordCredentials,
+  type SupabaseAuthPasswordResetInput,
   type SupabaseAuthSignupCredentials,
 } from "./supabaseAuthClient";
 import type { AuthMutationResult, AuthSessionResult } from "../../types/auth";
@@ -79,6 +80,9 @@ const mapBootstrapResponseToAuthResult = (
       result.message ?? "Free AI Mixer account setup is not available on this backend yet.",
   };
 };
+
+const neutralPasswordResetMessage =
+  "If an account exists, reset instructions have been sent.";
 
 interface AuthRuntimeDependencies {
   bootstrapAccount: typeof bootstrapAccount;
@@ -192,6 +196,106 @@ export const createAuthRuntimeService = (
       };
     },
 
+    async requestPasswordResetWithSupabaseRuntime(
+      input: SupabaseAuthPasswordResetInput,
+    ): Promise<AuthMutationResult> {
+      const client = getLiveAuthClient();
+
+      if (client.kind === "disabled") {
+        return client.result;
+      }
+
+      const resetResult = await client.auth.requestPasswordReset(input);
+
+      if (!resetResult.ok) {
+        return {
+          kind: "unavailable",
+          status: "unavailable",
+          code: "auth_service_unreachable",
+          message: resetResult.errorMessage,
+        };
+      }
+
+      return {
+        kind: "logged_out",
+        status: "unauthenticated",
+        message: neutralPasswordResetMessage,
+      };
+    },
+
+    async updatePasswordWithSupabaseRuntime(
+      newPassword: string,
+    ): Promise<AuthMutationResult> {
+      const client = getLiveAuthClient();
+
+      if (client.kind === "disabled") {
+        return client.result;
+      }
+
+      const updateResult = await client.auth.updatePassword(newPassword);
+
+      if (!updateResult.ok) {
+        return {
+          kind: "unavailable",
+          status: "unavailable",
+          code: "auth_service_unreachable",
+          message: updateResult.errorMessage,
+        };
+      }
+
+      const signOutResult = await client.auth.signOut();
+
+      if (!signOutResult.ok) {
+        return {
+          kind: "unavailable",
+          status: "unavailable",
+          code: "auth_service_unreachable",
+          message: signOutResult.errorMessage,
+        };
+      }
+
+      await dependencies.logoutFromBackendAuth();
+
+      return {
+        kind: "logged_out",
+        status: "unauthenticated",
+        message: "Password updated. Sign in again to continue.",
+      };
+    },
+
+    async retryAccountBootstrapWithSupabaseRuntime(): Promise<AuthSessionResult | AuthMutationResult> {
+      const client = getLiveAuthClient();
+
+      if (client.kind === "disabled") {
+        return client.result;
+      }
+
+      const accessTokenResult = await client.auth.getAccessToken();
+
+      if (!accessTokenResult.ok || !accessTokenResult.data) {
+        return {
+          kind: "unauthenticated",
+          status: "unauthenticated",
+          reason: "missing_credentials",
+          message: "Sign in is required before account setup can be retried.",
+        };
+      }
+
+      const bootstrapResult = await dependencies.bootstrapAccount(
+        accessTokenResult.data,
+      );
+      const mappedBootstrapResult = mapBootstrapResponseToAuthResult(bootstrapResult);
+
+      if (
+        mappedBootstrapResult.kind === "authenticated" ||
+        bootstrapResult?.kind === "workspace_bootstrap_blocked"
+      ) {
+        return refreshSessionAfterProviderAuth(accessTokenResult.data);
+      }
+
+      return mappedBootstrapResult;
+    },
+
     async logoutFromAuthRuntime(): Promise<AuthMutationResult> {
       const client = getLiveAuthClient();
 
@@ -219,5 +323,11 @@ export const loginWithSupabaseRuntime =
   defaultAuthRuntimeService.loginWithSupabaseRuntime;
 export const signUpWithSupabaseRuntime =
   defaultAuthRuntimeService.signUpWithSupabaseRuntime;
+export const requestPasswordResetWithSupabaseRuntime =
+  defaultAuthRuntimeService.requestPasswordResetWithSupabaseRuntime;
+export const updatePasswordWithSupabaseRuntime =
+  defaultAuthRuntimeService.updatePasswordWithSupabaseRuntime;
+export const retryAccountBootstrapWithSupabaseRuntime =
+  defaultAuthRuntimeService.retryAccountBootstrapWithSupabaseRuntime;
 export const logoutFromAuthRuntime =
   defaultAuthRuntimeService.logoutFromAuthRuntime;

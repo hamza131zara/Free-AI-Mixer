@@ -6,6 +6,7 @@ import {
 import {
   loginWithSupabaseRuntime,
   logoutFromAuthRuntime,
+  retryAccountBootstrapWithSupabaseRuntime,
   signUpWithSupabaseRuntime,
 } from "../services/auth/authRuntimeService";
 import type {
@@ -21,10 +22,11 @@ export interface AuthStoreState {
   identity?: VerifiedAccountIdentity;
   message: string;
   reasonCode?: string;
-  pendingAction: "refresh" | "login" | "signup" | "logout" | null;
+  pendingAction: "refresh" | "login" | "signup" | "logout" | "bootstrap" | null;
   refreshSession: (accessToken?: string) => Promise<void>;
   login: (credentials: AuthCredentialsInput) => Promise<void>;
   signup: (credentials: AuthCredentialsInput) => Promise<void>;
+  retryAccountBootstrap: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -93,6 +95,14 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   signup: async (credentials) => {
     set({ pendingAction: "signup" });
     const result = await signUpWithSupabaseRuntime(credentials);
+    set({
+      ...applySessionResult(result),
+      pendingAction: null,
+    });
+  },
+  retryAccountBootstrap: async () => {
+    set({ pendingAction: "bootstrap" });
+    const result = await retryAccountBootstrapWithSupabaseRuntime();
     set({
       ...applySessionResult(result),
       pendingAction: null,

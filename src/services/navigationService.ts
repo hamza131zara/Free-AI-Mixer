@@ -11,6 +11,8 @@ export interface AppRouteDefinition {
     | "dashboard"
     | "login"
     | "signup"
+    | "forgot-password"
+    | "reset-password"
     | "mixer"
     | "templates"
     | "projects"
@@ -197,6 +199,70 @@ export const appRoutes: AppRouteDefinition[] = [
       description:
         "Backend-auth signup boundary for Free AI Mixer.",
       canonicalPath: "/signup",
+      indexable: false,
+      includeInSitemap: false,
+      robots: "noindex,nofollow",
+    },
+  },
+  {
+    id: "forgot-password",
+    path: "/forgot-password",
+    label: "Forgot password",
+    eyebrow: "Account recovery",
+    title: "Forgot password",
+    description:
+      "This route requests Supabase Auth password reset instructions without exposing reset tokens or creating backend app access.",
+    kind: "auth",
+    status: "Auth recovery",
+    sections: [
+      {
+        title: "What this route does",
+        body:
+          "It asks Supabase Auth to send reset instructions using neutral account-recovery copy.",
+      },
+      {
+        title: "What this route does not do",
+        body:
+          "It does not store reset tokens, expose raw sessions, or mark the backend session as authenticated.",
+      },
+    ],
+    seo: {
+      title: "Forgot Password | Free AI Mixer",
+      description:
+        "Supabase Auth password reset request page for Free AI Mixer.",
+      canonicalPath: "/forgot-password",
+      indexable: false,
+      includeInSitemap: false,
+      robots: "noindex,nofollow",
+    },
+  },
+  {
+    id: "reset-password",
+    path: "/reset-password",
+    label: "Reset password",
+    eyebrow: "Account recovery",
+    title: "Reset password",
+    description:
+      "This route updates a password through the Supabase recovery session and requires a fresh login for backend app access.",
+    kind: "auth",
+    status: "Auth recovery",
+    sections: [
+      {
+        title: "What this route does",
+        body:
+          "It updates the password through Supabase Auth and then asks the user to sign in again.",
+      },
+      {
+        title: "What this route does not do",
+        body:
+          "It does not trust the recovery session as Free AI Mixer app access or store raw auth tokens.",
+      },
+    ],
+    seo: {
+      title: "Reset Password | Free AI Mixer",
+      description:
+        "Supabase Auth password update page for Free AI Mixer account recovery.",
+      canonicalPath: "/reset-password",
       indexable: false,
       includeInSitemap: false,
       robots: "noindex,nofollow",

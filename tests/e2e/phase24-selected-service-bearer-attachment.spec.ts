@@ -49,6 +49,14 @@ test.describe("phase24 selected service bearer attachment", () => {
               hasSession: false,
             },
           }),
+          requestPasswordReset: async () => ({
+            ok: true,
+            data: undefined,
+          }),
+          updatePassword: async () => ({
+            ok: true,
+            data: undefined,
+          }),
         },
       }),
     });

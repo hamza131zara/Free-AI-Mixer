@@ -44,6 +44,14 @@ test.describe("phase24 signup verification or deferred", () => {
               hasSession: false,
             },
           }),
+          requestPasswordReset: async () => ({
+            ok: true,
+            data: undefined,
+          }),
+          updatePassword: async () => ({
+            ok: true,
+            data: undefined,
+          }),
         },
       }),
       logoutFromBackendAuth: async () => ({

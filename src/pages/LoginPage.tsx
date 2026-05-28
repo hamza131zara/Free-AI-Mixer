@@ -57,6 +57,13 @@ export function LoginPage() {
               >
                 Open sign up
               </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => navigateTo("/forgot-password")}
+              >
+                Forgot password?
+              </button>
             </div>
           </form>
         </div>
