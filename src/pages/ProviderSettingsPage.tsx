@@ -51,6 +51,11 @@ export function ProviderSettingsPage() {
             and routing policy readiness only. Secure API key storage, live
             provider validation, and execution are still disabled in this phase.
           </p>
+          <p className="placeholder-description">
+            Provider key setup is not enabled in this beta. API key input, save,
+            replace, remove, and verification flows require future encrypted
+            backend storage before they can become live.
+          </p>
           <div className="hero-actions">
             <button
               type="button"

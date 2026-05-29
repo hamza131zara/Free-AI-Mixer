@@ -33,6 +33,10 @@ export function CreditsPage() {
             status. It does not fabricate a balance, refill action, purchase flow,
             subscription, or premium entitlement.
           </p>
+          <p className="placeholder-description">
+            Credits are planning-only in this beta. No live balance, refill,
+            billing, checkout, subscription, or ledger mutation exists yet.
+          </p>
           <div className="hero-actions">
             <button
               type="button"

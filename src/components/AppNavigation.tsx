@@ -19,8 +19,16 @@ export function AppNavigation() {
   const toggleMobileMenu = useNavigationStore((state) => state.toggleMobileMenu);
   const closeMobileMenu = useNavigationStore((state) => state.closeMobileMenu);
   const authStatus = useAuthStore((state) => state.status);
+  const identity = useAuthStore((state) => state.identity);
   const pendingAction = useAuthStore((state) => state.pendingAction);
   const logout = useAuthStore((state) => state.logout);
+  const handleLogout = (): void => {
+    void logout().then(() => {
+      if (useAuthStore.getState().status === "unauthenticated") {
+        navigateTo("/login");
+      }
+    });
+  };
 
   return (
     <header className="site-header">
@@ -67,16 +75,63 @@ export function AppNavigation() {
           </div>
           <div className="nav-group nav-group-auth nav-group-desktop-auth">
             {authStatus === "authenticated" ? (
-              <button
-                type="button"
-                className="nav-link"
-                onClick={() => {
-                  void logout();
-                }}
-                disabled={pendingAction === "logout"}
-              >
-                {pendingAction === "logout" ? "Logging out..." : "Log out"}
-              </button>
+              <>
+                <span className="nav-link" data-testid="account-nav-identity">
+                  {identity?.email ?? "Signed in"}
+                </span>
+                <button
+                  type="button"
+                  className={
+                    isActivePath(currentRoute.path, "/dashboard")
+                      ? "nav-link nav-link-active"
+                      : "nav-link"
+                  }
+                  onClick={() => navigateTo("/dashboard")}
+                >
+                  Dashboard
+                </button>
+                <button
+                  type="button"
+                  className={
+                    isActivePath(currentRoute.path, "/settings/providers")
+                      ? "nav-link nav-link-active"
+                      : "nav-link"
+                  }
+                  onClick={() => navigateTo("/settings/providers")}
+                >
+                  Provider Settings
+                </button>
+                <button
+                  type="button"
+                  className={
+                    isActivePath(currentRoute.path, "/credits")
+                      ? "nav-link nav-link-active"
+                      : "nav-link"
+                  }
+                  onClick={() => navigateTo("/credits")}
+                >
+                  Credits
+                </button>
+                <button
+                  type="button"
+                  className={
+                    isActivePath(currentRoute.path, "/help")
+                      ? "nav-link nav-link-active"
+                      : "nav-link"
+                  }
+                  onClick={() => navigateTo("/help")}
+                >
+                  Help
+                </button>
+                <button
+                  type="button"
+                  className="nav-link"
+                  onClick={handleLogout}
+                  disabled={pendingAction === "logout"}
+                >
+                  {pendingAction === "logout" ? "Logging out..." : "Log out"}
+                </button>
+              </>
             ) : (
               authNavigationItems.map((route) => (
                 <button
@@ -133,16 +188,19 @@ export function AppNavigation() {
                   </button>
                 ))}
                 {authStatus === "authenticated" ? (
-                  <button
-                    type="button"
-                    className="nav-link"
-                    onClick={() => {
-                      void logout();
-                    }}
-                    disabled={pendingAction === "logout"}
-                  >
-                    {pendingAction === "logout" ? "Logging out..." : "Log out"}
-                  </button>
+                  <>
+                    <span className="nav-link" data-testid="mobile-account-nav-identity">
+                      {identity?.email ?? "Signed in"}
+                    </span>
+                    <button
+                      type="button"
+                      className="nav-link"
+                      onClick={handleLogout}
+                      disabled={pendingAction === "logout"}
+                    >
+                      {pendingAction === "logout" ? "Logging out..." : "Log out"}
+                    </button>
+                  </>
                 ) : (
                   authNavigationItems.map((route) => (
                     <button

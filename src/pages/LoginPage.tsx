@@ -2,24 +2,26 @@ import type { FormEvent } from "react";
 import { useAuthStore } from "../store/authStore";
 import { useNavigationStore } from "../store/navigationStore";
 
-const handleCredentialsSubmit = (
-  event: FormEvent<HTMLFormElement>,
-  submit: (credentials: { email: string; password: string }) => Promise<void>,
-): void => {
-  event.preventDefault();
-  const formData = new FormData(event.currentTarget);
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-
-  void submit({ email, password });
-};
-
 export function LoginPage() {
   const authStatus = useAuthStore((state) => state.status);
   const authMessage = useAuthStore((state) => state.message);
   const pendingAction = useAuthStore((state) => state.pendingAction);
   const login = useAuthStore((state) => state.login);
   const navigateTo = useNavigationStore((state) => state.navigateTo);
+  const handleCredentialsSubmit = (
+    event: FormEvent<HTMLFormElement>,
+  ): void => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+
+    void login({ email, password }).then(() => {
+      if (useAuthStore.getState().status === "authenticated") {
+        navigateTo("/dashboard");
+      }
+    });
+  };
 
   return (
     <section className="auth-page" data-testid="login-page">
@@ -32,7 +34,7 @@ export function LoginPage() {
             wrapper is configured, then waits for backend account verification and
             setup before treating the session as real app access.
           </p>
-          <form className="auth-form" onSubmit={(event) => handleCredentialsSubmit(event, login)}>
+          <form className="auth-form" onSubmit={handleCredentialsSubmit}>
             <label className="field">
               <span>Email</span>
               <input name="email" type="email" autoComplete="email" required />

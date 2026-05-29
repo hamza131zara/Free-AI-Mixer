@@ -131,10 +131,6 @@ export const initializeAuthStore = (): void => {
     refreshBackendSession: async (accessToken?: string) => {
       await useAuthStore.getState().refreshSession(accessToken);
     },
-  }).then((bridge) => {
-    if (bridge.kind === "supabase_auth_session_bridge_disabled") {
-      void useAuthStore.getState().refreshSession();
-    }
   });
 };
 

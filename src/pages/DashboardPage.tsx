@@ -24,6 +24,53 @@ const notEnabledYetCards = [
   },
 ] as const;
 
+const quickLinks = [
+  {
+    label: "Projects",
+    path: "/projects",
+    summary: "View the protected saved-projects boundary. No cloud project saves yet.",
+  },
+  {
+    label: "History",
+    path: "/history",
+    summary: "Review the protected export-history boundary. No account export rows yet.",
+  },
+  {
+    label: "Provider Settings",
+    path: "/settings/providers",
+    summary: "Inspect provider catalog and BYOK readiness. Key storage is not live.",
+  },
+  {
+    label: "Credits",
+    path: "/credits",
+    summary: "Read planned credit policy. No live balance, refill, or ledger mutation.",
+  },
+  {
+    label: "Mixer",
+    path: "/mixer",
+    summary: "Return to the local mixer workbench.",
+  },
+  {
+    label: "Help",
+    path: "/help",
+    summary: "Find beta guidance, limitations, and support notes.",
+  },
+  {
+    label: "Onboarding",
+    path: "/onboarding",
+    summary: "Review product setup guidance without claiming completed setup.",
+  },
+] as const;
+
+const betaLimitations = [
+  "No real saved projects yet.",
+  "No real credits, billing, refill, or ledger mutation yet.",
+  "No provider key or BYOK storage yet.",
+  "No real export/download account history yet.",
+  "No active workspace switching yet.",
+  "No OAuth or public launch behavior yet.",
+] as const;
+
 const multipleWorkspaceBlockedCopy =
   "Your account has more than one active workspace. Workspace selection is not available in this beta yet, so Free AI Mixer cannot choose one safely. Use a single-workspace beta account or contact support.";
 
@@ -71,16 +118,24 @@ export function DashboardPage() {
   const navigateTo = useNavigationStore((state) => state.navigateTo);
   const workspaceStatusLabel = getWorkspaceStatusLabel(identity, reasonCode);
   const retrySetupVisible = shouldShowRetrySetup(authStatus, reasonCode);
+  const handleLogout = (): void => {
+    void logout().then(() => {
+      if (useAuthStore.getState().status === "unauthenticated") {
+        navigateTo("/login");
+      }
+    });
+  };
 
   return (
     <section className="dashboard-page" data-testid="dashboard-page">
       <div className="placeholder-hero">
         <div className="dashboard-copy">
-          <p className="eyebrow">Product Phase 2</p>
-          <h1>Account dashboard boundary</h1>
+          <p className="eyebrow">Controlled private beta</p>
+          <h1>Private beta account dashboard</h1>
           <p className="placeholder-description">
-            This route only shows backend-verified session information. It does not
-            fabricate a logged-in user, credits, projects, or provider setup.
+            This dashboard shows backend-verified account setup and gives beta
+            testers clear next steps. It does not fabricate projects, credits,
+            provider connections, exports, usage metrics, or workspace choices.
           </p>
           <div className="hero-actions">
             <button
@@ -108,9 +163,7 @@ export function DashboardPage() {
               <button
                 type="button"
                 className="secondary"
-                onClick={() => {
-                  void logout();
-                }}
+                onClick={handleLogout}
                 disabled={pendingAction === "logout"}
               >
                 {pendingAction === "logout" ? "Signing out..." : "Log out"}
@@ -189,6 +242,74 @@ export function DashboardPage() {
             This panel uses backend /auth/session identity only. It does not infer
             workspace or platform authority from Supabase metadata.
           </p>
+        </article>
+      </div>
+
+      <div className="page-section">
+        <div className="section-header">
+          <p className="eyebrow">Beta shortcuts</p>
+          <h2>Where to look during this account beta</h2>
+        </div>
+        <div className="placeholder-grid" data-testid="dashboard-beta-quick-links">
+          {quickLinks.map((link) => (
+            <article key={link.path} className="info-card">
+              <h3>{link.label}</h3>
+              <p>{link.summary}</p>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => navigateTo(link.path)}
+              >
+                Open {link.label}
+              </button>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="page-section">
+        <div className="section-header">
+          <p className="eyebrow">Beta limitations</p>
+          <h2>What this beta will not pretend is ready</h2>
+        </div>
+        <div className="note-grid" data-testid="dashboard-beta-limitations">
+          {betaLimitations.map((limitation) => (
+            <article key={limitation} className="info-card">
+              <p>{limitation}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="page-section">
+        <div className="section-header">
+          <p className="eyebrow">Support</p>
+          <h2>Report confusing beta states</h2>
+        </div>
+        <article className="info-card" data-testid="dashboard-support-guidance">
+          <h3>Help us harden the account flow</h3>
+          <p>
+            Please report confusing login, signup, password reset, setup, workspace,
+            provider, credits, project, or export states. Include the page you were
+            on, the visible status message, and whether you had just signed in,
+            reset a password, or retried setup.
+          </p>
+          <div className="hero-actions">
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => navigateTo("/help")}
+            >
+              Open help
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => navigateTo("/forgot-password")}
+            >
+              Account recovery
+            </button>
+          </div>
         </article>
       </div>
 

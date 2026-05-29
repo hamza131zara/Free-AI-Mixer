@@ -26,7 +26,9 @@ const refreshFromSessionSnapshot = async (
   refreshBackendSession: (accessToken?: string) => Promise<void>,
   sessionSnapshot?: SupabaseAuthSessionSnapshot,
 ): Promise<void> => {
-  await refreshBackendSession(sessionSnapshot?.accessToken);
+  if (sessionSnapshot?.accessToken) {
+    await refreshBackendSession(sessionSnapshot.accessToken);
+  }
 };
 
 export const initializeSupabaseAuthSessionBridge = async ({
@@ -58,10 +60,8 @@ export const initializeSupabaseAuthSessionBridge = async ({
 
   const initialAccessToken = await authClient.auth.getAccessToken();
 
-  if (initialAccessToken.ok) {
+  if (initialAccessToken.ok && initialAccessToken.data) {
     await refreshBackendSession(initialAccessToken.data);
-  } else {
-    await refreshBackendSession();
   }
 
   const subscription = authClient.auth.onAuthStateChange(

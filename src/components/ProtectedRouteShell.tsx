@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useNavigationStore } from "../store/navigationStore";
 import { useAuthStore } from "../store/authStore";
 
@@ -32,7 +32,14 @@ export function ProtectedRouteShell({
   const authStatus = useAuthStore((state) => state.status);
   const authMessage = useAuthStore((state) => state.message);
   const authReasonCode = useAuthStore((state) => state.reasonCode);
+  const refreshSession = useAuthStore((state) => state.refreshSession);
   const navigateTo = useNavigationStore((state) => state.navigateTo);
+
+  useEffect(() => {
+    if (authStatus === "unknown") {
+      void refreshSession();
+    }
+  }, [authStatus, refreshSession]);
 
   if (authStatus === "authenticated") {
     return <>{children}</>;
