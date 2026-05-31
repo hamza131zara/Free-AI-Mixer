@@ -12886,3 +12886,34 @@ Safety boundaries:
 - no frontend UI behavior changed
 - no public launch approval was added
 
+## Phase 41 - Private Beta Tester Feedback Intake Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- private beta feedback intake documentation
+- approved feedback channel guidance
+- tester feedback template with reproduction, expected/actual, environment, severity, and category fields
+- security-safe reporting guidance that forbids secrets, tokenized auth links, private env values, and credentials
+- triage categories for blocker, security/privacy, auth/session, email/SMTP, credits/billing, BYOK/provider settings, generation/mixer, export/artifact, UI/UX, and docs/copy
+- stop/rollback criteria and tester communication flow
+- focused docs/source regression coverage for no fake in-app feedback submission or runtime expansion
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, service-role keys, provider keys, JWT secrets, webhook secrets, or database secrets were added
+- no migrations were added
+- no auth runtime or backend route behavior changed
+- no feedback API route, database table, live email sending, or in-app feedback submission was added
+- no in-app feedback submission was added
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact delivery or download behavior was added
+- no fake feedback submission success UI was added
+- no public launch approval was added

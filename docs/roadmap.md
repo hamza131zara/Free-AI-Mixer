@@ -759,6 +759,22 @@ Status:
 - Public/open beta.
 - Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
 
+## Phase 41 status
+
+- Phase 41: complete when the private beta tester feedback intake pack is signed off.
+- Scope: docs plus focused regression coverage only.
+- The pack adds approved feedback channel guidance, a structured tester feedback template, triage categories, stop/rollback criteria, communication flow, known limitation reminders, and manual review rules before feedback becomes implementation work.
+- Feedback intake is private beta operations support, not public support launch.
+- No app runtime, backend routes, feedback API, database tables, live email sending, fake in-app submission success, deployment config, secrets, BYOK, credits/billing, generation/export, artifact delivery, admin, event/audit, or analytics behavior changes are included.
+
+### Still deferred after Phase 41
+
+- Actual tester invitation execution.
+- Public support launch.
+- In-app feedback submission.
+- Feedback API routes and persistence.
+- Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).

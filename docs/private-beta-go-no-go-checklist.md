@@ -22,7 +22,7 @@ Private beta is not public launch. No production launch should happen automatica
 
 Complete this before inviting any remote tester.
 
-Use [Staging Deployment Readiness](./staging-deployment-readiness.md) as the focused staging checklist, [Staging Manual Smoke Runbook](./staging-manual-smoke-runbook.md) for the browser smoke, [Staging Environment Example](./staging-env-example.md) as a placeholder-only env reference, and [Private Beta Tester Invite Pack](./private-beta-tester-invite-pack.md) for controlled tester communication. This private beta go/no-go checklist remains the invitation gate.
+Use [Staging Deployment Readiness](./staging-deployment-readiness.md) as the focused staging checklist, [Staging Manual Smoke Runbook](./staging-manual-smoke-runbook.md) for the browser smoke, [Staging Environment Example](./staging-env-example.md) as a placeholder-only env reference, [Private Beta Tester Invite Pack](./private-beta-tester-invite-pack.md) for controlled tester communication, and [Private Beta Feedback Intake](./private-beta-feedback-intake.md) for approved feedback channels and triage. This private beta go/no-go checklist remains the invitation gate.
 
 ### Manual Staging Environment Readiness
 
@@ -99,6 +99,8 @@ Use this before sending invitations.
 - Tell testers to use only the newest confirmation or recovery email.
 - Tell testers not to share passwords, full confirmation links, recovery links, or URL hashes.
 - Tell testers to report visible messages, page names, approximate time, and screenshots with tokenized links cropped or hidden.
+- Confirm the approved feedback intake channel is ready and secret-safe.
+- Confirm feedback reports will be manually reviewed before becoming implementation work.
 - Confirm a rollback path exists before invitations are sent.
 
 ## Go/No-Go Matrix

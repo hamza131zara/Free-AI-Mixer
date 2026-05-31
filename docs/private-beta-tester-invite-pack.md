@@ -35,8 +35,14 @@ Use only the staging account we approve for you. Do not use personal/admin accou
 
 If you test signup or password reset, email delivery may not be instant. Check spam, junk, or promotions folders and use only the newest email. Never share full confirmation links, recovery links, URL hashes, passwords, or screenshots containing tokenized URLs.
 
-Please report visible messages, page names, browser/device, approximate time, and cropped screenshots that do not include secrets or tokenized links.
+Please report feedback only through the approved private beta feedback channel. Include visible messages, page names, browser/device, approximate time, expected result, actual result, and cropped screenshots that do not include secrets or tokenized links.
 ```
+
+## Feedback Intake
+
+Use [Private Beta Feedback Intake](./private-beta-feedback-intake.md) for approved channels, report templates, triage categories, stop criteria, and tester communication rules.
+
+Testers must never send API keys, provider keys, SMTP credentials, service-role keys, JWTs, webhook secrets, passwords, full confirmation links, recovery links, URL hashes, private env values, or screenshots/videos containing tokenized URLs.
 
 ## What Testers Should Try
 
@@ -82,4 +88,3 @@ Pause invitations and return to internal smoke only if:
 - Do not run destructive database cleanup by default.
 - Do not rotate production or staging keys unless compromise is suspected.
 - If a secret is exposed, rotate that secret and treat screenshots/logs as sensitive.
-

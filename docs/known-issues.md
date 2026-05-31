@@ -221,6 +221,22 @@ Why it matters:
 - Small private beta onboarding needs safe human instructions as much as technical smoke tests.
 - Public launch remains blocked until the separate go/no-go checklist and production readiness checks pass.
 
+### Phase 41 Feedback Intake Is Manual And Private-Beta-Only
+
+Current state:
+
+- Phase 41 adds private beta feedback intake documentation and focused docs/source regression coverage.
+- Feedback channels are approved manually and are placeholders until the project owner chooses the actual email, form, or tracker.
+- Testers are instructed not to send API keys, provider keys, SMTP credentials, service-role keys, JWTs, webhook secrets, private env values, passwords, confirmation links, recovery links, URL hashes, or tokenized screenshots.
+- Feedback reports use a structured template with reproduction steps, expected result, actual result, browser/device/OS, environment label, severity, blocker/non-blocker, and issue categories.
+- Triage remains manual, and feedback must be reviewed before becoming an implementation phase.
+- No in-app feedback submission, feedback API route, database table, live email sending, fake feedback submission success UI, deployment, or public support launch was added.
+
+Why it matters:
+
+- Private beta feedback must be actionable without becoming a new secret-leak path.
+- Tester reports should improve the product without creating public-launch claims or fake support infrastructure.
+
 ### Export Runtime Still Deferred
 
 Current state:

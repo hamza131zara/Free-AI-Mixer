@@ -33,6 +33,8 @@ npm.cmd run build
 
 For a real staging auth smoke, follow `docs/real-auth-runtime-smoke-runbook.md` and keep it opt-in only.
 
+Use [Private Beta Feedback Intake](./private-beta-feedback-intake.md) for feedback channels, templates, triage categories, stop criteria, and communication rules during or after the manual smoke.
+
 ## Manual Browser Smoke Checklist
 
 ### Public Shell
@@ -114,4 +116,3 @@ Rollback options:
 - Reset tester passwords if account access is uncertain.
 - Disable password reset testing temporarily if email rate limits occur.
 - Keep git rollback separate from Supabase auth/database cleanup.
-
