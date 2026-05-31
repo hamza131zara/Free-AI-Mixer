@@ -12,6 +12,8 @@ Monitor only approved staging/private-beta testers.
 
 Do not collect or store secrets, provider keys, SMTP credentials, tokens, JWTs, webhook secrets, service-role keys, private env values, passwords, tokenized auth links, or recovery links.
 
+Use [Private Beta First Tester Feedback Review](./private-beta-first-tester-feedback-review.md) to classify first-session feedback before any patch planning.
+
 ## First Tester Monitoring Checklist
 
 Run this checklist for the first approved tester session:
@@ -96,5 +98,6 @@ First tester monitoring must preserve:
 - [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-tester-account-dry-run.md)
 - [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md)
 - [Private Beta Feedback Intake](./private-beta-feedback-intake.md)
+- [Private Beta First Tester Feedback Review](./private-beta-first-tester-feedback-review.md)
 - [Private Beta Issue Triage And Patch Planning](./private-beta-issue-triage-patch-planning.md)
 - [Private Beta Go/No-Go Checklist](./private-beta-go-no-go-checklist.md)

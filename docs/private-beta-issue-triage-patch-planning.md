@@ -14,6 +14,8 @@ Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.
 
 Use [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md) to triage first-session blocker, security, auth, product-honesty, or privacy findings.
 
+Use [Private Beta First Tester Feedback Review](./private-beta-first-tester-feedback-review.md) before converting first tester feedback into a patch phase.
+
 ## Triage Principles
 
 - Feedback must be reviewed before any code changes.

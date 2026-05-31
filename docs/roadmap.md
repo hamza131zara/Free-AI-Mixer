@@ -863,12 +863,26 @@ Status:
 - No analytics runtime, monitoring backend, database table, dashboard UI, API route, fake metrics, fake dashboards, fake monitoring status, live email sending, deployment, or public launch approval are included.
 - No live email sending is included.
 
-### Still deferred after Phase 48
+## Phase 49 status
+
+- Phase 49: complete when the private beta first tester feedback review pack is signed off.
+- Scope: docs plus focused regression coverage only.
+- The pack defines manual, reviewer-owned first tester feedback review before feedback becomes patch planning.
+- The review checklist covers approved tester confirmation, staging/private-beta URL, commit hash, feedback source/channel, screenshot/log redaction, severity, category, affected page/feature, reproduction steps, separation of risky auth/security/storage/BYOK/billing/export issues from docs/copy issues, patch plan choice, and stop/pause recommendation.
+- Review categories include security/privacy, auth/session, email/SMTP, credits/billing honesty, BYOK/provider settings, generation/mixer, export/artifact honesty, admin/readiness, UI/UX, and docs/copy.
+- Severity levels include blocker, critical, high, medium, low, and docs/copy only.
+- No issue tracker API, feedback API, analytics runtime, database table, dashboard UI, fake metric state, fake resolved status, fake issue tracker, live email sending, deployment, or public launch approval are included.
+- No fake metric state is included.
+- No fake resolved status is included.
+- No live email sending is included.
+
+### Still deferred after Phase 49
 
 - Actual tester invitation execution.
 - Automated invite/waitlist/tester access systems.
 - Automated analytics/monitoring runtime.
 - In-app monitoring dashboards or metric collection.
+- Issue tracker APIs, feedback APIs, fake resolved state, and automatic patch planning.
 - Public/open beta.
 - Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
 

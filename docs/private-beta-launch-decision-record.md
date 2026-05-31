@@ -10,6 +10,8 @@ The decision record does not deploy anything, invite testers automatically, add 
 
 Use [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md) after a go decision to manually watch the first approved tester session.
 
+Use [Private Beta First Tester Feedback Review](./private-beta-first-tester-feedback-review.md) after first-session feedback is received.
+
 ## Required Decision Inputs
 
 Record these inputs before choosing go, no-go, or hold:
@@ -118,6 +120,7 @@ After the decision:
 
 - [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md)
 - [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md)
+- [Private Beta First Tester Feedback Review](./private-beta-first-tester-feedback-review.md)
 - [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-tester-account-dry-run.md)
 - [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md)
 - [Private Beta Release Candidate Checklist](./private-beta-release-candidate-checklist.md)

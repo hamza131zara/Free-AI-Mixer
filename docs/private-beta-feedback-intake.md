@@ -14,6 +14,8 @@ Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.
 
 Use [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md) to confirm the first tester knows how to report feedback safely.
 
+Use [Private Beta First Tester Feedback Review](./private-beta-first-tester-feedback-review.md) to review first-session feedback before it becomes patch planning.
+
 ## Approved Feedback Channels
 
 Use only channels approved by the project owner or staging coordinator:

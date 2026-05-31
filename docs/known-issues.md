@@ -356,6 +356,26 @@ Why it matters:
 
 - First tester monitoring should help humans pause, review, and triage safely without inventing analytics, fake dashboards, fake metrics, or launch state.
 
+### Phase 49 First Tester Feedback Review Is Manual
+
+Current state:
+
+- Phase 49 adds first tester feedback review documentation plus focused docs/source regression coverage.
+- First tester feedback review is manual and reviewer-owned.
+- Feedback review is not public support launch.
+- Feedback does not automatically become implementation.
+- The review checklist covers approved tester confirmation, staging/private-beta URL, commit hash, feedback source/channel, screenshot/log redaction, severity, category, affected page/feature, reproduction steps, separation of risky auth/security/storage/BYOK/billing/export issues from docs/copy issues, patch plan choice, and stop/pause recommendation.
+- Review categories include security/privacy, auth/session, email/SMTP, credits/billing honesty, BYOK/provider settings, generation/mixer, export/artifact honesty, admin/readiness, UI/UX, and docs/copy.
+- Severity levels include blocker, critical, high, medium, low, and docs/copy only.
+- No issue tracker API, feedback API, analytics runtime, database table, dashboard UI, fake metric state, fake resolved status, fake issue tracker, live email sending, deployment, or public launch approval was added.
+- No fake metric state was added.
+- No fake resolved status was added.
+- No live email sending was added.
+
+Why it matters:
+
+- First tester feedback must be reviewed and classified before it becomes a safe, focused patch phase.
+
 ### Export Runtime Still Deferred
 
 Current state:

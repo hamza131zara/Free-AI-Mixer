@@ -12857,6 +12857,44 @@ Safety boundaries:
 - no fake success, progress, artifacts, or downloads were added
 - no public launch approval was added
 
+## Phase 49 - Private Beta First Tester Feedback Review Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- private beta first tester feedback review documentation
+- manual, reviewer-owned feedback review for first approved tester feedback
+- guidance that feedback review is not public support launch and feedback does not automatically become implementation
+- feedback review checklist for approved tester confirmation, staging/private-beta URL, commit hash, feedback source/channel, screenshot/log redaction before saving, severity, category, affected page/feature, reproduction steps, separation of blocker/security/auth/storage/BYOK/billing/export issues from docs/copy issues, patch plan choice, and stop/pause recommendation
+- review categories for security/privacy, auth/session, email/SMTP, credits/billing honesty, BYOK/provider settings, generation/mixer, export/artifact honesty, admin/readiness, UI/UX, and docs/copy
+- severity levels for blocker, critical, high, medium, low, and docs/copy only
+- stop/pause criteria for secret exposure, service-role exposure, broken auth/session, email/SMTP onboarding failure, fake billing/credits, fake downloads/artifacts/signed URLs, admin exposure, staging outage, tester access leak, and serious privacy/security report
+- patch planning output template with feedback reference placeholder, tester ID placeholder, commit hash placeholder, affected page/feature, severity, category, reproduction summary, expected/actual, proposed phase title, phase mode, files likely affected, tests required, strict exclusions, rollback/pause recommendation, and reviewer sign-off placeholder
+- patch planning rules for grouping docs/copy-only issues when safe, isolating risky runtime/security/auth/storage/BYOK/billing/export issues, audit-first handling for risky issues, and no tester-facing fix promises until reviewed and committed
+- focused docs/source regression coverage for no fake issue tracker, no fake resolved status, no fake metrics, no fake success state, no issue tracker API, no feedback API, no analytics runtime, no database table, and no dashboard UI
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, service-role keys, provider keys, JWT secrets, webhook secrets, or database secrets were added
+- no migrations were added
+- no auth runtime or backend route behavior changed
+- no feedback, issue tracker, or analytics API route was added
+- no database table, dashboard UI, fake metric state, fake resolved status, fake issue tracker, or fake success state was added
+- no fake metric state was added
+- no fake resolved status was added
+- no live email sending was added
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact delivery or download behavior was added
+- no fake success, progress, artifacts, or downloads were added
+- no public launch approval was added
+
 ## Phase 48 - Private Beta First Tester Monitoring Pack
 
 Status:

@@ -12,6 +12,8 @@ Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.
 
 Use [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md) after a go decision to manually monitor the first approved tester session.
 
+Use [Private Beta First Tester Feedback Review](./private-beta-first-tester-feedback-review.md) to review first-session feedback safely before patch planning.
+
 ## Required Pre-Launch Gates
 
 All gates must be reviewed before sending approved tester invitations:
@@ -134,6 +136,7 @@ For the first 24 hours after approved tester invitations:
 - [Private Beta Go/No-Go Checklist](./private-beta-go-no-go-checklist.md)
 - [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md)
 - [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md)
+- [Private Beta First Tester Feedback Review](./private-beta-first-tester-feedback-review.md)
 - [Private Beta Release Candidate Checklist](./private-beta-release-candidate-checklist.md)
 - [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md)
 - [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-tester-account-dry-run.md)
