@@ -37,6 +37,8 @@ const sensitiveKeyParts = [
   "secret_ref",
   "providererror",
   "provider_error",
+  "providerrawerror",
+  "provider_raw_error",
   "rawprovidererror",
   "raw_provider_error",
   "errorbody",
