@@ -6,6 +6,8 @@ This checklist decides whether Free AI Mixer can invite controlled private beta 
 
 The beta is account/auth focused. It validates real Supabase auth, backend session authority, account bootstrap, password reset, logout, protected account pages, and fail-closed states.
 
+Private beta is not public launch. No production launch should happen automatically from this document, and public/open beta requires a separate manual go/no-go approval after production readiness is verified.
+
 ## Beta Readiness Matrix
 
 | Scope | Status | Required controls |
@@ -20,18 +22,23 @@ The beta is account/auth focused. It validates real Supabase auth, backend sessi
 
 Complete this before inviting any remote tester.
 
+### Manual Staging Environment Readiness
+
 - Stable frontend URL exists.
 - Stable backend URL exists.
 - Frontend uses the correct public Supabase URL and anon key.
 - Backend uses the correct Supabase URL.
 - Backend has the service-role key only in backend secret storage.
 - No service-role key is present in frontend config or any `VITE_*` env var.
+- Supabase project, frontend env, backend env, auth runtime gates, workspace runtime gates, and Supabase DB runtime gates have been manually verified for the target environment.
 - Supabase Auth redirect allow-list includes the staging app origin.
 - Supabase Auth redirect allow-list includes `/login`.
 - Supabase Auth redirect allow-list includes `/signup`.
 - Supabase Auth redirect allow-list includes `/reset-password`.
 - CORS or deployment routing allows the frontend to reach the backend account/auth/protected routes.
 - Local Vite proxy assumptions are not mistaken for staging routing.
+- Auth email delivery and custom SMTP status are explicitly known for the environment.
+- Custom SMTP must be manually verified before serious tester onboarding.
 - Real auth smoke runbook has been followed for the target environment.
 - Real auth smoke command is available:
 
@@ -40,6 +47,20 @@ npm.cmd run test:e2e -- tests/e2e/phase25-real-auth-runtime-smoke.spec.ts
 ```
 
 - No secrets, passwords, JWTs, service-role keys, SMTP credentials, confirmation links, recovery links, or URL hashes are pasted into docs, tests, logs, screenshots, or issue reports.
+
+### Auth/Session Manual Smoke
+
+- Public pages load without authentication.
+- Login succeeds for an approved, verified tester account.
+- `/auth/session` returns backend-derived authenticated state after login.
+- `/account/bootstrap` is available for account setup and does not create fake auth/session/workspace state.
+- Dashboard shows backend-derived account and workspace status.
+- Logout clears authenticated UI state and does not leave stale account status visible.
+- Selected protected routes are checked through the app and remain auth/workspace-gated:
+  - `/project-library/projects`
+  - `/project-library/history`
+  - `/provider-settings/status`
+  - `/credits/status`
 
 ## Local Dry-Run Checklist
 
@@ -56,6 +77,8 @@ Complete this before staging or tester invitations.
 - Expired, reused, or wrong-port reset link guidance is visible and understandable.
 - Provider Settings clearly says provider key/BYOK storage is non-live.
 - Credits clearly says balances, billing, refill, and ledger mutation are non-live.
+- Export/artifact delivery remains honest: no fake downloads, no fake artifacts, and no public artifact delivery claims.
+- Public artifact delivery remains gated by production auth, RLS, storage readiness, and an explicit launch approval.
 - Protected route behavior is truthful for signed-out, unavailable, forbidden, and workspace-required states.
 - Public pages remain available without auth.
 - Mobile or narrow viewport quick check passes for login, dashboard, and recovery pages.
@@ -113,9 +136,11 @@ Any of the following blocks public/open beta:
 - Credits and billing are not live.
 - Generation/export account runtime is not public-SaaS-ready.
 - Public artifact delivery, signed URLs, or download behavior are not production-approved.
+- Public artifact delivery remains gated by production auth/RLS/storage readiness.
 - Active workspace selection is not implemented.
 - OAuth remains deferred.
 - Event/audit persistence and analytics remain deferred.
+- Admin analytics remain readiness-only.
 - Security/privacy checklist is incomplete.
 - Public launch has not received explicit go/no-go approval.
 
@@ -128,11 +153,13 @@ The beta must clearly preserve these truths:
 - BYOK storage is not live.
 - Billing is not live.
 - Generation/export account runtime is not public-ready.
+- Admin analytics are readiness-only.
 - No fake projects.
 - No fake provider connections.
 - No fake credit balances.
 - No fake downloads.
 - No fake artifacts.
+- No fake signed URLs or public artifact delivery.
 - No fake usage metrics.
 - No fake progress or success states.
 
