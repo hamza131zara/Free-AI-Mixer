@@ -12857,6 +12857,38 @@ Safety boundaries:
 - no fake success, progress, artifacts, or downloads were added
 - no public launch approval was added
 
+## Phase 44 - Private Beta Launch Control / Tester Access Gate Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- private beta launch control and tester access gate documentation
+- approved tester list and approved staging account rules
+- launch control checklist with current commit hash placeholder, staging URL placeholder, approved tester group placeholder, tester account list placeholder, SMTP/email verification, auth/session smoke, protected routes, product honesty gates, feedback intake, triage/patch planning, rollback owner, and final go/no-go/hold decision
+- tester access gate rules for staging/private beta URL only, approved testers only, revocation on blockers/security/auth/secret issues, and no tester access to service-role/admin secrets
+- stop/rollback criteria for secret exposure, service-role exposure, broken auth/session, fake billing/credits, fake downloads/artifacts/signed URLs, public launch claims, staging outage, and tester access leak
+- communication templates for approved tester invite, hold/no-go notice, access revoked/paused notice, and known limitations reminder
+- focused docs/source regression coverage for no fake invite automation, no fake waitlist approval, no fake tester access success, no invite/waitlist/tester access API routes, and no fake access state
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, service-role keys, provider keys, JWT secrets, webhook secrets, or database secrets were added
+- no migrations were added
+- no auth runtime or backend route behavior changed
+- no invite, waitlist, or tester access API route was added
+- no database table, release automation, live email sending, or fake tester access approved state was added
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact delivery or download behavior was added
+- no fake success, progress, artifacts, or downloads were added
+- no public launch approval was added
+
 ## Phase 43 - Private Beta Release Candidate Checklist Pack
 
 Status:

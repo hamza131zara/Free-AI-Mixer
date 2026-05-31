@@ -44,6 +44,8 @@ Use [Private Beta Feedback Intake](./private-beta-feedback-intake.md) for approv
 
 Use [Private Beta Issue Triage And Patch Planning](./private-beta-issue-triage-patch-planning.md) after feedback is reviewed and before any patch work is promised or implemented.
 
+Use [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md) before sending approved tester access.
+
 Testers must never send API keys, provider keys, SMTP credentials, service-role keys, JWTs, webhook secrets, passwords, full confirmation links, recovery links, URL hashes, private env values, or screenshots/videos containing tokenized URLs.
 
 ## What Testers Should Try

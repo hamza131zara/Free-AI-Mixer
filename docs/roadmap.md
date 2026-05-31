@@ -808,6 +808,22 @@ Status:
 - Public/open beta.
 - Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
 
+## Phase 44 status
+
+- Phase 44: complete when the private beta launch control and tester access gate pack is signed off.
+- Scope: docs plus focused regression coverage only.
+- The pack defines manual launch control, approved tester list and approved staging account requirements, launch checklist, tester access gate rules, stop/rollback criteria, and communication templates.
+- Private beta launch control is manual and reviewed.
+- Private beta is not public launch.
+- No invite automation, waitlist automation, fake tester access success, invite/waitlist/tester access API routes, tester database, release automation, live email, or public launch approval are included.
+
+### Still deferred after Phase 44
+
+- Actual tester invitation execution.
+- Automated invite/waitlist/tester access systems.
+- Public/open beta.
+- Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).

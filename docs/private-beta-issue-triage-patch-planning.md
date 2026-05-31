@@ -130,3 +130,5 @@ Before writing an implementation prompt:
 Accepted issues should become narrow phase prompts with explicit allowed scope, strict exclusions, verification commands, and final sign-off expectations.
 
 Use [Private Beta Release Candidate Checklist](./private-beta-release-candidate-checklist.md) after patch verification and before treating a staging build as ready for controlled tester review.
+
+Use [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md) before communicating access to testers.

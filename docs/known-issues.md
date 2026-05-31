@@ -272,6 +272,22 @@ Why it matters:
 - A controlled tester RC needs a clear manual decision record before invitations.
 - The RC checklist must not be confused with production launch readiness.
 
+### Phase 44 Launch Control Is Manual
+
+Current state:
+
+- Phase 44 adds private beta launch control and tester access gate documentation plus focused docs/source regression coverage.
+- Tester access must use approved tester lists and approved staging/private beta accounts only.
+- Open public signup, automatic invite automation, fake waitlist approval, fake tester access success, and production launch approval remain forbidden.
+- Launch control uses a manual checklist with commit hash placeholder, staging URL placeholder, approved tester group placeholder, tester account list placeholder, smoke/product-honesty gates, rollback owner, and go/no-go/hold decision.
+- Communication templates exist for approved tester invite, hold/no-go notice, access revoked/paused notice, and known limitations reminder.
+- No invite API, waitlist API, tester database, release automation, live email sending, fake tester access approved state, runtime change, or public launch approval was added.
+
+Why it matters:
+
+- Private beta access needs a human gate before any tester receives staging access.
+- Launch control must not become hidden public signup or fake invitation automation.
+
 ### Export Runtime Still Deferred
 
 Current state:

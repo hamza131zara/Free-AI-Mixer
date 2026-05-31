@@ -8,6 +8,8 @@ Private beta RC is not public launch. RC candidate means ready for controlled te
 
 This document does not deploy anything, approve public launch, add release automation, configure SMTP, change runtime behavior, or create fake RC-approved status.
 
+Use [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md) after the RC decision and before sending tester access.
+
 ## Required Checks Before RC
 
 All required checks must pass before a build can be treated as a private beta RC candidate:
@@ -69,6 +71,7 @@ The RC candidate must preserve:
 - Supabase redirect allow-list matches the staging frontend URL.
 - Approved tester accounts are ready.
 - Tester invite instructions are ready.
+- Launch control and tester access gate are ready.
 - Feedback intake channel is ready and secret-safe.
 - Issue triage and patch planning are ready.
 - Stop/rollback owner is known.
@@ -139,4 +142,3 @@ Reviewer sign-off placeholder:
 ```
 
 Do not fill this template with secrets, real passwords, tokenized auth links, service-role keys, SMTP credentials, provider keys, JWTs, webhook secrets, or private env values.
-

@@ -137,6 +137,8 @@ Use [Private Beta Issue Triage And Patch Planning](./private-beta-issue-triage-p
 
 Use [Private Beta Release Candidate Checklist](./private-beta-release-candidate-checklist.md) before inviting testers to review a new RC candidate build.
 
+Use [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md) to confirm access remains limited to approved testers and approved staging accounts.
+
 Before implementation:
 
 - Review the report manually.

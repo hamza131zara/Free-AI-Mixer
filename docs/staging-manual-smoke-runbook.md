@@ -37,6 +37,8 @@ Use [Private Beta Feedback Intake](./private-beta-feedback-intake.md) for feedba
 
 Use [Private Beta Release Candidate Checklist](./private-beta-release-candidate-checklist.md) after the manual smoke passes and before treating the build as a private beta RC candidate.
 
+Use [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md) before sending tester access after a passing smoke and RC decision.
+
 ## Manual Browser Smoke Checklist
 
 ### Public Shell
