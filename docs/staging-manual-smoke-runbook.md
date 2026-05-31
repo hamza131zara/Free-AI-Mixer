@@ -6,6 +6,8 @@ This runbook guides a human staging smoke test before controlled private beta te
 
 Private beta is not public launch. Do not invite testers until the private beta go/no-go checklist passes.
 
+Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) after manual smoke, RC, launch control, and controlled tester account dry-run are complete.
+
 ## Preconditions
 
 - Stable staging frontend URL is available.

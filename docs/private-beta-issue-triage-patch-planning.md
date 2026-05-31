@@ -8,6 +8,8 @@ Private beta issue triage is manual and reviewed. Private beta is not public lau
 
 This document does not add an issue tracker, in-app feedback submission, backend issue routes, database tables, automation, deployment, or public launch approval.
 
+Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) to confirm issue triage and patch planning are ready before approved tester invitations are sent.
+
 ## Triage Principles
 
 - Feedback must be reviewed before any code changes.

@@ -8,6 +8,8 @@ Controlled tester account dry-run is manual. Private beta is not public launch.
 
 This document does not create tester accounts automatically, change auth runtime, add tester databases, add invite/waitlist APIs, add release automation, or create fake tester account success.
 
+Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) after this dry run passes and before sending approved tester invitations.
+
 ## Account Safety Rules
 
 - Use approved staging/private-beta tester accounts only.
@@ -106,4 +108,3 @@ If the dry run fails:
 - Record the failure without secrets.
 - Use private beta issue triage and patch planning before any fix.
 - Rerun the dry-run checklist after the fix is verified.
-

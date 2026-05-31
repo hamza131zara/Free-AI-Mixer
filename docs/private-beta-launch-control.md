@@ -10,6 +10,8 @@ This document does not deploy anything, approve production launch, create open p
 
 Use [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-tester-account-dry-run.md) to manually verify an approved staging/private beta tester account before sending real tester invitations.
 
+Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) for the final reviewer-approved launch procedure after launch control is complete.
+
 ## Launch Control Rules
 
 - Tester access must use an approved tester list.

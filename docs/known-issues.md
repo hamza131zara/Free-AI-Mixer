@@ -302,6 +302,23 @@ Current state:
 Why it matters:
 
 - Real tester invitations should wait until one approved staging/private beta tester account has been manually proven safe.
+
+### Phase 46 Final Manual Launch Runbook Is Manual
+
+Current state:
+
+- Phase 46 adds final manual private beta launch runbook documentation plus focused docs/source regression coverage.
+- Private beta final manual launch is not public launch.
+- Launch is controlled, manual, and reviewer-approved only.
+- Required gates include clean git status, recorded commit hash, typecheck, build, post181 QA, Phase 37-45 readiness, staging manual smoke, RC checklist, launch control, controlled tester account dry-run, custom SMTP/email verification or documented limitation, tester invite pack, feedback intake, and issue triage/patch planning readiness.
+- The launch sequence sends limited tester invites only after a manual go decision and monitors first tester login, auth/email issues, and feedback intake.
+- Stop criteria include secret exposure, service-role exposure, broken auth/session, email/SMTP failure that blocks onboarding, fake billing/credits, fake downloads/artifacts/signed URLs, exposed admin area, public launch claims, staging outage, tester access leak, and serious security/privacy reports.
+- No deployment automation, release automation, invite API, waitlist API, tester database, auth runtime change, live email sending, fake private-beta launched status, deployment, or public launch approval was added.
+- No live email sending was added.
+
+Why it matters:
+
+- Approved tester invitations should only happen after a human reviewer signs a go/no-go/hold decision.
 - The dry run must not become hidden onboarding automation or fake account success.
 
 ### Export Runtime Still Deferred

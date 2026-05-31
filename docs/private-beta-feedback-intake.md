@@ -8,6 +8,8 @@ Private beta feedback intake is not a public support launch. It does not add in-
 
 All feedback must be reviewed manually before it becomes implementation work.
 
+Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) to confirm feedback intake is ready before approved tester invitations are sent.
+
 ## Approved Feedback Channels
 
 Use only channels approved by the project owner or staging coordinator:

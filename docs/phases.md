@@ -12857,6 +12857,41 @@ Safety boundaries:
 - no fake success, progress, artifacts, or downloads were added
 - no public launch approval was added
 
+## Phase 46 - Private Beta Final Manual Launch Runbook Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- final manual private beta launch runbook documentation
+- controlled, manual, reviewer-approved launch procedure before approved tester invitations
+- pre-launch gates for clean git status, recorded commit hash, typecheck, build, post181 launch QA, Phase 37-45 readiness, staging manual smoke, RC checklist, launch control checklist, controlled tester account dry-run, custom SMTP/email verification or documented limitation, tester invite pack, feedback intake, and issue triage/patch planning readiness
+- manual launch sequence for staging/private-beta URL, approved tester group, approved staging tester accounts, limited tester invite only after go decision, first tester login monitoring, auth/email monitoring, feedback intake monitoring, and pause behavior when stop criteria triggers
+- product honesty gates for no fake auth/session, no fake credits/billing, pre-live/fail-closed BYOK/provider settings, honest projects/history, honest export/artifact delivery, readiness-only admin/analytics, and production-gated public artifact delivery
+- stop/rollback criteria for secret exposure, service-role exposure, broken auth/session, email/SMTP onboarding failure, fake billing/credits, fake downloads/artifacts/signed URLs, exposed admin area, public launch claim, staging outage, tester access leak, and serious security/privacy report
+- final launch decision template with commit hash placeholder, staging URL placeholder, tester group placeholder, SMTP verification, smoke result, RC result, tester dry-run result, known limitations, go/no-go/hold decision, reviewer sign-off, and timestamp placeholder
+- post-launch monitoring checklist for first 24 hours, feedback intake review cadence, issue triage cadence, pause/revoke communication, and patch planning rules
+- focused docs/source regression coverage for no deployment automation, no release automation, no invite/waitlist/tester API, no tester database, no auth runtime change, and no fake private-beta launched status
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, service-role keys, provider keys, JWT secrets, webhook secrets, or database secrets were added
+- no migrations were added
+- no auth runtime or backend route behavior changed
+- no invite, waitlist, or tester access API route was added
+- no database table, release automation, deployment automation, live email sending, or fake private-beta launched status was added
+- no live email sending was added
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact delivery or download behavior was added
+- no fake success, progress, artifacts, or downloads were added
+- no public launch approval was added
+
 ## Phase 45 - Private Beta Controlled Tester Account Dry-Run Pack
 
 Status:

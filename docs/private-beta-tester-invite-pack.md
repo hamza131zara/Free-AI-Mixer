@@ -6,6 +6,8 @@ This pack gives safe wording and operating rules for inviting a small group of t
 
 Private beta is not public launch. Tester onboarding remains manual and controlled.
 
+Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) before sending approved tester invitations.
+
 ## Who Can Be Invited
 
 - Invite only approved staging testers.

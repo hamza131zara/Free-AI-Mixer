@@ -833,6 +833,16 @@ Status:
 - No tester database, invite API, waitlist API, auth runtime change, fake tester account success, live email sending, deployment, or public launch approval are included.
 - No live email sending is included.
 
+## Phase 46 status
+
+- Phase 46: complete when the private beta final manual launch runbook pack is signed off.
+- Scope: docs plus focused regression coverage only.
+- The pack defines the final controlled, manual, reviewer-approved private beta launch procedure before inviting approved testers.
+- The runbook requires clean git status, recorded commit hash, typecheck, build, post181 QA, Phase 37-45 readiness checks, staging manual smoke, RC checklist, launch control checklist, controlled tester account dry-run, custom SMTP/email delivery verification or documented limitation, tester invite pack, feedback intake, and issue triage/patch planning readiness.
+- The launch sequence confirms staging/private-beta URL, approved tester group, approved staging tester accounts, limited invite send after a go decision, first tester login monitoring, auth/email monitoring, feedback intake monitoring, and pause behavior when stop criteria triggers.
+- No deployment automation, release automation, invite API, waitlist API, tester database, auth runtime change, fake private-beta launched status, live email sending, deployment, or public launch approval are included.
+- No live email sending is included.
+
 ### Still deferred after Phase 45
 
 - Actual tester invitation execution.
