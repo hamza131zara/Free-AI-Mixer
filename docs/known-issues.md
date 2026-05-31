@@ -166,6 +166,20 @@ Why it matters:
 - Tester invitations need an explicit go/no-go gate rather than an implied readiness statement.
 - Staging and operational checks must stay separate from public launch claims.
 
+### Phase 37 Private Beta Publish Readiness Smoke Is A Safety Check
+
+Current state:
+
+- Phase 37 adds a focused private beta publish readiness smoke pack.
+- The smoke checks public shell loading, protected-route honesty, auth email/custom SMTP copy, non-live credits/provider settings/project/export/admin boundaries, no fake artifact delivery, source-boundary safety, and continued public-launch blocking.
+- This is not a public launch approval.
+- No live auth behavior, SMTP credentials, migrations, BYOK storage, credits or billing mutation, provider SDK/API calls, generation/export/render runtime, artifact delivery behavior, fake success state, or deployment configuration changed.
+
+Why it matters:
+
+- Private beta preparation needs a final practical honesty check before tester or publish preparation.
+- Public launch remains blocked until the manual go/no-go checklist, production auth/RLS/storage readiness, operational hardening, and product runtime decisions are separately verified.
+
 ### Export Runtime Still Deferred
 
 Current state:

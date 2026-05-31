@@ -12767,3 +12767,32 @@ Safety boundaries:
 - no fake email success state was added
 - no billing, credits, BYOK, generation, export, admin, event, or audit runtime behavior changed
 
+## Phase 37 - Private Beta Publish Readiness Smoke Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- focused private-beta publish readiness smoke coverage
+- public landing and mixer shell default-safe load check
+- protected-route no-fake-authenticated-access check
+- auth email/custom SMTP copy honesty check
+- account surface honesty checks for credits, provider settings, projects, export history, and admin
+- export/artifact no-fake-download/no-fake-signed-url/no-fake-artifact coverage
+- frontend source boundary checks for no Supabase DB/storage access, no service-role exposure, no committed secret-looking values, and no public-launch shortcut
+
+Safety boundaries:
+
+- no live auth behavior was added
+- no SMTP credentials or env values were added
+- no migrations were added
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact download or public delivery behavior was added
+- no fake success, progress, artifacts, or downloads were added
+- no public launch approval was added
+

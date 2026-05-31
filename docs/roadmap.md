@@ -695,6 +695,21 @@ Status:
 - OAuth.
 - Real billing, credits ledger, provider key storage, generation/export account runtime, event/audit persistence, and analytics.
 
+## Phase 37 status
+
+- Phase 37: complete when the private beta publish readiness smoke pack is signed off.
+- Scope: one focused smoke/regression test plus docs notes only.
+- The smoke verifies public shell loading, protected-route honesty, auth email/custom SMTP copy, non-live credits/provider settings/project/export/admin boundaries, no fake artifact delivery, source-boundary safety, and continued public-launch blocking.
+- No live auth changes, SMTP credentials, migrations, BYOK storage, credits/billing mutation, provider SDK/API calls, generation/export/render runtime changes, artifact delivery behavior, fake success state, or public launch approval are included.
+
+### Still deferred after Phase 37
+
+- Manual staging go/no-go execution.
+- Custom SMTP configuration in Supabase.
+- Broader tester onboarding beyond the controlled private beta gate.
+- Public/open beta.
+- Live credits, billing, BYOK storage, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and deployment hardening.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).
