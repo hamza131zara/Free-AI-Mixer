@@ -206,6 +206,21 @@ Why it matters:
 - Staging publish preparation must stay secret-free and manual until the deployment environment is configured outside the repo.
 - Public launch remains blocked until the manual checklist, staging smoke, production auth/RLS/storage readiness, and a separate public launch go/no-go are complete.
 
+### Phase 40 Tester Onboarding Is Manual And Controlled
+
+Current state:
+
+- Phase 40 adds a staging manual smoke runbook and private beta tester invite pack.
+- Tester onboarding remains manual, controlled, and limited to approved staging tester accounts.
+- Custom SMTP/email delivery must be manually verified before serious tester onboarding.
+- The docs tell testers to check spam, junk, or promotions folders and not to share tokenized links, URL hashes, passwords, or secrets.
+- Phase 40 does not deploy anything, change runtime behavior, add secrets, enable BYOK, enable credits/billing, change generation/export/render runtime, enable artifact delivery, or approve public launch.
+
+Why it matters:
+
+- Small private beta onboarding needs safe human instructions as much as technical smoke tests.
+- Public launch remains blocked until the separate go/no-go checklist and production readiness checks pass.
+
 ### Export Runtime Still Deferred
 
 Current state:

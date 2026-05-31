@@ -12857,3 +12857,32 @@ Safety boundaries:
 - no fake success, progress, artifacts, or downloads were added
 - no public launch approval was added
 
+## Phase 40 - Staging Manual Smoke Runbook + Tester Invite Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- staging manual smoke runbook documentation
+- private beta tester invite pack documentation
+- controlled tester communication and known-limitations guidance
+- stop/rollback criteria for manual staging smoke and tester onboarding
+- focused docs regression coverage for secret-free, non-launch, manual onboarding posture
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, service-role keys, provider keys, JWT secrets, webhook secrets, or database secrets were added
+- no migrations were added
+- no auth runtime or backend route behavior changed
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact delivery or download behavior was added
+- no fake success, progress, artifacts, or downloads were added
+- no frontend UI behavior changed
+- no public launch approval was added
+

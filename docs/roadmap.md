@@ -743,6 +743,22 @@ Status:
 - Public/open beta.
 - Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
 
+## Phase 40 status
+
+- Phase 40: complete when the staging manual smoke runbook and tester invite pack is signed off.
+- Scope: docs and focused docs regression coverage only.
+- The pack adds a manual staging smoke runbook, controlled tester invite guidance, known-limitations language, stop/rollback criteria, and secret-free/non-launch checks.
+- No deployment, real env values, SMTP credentials, service-role keys, migrations, auth runtime changes, backend route changes, live BYOK storage, credits/billing mutation, provider SDK/API calls, generation/export/render runtime changes, artifact delivery/download behavior, fake success state, frontend UI behavior, or public launch approval are included.
+
+### Still deferred after Phase 40
+
+- Manual execution of the staging smoke.
+- Actual tester invitations.
+- Manual custom SMTP verification.
+- Real staging auth smoke execution.
+- Public/open beta.
+- Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).
