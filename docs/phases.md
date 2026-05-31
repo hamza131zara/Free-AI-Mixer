@@ -12857,6 +12857,41 @@ Safety boundaries:
 - no fake success, progress, artifacts, or downloads were added
 - no public launch approval was added
 
+## Phase 47 - Private Beta Launch Decision Record Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- private beta launch decision record documentation
+- manual, reviewer-owned go/no-go/hold decision record
+- decision inputs for clean git status, commit hash placeholder, staging URL placeholder, tester group placeholder, typecheck, build, post181 QA, Phase 37-46 readiness, staging manual smoke, RC checklist, controlled tester dry-run, SMTP/email verification or documented limitation, feedback intake readiness, issue triage/patch planning readiness, known limitations, and stop/rollback owner
+- decision template with date/time placeholder, reviewer placeholder, commit hash placeholder, staging URL placeholder, tester group placeholder, decision, reasons, known limitations, required follow-up actions, rollback/pause owner, and sign-off placeholder
+- go decision rules for approved testers only, staging/private beta URL only, no public signup claim, feedback intake readiness, and monitoring cadence readiness
+- no-go/hold rules for blocker/security/auth/email/product-honesty issues, fake billing/credits, fake downloads/artifacts/signed URLs, service-role/secret exposure, admin exposure, staging outage, and tester access leak
+- product honesty gates for no fake auth/session, no fake credits/billing, pre-live/fail-closed BYOK/provider settings, honest export/artifact delivery, readiness-only admin/analytics, and production-gated public artifact delivery
+- post-decision recordkeeping rules for docs/manual tracker only, no secrets, no private tokens/env values, no public launch announcement, and no runtime launched/approved state
+- focused docs/source regression coverage for no deployment automation, no release automation, no invite/waitlist/tester API, no tester database, no auth runtime change, and no fake launched/approved state
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, service-role keys, provider keys, JWT secrets, webhook secrets, or database secrets were added
+- no migrations were added
+- no auth runtime or backend route behavior changed
+- no invite, waitlist, or tester access API route was added
+- no database table, release automation, deployment automation, live email sending, or fake launched/approved state was added
+- no live email sending was added
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact delivery or download behavior was added
+- no fake success, progress, artifacts, or downloads were added
+- no public launch approval was added
+
 ## Phase 46 - Private Beta Final Manual Launch Runbook Pack
 
 Status:

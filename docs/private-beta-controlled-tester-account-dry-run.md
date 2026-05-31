@@ -10,6 +10,8 @@ This document does not create tester accounts automatically, change auth runtime
 
 Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) after this dry run passes and before sending approved tester invitations.
 
+Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md) to record the final manual go/no-go/hold decision.
+
 ## Account Safety Rules
 
 - Use approved staging/private-beta tester accounts only.

@@ -14,6 +14,8 @@ Use [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-t
 
 Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) only after RC, launch control, and controlled tester account dry-run are complete.
 
+Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md) to record the final go/no-go/hold decision.
+
 ## Required Checks Before RC
 
 All required checks must pass before a build can be treated as a private beta RC candidate:
@@ -78,6 +80,7 @@ The RC candidate must preserve:
 - Launch control and tester access gate are ready.
 - Controlled tester account dry-run is ready.
 - Private beta final manual launch runbook is ready.
+- Private beta launch decision record is ready.
 - Feedback intake channel is ready and secret-safe.
 - Issue triage and patch planning are ready.
 - Stop/rollback owner is known.

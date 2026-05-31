@@ -10,6 +10,8 @@ This document does not add an issue tracker, in-app feedback submission, backend
 
 Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) to confirm issue triage and patch planning are ready before approved tester invitations are sent.
 
+Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md) to record whether issue triage and patch planning readiness supports go/no-go/hold.
+
 ## Triage Principles
 
 - Feedback must be reviewed before any code changes.

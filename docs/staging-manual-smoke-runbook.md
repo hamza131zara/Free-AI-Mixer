@@ -8,6 +8,8 @@ Private beta is not public launch. Do not invite testers until the private beta 
 
 Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) after manual smoke, RC, launch control, and controlled tester account dry-run are complete.
 
+Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md) to record the manual decision after smoke and launch gates are reviewed.
+
 ## Preconditions
 
 - Stable staging frontend URL is available.

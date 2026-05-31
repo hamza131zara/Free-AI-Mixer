@@ -10,6 +10,8 @@ All feedback must be reviewed manually before it becomes implementation work.
 
 Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) to confirm feedback intake is ready before approved tester invitations are sent.
 
+Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md) to record whether feedback intake readiness supports go/no-go/hold.
+
 ## Approved Feedback Channels
 
 Use only channels approved by the project owner or staging coordinator:

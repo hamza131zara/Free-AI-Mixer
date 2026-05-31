@@ -321,6 +321,24 @@ Why it matters:
 - Approved tester invitations should only happen after a human reviewer signs a go/no-go/hold decision.
 - The dry run must not become hidden onboarding automation or fake account success.
 
+### Phase 47 Launch Decision Record Is Manual
+
+Current state:
+
+- Phase 47 adds private beta launch decision record documentation plus focused docs/source regression coverage.
+- Launch decision record is manual and reviewer-owned.
+- Private beta launch decision is not public launch approval.
+- The decision record does not deploy anything, invite testers automatically, or create fake launched/approved state.
+- Required inputs include clean git status, commit hash, staging URL, tester group, typecheck, build, post181 QA, Phase 37-46 readiness, staging manual smoke, RC checklist, controlled tester dry-run, SMTP/email verification or documented limitation, feedback intake readiness, issue triage/patch planning readiness, known limitations, and stop/rollback owner.
+- Decision choices are go, no-go, and hold.
+- Post-decision recordkeeping is docs/manual tracker only and must not store secrets, private tokens, env values, tokenized auth links, passwords, service-role keys, SMTP credentials, provider keys, JWTs, or webhook secrets.
+- No deployment automation, release automation, invite API, waitlist API, tester database, auth runtime change, live email sending, fake launched/approved state, deployment, or public launch approval was added.
+- No live email sending was added.
+
+Why it matters:
+
+- A go decision can allow controlled tester review only; it must not become deployment automation, public launch approval, or runtime launch state.
+
 ### Export Runtime Still Deferred
 
 Current state:

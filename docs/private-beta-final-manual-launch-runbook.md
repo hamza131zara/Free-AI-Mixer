@@ -8,6 +8,8 @@ Private beta final manual launch is not public launch. Launch is controlled, man
 
 This runbook does not deploy anything, add automatic deployment, add release automation, enable public signup, approve public launch, create invite APIs, create waitlist APIs, create tester databases, change auth runtime, or create fake private-beta launched status.
 
+Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md) to record the final go/no-go/hold decision manually before approved tester invitations are sent.
+
 ## Required Pre-Launch Gates
 
 All gates must be reviewed before sending approved tester invitations:
@@ -128,6 +130,7 @@ For the first 24 hours after approved tester invitations:
 ## Related Documents
 
 - [Private Beta Go/No-Go Checklist](./private-beta-go-no-go-checklist.md)
+- [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md)
 - [Private Beta Release Candidate Checklist](./private-beta-release-candidate-checklist.md)
 - [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md)
 - [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-tester-account-dry-run.md)

@@ -12,6 +12,8 @@ Use [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-t
 
 Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md) for the final reviewer-approved launch procedure after launch control is complete.
 
+Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md) to record the manual launch decision without creating fake launch state.
+
 ## Launch Control Rules
 
 - Tester access must use an approved tester list.

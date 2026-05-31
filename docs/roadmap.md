@@ -843,7 +843,17 @@ Status:
 - No deployment automation, release automation, invite API, waitlist API, tester database, auth runtime change, fake private-beta launched status, live email sending, deployment, or public launch approval are included.
 - No live email sending is included.
 
-### Still deferred after Phase 45
+## Phase 47 status
+
+- Phase 47: complete when the private beta launch decision record pack is signed off.
+- Scope: docs plus focused regression coverage only.
+- The pack defines a manual, reviewer-owned launch decision record for go/no-go/hold.
+- The decision record requires git status, commit hash, staging URL, tester group, typecheck, build, post181 QA, Phase 37-46 readiness, staging manual smoke, RC checklist, controlled tester dry-run, SMTP/email verification or documented limitation, feedback intake readiness, issue triage/patch planning readiness, known limitations, and stop/rollback owner.
+- The decision record stores decisions in docs/manual tracker only and must not store secrets, private tokens, env values, tokenized auth links, passwords, service-role keys, SMTP credentials, provider keys, JWTs, or webhook secrets.
+- No deployment automation, release automation, invite API, waitlist API, tester database, auth runtime change, fake launched/approved state, live email sending, deployment, or public launch approval are included.
+- No live email sending is included.
+
+### Still deferred after Phase 47
 
 - Actual tester invitation execution.
 - Automated invite/waitlist/tester access systems.
