@@ -34,6 +34,11 @@ export function LoginPage() {
             wrapper is configured, then waits for backend account verification and
             setup before treating the session as real app access.
           </p>
+          <p className="placeholder-description">
+            Private beta testers should use a confirmed account and known password.
+            Do not share confirmation or recovery links; those URLs may contain
+            temporary auth tokens.
+          </p>
           <form className="auth-form" onSubmit={handleCredentialsSubmit}>
             <label className="field">
               <span>Email</span>

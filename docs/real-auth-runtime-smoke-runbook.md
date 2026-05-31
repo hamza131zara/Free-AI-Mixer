@@ -53,23 +53,43 @@ VITE_SUPABASE_ANON_KEY=your-public-anon-key
 
 Phase 27 added password reset and account recovery UX. The real auth smoke does not automate password reset, but beta environments must still configure the Supabase Auth redirect allow-list before testers use recovery flows.
 
-Add the app reset route to the Supabase Auth redirect allow-list.
+Add the app origin, login, signup, and reset routes to the Supabase Auth redirect allow-list for each local, staging, and production beta environment.
 
-Local example:
+Local app and auth route examples:
 
 ```text
+http://localhost:5173
+http://localhost:5173/login
+http://localhost:5173/signup
 http://localhost:5173/reset-password
 ```
 
-If Vite is configured to run on another local port, add that reset route too.
+If Vite is configured to run on another local port, add the same route set for that port. Do not assume `5173` when the dev server prints a different URL.
 
-Staging and production beta examples should use the real app domain reset route, for example:
+Staging and production beta examples should use the real app domain routes, for example:
 
 ```text
+https://your-beta-domain.example
+https://your-beta-domain.example/login
+https://your-beta-domain.example/signup
 https://your-beta-domain.example/reset-password
 ```
 
-Do not paste keys, tokens, passwords, JWTs, anon keys, or service-role keys into docs or logs. Password reset uses Supabase Auth only. The app does not store reset tokens, raw Supabase users, or raw Supabase sessions. After updating a password, the user signs in again normally.
+Do not paste keys, tokens, passwords, JWTs, anon keys, service-role keys, confirmation links, recovery links, or URL hashes into docs, chat, screenshots, logs, or issue reports. Password reset uses Supabase Auth only. The app does not store reset tokens, raw Supabase users, or raw Supabase sessions. After updating a password, the user signs in again normally.
+
+## Auth Email Delivery And Custom SMTP
+
+Supabase built-in email delivery can rate-limit repeated signup and password reset testing. For broader tester onboarding, configure custom SMTP manually in the Supabase dashboard before inviting more testers.
+
+Custom SMTP setup is operational, not application code. Do not commit SMTP hosts, usernames, passwords, API keys, or real sender secrets. See `docs/auth-email-custom-smtp-onboarding.md`.
+
+When manually testing email flows:
+
+- Use a dedicated verified smoke user or pre-confirmed tester account with a known temporary password.
+- Request signup and reset emails sparingly.
+- Use only the newest confirmation or recovery email.
+- Treat confirmation and recovery URLs as tokenized secrets.
+- If a link is expired, reused, or opened on the wrong local/staging URL, request a fresh email instead of debugging with a shared tokenized URL.
 
 ## Opt-In Smoke Env
 
@@ -82,6 +102,8 @@ FREE_AI_MIXER_REAL_AUTH_SMOKE_PASSWORD=dedicated-test-user-password
 ```
 
 Use a dedicated verified test user. Do not use a personal account, admin account, customer account, or production owner account.
+
+Prefer a pre-confirmed smoke user with a known password. The smoke should not depend on signup email delivery.
 
 ## How To Run
 

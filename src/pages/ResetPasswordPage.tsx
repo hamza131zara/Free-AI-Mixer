@@ -38,6 +38,10 @@ export function ResetPasswordPage() {
             store reset tokens and does not mark backend app access as authenticated
             from this page.
           </p>
+          <p className="placeholder-description">
+            If this reset link is expired, reused, or opened on the wrong local or
+            staging port, request a fresh reset email and use the newest link only.
+          </p>
           <form className="auth-form" onSubmit={handleSubmit}>
             <label className="field">
               <span>New password</span>

@@ -125,6 +125,23 @@ Why it matters:
 - The strategy doc must not be treated as live BYOK readiness.
 - Live provider key storage, provider verification, encrypted vault runtime, active workspace selection, billing/credits ledger, and generation/export integration remain deferred.
 
+### Phase 35 Auth Email Operations Are Manual
+
+Current state:
+
+- Phase 35 adds docs and tester-facing copy for Supabase email limits, redirect URL setup, custom SMTP readiness, expired or reused auth links, newest-email-only behavior, and tokenized-link safety.
+- Custom SMTP remains a manual Supabase dashboard operation, not application code.
+- Built-in Supabase email delivery can rate-limit repeated signup and password reset testing.
+- Controlled beta should prefer dedicated, pre-confirmed tester accounts with known temporary passwords when email delivery itself is not under test.
+- Confirmation and recovery links may contain temporary tokens and must not be pasted into docs, chat, screenshots, logs, or issue reports.
+- OTP/code confirmation remains deferred.
+- Public launch remains blocked.
+
+Why it matters:
+
+- Broader tester onboarding depends on reliable email delivery and clear recovery instructions.
+- Auth email operations must not introduce token logging, token storage, committed SMTP secrets, or public launch claims.
+
 ### Export Runtime Still Deferred
 
 Current state:

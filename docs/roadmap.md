@@ -633,6 +633,28 @@ Status:
 - Generation/export runtime integration with provider keys.
 - Event/audit persistence wiring.
 
+## Phase 35 status
+
+- Phase 35: complete when the auth email, custom SMTP, and tester onboarding docs/copy pack is signed off.
+- Scope: docs and tester-facing copy only.
+- No auth runtime logic, backend routes, migrations, Supabase configuration automation, SMTP credentials, generation/export, credits, billing, BYOK, event/audit, or analytics behavior changes are included.
+
+### What Phase 35 adds
+
+- `docs/auth-email-custom-smtp-onboarding.md` documents manual Supabase custom SMTP setup readiness, redirect allow-list requirements, email rate-limit guidance, newest-email-only behavior, tokenized-link safety, dedicated tester account guidance, and revocation/rollback notes.
+- Private beta and real auth smoke docs now clarify that custom SMTP is needed before broader tester onboarding and that built-in Supabase email delivery can rate-limit repeated signup/password reset testing.
+- Auth pages include static copy guidance for confirmed-user login, sparse email requests, newest verification/recovery email use, expired/reused/wrong-port links, and tokenized-link safety.
+
+### Still deferred after Phase 35
+
+- Real SMTP configuration automation.
+- OTP/code confirmation flow.
+- Automated signup or password reset smoke.
+- Active workspace selection.
+- OAuth.
+- Public launch.
+- Real billing, credits ledger, provider key storage, generation/export account runtime, event/audit persistence, and analytics.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).

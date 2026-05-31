@@ -32,6 +32,11 @@ export function SignupPage() {
             provider account, but it does not claim Free AI Mixer account setup is complete
             until a later verified backend bootstrap succeeds.
           </p>
+          <p className="placeholder-description">
+            Use the newest verification email only. Older links may expire or stop
+            working after another request, and repeated requests can hit provider
+            email rate limits.
+          </p>
           <form className="auth-form" onSubmit={(event) => handleCredentialsSubmit(event, signup)}>
             <label className="field">
               <span>Email</span>

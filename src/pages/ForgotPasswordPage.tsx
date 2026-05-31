@@ -45,6 +45,11 @@ export function ForgotPasswordPage() {
             Password recovery uses Supabase Auth only. Free AI Mixer does not store reset
             tokens or claim backend app access from this request.
           </p>
+          <p className="placeholder-description">
+            If email is delayed, wait before requesting again to avoid provider
+            rate limits. Use the newest recovery email only and never share the
+            full recovery link.
+          </p>
           <form className="auth-form" onSubmit={handleSubmit}>
             <label className="field">
               <span>Email</span>
