@@ -109,6 +109,22 @@ Why it matters:
 - Controlled private beta can proceed only with clear expectations and manual checks.
 - The docs should reduce tester confusion without creating product claims the runtime cannot satisfy yet.
 
+### Phase 31 BYOK Provider Key Storage Is Strategy-Only
+
+Current state:
+
+- `docs/byok-provider-key-storage-strategy.md` documents the future BYOK provider key storage threat model and implementation contract.
+- Provider Settings remains authenticated, non-live, and secret-free.
+- Credits remain planning-only and non-live.
+- No frontend raw-key inputs, backend storage, provider SDK calls, routes/mutations, encrypted vault runtime, migrations, credits ledger, billing, generation/export integration, or event/audit persistence were added.
+- Future BYOK must be backend-only, workspace-authorized, encrypted or vault-backed, redacted, and tested before becoming live.
+
+Why it matters:
+
+- Provider API keys are secrets and must not leak through frontend state, browser storage, logs, screenshots, snapshots, URLs, browser responses, or docs.
+- The strategy doc must not be treated as live BYOK readiness.
+- Live provider key storage, provider verification, encrypted vault runtime, active workspace selection, billing/credits ledger, and generation/export integration remain deferred.
+
 ### Export Runtime Still Deferred
 
 Current state:

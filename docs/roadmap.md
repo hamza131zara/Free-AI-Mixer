@@ -608,6 +608,31 @@ Status:
 - Admin analytics.
 - Broader beta and public launch.
 
+## Phase 31 status
+
+- Phase 31: complete when the BYOK provider key storage strategy doc is signed off.
+- Scope: docs-only BYOK/provider key storage strategy, threat model, future backend-only route contracts, authorization rules, storage/vault options, redaction rules, and future test requirements.
+- No runtime behavior changes are included in Phase 31.
+
+### What Phase 31 adds
+
+- `docs/byok-provider-key-storage-strategy.md` documents the future provider key storage contract.
+- The strategy confirms Provider Settings remains a safe non-live authenticated boundary page.
+- The strategy requires backend-only encryption/decryption, backend workspace authorization, masked frontend responses, and no frontend provider key storage or direct provider calls.
+
+### Still deferred after Phase 31
+
+- Live BYOK/provider key storage.
+- Encrypted vault runtime.
+- Provider SDK/API verification.
+- Provider key UI input fields.
+- Provider settings routes/mutations becoming live.
+- Migrations for live provider key persistence.
+- Active workspace selection.
+- Real credits, billing, checkout, credit ledger, and credit mutation runtime.
+- Generation/export runtime integration with provider keys.
+- Event/audit persistence wiring.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).
