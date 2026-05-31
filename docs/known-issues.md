@@ -180,6 +180,19 @@ Why it matters:
 - Private beta preparation needs a final practical honesty check before tester or publish preparation.
 - Public launch remains blocked until the manual go/no-go checklist, production auth/RLS/storage readiness, operational hardening, and product runtime decisions are separately verified.
 
+### Phase 38 Staging Deployment Readiness Is Not Deployment
+
+Current state:
+
+- Phase 38 adds staging/private-beta deployment readiness documentation and focused smoke coverage.
+- The readiness pack checks production build script posture, backend-safe public shell behavior, protected-page honesty, documented env names, no service-role exposure, no frontend Supabase DB/storage access, and non-live BYOK/credits/export/admin boundaries.
+- It does not deploy anything, configure real environment values, configure SMTP, add migrations, change auth/runtime behavior, or approve public launch.
+
+Why it matters:
+
+- Staging preparation needs explicit controls before testers use a shared environment.
+- Public launch remains blocked until staging has been manually configured, real auth smoke passes in that environment, production auth/RLS/storage readiness is verified, and a separate public launch go/no-go approves it.
+
 ### Export Runtime Still Deferred
 
 Current state:

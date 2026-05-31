@@ -710,6 +710,22 @@ Status:
 - Public/open beta.
 - Live credits, billing, BYOK storage, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and deployment hardening.
 
+## Phase 38 status
+
+- Phase 38: complete when the staging deployment readiness pack is signed off.
+- Scope: one focused staging readiness smoke, staging readiness documentation, and roadmap/known-issues/phase notes.
+- The pack validates production build script readiness, backend-safe public shell behavior, protected-page honesty, documented staging env names without real values, no service-role exposure, no frontend Supabase DB/storage access, no fake public-launch or fully-live claims, and continued non-live boundaries for BYOK, credits/billing, export/artifact delivery, and admin analytics.
+- No deployment, real env values, SMTP credentials, migrations, live BYOK storage, credits/billing mutation, provider SDK/API calls, auth runtime changes, backend route changes, generation/export/render runtime changes, artifact delivery behavior, fake success state, or public launch approval are included.
+
+### Still deferred after Phase 38
+
+- Actual staging deployment and environment configuration.
+- Manual custom SMTP verification.
+- Manual real auth smoke against staging.
+- Broader tester onboarding.
+- Public/open beta.
+- Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).

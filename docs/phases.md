@@ -12796,3 +12796,33 @@ Safety boundaries:
 - no fake success, progress, artifacts, or downloads were added
 - no public launch approval was added
 
+## Phase 38 - Staging Deployment Readiness Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- focused staging/private-beta deployment readiness smoke coverage
+- staging deployment readiness documentation
+- production build script readiness check
+- public landing and mixer backend-safe shell checks
+- protected-page no-fake-auth checks
+- env-name documentation checks without real values
+- source-boundary checks for no frontend Supabase DB/storage access, no service-role exposure, and no committed secret-looking values
+- non-live boundary checks for BYOK, credits/billing, export/artifact delivery, and admin analytics
+- manual checklist gate remains required before private beta or public launch
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, or service-role keys were added
+- no migrations were added
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no auth runtime, backend route, generation/export/render runtime, or artifact delivery behavior changed
+- no fake success, progress, artifacts, or downloads were added
+- no public launch approval was added
+
