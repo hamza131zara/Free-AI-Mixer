@@ -39,6 +39,11 @@ export function LoginPage() {
             Do not share confirmation or recovery links; those URLs may contain
             temporary auth tokens.
           </p>
+          <p className="placeholder-description">
+            If you are waiting on a confirmation or recovery email, check spam,
+            junk, or promotions folders. Delivery depends on the configured auth
+            email provider and is not guaranteed to be instant.
+          </p>
           <form className="auth-form" onSubmit={handleCredentialsSubmit}>
             <label className="field">
               <span>Email</span>

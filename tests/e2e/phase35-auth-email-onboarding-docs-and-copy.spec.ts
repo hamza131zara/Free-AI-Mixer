@@ -12,6 +12,9 @@ test.describe("phase35 auth email onboarding docs and copy", () => {
     const doc = readSource("docs/auth-email-custom-smtp-onboarding.md");
 
     expect(doc).toContain("Configure custom SMTP manually in Supabase");
+    expect(doc).toContain("serious tester onboarding requires a manually configured custom SMTP provider");
+    expect(doc).toContain("Do not promise instant email delivery");
+    expect(doc).toContain("check spam, junk, or promotions folders");
     expect(doc).toContain("SMTP provider choice");
     expect(doc).toContain("Sender and from address");
     expect(doc).toContain("DNS records");
@@ -20,11 +23,15 @@ test.describe("phase35 auth email onboarding docs and copy", () => {
     expect(doc).toContain("http://localhost:5173/reset-password");
     expect(doc).toContain("If Vite runs on another local port");
     expect(doc).toContain("Use only the newest verification or recovery email");
+    expect(doc).toContain("delivery depend on the configured Supabase Auth email provider or custom SMTP provider");
     expect(doc).toContain("Confirmation and recovery links can contain temporary tokens");
+    expect(doc).toContain("Use approved local or staging test accounts only");
     expect(doc).toContain("pre-confirmed tester accounts");
     expect(doc).toContain("dedicated verified smoke user");
     expect(doc).toContain("Disable the tester user");
     expect(doc).toContain("Do not run destructive database cleanup by default");
+    expect(doc).toContain("Do not claim production auth email is fully configured unless");
+    expect(doc).not.toContain("Production auth email is fully configured.");
   });
 
   test("auth pages include rate-limit, newest-link, and tokenized-link safety copy without behavior changes", () => {
@@ -35,12 +42,28 @@ test.describe("phase35 auth email onboarding docs and copy", () => {
 
     expect(loginPage).toContain("confirmed account and known password");
     expect(loginPage).toContain("temporary auth tokens");
+    expect(loginPage).toContain("check spam");
+    expect(loginPage).toContain("not guaranteed to be instant");
     expect(signupPage).toContain("Use the newest verification email only");
     expect(signupPage).toContain("email rate limits");
+    expect(signupPage).toContain("configured auth email provider");
+    expect(signupPage).toContain("spam, junk, or promotions");
     expect(forgotPasswordPage).toContain("avoid provider");
     expect(forgotPasswordPage).toContain("Use the newest recovery email only");
+    expect(forgotPasswordPage).toContain("not guaranteed to arrive");
     expect(resetPasswordPage).toContain("expired, reused, or opened on the wrong");
     expect(resetPasswordPage).toContain("newest link only");
+    expect(resetPasswordPage).toContain("may be rate-limited during testing");
+
+    const combinedAuthPages = [
+      loginPage,
+      signupPage,
+      forgotPasswordPage,
+      resetPasswordPage,
+    ].join("\n");
+    expect(combinedAuthPages).not.toContain("email delivery is guaranteed");
+    expect(combinedAuthPages).not.toContain("emails arrive instantly");
+    expect(combinedAuthPages).not.toContain("production email is configured");
 
     expect(loginPage).toContain("void login({ email, password })");
     expect(signupPage).toContain("void submit({ email, password })");

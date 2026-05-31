@@ -37,6 +37,10 @@ export function SignupPage() {
             working after another request, and repeated requests can hit provider
             email rate limits.
           </p>
+          <p className="placeholder-description">
+            Email delivery depends on the configured auth email provider. Check
+            spam, junk, or promotions folders before requesting another message.
+          </p>
           <form className="auth-form" onSubmit={(event) => handleCredentialsSubmit(event, signup)}>
             <label className="field">
               <span>Email</span>

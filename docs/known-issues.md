@@ -138,8 +138,10 @@ Current state:
 - Phase 35 adds docs and tester-facing copy for Supabase email limits, redirect URL setup, custom SMTP readiness, expired or reused auth links, newest-email-only behavior, and tokenized-link safety.
 - Custom SMTP remains a manual Supabase dashboard operation, not application code.
 - Built-in Supabase email delivery can rate-limit repeated signup and password reset testing.
+- Email confirmation and password reset delivery depend on the configured Supabase Auth email provider or custom SMTP provider; testers may need to check spam, junk, or promotions folders.
 - Controlled beta should prefer dedicated, pre-confirmed tester accounts with known temporary passwords when email delivery itself is not under test.
 - Confirmation and recovery links may contain temporary tokens and must not be pasted into docs, chat, screenshots, logs, or issue reports.
+- Production auth email must not be described as fully configured until the environment-specific email provider or custom SMTP setup has been manually verified.
 - OTP/code confirmation remains deferred.
 - Public launch remains blocked.
 

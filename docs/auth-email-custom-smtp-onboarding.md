@@ -4,7 +4,9 @@
 
 Phase 35 documents the operational email path for controlled private beta auth testing. It does not configure SMTP in code, change Supabase Auth behavior, or automate signup, confirmation, password reset, or tester cleanup.
 
-Free AI Mixer currently uses Supabase Auth for signup verification and password recovery. Supabase built-in email delivery is acceptable for tiny dry runs, but broader tester onboarding should use a manually configured custom SMTP provider in the Supabase dashboard.
+Free AI Mixer currently uses Supabase Auth for signup verification and password recovery. Supabase built-in email delivery is acceptable for tiny dry runs, but serious tester onboarding requires a manually configured custom SMTP provider in the Supabase dashboard.
+
+Do not promise instant email delivery. Testers may need to wait and check spam, junk, or promotions folders before requesting another confirmation or recovery email.
 
 Before inviting remote testers, pair this email checklist with [the controlled private beta go/no-go checklist](./private-beta-go-no-go-checklist.md).
 
@@ -53,12 +55,13 @@ Use placeholders in docs. Real domains belong in environment-specific runbooks o
 
 ## Rate Limits And Email Link Rules
 
-Supabase built-in email delivery can rate-limit repeated signup and password reset testing. Custom SMTP may also have provider-specific limits.
+Supabase built-in email delivery can rate-limit repeated signup and password reset testing. Custom SMTP may also have provider-specific limits. Email confirmation and password reset delivery depend on the configured Supabase Auth email provider or custom SMTP provider for the target environment.
 
 Tester guidance:
 
 - Request signup or password reset emails sparingly.
 - Wait before repeated requests if an email is delayed.
+- Check spam, junk, and promotions folders before requesting another email.
 - Use only the newest verification or recovery email.
 - Older confirmation and recovery links can expire, become single-use, or stop working after a newer email is requested.
 - If a link was reused, expired, or opened on the wrong local/staging URL, request a fresh email.
@@ -81,12 +84,12 @@ When reporting issues, testers should share the page, visible safe message, appr
 
 ## Tester Onboarding Flow
 
-For controlled private beta, use 3-5 trusted testers only.
+For controlled private beta, use 3-5 trusted testers only. Use approved local or staging test accounts only; do not use personal, admin, production owner, or unapproved customer accounts.
 
 Recommended flow:
 
 1. Create a dedicated tester account or invite a tester to create one.
-2. Prefer pre-confirmed tester accounts with known temporary passwords for dry runs when email delivery is under test.
+2. Prefer pre-confirmed tester accounts with known temporary passwords for dry runs when email delivery itself is not under test.
 3. Require email verification before login and account bootstrap.
 4. Ask the tester to log in from the app URL that matches the redirect allow-list.
 5. Confirm the dashboard shows backend-derived session and workspace state.
@@ -124,7 +127,7 @@ If a secret or tokenized link was shared publicly, rotate the affected secret or
 
 ## Boundaries
 
-This document does not make auth email production-ready by itself.
+This document does not make auth email production-ready by itself. Do not claim production auth email is fully configured unless the environment-specific Supabase Auth email or custom SMTP provider setup has been manually verified.
 
 Still deferred:
 

@@ -42,6 +42,11 @@ export function ResetPasswordPage() {
             If this reset link is expired, reused, or opened on the wrong local or
             staging port, request a fresh reset email and use the newest link only.
           </p>
+          <p className="placeholder-description">
+            If the email is missing, check spam, junk, or promotions folders before
+            requesting another reset. Delivery depends on the configured auth email
+            provider and may be rate-limited during testing.
+          </p>
           <form className="auth-form" onSubmit={handleSubmit}>
             <label className="field">
               <span>New password</span>

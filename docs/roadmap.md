@@ -660,7 +660,8 @@ Status:
 
 - `docs/auth-email-custom-smtp-onboarding.md` documents manual Supabase custom SMTP setup readiness, redirect allow-list requirements, email rate-limit guidance, newest-email-only behavior, tokenized-link safety, dedicated tester account guidance, and revocation/rollback notes.
 - Private beta and real auth smoke docs now clarify that custom SMTP is needed before broader tester onboarding and that built-in Supabase email delivery can rate-limit repeated signup/password reset testing.
-- Auth pages include static copy guidance for confirmed-user login, sparse email requests, newest verification/recovery email use, expired/reused/wrong-port links, and tokenized-link safety.
+- Auth pages include static copy guidance for confirmed-user login, sparse email requests, spam/junk/promotions folder checks, newest verification/recovery email use, expired/reused/wrong-port links, non-instant delivery expectations, and tokenized-link safety.
+- Phase 35 does not claim production auth email is fully configured unless the environment-specific Supabase Auth email or custom SMTP setup has been manually verified.
 
 ### Still deferred after Phase 35
 

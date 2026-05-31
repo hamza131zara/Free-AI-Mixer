@@ -50,6 +50,11 @@ export function ForgotPasswordPage() {
             rate limits. Use the newest recovery email only and never share the
             full recovery link.
           </p>
+          <p className="placeholder-description">
+            Delivery depends on the configured auth email provider. Check spam,
+            junk, or promotions folders; reset emails are not guaranteed to arrive
+            instantly.
+          </p>
           <form className="auth-form" onSubmit={handleSubmit}>
             <label className="field">
               <span>Email</span>

@@ -12743,3 +12743,27 @@ Safety boundaries:
 - no fake connected or verified provider state was added
 - no credits, billing, generation, export, admin, event, or audit runtime behavior changed
 
+## Merged Phase 35 - Auth Email / Custom SMTP / Tester Onboarding Docs + Copy
+
+Status:
+
+- complete
+
+Scope:
+
+- docs and static auth-page copy only
+- custom SMTP setup guidance remains manual Supabase dashboard guidance
+- tester onboarding guidance uses approved local/staging test accounts only
+- auth copy now reminds testers to check spam, junk, or promotions folders
+- auth copy avoids promising instant email delivery
+- docs avoid claiming production auth email is fully configured unless environment-specific provider setup has been manually verified
+
+Safety boundaries:
+
+- no auth logic changed
+- no Supabase client behavior changed
+- no backend auth routes changed
+- no SMTP credentials, env values, or migrations were added
+- no fake email success state was added
+- no billing, credits, BYOK, generation, export, admin, event, or audit runtime behavior changed
+
