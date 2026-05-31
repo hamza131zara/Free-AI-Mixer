@@ -46,6 +46,8 @@ Use [Private Beta Issue Triage And Patch Planning](./private-beta-issue-triage-p
 
 Use [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md) before sending approved tester access.
 
+Use [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-tester-account-dry-run.md) to verify an approved staging/private beta tester account before inviting real testers.
+
 Testers must never send API keys, provider keys, SMTP credentials, service-role keys, JWTs, webhook secrets, passwords, full confirmation links, recovery links, URL hashes, private env values, or screenshots/videos containing tokenized URLs.
 
 ## What Testers Should Try

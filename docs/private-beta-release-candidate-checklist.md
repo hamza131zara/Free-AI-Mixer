@@ -10,6 +10,8 @@ This document does not deploy anything, approve public launch, add release autom
 
 Use [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md) after the RC decision and before sending tester access.
 
+Use [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-tester-account-dry-run.md) before inviting real testers.
+
 ## Required Checks Before RC
 
 All required checks must pass before a build can be treated as a private beta RC candidate:
@@ -72,6 +74,7 @@ The RC candidate must preserve:
 - Approved tester accounts are ready.
 - Tester invite instructions are ready.
 - Launch control and tester access gate are ready.
+- Controlled tester account dry-run is ready.
 - Feedback intake channel is ready and secret-safe.
 - Issue triage and patch planning are ready.
 - Stop/rollback owner is known.

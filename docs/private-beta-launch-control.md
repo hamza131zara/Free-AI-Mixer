@@ -8,6 +8,8 @@ Private beta launch control is manual and reviewed. Private beta is not public l
 
 This document does not deploy anything, approve production launch, create open public signup, add invite automation, add waitlist automation, add tester-access APIs, add database tables, or create fake tester access success.
 
+Use [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-tester-account-dry-run.md) to manually verify an approved staging/private beta tester account before sending real tester invitations.
+
 ## Launch Control Rules
 
 - Tester access must use an approved tester list.
@@ -54,6 +56,7 @@ Do not fill this checklist with passwords, tokenized auth links, service-role ke
 - Testers must not submit provider keys, SMTP credentials, tokens, JWTs, webhook secrets, private env values, passwords, confirmation links, recovery links, or URL hashes.
 - Tester reports must use the approved feedback intake channel.
 - Tester issues must pass manual triage before patch planning.
+- A controlled tester account dry-run must pass before inviting real testers.
 
 ## Stop And Rollback Criteria
 
@@ -131,4 +134,3 @@ Launch control must preserve:
 - Export/artifact delivery remains honest with no fake downloads, no fake signed URLs, no fake artifacts, and no fake success.
 - Admin/analytics remains readiness-only.
 - Public launch remains blocked until separate production readiness and go/no-go approval.
-

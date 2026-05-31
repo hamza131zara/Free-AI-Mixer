@@ -12857,6 +12857,40 @@ Safety boundaries:
 - no fake success, progress, artifacts, or downloads were added
 - no public launch approval was added
 
+## Phase 45 - Private Beta Controlled Tester Account Dry-Run Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- controlled tester account dry-run documentation
+- manual dry-run checklist for approved staging/private beta tester accounts only
+- guidance forbidding personal, admin, and service-role accounts for tester dry-run
+- secret-sharing warnings for service-role keys, SMTP credentials, provider keys, JWTs, webhook secrets, tokens, passwords, tokenized auth links, and private env values
+- dry-run checklist for email delivery, login, logout, password reset when SMTP is verified, dashboard/account bootstrap, protected routes, credits/status honesty, provider settings/BYOK fail-closed state, projects/history honesty, export/artifact honesty, admin/readiness-only state, feedback intake, and access pause/revoke path
+- stop/rollback criteria for tester auth failure, unknown/broken email delivery, secret exposure, service-role exposure, fake billing/credits, fake downloads/artifacts/signed URLs, exposed admin area, public launch claims, and tester access leak
+- dry-run result template with tester account placeholder, staging URL placeholder, commit hash placeholder, SMTP verification, auth/session, protected routes, product honesty, feedback intake, go/no-go/hold decision, and reviewer sign-off placeholder
+- focused docs/source regression coverage for no tester database, invite API, waitlist API, auth runtime change, or fake tester account success
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, service-role keys, provider keys, JWT secrets, webhook secrets, or database secrets were added
+- no migrations were added
+- no auth runtime or backend route behavior changed
+- no invite, waitlist, or tester access API route was added
+- no database table, release automation, live email sending, or fake tester account approved state was added
+- no live email sending was added
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact delivery or download behavior was added
+- no fake success, progress, artifacts, or downloads were added
+- no public launch approval was added
+
 ## Phase 44 - Private Beta Launch Control / Tester Access Gate Pack
 
 Status:

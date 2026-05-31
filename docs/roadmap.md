@@ -824,6 +824,22 @@ Status:
 - Public/open beta.
 - Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
 
+## Phase 45 status
+
+- Phase 45: complete when the controlled tester account dry-run pack is signed off.
+- Scope: docs plus focused regression coverage only.
+- The pack defines a manual dry-run process for one approved staging/private beta tester account before inviting real testers.
+- The dry run covers account creation/approval, email delivery status, login/logout, password reset when SMTP is verified, dashboard/account bootstrap, protected routes, credits/status honesty, provider settings/BYOK fail-closed state, projects/history honesty, export/artifact honesty, admin/readiness-only state, feedback intake, and access pause/revoke path.
+- No tester database, invite API, waitlist API, auth runtime change, fake tester account success, live email sending, deployment, or public launch approval are included.
+- No live email sending is included.
+
+### Still deferred after Phase 45
+
+- Actual tester invitation execution.
+- Automated invite/waitlist/tester access systems.
+- Public/open beta.
+- Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).

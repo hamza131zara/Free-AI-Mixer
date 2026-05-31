@@ -39,6 +39,8 @@ Use [Private Beta Release Candidate Checklist](./private-beta-release-candidate-
 
 Use [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md) before sending tester access after a passing smoke and RC decision.
 
+Use [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-tester-account-dry-run.md) to manually verify one approved staging/private beta tester account before inviting real testers.
+
 ## Manual Browser Smoke Checklist
 
 ### Public Shell

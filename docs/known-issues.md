@@ -288,6 +288,22 @@ Why it matters:
 - Private beta access needs a human gate before any tester receives staging access.
 - Launch control must not become hidden public signup or fake invitation automation.
 
+### Phase 45 Tester Account Dry Run Is Manual
+
+Current state:
+
+- Phase 45 adds controlled tester account dry-run documentation plus focused docs/source regression coverage.
+- The dry run uses approved staging/private beta tester accounts only.
+- Personal, admin, and service-role accounts must not be used for tester dry-run.
+- The dry run checks login/logout, password reset only when SMTP is verified, dashboard/account bootstrap, protected routes, credits/status honesty, provider settings/BYOK fail-closed state, projects/history honesty, export/artifact honesty, admin/readiness-only state, feedback intake, and access pause/revoke path.
+- No tester database, invite API, waitlist API, tester access API, auth runtime change, live email sending, fake tester account approved state, deployment, or public launch approval was added.
+- No live email sending was added.
+
+Why it matters:
+
+- Real tester invitations should wait until one approved staging/private beta tester account has been manually proven safe.
+- The dry run must not become hidden onboarding automation or fake account success.
+
 ### Export Runtime Still Deferred
 
 Current state:
