@@ -142,6 +142,22 @@ Why it matters:
 - Broader tester onboarding depends on reliable email delivery and clear recovery instructions.
 - Auth email operations must not introduce token logging, token storage, committed SMTP secrets, or public launch claims.
 
+### Phase 36 Private Beta Go/No-Go Is Docs-Only
+
+Current state:
+
+- Phase 36 adds a controlled private beta staging and go/no-go checklist.
+- Local/manual dry run and one internal smoke user are ready.
+- 3-5 trusted testers are ready with restrictions after staging, real auth smoke, redirect allow-list, and manual QA checks pass.
+- 5-15 testers remain blocked until staging, custom SMTP, and onboarding/support process hardening are complete.
+- Public/open beta remains blocked.
+- No frontend code, backend code, tests, auth logic, deployment config, SMTP config, provider/BYOK runtime, credits, billing, generation, export, event/audit, or analytics behavior changed.
+
+Why it matters:
+
+- Tester invitations need an explicit go/no-go gate rather than an implied readiness statement.
+- Staging and operational checks must stay separate from public launch claims.
+
 ### Export Runtime Still Deferred
 
 Current state:

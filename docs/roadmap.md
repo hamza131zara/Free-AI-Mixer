@@ -655,6 +655,28 @@ Status:
 - Public launch.
 - Real billing, credits ledger, provider key storage, generation/export account runtime, event/audit persistence, and analytics.
 
+## Phase 36 status
+
+- Phase 36: complete when the controlled private beta staging and go/no-go docs pack is signed off.
+- Scope: docs-only go/no-go matrix, staging readiness checklist, local dry-run checklist, tester invitation checklist, product honesty checklist, security/privacy checklist, and rollback guidance.
+- No frontend code, backend code, tests, auth logic, deployment config, SMTP configuration, provider/BYOK runtime, credits, billing, generation/export, event/audit, analytics, or public launch behavior changes are included.
+
+### What Phase 36 adds
+
+- `docs/private-beta-go-no-go-checklist.md` defines readiness for local/manual dry run, one internal smoke user, 3-5 trusted testers, 5-15 testers, and public/open beta.
+- The checklist records staging requirements, redirect allow-list expectations, real auth smoke usage, tester invitation controls, product honesty gates, security/privacy gates, and disable/rollback guidance.
+
+### Still deferred after Phase 36
+
+- Real deployment configuration.
+- Custom SMTP configuration in Supabase.
+- Broader tester onboarding beyond 3-5 trusted testers.
+- Public/open beta.
+- OTP/code confirmation.
+- Active workspace selection.
+- OAuth.
+- Real billing, credits ledger, provider key storage, generation/export account runtime, event/audit persistence, and analytics.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).

@@ -6,6 +6,8 @@ Free AI Mixer is ready for a controlled private beta with 3-5 trusted testers on
 
 This is an account/auth beta, not a public launch. The current beta validates real Supabase authentication, backend session authority, account bootstrap, password reset, logout, protected account page visibility, and fail-closed states.
 
+Use [the controlled private beta go/no-go checklist](./private-beta-go-no-go-checklist.md) before inviting remote testers. The checklist separates local dry runs, one internal smoke user, 3-5 trusted testers, broader tester groups, and public/open beta.
+
 ## What Is Ready
 
 - Login with Supabase Auth.

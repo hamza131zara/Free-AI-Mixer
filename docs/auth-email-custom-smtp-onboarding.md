@@ -6,6 +6,8 @@ Phase 35 documents the operational email path for controlled private beta auth t
 
 Free AI Mixer currently uses Supabase Auth for signup verification and password recovery. Supabase built-in email delivery is acceptable for tiny dry runs, but broader tester onboarding should use a manually configured custom SMTP provider in the Supabase dashboard.
 
+Before inviting remote testers, pair this email checklist with [the controlled private beta go/no-go checklist](./private-beta-go-no-go-checklist.md).
+
 ## Custom SMTP Setup Is Manual
 
 Configure custom SMTP manually in Supabase. Do not commit SMTP credentials, provider passwords, tokens, or real hostnames to the repository.

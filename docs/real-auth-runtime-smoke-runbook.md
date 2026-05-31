@@ -2,6 +2,8 @@
 
 Phase 25 adds an operational runbook and an opt-in real auth smoke test for the Phase 24 account bootstrap foundation. It does not change auth runtime behavior, signup behavior, bearer attachment, generation, exports, billing, credits mutations, admin access, event/audit persistence, or analytics.
 
+Before inviting remote testers, use this smoke together with [the controlled private beta go/no-go checklist](./private-beta-go-no-go-checklist.md).
+
 ## Current Runtime Scope
 
 Phase 24 is the signed-off real auth foundation:
