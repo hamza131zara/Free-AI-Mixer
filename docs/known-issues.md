@@ -118,12 +118,18 @@ Current state:
 - Credits remain planning-only and non-live.
 - No frontend raw-key inputs, backend storage, provider SDK calls, routes/mutations, encrypted vault runtime, migrations, credits ledger, billing, generation/export integration, or event/audit persistence were added.
 - Future BYOK must be backend-only, workspace-authorized, encrypted or vault-backed, redacted, and tested before becoming live.
+- Merged Phase 34 added focused pre-live BYOK security boundary coverage:
+  - provider settings mutation routes remain fail-closed
+  - the not-configured provider secret vault cannot produce fake success
+  - BYOK/provider-secret redaction covers `provider_raw_error` and `providerrawerror`
+  - frontend source boundaries still show no raw provider key input UI, no frontend Supabase/storage key access, and no browser storage for provider keys
 
 Why it matters:
 
 - Provider API keys are secrets and must not leak through frontend state, browser storage, logs, screenshots, snapshots, URLs, browser responses, or docs.
 - The strategy doc must not be treated as live BYOK readiness.
 - Live provider key storage, provider verification, encrypted vault runtime, active workspace selection, billing/credits ledger, and generation/export integration remain deferred.
+- Phase 34 did not add live BYOK storage, migrations, provider SDK/API calls, fake connected/verified state, or credits/billing/generation/export/admin/event/audit runtime changes.
 
 ### Phase 35 Auth Email Operations Are Manual
 

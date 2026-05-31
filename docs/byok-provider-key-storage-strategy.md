@@ -49,6 +49,21 @@ Frontend-only key entry, session-only key storage, direct provider calls, or loc
 
 The current Phase 31 step is docs-only. It records the contract before adding migrations, live routes, raw-key inputs, provider SDK calls, or encrypted vault runtime.
 
+## Phase 34 Pre-Live Security Boundary Coverage
+
+Merged Phase 34 added focused pre-live security boundary coverage before any live provider key storage or provider connection work.
+
+Coverage now records that:
+
+- Provider settings mutation routes remain fail-closed.
+- The not-configured provider secret vault cannot produce fake success.
+- Mutation unavailable responses stay safe and do not echo raw provider key-like request values.
+- BYOK/provider-secret redaction covers `provider_raw_error` and `providerrawerror` in addition to existing provider key, plaintext key, replacement plaintext key, encrypted payload, secret reference, auth/session/token, service-role-like, and raw provider error fields.
+- Frontend remains safe: no raw provider key input UI, no frontend Supabase/storage key access, and no `localStorage` or `sessionStorage` provider key persistence.
+- Frontend provider metadata remains non-live and must not become fake connected or fake verified state.
+
+Phase 34 did not add live BYOK storage, migrations, provider SDK/API calls, fake connected or verified provider state, credits, billing, generation, export, admin, event, or audit runtime behavior.
+
 ## Future Recommended Architecture
 
 Future BYOK should use a backend-only provider secret boundary:

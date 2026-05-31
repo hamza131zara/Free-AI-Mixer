@@ -633,6 +633,23 @@ Status:
 - Generation/export runtime integration with provider keys.
 - Event/audit persistence wiring.
 
+## Merged Phase 34 status
+
+- Merged Phase 34: complete when the BYOK pre-live security boundary coverage is signed off.
+- Scope: focused boundary coverage for provider settings mutation fail-closed behavior, BYOK/provider-secret redaction, frontend source boundaries, and runtime non-expansion.
+- Provider settings mutation routes remain fail-closed.
+- The not-configured provider secret vault cannot produce fake success.
+- BYOK/provider-secret redaction now covers `provider_raw_error` and `providerrawerror`.
+- Frontend remains safe: no raw provider key input UI, no frontend Supabase/storage key access, and no browser storage for provider keys.
+
+### Preserved boundaries after Merged Phase 34
+
+- No live BYOK storage was added.
+- No migrations were added.
+- No provider SDK/API calls were added.
+- No fake connected or verified provider state was added.
+- No credits, billing, generation, export, admin, event, or audit runtime behavior changed.
+
 ## Phase 35 status
 
 - Phase 35: complete when the auth email, custom SMTP, and tester onboarding docs/copy pack is signed off.

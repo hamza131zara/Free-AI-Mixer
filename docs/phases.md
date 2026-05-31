@@ -12721,3 +12721,25 @@ Safety boundaries:
 - no service-role behavior was added
 - no remote deployment was executed
 
+## Merged Phase 34 - BYOK Pre-Live Security Boundary Coverage
+
+Status:
+
+- complete
+
+Scope:
+
+- focused BYOK pre-live security boundary coverage
+- provider settings mutation route fail-closed coverage
+- not-configured provider secret vault fake-success prevention coverage
+- BYOK/provider-secret redaction coverage for `provider_raw_error` and `providerrawerror`
+- frontend/source boundary coverage for no raw provider key inputs, no frontend Supabase/storage key access, and no browser storage for provider keys
+
+Safety boundaries:
+
+- no live BYOK storage was added
+- no migrations were added
+- no provider SDK/API calls were added
+- no fake connected or verified provider state was added
+- no credits, billing, generation, export, admin, event, or audit runtime behavior changed
+
