@@ -792,6 +792,22 @@ Status:
 - Public support launch.
 - Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
 
+## Phase 43 status
+
+- Phase 43: complete when the private beta release-candidate checklist pack is signed off.
+- Scope: docs plus focused regression coverage only.
+- The pack defines the manual RC gate for controlled tester review only, including staging smoke, typecheck, build, post181 launch QA smoke, Phase 37/38/39/40/41/42 readiness, custom SMTP/email delivery verification, tester invite readiness, feedback intake readiness, issue triage readiness, security/privacy gates, product honesty gates, stop/rollback criteria, and a manual go/no-go/hold decision template.
+- Private beta RC is not public launch.
+- No release automation, fake RC-approved status, fake deployment, fake tester onboarding success, backend routes, databases, or public launch approval are included.
+
+### Still deferred after Phase 43
+
+- Manual RC decision execution.
+- Actual tester invitation execution.
+- Release automation.
+- Public/open beta.
+- Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).

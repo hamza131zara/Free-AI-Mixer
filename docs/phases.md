@@ -12857,6 +12857,39 @@ Safety boundaries:
 - no fake success, progress, artifacts, or downloads were added
 - no public launch approval was added
 
+## Phase 43 - Private Beta Release Candidate Checklist Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- private beta release-candidate checklist documentation
+- RC candidate definition as ready for controlled tester review only
+- manual staging smoke, typecheck, build, post181 launch QA smoke, and Phase 37/38/39/40/41/42 readiness prerequisites
+- custom SMTP/email delivery manual verification gate before serious tester onboarding
+- tester invite, feedback intake, and issue triage/patch planning readiness gates
+- security/privacy gates for no committed secrets, no service-role exposure, no frontend Supabase DB/storage access, and no fake auth/session
+- product honesty gates for non-live credits/billing, pre-live/fail-closed BYOK, honest provider settings, honest export/artifact delivery, and readiness-only admin/analytics
+- final manual RC decision template with candidate date, commit hash placeholder, staging URL placeholder, tester group placeholder, pass/fail checklist, known limitations, go/no-go/hold decision, and reviewer sign-off placeholder
+- focused docs/source regression coverage for no fake public launch, no fake RC approval, no fake deployment, and no fake tester onboarding success
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, service-role keys, provider keys, JWT secrets, webhook secrets, or database secrets were added
+- no migrations were added
+- no auth runtime or backend route behavior changed
+- no release automation, issue tracker API route, database table, live email sending, or fake RC-approved status was added
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact delivery or download behavior was added
+- no fake success, progress, artifacts, or downloads were added
+- no public launch approval was added
+
 ## Phase 40 - Staging Manual Smoke Runbook + Tester Invite Pack
 
 Status:

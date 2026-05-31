@@ -22,7 +22,7 @@ Private beta is not public launch. No production launch should happen automatica
 
 Complete this before inviting any remote tester.
 
-Use [Staging Deployment Readiness](./staging-deployment-readiness.md) as the focused staging checklist, [Staging Manual Smoke Runbook](./staging-manual-smoke-runbook.md) for the browser smoke, [Staging Environment Example](./staging-env-example.md) as a placeholder-only env reference, [Private Beta Tester Invite Pack](./private-beta-tester-invite-pack.md) for controlled tester communication, [Private Beta Feedback Intake](./private-beta-feedback-intake.md) for approved feedback channels and triage, and [Private Beta Issue Triage And Patch Planning](./private-beta-issue-triage-patch-planning.md) before feedback becomes patch work. This private beta go/no-go checklist remains the invitation gate.
+Use [Staging Deployment Readiness](./staging-deployment-readiness.md) as the focused staging checklist, [Staging Manual Smoke Runbook](./staging-manual-smoke-runbook.md) for the browser smoke, [Staging Environment Example](./staging-env-example.md) as a placeholder-only env reference, [Private Beta Tester Invite Pack](./private-beta-tester-invite-pack.md) for controlled tester communication, [Private Beta Feedback Intake](./private-beta-feedback-intake.md) for approved feedback channels and triage, [Private Beta Issue Triage And Patch Planning](./private-beta-issue-triage-patch-planning.md) before feedback becomes patch work, and [Private Beta Release Candidate Checklist](./private-beta-release-candidate-checklist.md) before treating a staging build as an RC candidate. This private beta go/no-go checklist remains the invitation gate.
 
 ### Manual Staging Environment Readiness
 

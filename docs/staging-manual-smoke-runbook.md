@@ -35,6 +35,8 @@ For a real staging auth smoke, follow `docs/real-auth-runtime-smoke-runbook.md` 
 
 Use [Private Beta Feedback Intake](./private-beta-feedback-intake.md) for feedback channels, templates, triage categories, stop criteria, and communication rules during or after the manual smoke.
 
+Use [Private Beta Release Candidate Checklist](./private-beta-release-candidate-checklist.md) after the manual smoke passes and before treating the build as a private beta RC candidate.
+
 ## Manual Browser Smoke Checklist
 
 ### Public Shell

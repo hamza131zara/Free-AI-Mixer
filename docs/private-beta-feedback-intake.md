@@ -135,6 +135,8 @@ Feedback does not automatically become an implementation phase.
 
 Use [Private Beta Issue Triage And Patch Planning](./private-beta-issue-triage-patch-planning.md) before converting accepted feedback into patch work.
 
+Use [Private Beta Release Candidate Checklist](./private-beta-release-candidate-checklist.md) before inviting testers to review a new RC candidate build.
+
 Before implementation:
 
 - Review the report manually.

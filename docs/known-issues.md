@@ -254,6 +254,24 @@ Why it matters:
 - Tester feedback needs a safe path into engineering work without bypassing review.
 - Private beta fixes must not become broad mixed-scope patches or hidden runtime expansions.
 
+### Phase 43 Private Beta RC Is A Manual Gate
+
+Current state:
+
+- Phase 43 adds a private beta release-candidate checklist and focused docs/source regression coverage.
+- RC candidate means ready for controlled tester review only.
+- Private beta RC is not public launch.
+- Manual staging smoke, typecheck, build, post181 launch QA smoke, and Phase 37/38/39/40/41/42 readiness must pass before RC.
+- Custom SMTP/email delivery must be manually verified before serious tester onboarding.
+- Tester invite pack, feedback intake, and issue triage/patch planning must be ready.
+- Product honesty gates still require non-live credits/billing, pre-live/fail-closed BYOK, honest provider settings, honest export/artifact delivery, and readiness-only admin/analytics.
+- No fake RC-approved status, release automation, fake deployment, fake tester onboarding success, backend routes, database tables, live email sending, or public launch approval was added.
+
+Why it matters:
+
+- A controlled tester RC needs a clear manual decision record before invitations.
+- The RC checklist must not be confused with production launch readiness.
+
 ### Export Runtime Still Deferred
 
 Current state:
