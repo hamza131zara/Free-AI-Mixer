@@ -14,6 +14,8 @@ Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launc
 
 Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md) to record the manual launch decision without creating fake launch state.
 
+Use [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md) to manually monitor the first approved tester session after access begins.
+
 ## Launch Control Rules
 
 - Tester access must use an approved tester list.

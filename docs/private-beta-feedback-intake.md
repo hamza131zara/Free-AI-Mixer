@@ -12,6 +12,8 @@ Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launc
 
 Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md) to record whether feedback intake readiness supports go/no-go/hold.
 
+Use [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md) to confirm the first tester knows how to report feedback safely.
+
 ## Approved Feedback Channels
 
 Use only channels approved by the project owner or staging coordinator:

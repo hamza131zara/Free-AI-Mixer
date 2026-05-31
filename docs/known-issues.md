@@ -339,6 +339,23 @@ Why it matters:
 
 - A go decision can allow controlled tester review only; it must not become deployment automation, public launch approval, or runtime launch state.
 
+### Phase 48 First Tester Monitoring Is Manual
+
+Current state:
+
+- Phase 48 adds first tester monitoring documentation plus focused docs/source regression coverage.
+- First tester monitoring is manual and reviewer-owned.
+- Private beta monitoring is not public launch monitoring.
+- Monitoring is for approved staging/private beta testers only.
+- The first tester checklist covers launch decision record, staging URL, commit hash, approved tester account, manually sent invite, first login, auth/session behavior, email/custom SMTP issues, protected routes, credits/status honesty, BYOK/provider settings fail-closed behavior, project/history honesty, export/artifact honesty, admin/readiness-only boundaries, and feedback intake readiness.
+- The first 24-hour cadence includes first tester login check, same-day feedback review, immediate blocker/security triage, daily triage summary, and hold/pause decision if needed.
+- No analytics runtime, monitoring backend, database table, dashboard UI, API route, fake metrics, fake dashboards, fake monitoring status, live email sending, deployment, or public launch approval was added.
+- No live email sending was added.
+
+Why it matters:
+
+- First tester monitoring should help humans pause, review, and triage safely without inventing analytics, fake dashboards, fake metrics, or launch state.
+
 ### Export Runtime Still Deferred
 
 Current state:

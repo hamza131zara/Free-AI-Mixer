@@ -12,6 +12,8 @@ Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launc
 
 Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md) to record whether issue triage and patch planning readiness supports go/no-go/hold.
 
+Use [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md) to triage first-session blocker, security, auth, product-honesty, or privacy findings.
+
 ## Triage Principles
 
 - Feedback must be reviewed before any code changes.

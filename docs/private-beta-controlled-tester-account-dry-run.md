@@ -12,6 +12,8 @@ Use [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launc
 
 Use [Private Beta Launch Decision Record](./private-beta-launch-decision-record.md) to record the final manual go/no-go/hold decision.
 
+Use [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md) after a go decision and approved tester invitation.
+
 ## Account Safety Rules
 
 - Use approved staging/private-beta tester accounts only.

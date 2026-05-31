@@ -8,6 +8,8 @@ Launch decision record is manual and reviewer-owned. Private beta launch decisio
 
 The decision record does not deploy anything, invite testers automatically, add release automation, add deployment automation, create invite APIs, create waitlist APIs, create tester databases, change auth runtime, or create fake launched/approved state.
 
+Use [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md) after a go decision to manually watch the first approved tester session.
+
 ## Required Decision Inputs
 
 Record these inputs before choosing go, no-go, or hold:
@@ -115,6 +117,7 @@ After the decision:
 ## Related Documents
 
 - [Private Beta Final Manual Launch Runbook](./private-beta-final-manual-launch-runbook.md)
+- [Private Beta First Tester Monitoring](./private-beta-first-tester-monitoring.md)
 - [Private Beta Controlled Tester Account Dry Run](./private-beta-controlled-tester-account-dry-run.md)
 - [Private Beta Launch Control And Tester Access Gate](./private-beta-launch-control.md)
 - [Private Beta Release Candidate Checklist](./private-beta-release-candidate-checklist.md)

@@ -853,10 +853,22 @@ Status:
 - No deployment automation, release automation, invite API, waitlist API, tester database, auth runtime change, fake launched/approved state, live email sending, deployment, or public launch approval are included.
 - No live email sending is included.
 
-### Still deferred after Phase 47
+## Phase 48 status
+
+- Phase 48: complete when the private beta first tester monitoring pack is signed off.
+- Scope: docs plus focused regression coverage only.
+- The pack defines manual, reviewer-owned first tester monitoring for approved staging/private beta testers only.
+- The monitoring checklist covers launch decision record, staging URL, commit hash, approved tester account, manually sent tester invite, first login, auth/session behavior, email/custom SMTP issues, protected route access, credits/status honesty, BYOK/provider settings fail-closed behavior, project/history honesty, export/artifact honesty, admin/readiness-only boundaries, and feedback intake readiness.
+- The first 24-hour cadence covers first tester login check, same-day feedback review, immediate blocker/security triage, daily triage summary, and hold/pause decision if needed.
+- No analytics runtime, monitoring backend, database table, dashboard UI, API route, fake metrics, fake dashboards, fake monitoring status, live email sending, deployment, or public launch approval are included.
+- No live email sending is included.
+
+### Still deferred after Phase 48
 
 - Actual tester invitation execution.
 - Automated invite/waitlist/tester access systems.
+- Automated analytics/monitoring runtime.
+- In-app monitoring dashboards or metric collection.
 - Public/open beta.
 - Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
 

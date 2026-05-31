@@ -12857,6 +12857,40 @@ Safety boundaries:
 - no fake success, progress, artifacts, or downloads were added
 - no public launch approval was added
 
+## Phase 48 - Private Beta First Tester Monitoring Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- private beta first tester monitoring documentation
+- manual, reviewer-owned monitoring for approved staging/private beta testers only
+- guidance that private beta monitoring is not public launch monitoring
+- first tester monitoring checklist for launch decision record, staging URL, commit hash, approved tester account, manual tester invite, first login, auth/session behavior, email/custom SMTP issues, protected route access, credits/status honesty, BYOK/provider settings fail-closed behavior, project/history honesty, export/artifact honesty, admin/readiness-only boundaries, and feedback intake readiness
+- first 24-hour cadence for first tester login check, same-day feedback review, immediate blocker/security triage, daily triage summary, and hold/pause decision if needed
+- stop/pause criteria for secret exposure, service-role exposure, broken auth/session, email/SMTP onboarding failure, fake billing/credits, fake downloads/artifacts/signed URLs, admin exposure, staging outage, tester access leak, and serious privacy/security report
+- monitoring note template with tester ID placeholder, safe account email placeholder, commit hash placeholder, staging URL placeholder, time window placeholder, pages tested, observed issues, severity, pause/go/hold recommendation, follow-up patch phase placeholder, and reviewer sign-off placeholder
+- focused docs/source regression coverage for no analytics runtime, no monitoring backend, no database table, no dashboard UI, no API route, no fake metrics, and no fake monitoring status
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, service-role keys, provider keys, JWT secrets, webhook secrets, or database secrets were added
+- no migrations were added
+- no auth runtime or backend route behavior changed
+- no analytics or monitoring API route was added
+- no monitoring backend, database table, dashboard UI, fake metric state, fake dashboard, or fake monitoring status was added
+- no live email sending was added
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact delivery or download behavior was added
+- no fake success, progress, artifacts, or downloads were added
+- no public launch approval was added
+
 ## Phase 47 - Private Beta Launch Decision Record Pack
 
 Status:
