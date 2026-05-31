@@ -193,6 +193,19 @@ Why it matters:
 - Staging preparation needs explicit controls before testers use a shared environment.
 - Public launch remains blocked until staging has been manually configured, real auth smoke passes in that environment, production auth/RLS/storage readiness is verified, and a separate public launch go/no-go approves it.
 
+### Phase 39 Staging Publish Dry Run Is Manual And Secret-Free
+
+Current state:
+
+- Phase 39 adds a staging publish dry-run safety pack.
+- The pack includes placeholder-only staging env guidance and focused regression coverage for env-name documentation, frontend/backend secret boundaries, manual smoke gates, private beta go/no-go gating, and non-live product boundaries.
+- It does not deploy anything, add real env values, configure SMTP, add service-role keys, add migrations, change auth runtime, change backend routes, enable BYOK, enable credits/billing, call provider SDKs, change generation/export/render runtime, or approve public launch.
+
+Why it matters:
+
+- Staging publish preparation must stay secret-free and manual until the deployment environment is configured outside the repo.
+- Public launch remains blocked until the manual checklist, staging smoke, production auth/RLS/storage readiness, and a separate public launch go/no-go are complete.
+
 ### Export Runtime Still Deferred
 
 Current state:

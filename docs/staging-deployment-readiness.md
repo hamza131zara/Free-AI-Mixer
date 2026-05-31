@@ -6,6 +6,22 @@ This checklist prepares Free AI Mixer for a controlled staging/private-beta depl
 
 Private beta is not public launch. Staging readiness means the team can manually verify account/auth flows and honest product boundaries in a stable environment before inviting a small tester group.
 
+Use [Staging Environment Example](./staging-env-example.md) as a placeholder-only reference for required environment names. It must never contain real secrets.
+
+## Staging Publish Dry Run
+
+The staging publish dry run is a manual readiness rehearsal, not a deployment command and not public launch approval.
+
+Before any tester invitation:
+
+- Confirm the staging frontend and backend URLs are stable.
+- Confirm frontend variables contain only public client config.
+- Confirm backend secrets are server-only.
+- Confirm no service-role key exists in frontend config or `VITE_*` variables.
+- Run the manual staging smoke checklist below.
+- Run the private beta go/no-go checklist before inviting testers.
+- Stop if any secret, tokenized link, fake product state, or public-launch claim appears.
+
 ## Required Staging URLs
 
 - Stable frontend URL for the staging app.
@@ -55,6 +71,8 @@ Do not commit real values for any of these names. Do not create `VITE_*SERVICE_R
 
 - `npm.cmd run typecheck` passes.
 - `npm.cmd run build` passes.
+- `npm.cmd run test:e2e -- tests/e2e/phase37-private-beta-publish-readiness.spec.ts` passes.
+- `npm.cmd run test:e2e -- tests/e2e/phase38-staging-deployment-readiness.spec.ts` passes.
 - Public landing and mixer pages load without requiring the backend.
 - Login works for an approved, verified staging tester account.
 - `/account/bootstrap` completes or fails closed with a public-safe state.
@@ -101,4 +119,3 @@ Stop staging/private-beta preparation and return to internal smoke only if:
 - Export/artifact surfaces show fake downloads, fake signed URLs, fake artifacts, or fake success.
 - Admin analytics appear publicly unlocked.
 - Public/open beta or production launch is implied without manual go/no-go approval.
-

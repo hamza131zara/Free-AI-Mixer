@@ -22,7 +22,7 @@ Private beta is not public launch. No production launch should happen automatica
 
 Complete this before inviting any remote tester.
 
-Use [Staging Deployment Readiness](./staging-deployment-readiness.md) as the focused staging checklist. This private beta go/no-go checklist remains the invitation gate.
+Use [Staging Deployment Readiness](./staging-deployment-readiness.md) as the focused staging checklist and [Staging Environment Example](./staging-env-example.md) as a placeholder-only env reference. This private beta go/no-go checklist remains the invitation gate.
 
 ### Manual Staging Environment Readiness
 

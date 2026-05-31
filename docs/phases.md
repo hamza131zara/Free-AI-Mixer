@@ -12826,3 +12826,34 @@ Safety boundaries:
 - no fake success, progress, artifacts, or downloads were added
 - no public launch approval was added
 
+## Phase 39 - Staging Publish Dry-Run Safety Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- focused staging publish dry-run safety coverage
+- placeholder-only staging environment example documentation
+- staging dry-run checklist documentation
+- required env-name documentation checks without real values
+- frontend/public env versus backend/server-only env boundary checks
+- manual smoke and go/no-go gate checks
+- non-live boundary checks for BYOK, credits/billing, export/artifact delivery, and admin analytics
+- source-boundary checks for no frontend Supabase DB/storage access, no service-role exposure, no committed secret-looking values, and no public-launch shortcut
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, service-role keys, provider keys, JWT secrets, webhook secrets, or database secrets were added
+- no migrations were added
+- no auth runtime or backend route behavior changed
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact delivery or download behavior was added
+- no fake success, progress, artifacts, or downloads were added
+- no public launch approval was added
+

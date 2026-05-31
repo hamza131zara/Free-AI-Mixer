@@ -726,6 +726,23 @@ Status:
 - Public/open beta.
 - Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
 
+## Phase 39 status
+
+- Phase 39: complete when the staging publish dry-run safety pack is signed off.
+- Scope: one focused safety regression, placeholder-only staging env documentation, staging dry-run checklist updates, and roadmap/known-issues/phase notes.
+- The pack validates required staging env names without real values, frontend-public versus backend-server-only env boundaries, manual smoke/checklist gates, private beta go/no-go gating, custom SMTP manual verification, non-live BYOK/credits/billing/export/admin boundaries, no frontend Supabase DB/storage access, no secret-looking committed values, and unchanged build/typecheck posture.
+- No deployment, real env values, SMTP credentials, service-role keys, migrations, auth runtime changes, backend route changes, live BYOK storage, credits/billing mutation, provider SDK/API calls, generation/export/render runtime changes, artifact delivery/download behavior, fake success state, or public launch approval are included.
+
+### Still deferred after Phase 39
+
+- Actual staging deployment.
+- Real staging secret configuration in a deployment provider.
+- Manual custom SMTP verification.
+- Manual real auth smoke against staging.
+- Tester invitation execution.
+- Public/open beta.
+- Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).
