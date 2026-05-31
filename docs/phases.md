@@ -12917,3 +12917,34 @@ Safety boundaries:
 - no artifact delivery or download behavior was added
 - no fake feedback submission success UI was added
 - no public launch approval was added
+
+## Phase 42 - Private Beta Issue Triage / Patch Planning Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- private beta issue triage and patch planning documentation
+- manual severity levels for blocker, critical, high, medium, low, and docs/copy only
+- triage categories for security/privacy, auth/session, email/SMTP, credits/billing honesty, BYOK/provider settings, generation/mixer, export/artifact honesty, admin/readiness, UI/UX, and docs/copy
+- stop/rollback criteria for secret exposure, service-role exposure, broken auth/session, fake billing/credits, fake downloads/artifacts, public launch claims, and major staging outage
+- patch planning template with issue summary, source feedback reference placeholder, severity, category, affected page/feature, reproduction, expected/actual, proposed safe phase, likely files, tests, rollback notes, and strict exclusions
+- grouping rules that keep docs/copy issues separate from risky runtime work
+- focused docs/source regression coverage for no fake issue tracker, no fake resolved status, no fake in-app feedback, and no patch automation
+
+Safety boundaries:
+
+- no deployment was executed
+- no real env values, SMTP credentials, service-role keys, provider keys, JWT secrets, webhook secrets, or database secrets were added
+- no migrations were added
+- no auth runtime or backend route behavior changed
+- no issue tracker API route, database table, live email sending, fake issue resolved status, or patch automation was added
+- no live BYOK storage was added
+- no billing or credits mutation was added
+- no provider SDK/API calls were added
+- no generation/export/render runtime behavior changed
+- no artifact delivery or download behavior was added
+- no fake success, progress, artifacts, or downloads were added
+- no public launch approval was added

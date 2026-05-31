@@ -237,6 +237,23 @@ Why it matters:
 - Private beta feedback must be actionable without becoming a new secret-leak path.
 - Tester reports should improve the product without creating public-launch claims or fake support infrastructure.
 
+### Phase 42 Issue Triage And Patch Planning Is Manual
+
+Current state:
+
+- Phase 42 adds private beta issue triage and patch planning documentation plus focused docs/source regression coverage.
+- Feedback intake still does not automatically become implementation.
+- Issues must be classified by severity and category before any code changes.
+- Risky issues follow audit-first handling before implementation.
+- Patch planning uses a template with reproduction steps, expected result, actual result, proposed safe phase, affected files, tests, rollback notes, and strict exclusions.
+- Docs/copy-only issues can be grouped when safe, but security/auth/storage/BYOK/billing/export runtime work must stay separate.
+- No fake issue tracker, fake resolved status, fake in-app feedback, patch automation, issue tracker API route, database table, live email sending, deployment, or public launch approval was added.
+
+Why it matters:
+
+- Tester feedback needs a safe path into engineering work without bypassing review.
+- Private beta fixes must not become broad mixed-scope patches or hidden runtime expansions.
+
 ### Export Runtime Still Deferred
 
 Current state:

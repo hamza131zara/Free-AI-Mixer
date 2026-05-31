@@ -133,6 +133,8 @@ Private beta testers should understand these current limits before reporting the
 
 Feedback does not automatically become an implementation phase.
 
+Use [Private Beta Issue Triage And Patch Planning](./private-beta-issue-triage-patch-planning.md) before converting accepted feedback into patch work.
+
 Before implementation:
 
 - Review the report manually.
@@ -141,4 +143,3 @@ Before implementation:
 - Check whether it is already a known limitation.
 - Prioritize security/privacy and blocker reports first.
 - Convert accepted work into a narrow implementation prompt with explicit safety boundaries.
-

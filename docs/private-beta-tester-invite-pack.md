@@ -42,6 +42,8 @@ Please report feedback only through the approved private beta feedback channel. 
 
 Use [Private Beta Feedback Intake](./private-beta-feedback-intake.md) for approved channels, report templates, triage categories, stop criteria, and tester communication rules.
 
+Use [Private Beta Issue Triage And Patch Planning](./private-beta-issue-triage-patch-planning.md) after feedback is reviewed and before any patch work is promised or implemented.
+
 Testers must never send API keys, provider keys, SMTP credentials, service-role keys, JWTs, webhook secrets, passwords, full confirmation links, recovery links, URL hashes, private env values, or screenshots/videos containing tokenized URLs.
 
 ## What Testers Should Try

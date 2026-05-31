@@ -775,6 +775,23 @@ Status:
 - Feedback API routes and persistence.
 - Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
 
+## Phase 42 status
+
+- Phase 42: complete when the private beta issue triage and patch planning pack is signed off.
+- Scope: docs plus focused regression coverage only.
+- The pack defines manual issue classification, severity levels, triage categories, stop/rollback criteria, patch planning templates, grouping rules, and audit-first handling for risky issues.
+- Feedback intake still does not automatically become implementation.
+- Patch planning does not create fake issue tracker state, fake resolved status, patch automation, deployment automation, backend routes, databases, or public launch approval.
+
+### Still deferred after Phase 42
+
+- Actual patch implementation from tester feedback.
+- Automated issue tracker integration.
+- In-app feedback or issue submission.
+- Issue tracker API routes and persistence.
+- Public support launch.
+- Live BYOK, credits, billing, generation/export account runtime, production artifact delivery, admin analytics, event/audit persistence, and production launch approval.
+
 ## Phase 8.14 status
 
 - Phase 8.14-A: complete (enqueue behavior audit).
