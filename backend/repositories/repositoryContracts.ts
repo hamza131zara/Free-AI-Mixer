@@ -38,6 +38,10 @@ export type BackendProviderKeyVerificationStatus =
   | "validation_failed"
   | "needs_reverification";
 
+export type BackendProviderKeyStorageMode =
+  | "encrypted_payload"
+  | "external_secret_ref";
+
 export interface BackendEncryptedSecretPayload {
   encryptedPayload: string;
   keyVersion: string;
@@ -46,16 +50,21 @@ export interface BackendEncryptedSecretPayload {
 
 export interface BackendProviderKeyRecord
   extends BackendWorkspaceProviderKeyOwnership {
-  encryptedSecret: BackendEncryptedSecretPayload;
+  storageMode?: BackendProviderKeyStorageMode;
+  encryptedSecret?: BackendEncryptedSecretPayload;
   secretRef?: string;
   status: BackendProviderKeyStatus;
   maskedFingerprint?: string;
   keyFingerprintSuffix?: string;
   lastVerifiedAt?: string;
+  lastVerificationErrorCode?: string;
   verificationStatus?: BackendProviderKeyVerificationStatus;
   needsReverification?: boolean;
   rotatedAt?: string;
+  revokedAt?: string;
   disabledAt?: string;
+  deletedAt?: string;
+  updatedByUserId?: string;
 }
 
 export interface BackendProviderKeyCreateInput {

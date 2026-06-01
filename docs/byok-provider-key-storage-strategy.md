@@ -88,6 +88,32 @@ Phase 57 preserves these no-go items:
 - No fake connected, verified, or test-passed state.
 - No credits, billing, generation, export, admin, event, or audit runtime expansion.
 
+## Phase 59 Schema Draft And Repository Adapter Boundary
+
+Merged Phase 59 adds the next backend-only storage foundation without making BYOK live.
+
+The boundary now includes:
+
+- A draft provider key schema refinement migration with `encrypted_payload` and `secret_ref` support.
+- A schema mirror documenting the intended provider key storage shape.
+- A Supabase provider key repository adapter boundary for future create, replace, revoke, and list operations.
+- Redacted repository storage results for stored, replaced, revoked, conflict, unavailable, invalid-provider, unauthorized, and vault-unavailable outcomes.
+- Conflict handling for one active provider key per workspace/provider.
+- Replace semantics that rotate the old active record and create a redacted replacement summary.
+- Revoke semantics that disable/revoke without returning secret material.
+
+The schema draft records:
+
+- `workspace_id`, `owner_id`, `provider_id`, `provider_name`, creator/updater app-user ids, and timestamps.
+- `encrypted_payload` or `secret_ref` with a storage-mode check requiring exactly one active storage reference.
+- `key_version`, `encryption_algorithm`, `status`, `verification_status`, `last_verified_at`, sanitized `last_verification_error_code`, and `needs_reverification`.
+- `rotated_at`, `revoked_at`, `disabled_at`, and `deleted_at`.
+- A unique active workspace/provider constraint.
+- Default-deny RLS posture with no client-facing policies in this phase.
+- Comments forbidding plaintext provider keys, raw provider errors, service-role values, provider credentials, provider account metadata, and browser-visible secret material.
+
+Provider Settings routes remain fail-closed and unwired. Phase 59 does not execute migrations, configure a live vault, add frontend API key input, call provider APIs, add fake connected/verified/test-passed state, add credits or billing mutation, or integrate generation/export runtime.
+
 ## Future Recommended Architecture
 
 Future BYOK should use a backend-only provider secret boundary:

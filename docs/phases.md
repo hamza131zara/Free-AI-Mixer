@@ -13216,3 +13216,34 @@ Safety boundaries:
 - no generation or export runtime integration was added
 - no workspace id or role is trusted from frontend input
 - no live BYOK storage or configured vault runtime was added
+
+## Phase 59 - BYOK Provider Key Schema Draft + Repository Adapter Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only draft provider key schema refinement migration
+- provider key schema mirror for future BYOK storage shape
+- Supabase provider key repository adapter boundary
+- create, replace, revoke, and list behavior at the repository boundary only
+- redacted storage results for stored, replaced, revoked, conflict, unavailable, unauthorized, invalid-provider, and vault-unavailable outcomes
+- unique active workspace/provider schema posture
+- default-deny RLS posture note
+- focused boundary coverage for schema safety, repository redaction, route unwired status, frontend source boundaries, and no runtime expansion
+
+Safety boundaries:
+
+- no migration was executed
+- no provider settings route was wired to live provider key storage
+- no frontend API key input was added
+- no browser storage of provider keys was added
+- no service-role exposure through `VITE_*` was added
+- no live vault encryption implementation was added
+- no provider SDK/API calls were added
+- no fake connected, verified, or test-passed provider state was added
+- no credits or billing mutation was added
+- no generation or export runtime integration was added
+- no raw key, encrypted payload, secret reference, raw provider error, service-role-like value, or provider credential is allowed in frontend/browser-facing responses

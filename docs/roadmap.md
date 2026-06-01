@@ -1013,3 +1013,11 @@ Status:
 - Scope: provider key request/response contracts, vault operation result contracts, repository create/replace/revoke/list contracts, redacted storage result unions, docs, and focused boundary tests.
 - No frontend API key input, live vault, live provider storage, provider SDK/API call, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
 - Provider Settings remains readiness-only until a future phase wires a configured backend vault and repository under workspace owner/admin authorization.
+
+## Phase 59 status
+
+- Phase 59: backend-only BYOK provider key schema draft and Supabase repository adapter boundary pack.
+- Scope: draft provider key schema refinement migration, schema mirror, Supabase provider key repository adapter boundary, redacted create/replace/revoke/list behavior, conflict handling for one active workspace/provider key, and focused boundary tests.
+- Provider Settings routes remain fail-closed and unwired to live provider key storage.
+- No migration execution, frontend API key input, live vault encryption, provider SDK/API call, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
+- Live BYOK remains deferred until a later approved phase wires a configured backend vault, repository, workspace owner/admin authorization, route behavior, and frontend UX under no-secret-leak coverage.
