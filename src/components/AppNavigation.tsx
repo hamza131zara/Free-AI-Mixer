@@ -1,4 +1,4 @@
-import { Menu, X } from "lucide-react";
+import { ChevronDown, Menu, UserCircle, X } from "lucide-react";
 import {
   accountNavigationItems,
   authNavigationItems,
@@ -11,6 +11,9 @@ import { selectCurrentRoute, useNavigationStore } from "../store/navigationStore
 
 const isActivePath = (currentPath: string, targetPath: string): boolean =>
   currentPath === targetPath;
+
+const accountMenuTriggerLabel = (email?: string): string =>
+  email ? `Account menu for ${email}` : "Account menu";
 
 export function AppNavigation() {
   const currentRoute = useNavigationStore(selectCurrentRoute);
@@ -28,6 +31,9 @@ export function AppNavigation() {
         navigateTo("/login");
       }
     });
+  };
+  const navigateToAccountRoute = (path: string): void => {
+    navigateTo(path);
   };
 
   return (
@@ -75,63 +81,43 @@ export function AppNavigation() {
           </div>
           <div className="nav-group nav-group-auth nav-group-desktop-auth">
             {authStatus === "authenticated" ? (
-              <>
-                <span className="nav-link" data-testid="account-nav-identity">
-                  {identity?.email ?? "Signed in"}
-                </span>
-                <button
-                  type="button"
-                  className={
-                    isActivePath(currentRoute.path, "/dashboard")
-                      ? "nav-link nav-link-active"
-                      : "nav-link"
-                  }
-                  onClick={() => navigateTo("/dashboard")}
+              <details className="account-menu" data-testid="account-menu">
+                <summary
+                  className="account-menu-trigger"
+                  aria-label={accountMenuTriggerLabel(identity?.email)}
+                  data-testid="account-menu-trigger"
                 >
-                  Dashboard
-                </button>
-                <button
-                  type="button"
-                  className={
-                    isActivePath(currentRoute.path, "/settings/providers")
-                      ? "nav-link nav-link-active"
-                      : "nav-link"
-                  }
-                  onClick={() => navigateTo("/settings/providers")}
-                >
-                  Provider Settings
-                </button>
-                <button
-                  type="button"
-                  className={
-                    isActivePath(currentRoute.path, "/credits")
-                      ? "nav-link nav-link-active"
-                      : "nav-link"
-                  }
-                  onClick={() => navigateTo("/credits")}
-                >
-                  Credits
-                </button>
-                <button
-                  type="button"
-                  className={
-                    isActivePath(currentRoute.path, "/help")
-                      ? "nav-link nav-link-active"
-                      : "nav-link"
-                  }
-                  onClick={() => navigateTo("/help")}
-                >
-                  Help
-                </button>
-                <button
-                  type="button"
-                  className="nav-link"
-                  onClick={handleLogout}
-                  disabled={pendingAction === "logout"}
-                >
-                  {pendingAction === "logout" ? "Logging out..." : "Log out"}
-                </button>
-              </>
+                  <UserCircle aria-hidden="true" size={18} />
+                  <span className="account-menu-trigger-copy" data-testid="account-nav-identity">
+                    {identity?.email ?? "Signed in"}
+                  </span>
+                  <ChevronDown aria-hidden="true" size={16} />
+                </summary>
+                <div className="account-menu-panel" data-testid="account-menu-panel">
+                  {accountNavigationItems.map((route) => (
+                    <button
+                      key={`account-menu-${route.id}`}
+                      type="button"
+                      className={
+                        isActivePath(currentRoute.path, route.path)
+                          ? "account-menu-item account-menu-item-active"
+                          : "account-menu-item"
+                      }
+                      onClick={() => navigateToAccountRoute(route.path)}
+                    >
+                      {route.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="account-menu-item account-menu-logout"
+                    onClick={handleLogout}
+                    disabled={pendingAction === "logout"}
+                  >
+                    {pendingAction === "logout" ? "Logging out..." : "Log out"}
+                  </button>
+                </div>
+              </details>
             ) : (
               authNavigationItems.map((route) => (
                 <button
@@ -173,25 +159,25 @@ export function AppNavigation() {
             <section className="mobile-nav-section">
               <p className="mobile-nav-heading">Account</p>
               <div className="nav-group">
-                {accountNavigationItems.map((route) => (
-                  <button
-                    key={`mobile-account-${route.id}`}
-                    type="button"
-                    className={
-                      isActivePath(currentRoute.path, route.path)
-                        ? "nav-link nav-link-active"
-                        : "nav-link"
-                    }
-                    onClick={() => navigateTo(route.path)}
-                  >
-                    {route.label}
-                  </button>
-                ))}
                 {authStatus === "authenticated" ? (
                   <>
                     <span className="nav-link" data-testid="mobile-account-nav-identity">
                       {identity?.email ?? "Signed in"}
                     </span>
+                    {accountNavigationItems.map((route) => (
+                      <button
+                        key={`mobile-account-${route.id}`}
+                        type="button"
+                        className={
+                          isActivePath(currentRoute.path, route.path)
+                            ? "nav-link nav-link-active"
+                            : "nav-link"
+                        }
+                        onClick={() => navigateTo(route.path)}
+                      >
+                        {route.label}
+                      </button>
+                    ))}
                     <button
                       type="button"
                       className="nav-link"

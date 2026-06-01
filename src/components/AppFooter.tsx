@@ -1,5 +1,4 @@
 import {
-  accountNavigationItems,
   exploreFooterItems,
   legalNavigationItems,
   productFooterItems,
@@ -76,20 +75,6 @@ export function AppFooter() {
           <div className="footer-section">
             <h3>Explore</h3>
             {exploreFooterItems.map((route) => (
-              <button
-                key={route.id}
-                type="button"
-                className="footer-link"
-                onClick={() => navigateTo(route.path)}
-              >
-                {route.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="footer-section">
-            <h3>Account</h3>
-            {accountNavigationItems.map((route) => (
               <button
                 key={route.id}
                 type="button"
