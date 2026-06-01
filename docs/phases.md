@@ -13247,3 +13247,32 @@ Safety boundaries:
 - no credits or billing mutation was added
 - no generation or export runtime integration was added
 - no raw key, encrypted payload, secret reference, raw provider error, service-role-like value, or provider credential is allowed in frontend/browser-facing responses
+
+## Phase 61 - Backend BYOK Local Encryption Vault Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only local/staging provider secret vault boundary
+- Node crypto `AES-256-GCM` encrypted-payload handling
+- backend-only vault config parser and validator
+- fail-closed readiness for missing or malformed vault env
+- encrypt/decrypt/store/rotate/revoke vault behavior tested directly
+- focused boundary coverage for wrong-key and tampered-payload failures
+- source-boundary coverage proving Provider Settings routes remain fail-closed and unwired
+
+Safety boundaries:
+
+- no frontend API key input was added
+- no browser storage of provider keys was added
+- no provider settings route was wired to live provider key storage
+- no migration was executed
+- no provider SDK/API calls were added
+- no test-connection implementation was added
+- no fake connected, verified, or test-passed provider state was added
+- no service-role exposure through `VITE_*` was added
+- no raw key, encrypted payload, secret reference, IV, tag, ciphertext details, raw provider error, or service-role-like value is allowed in browser-facing responses
+- no credits, billing, generation, export, admin, event, or audit runtime behavior changed

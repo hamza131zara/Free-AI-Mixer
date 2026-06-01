@@ -114,6 +114,40 @@ The schema draft records:
 
 Provider Settings routes remain fail-closed and unwired. Phase 59 does not execute migrations, configure a live vault, add frontend API key input, call provider APIs, add fake connected/verified/test-passed state, add credits or billing mutation, or integrate generation/export runtime.
 
+## Phase 61 Local Encryption Vault Boundary
+
+Merged Phase 61 adds a backend-only local/staging encrypted-payload vault boundary. This is a cryptographic boundary only; BYOK is still not live in Provider Settings.
+
+The boundary now includes:
+
+- A local encrypted provider secret vault using Node crypto `AES-256-GCM`.
+- A backend-only vault config parser and validator.
+- Authenticated encryption and decryption for internal provider key handles.
+- Fail-closed config behavior when required backend env is missing or malformed.
+- Store and rotate vault operations that return encrypted handles only.
+- Revoke vault operation that returns revoked status without secret material.
+
+The backend-only env names are:
+
+- `FREE_AI_MIXER_BYOK_VAULT_ENABLED`
+- `FREE_AI_MIXER_BYOK_VAULT_PROVIDER`
+- `FREE_AI_MIXER_BYOK_ENCRYPTION_KEY_VERSION`
+- `FREE_AI_MIXER_BYOK_ENCRYPTION_KEY_V1`
+
+Docs and tests intentionally do not include real env values. The encryption key must be a backend-only base64-encoded 32-byte key. It must never be exposed through `VITE_*`, frontend config, logs, screenshots, traces, docs examples, or browser responses.
+
+Phase 61 keeps these no-go items:
+
+- No frontend API key input.
+- No browser storage of provider keys.
+- No Provider Settings route wiring to live key storage.
+- No migration execution.
+- No provider SDK/API calls.
+- No test-connection implementation.
+- No fake connected, verified, or test-passed state.
+- No raw key, encrypted payload, secret reference, IV, tag, ciphertext details, raw provider errors, or service-role-like values in browser-facing responses.
+- No credits, billing, generation, export, admin, event, or audit runtime expansion.
+
 ## Future Recommended Architecture
 
 Future BYOK should use a backend-only provider secret boundary:

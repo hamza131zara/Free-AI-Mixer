@@ -33,6 +33,8 @@ const sensitiveKeyParts = [
   "replacement_plaintext_key",
   "encryptedpayload",
   "encrypted_payload",
+  "encryptionkey",
+  "encryption_key",
   "secretref",
   "secret_ref",
   "providererror",

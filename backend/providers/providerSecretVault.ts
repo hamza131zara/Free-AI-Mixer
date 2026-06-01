@@ -10,6 +10,7 @@ export interface EncryptProviderKeyInput {
 export interface DecryptProviderKeyInput {
   providerKeyId: string;
   workspaceId: string;
+  secretHandle?: ProviderSecretVaultSecretHandle;
 }
 
 export interface StoreProviderKeyInput {
@@ -78,10 +79,24 @@ export interface ProviderSecretVaultStoredResult {
   keyFingerprintSuffix?: string;
 }
 
+export interface ProviderSecretVaultEncryptedResult {
+  kind: "vault_provider_key_encrypted";
+  status: "encrypted";
+  secretHandle: ProviderSecretVaultSecretHandle;
+  maskedFingerprint?: string;
+  keyFingerprintSuffix?: string;
+}
+
 export interface ProviderSecretVaultDecryptedResult {
   kind: "vault_provider_key_decrypted";
   status: "decrypted";
   plaintextKey: string;
+}
+
+export interface ProviderSecretVaultDecryptFailedResult {
+  kind: "vault_decrypt_failed";
+  status: "decrypt_failed";
+  message: string;
 }
 
 export interface ProviderSecretVaultRevokedResult {
@@ -105,8 +120,10 @@ export interface ProviderSecretVaultInvalidProviderResult {
 
 export type ProviderSecretVaultOperationResult =
   | ProviderSecretVaultUnavailableResult
+  | ProviderSecretVaultEncryptedResult
   | ProviderSecretVaultStoredResult
   | ProviderSecretVaultDecryptedResult
+  | ProviderSecretVaultDecryptFailedResult
   | ProviderSecretVaultRevokedResult
   | ProviderSecretVaultRotatedResult
   | ProviderSecretVaultInvalidProviderResult;

@@ -1021,3 +1021,11 @@ Status:
 - Provider Settings routes remain fail-closed and unwired to live provider key storage.
 - No migration execution, frontend API key input, live vault encryption, provider SDK/API call, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
 - Live BYOK remains deferred until a later approved phase wires a configured backend vault, repository, workspace owner/admin authorization, route behavior, and frontend UX under no-secret-leak coverage.
+
+## Phase 61 status
+
+- Phase 61: backend-only BYOK local encryption vault boundary pack.
+- Scope: Node crypto `AES-256-GCM` local/staging encrypted-payload vault, backend-only config parsing/validation, direct encrypt/decrypt/store/rotate/revoke tests, wrong-key/tamper fail-closed coverage, and route/frontend source-boundary checks.
+- Provider Settings routes remain fail-closed and unwired to live provider key storage.
+- No frontend API key input, route wiring, migration execution, provider SDK/API call, test-connection implementation, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
+- Live BYOK remains deferred until a later approved phase wires auth/workspace-authorized routes to the configured vault and repository with browser-safe redacted responses only.
