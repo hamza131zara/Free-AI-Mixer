@@ -14,6 +14,14 @@ import {
   createRepositoryComposition,
   type BackendRepositoryComposition,
 } from "./repositoryComposition";
+import { createLocalEncryptedProviderSecretVault } from "../providers/localEncryptedProviderSecretVault";
+import { createNotConfiguredProviderSecretVault } from "../providers/notConfiguredProviderSecretVault";
+import {
+  parseByokProviderKeysRuntimeGate,
+  parseProviderSecretVaultConfig,
+  type ByokProviderKeysRuntimeGate,
+} from "../providers/providerSecretVaultConfig";
+import type { ProviderSecretVault } from "../providers/providerSecretVault";
 import {
   drainRenderWorkerOnce,
   type RenderWorkerDrainResult,
@@ -36,6 +44,10 @@ export interface BackendDependencies {
   artifactStorageRefResolver: ArtifactStorageRefResolver;
   /** Internal DB-backed repository composition boundary. Unwired by default. */
   repositoryComposition: BackendRepositoryComposition;
+  /** Internal provider secret vault boundary. Mutations remain route-gated. */
+  providerSecretVault: ProviderSecretVault;
+  /** Explicit BYOK provider-key route-live gate. Parsed but not live in Phase 63. */
+  byokProviderKeysRuntimeGate: ByokProviderKeysRuntimeGate;
   /** Internal render snapshot store (process-memory only) */
   renderInputSnapshotStore: RenderInputSnapshotStore;
 }
@@ -55,6 +67,12 @@ export const createBackendDependencies = (): BackendDependencies => {
     supabaseConfig,
     createSupabaseClientFactory(supabaseConfig),
   );
+  const byokVaultConfig = parseProviderSecretVaultConfig();
+  const providerSecretVault =
+    byokVaultConfig.kind === "configured"
+      ? createLocalEncryptedProviderSecretVault(byokVaultConfig)
+      : createNotConfiguredProviderSecretVault();
+  const byokProviderKeysRuntimeGate = parseByokProviderKeysRuntimeGate();
 
   const pathPolicy: RenderOutputPathPolicy = {
     roots,
@@ -107,6 +125,8 @@ export const createBackendDependencies = (): BackendDependencies => {
     onVerifiedArtifactRef,
     artifactStorageRefResolver,
     repositoryComposition,
+    providerSecretVault,
+    byokProviderKeysRuntimeGate,
     renderInputSnapshotStore,
   };
 };

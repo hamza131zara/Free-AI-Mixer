@@ -19,32 +19,73 @@ import { createAdminRouter } from "./routes/admin";
 import { createMonitoringRouter } from "./routes/monitoring";
 import { createExportRouter } from "./routes/exports";
 import { createBackendDependencies } from "./composition/backendDependencies";
+import type { BackendDatabaseRepositories } from "./composition/repositoryComposition";
 import { createRenderWorkerLifecycle } from "./workers/renderWorkerLifecycle";
 import { createLocalDevArtifactAccessProvider } from "./artifacts/localDevArtifactAccessProvider";
 import { readSupabaseConfigFromEnv } from "./config/supabaseConfig";
 import { createSupabaseClientFactory } from "./db/supabaseClientFactory";
+import type { WorkspaceMembershipRepository } from "./auth/workspaceMembership";
 
 const isLocalDevArtifactStreamEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1";
 
+const createProviderSettingsMembershipRepository = (
+  repositories: BackendDatabaseRepositories,
+): WorkspaceMembershipRepository => ({
+  getMembership: async ({ userId, workspaceId }) => {
+    const membership =
+      await repositories.workspaceMembershipRepository.getMembership(
+        workspaceId,
+        userId,
+      );
+
+    if (!membership) {
+      return {
+        kind: "not_member",
+        reason: "not_found",
+      };
+    }
+
+    if (membership.status !== "active") {
+      return {
+        kind: "not_member",
+        reason: "inactive",
+      };
+    }
+
+    return {
+      kind: "member",
+      membership: {
+        role: membership.role === "editor" ? "member" : membership.role,
+        source: "workspace_memberships",
+        status: "active",
+        userId: membership.userId,
+        workspaceId: membership.workspaceId,
+      },
+    };
+  },
+});
+
 export const createApp = (): Express => {
   const app = express();
   const backendDeps = createBackendDependencies();
+  const repositories =
+    backendDeps.repositoryComposition.kind === "repository_composition_available"
+      ? backendDeps.repositoryComposition.createRepositories()
+      : undefined;
   const authRuntimeConfig = readTrustedAuthProviderRuntimeConfig();
   const supabaseClientFactory = createSupabaseClientFactory(
     readSupabaseConfigFromEnv(),
   );
   const routeAccessResolver =
-    backendDeps.repositoryComposition.kind === "repository_composition_available"
+    repositories
       ? createRepositoryBackedRequesterContextResolver({
-          repositories: backendDeps.repositoryComposition.createRepositories(),
+          repositories,
         })
       : undefined;
   const accountBootstrapDependencies =
-    backendDeps.repositoryComposition.kind === "repository_composition_available" &&
-    supabaseClientFactory.kind === "supabase_client_factory"
+    repositories && supabaseClientFactory.kind === "supabase_client_factory"
       ? (() => {
-          const repositories = backendDeps.repositoryComposition.createRepositories();
           const adminHandle = supabaseClientFactory.createAdminClientHandle();
 
           return {
@@ -157,7 +198,16 @@ export const createApp = (): Express => {
   app.use(
     createProviderSettingsRouter({
       runtimeConfig: authRuntimeConfig,
+      providerSecretVault: backendDeps.providerSecretVault,
+      providerKeysRuntimeEnabled: backendDeps.byokProviderKeysRuntimeGate.enabled,
       ...(routeAccessResolver ? { routeAccessResolver } : {}),
+      ...(repositories
+        ? {
+            providerKeyRepository: repositories.providerKeyRepository,
+            workspaceMembershipRepository:
+              createProviderSettingsMembershipRepository(repositories),
+          }
+        : {}),
     }),
   );
   app.use(

@@ -1029,3 +1029,11 @@ Status:
 - Provider Settings routes remain fail-closed and unwired to live provider key storage.
 - No frontend API key input, route wiring, migration execution, provider SDK/API call, test-connection implementation, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
 - Live BYOK remains deferred until a later approved phase wires auth/workspace-authorized routes to the configured vault and repository with browser-safe redacted responses only.
+
+## Phase 63 status
+
+- Phase 63: backend-only BYOK vault/repository composition boundary pack.
+- Scope: provider key repository composition, backend dependency vault composition, not-configured default vault, valid-env local encrypted vault composition, explicit provider-key route-live gate parsing, and optional Provider Settings dependency shape.
+- Provider Settings mutation routes remain unavailable/fail-closed even when vault and repository dependencies exist.
+- No frontend API key input, live route mutation behavior, migration execution, provider SDK/API call, test-connection implementation, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
+- Live BYOK remains deferred until a later approved phase implements route add/replace/revoke behavior under backend auth, workspace owner/admin authorization, configured vault/repository dependencies, and browser-safe redacted responses only.

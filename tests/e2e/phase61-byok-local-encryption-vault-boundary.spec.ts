@@ -264,12 +264,15 @@ test.describe("phase61 local encrypted provider secret vault boundary", () => {
 
     expect(providerSettingsRoute).toContain("createNotConfiguredProviderSecretVault");
     expect(providerSettingsRoute).toContain("secure_provider_key_storage_not_enabled");
-    expect(combinedRuntime).not.toContain("createLocalEncryptedProviderSecretVault");
-    expect(combinedRuntime).not.toContain("createLocalEncryptedProviderSecretVaultFromEnv");
-    expect(combinedRuntime).not.toContain("parseProviderSecretVaultConfig");
+    expect(backendDependencies).toContain("createLocalEncryptedProviderSecretVault");
+    expect(backendDependencies).toContain("parseProviderSecretVaultConfig");
+    expect(providerSettingsRoute).not.toContain("createLocalEncryptedProviderSecretVault");
+    expect(providerSettingsRoute).not.toContain("parseProviderSecretVaultConfig");
     expect(providerSettingsRoute).not.toContain(".storeProviderKey(");
     expect(providerSettingsRoute).not.toContain(".rotateProviderKey(");
     expect(providerSettingsRoute).not.toContain(".decryptProviderKey(");
+    expect(appSource).not.toContain(".storeProviderKey(");
+    expect(combinedRuntime).not.toContain(".createProviderKey(");
   });
 
   test("frontend source remains free of key input browser storage provider SDK calls and fake state", async () => {

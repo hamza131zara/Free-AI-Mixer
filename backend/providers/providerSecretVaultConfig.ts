@@ -3,6 +3,7 @@ export const byokVaultEnvNames = {
   provider: "FREE_AI_MIXER_BYOK_VAULT_PROVIDER",
   keyVersion: "FREE_AI_MIXER_BYOK_ENCRYPTION_KEY_VERSION",
   keyPrefix: "FREE_AI_MIXER_BYOK_ENCRYPTION_KEY_",
+  providerKeysRuntimeEnabled: "FREE_AI_MIXER_BYOK_PROVIDER_KEYS_RUNTIME_ENABLED",
 } as const;
 
 export interface ProviderSecretVaultLocalEncryptedPayloadConfig {
@@ -30,6 +31,11 @@ export type ProviderSecretVaultConfigDecision =
   | ProviderSecretVaultConfigUnavailable;
 
 export type ProviderSecretVaultEnv = Record<string, string | undefined>;
+
+export interface ByokProviderKeysRuntimeGate {
+  kind: "byok_provider_keys_runtime_gate";
+  enabled: boolean;
+}
 
 const unavailable = (
   reason: ProviderSecretVaultConfigUnavailable["reason"],
@@ -109,3 +115,10 @@ export const parseProviderSecretVaultConfig = (
     keysByVersion,
   };
 };
+
+export const parseByokProviderKeysRuntimeGate = (
+  env: ProviderSecretVaultEnv = process.env,
+): ByokProviderKeysRuntimeGate => ({
+  kind: "byok_provider_keys_runtime_gate",
+  enabled: env[byokVaultEnvNames.providerKeysRuntimeEnabled] === "1",
+});

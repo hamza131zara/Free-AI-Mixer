@@ -148,6 +148,34 @@ Phase 61 keeps these no-go items:
 - No raw key, encrypted payload, secret reference, IV, tag, ciphertext details, raw provider errors, or service-role-like values in browser-facing responses.
 - No credits, billing, generation, export, admin, event, or audit runtime expansion.
 
+## Phase 63 Vault/Repository Composition Boundary
+
+Merged Phase 63 adds backend-only composition seams for future BYOK wiring without making Provider Settings mutations live.
+
+The boundary now includes:
+
+- Provider key repository composition when Supabase DB and backend-only service-role configuration are valid.
+- Provider secret vault composition in backend dependencies.
+- Not-configured vault as the default fail-closed vault.
+- Local encrypted vault composition only when backend-only BYOK vault env is valid.
+- An explicit route-live gate named `FREE_AI_MIXER_BYOK_PROVIDER_KEYS_RUNTIME_ENABLED`.
+- Optional Provider Settings route dependencies for future provider key repository and vault wiring.
+
+Provider Settings mutation routes remain unavailable and fail closed. The route-live gate is parsed for future use, but Phase 63 does not make add, replace, revoke, routing policy, or test-connection behavior live.
+
+Phase 63 keeps these no-go items:
+
+- No frontend API key input.
+- No browser storage of provider keys.
+- No live route mutation behavior.
+- No migration execution.
+- No provider SDK/API calls.
+- No test-connection implementation.
+- No fake connected, verified, or test-passed state.
+- No service-role exposure through `VITE_*`.
+- No raw key, encrypted payload, secret reference, IV, tag, ciphertext details, raw provider errors, or service-role-like values in browser-facing responses.
+- No credits, billing, generation, export, admin, event, or audit runtime expansion.
+
 ## Future Recommended Architecture
 
 Future BYOK should use a backend-only provider secret boundary:

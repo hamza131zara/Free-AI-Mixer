@@ -13276,3 +13276,32 @@ Safety boundaries:
 - no service-role exposure through `VITE_*` was added
 - no raw key, encrypted payload, secret reference, IV, tag, ciphertext details, raw provider error, or service-role-like value is allowed in browser-facing responses
 - no credits, billing, generation, export, admin, event, or audit runtime behavior changed
+
+## Phase 63 - BYOK Vault/Repository Composition Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only provider key repository composition
+- backend dependency composition for provider secret vault
+- not-configured vault remains default fail-closed behavior
+- local encrypted vault is composed only when backend-only BYOK vault env is valid
+- explicit `FREE_AI_MIXER_BYOK_PROVIDER_KEYS_RUNTIME_ENABLED` route-live gate parsing
+- optional Provider Settings route dependency shape for future repository/vault wiring
+- focused boundary coverage proving Provider Settings mutation routes remain unavailable
+
+Safety boundaries:
+
+- no frontend API key input was added
+- no browser storage of provider keys was added
+- no live provider settings route mutation behavior was added
+- no migration was executed
+- no provider SDK/API calls were added
+- no test-connection implementation was added
+- no fake connected, verified, or test-passed provider state was added
+- no service-role exposure through `VITE_*` was added
+- no raw key, encrypted payload, secret reference, IV, tag, ciphertext details, raw provider error, or service-role-like value is allowed in browser-facing responses
+- no credits, billing, generation, export, admin, event, or audit runtime behavior changed

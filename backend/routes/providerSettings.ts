@@ -25,11 +25,14 @@ import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProvid
 import { createNotConfiguredProviderSecretVault } from "../providers/notConfiguredProviderSecretVault";
 import { getProviderCatalog } from "../providers/providerCatalog";
 import type { ProviderSecretVault } from "../providers/providerSecretVault";
+import type { BackendProviderKeyRepository } from "../repositories/repositoryContracts";
 
 export interface CreateProviderSettingsRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
   workspaceMembershipRepository?: WorkspaceMembershipRepository;
   providerSecretVault?: ProviderSecretVault;
+  providerKeyRepository?: BackendProviderKeyRepository;
+  providerKeysRuntimeEnabled?: boolean;
   routeAccessResolver?: AsyncBackendRequesterContextResolver;
 }
 
@@ -258,6 +261,8 @@ export const createProviderSettingsRouter = (
     createWorkspaceMembershipNotConfiguredRepository();
   const providerSecretVault =
     options.providerSecretVault ?? createNotConfiguredProviderSecretVault();
+  void options.providerKeyRepository;
+  void options.providerKeysRuntimeEnabled;
 
   router.get(
     "/provider-settings/catalog",
