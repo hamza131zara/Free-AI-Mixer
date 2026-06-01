@@ -27,9 +27,11 @@ FREE_AI_MIXER_AUTH_ISSUER=https://your-project.supabase.co/auth/v1
 FREE_AI_MIXER_AUTH_AUDIENCE=authenticated
 FREE_AI_MIXER_AUTH_JWKS_URI=https://your-project.supabase.co/auth/v1/.well-known/jwks.json
 FREE_AI_MIXER_AUTH_JWT_KEY_MODE=remote_jwks
-FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS=RS256
+FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS=ES256
 FREE_AI_MIXER_WORKSPACE_RUNTIME_ENABLED=1
 ```
+
+The allowed algorithm must match the current Supabase access token algorithm for the project. The current verified local/staging Supabase Auth path uses `ES256`; if Supabase rotates or changes token signing configuration later, update this env value only after confirming the token header and JWKS support.
 
 ## Required Backend Supabase DB Env
 
