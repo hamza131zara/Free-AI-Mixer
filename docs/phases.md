@@ -13189,3 +13189,30 @@ Safety boundaries:
 - no artifact delivery or download behavior was added
 - no fake success, progress, artifacts, or downloads were added
 - no public launch approval was added
+
+## Phase 57 - Backend BYOK Provider Key Contract + Repository/Vault Storage Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only provider key vault operation result contracts
+- backend-only provider settings add, replace, revoke, and test request/response contracts
+- provider key repository create, replace, revoke, and list contract types
+- storage result unions for stored, replaced, revoked, unavailable, unauthorized, conflict, invalid provider, and vault unavailable outcomes
+- focused boundary coverage for no raw key, encrypted payload, secret reference, provider raw error, service-role-like value, fake connected state, or fake verified state in browser-visible responses
+
+Safety boundaries:
+
+- no frontend API key input was added
+- no browser storage of provider keys was added
+- no service-role exposure through `VITE_*` was added
+- no raw key, encrypted payload, or secret reference is allowed in provider settings HTTP responses
+- no provider SDK/API verification was added
+- no fake connected, verified, or test-passed provider state was added
+- no credits or billing mutation was added
+- no generation or export runtime integration was added
+- no workspace id or role is trusted from frontend input
+- no live BYOK storage or configured vault runtime was added

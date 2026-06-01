@@ -388,6 +388,16 @@ export const createProviderSettingsRouter = (
     ),
   );
 
+  router.put(
+    "/provider-settings/connections/:providerId",
+    createMutationHandler(
+      "replace_provider_key",
+      options.runtimeConfig,
+      workspaceMembershipRepository,
+      providerSecretVault,
+    ),
+  );
+
   router.post(
     "/provider-settings/connections/:providerId/test",
     createMutationHandler(

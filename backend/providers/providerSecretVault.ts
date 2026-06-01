@@ -53,7 +53,63 @@ export interface ProviderSecretVaultUnavailableResult {
   message: string;
 }
 
-export type ProviderSecretVaultOperationResult = ProviderSecretVaultUnavailableResult;
+export interface ProviderSecretVaultEncryptedSecretHandle {
+  kind: "encrypted_secret";
+  encryptedPayload: string;
+  keyVersion: string;
+  algorithm: string;
+}
+
+export interface ProviderSecretVaultExternalSecretHandle {
+  kind: "external_secret_ref";
+  secretRef: string;
+  keyVersion: string;
+}
+
+export type ProviderSecretVaultSecretHandle =
+  | ProviderSecretVaultEncryptedSecretHandle
+  | ProviderSecretVaultExternalSecretHandle;
+
+export interface ProviderSecretVaultStoredResult {
+  kind: "vault_provider_key_stored";
+  status: "stored";
+  secretHandle: ProviderSecretVaultSecretHandle;
+  maskedFingerprint?: string;
+  keyFingerprintSuffix?: string;
+}
+
+export interface ProviderSecretVaultDecryptedResult {
+  kind: "vault_provider_key_decrypted";
+  status: "decrypted";
+  plaintextKey: string;
+}
+
+export interface ProviderSecretVaultRevokedResult {
+  kind: "vault_provider_key_revoked";
+  status: "revoked";
+}
+
+export interface ProviderSecretVaultRotatedResult {
+  kind: "vault_provider_key_rotated";
+  status: "replaced";
+  secretHandle: ProviderSecretVaultSecretHandle;
+  maskedFingerprint?: string;
+  keyFingerprintSuffix?: string;
+}
+
+export interface ProviderSecretVaultInvalidProviderResult {
+  kind: "vault_invalid_provider";
+  status: "invalid_provider";
+  message: string;
+}
+
+export type ProviderSecretVaultOperationResult =
+  | ProviderSecretVaultUnavailableResult
+  | ProviderSecretVaultStoredResult
+  | ProviderSecretVaultDecryptedResult
+  | ProviderSecretVaultRevokedResult
+  | ProviderSecretVaultRotatedResult
+  | ProviderSecretVaultInvalidProviderResult;
 
 export interface ProviderSecretVault {
   getVaultReadiness(): ProviderSecretVaultReadiness;

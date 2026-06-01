@@ -35,6 +35,16 @@ export type BackendProviderConnectionUnavailableReason =
   | "secure_provider_key_storage_not_enabled"
   | "workspace_permission_not_verified";
 
+export type BackendProviderConnectionMutationStatus =
+  | "stored"
+  | "replaced"
+  | "revoked"
+  | "unavailable"
+  | "unauthorized"
+  | "conflict"
+  | "invalid_provider"
+  | "vault_unavailable";
+
 export interface BackendProviderCatalogEntry {
   id: BackendSupportedProviderId;
   displayName: string;
@@ -98,14 +108,60 @@ export interface BackendProviderRoutingPolicyResponse {
   routingPreferences: BackendProviderRoutingPreferences;
 }
 
+export interface BackendProviderConnectionCreateRequest {
+  providerId: BackendSupportedProviderId;
+  apiKey: string;
+}
+
+export interface BackendProviderConnectionReplaceRequest {
+  apiKey: string;
+}
+
+export interface BackendProviderConnectionTestRequest {
+  providerId?: BackendSupportedProviderId;
+}
+
+export interface BackendProviderConnectionRevokeRequest {
+  providerId?: BackendSupportedProviderId;
+}
+
 export type BackendProviderConnectionMutationResponse =
+  | {
+      kind: "provider_settings_connection_stored";
+      status: "stored";
+      message: string;
+      connection: BackendRedactedProviderConnectionSummary;
+    }
+  | {
+      kind: "provider_settings_connection_replaced";
+      status: "replaced";
+      message: string;
+      connection: BackendRedactedProviderConnectionSummary;
+    }
+  | {
+      kind: "provider_settings_connection_revoked";
+      status: "revoked";
+      message: string;
+      connection: BackendRedactedProviderConnectionSummary;
+    }
   | {
       kind: "provider_settings_mutation_unavailable";
       status:
         | "auth_not_configured"
         | "auth_provider_unavailable"
         | "secure_provider_key_storage_not_enabled"
-        | "workspace_permission_not_verified";
+        | "workspace_permission_not_verified"
+        | "vault_unavailable";
+      message: string;
+    }
+  | {
+      kind: "provider_settings_mutation_conflict";
+      status: "conflict";
+      message: string;
+    }
+  | {
+      kind: "provider_settings_invalid_provider";
+      status: "invalid_provider";
       message: string;
     }
   | {

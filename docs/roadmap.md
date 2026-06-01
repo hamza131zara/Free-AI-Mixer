@@ -1006,3 +1006,10 @@ Status:
 - Durable queue/persistence (Redis/database-backed execution).
 - Frontend async worker integration.
 - Production artifact hosting/signed URLs/download capability.
+
+## Phase 57 status
+
+- Phase 57: backend-only BYOK provider key contract and repository/vault storage boundary pack.
+- Scope: provider key request/response contracts, vault operation result contracts, repository create/replace/revoke/list contracts, redacted storage result unions, docs, and focused boundary tests.
+- No frontend API key input, live vault, live provider storage, provider SDK/API call, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
+- Provider Settings remains readiness-only until a future phase wires a configured backend vault and repository under workspace owner/admin authorization.

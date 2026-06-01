@@ -64,6 +64,30 @@ Coverage now records that:
 
 Phase 34 did not add live BYOK storage, migrations, provider SDK/API calls, fake connected or verified provider state, credits, billing, generation, export, admin, event, or audit runtime behavior.
 
+## Phase 57 Backend-Only Contract Boundary
+
+Merged Phase 57 adds backend-only provider key storage boundary contracts before any live BYOK input or vault runtime.
+
+The boundary now records:
+
+- Future vault operation result types for stored, replaced, revoked, decrypted, invalid-provider, and unavailable outcomes.
+- Future provider settings request/response contracts for add, replace, revoke, and test boundaries.
+- Repository create, replace, revoke, and list contract types for provider key persistence.
+- Storage result unions for stored, replaced, revoked, unavailable, unauthorized, conflict, invalid-provider, and vault-unavailable outcomes.
+- Redacted connection summaries as the only success-like browser-visible response shape.
+
+Phase 57 does not make provider key storage live. The not-configured vault remains the default fail-closed behavior, Provider Settings remains readiness-only, and provider key input fields remain deferred.
+
+Phase 57 preserves these no-go items:
+
+- No frontend API key input.
+- No browser storage of provider keys.
+- No service-role exposure through `VITE_*`.
+- No raw key, encrypted payload, or secret reference in browser-visible responses.
+- No provider SDK/API verification.
+- No fake connected, verified, or test-passed state.
+- No credits, billing, generation, export, admin, event, or audit runtime expansion.
+
 ## Future Recommended Architecture
 
 Future BYOK should use a backend-only provider secret boundary:

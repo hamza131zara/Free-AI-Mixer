@@ -15,6 +15,10 @@ import type {
   BackendExportJobRecord,
 } from "../contracts/exportHttpTypes";
 import type {
+  BackendRedactedProviderConnectionSummary,
+  BackendSupportedProviderId,
+} from "../contracts/providerSettingsHttpTypes";
+import type {
   AuditTrailCategory,
   AuditTrailType,
 } from "../observability/auditTrailContracts";
@@ -43,6 +47,7 @@ export interface BackendEncryptedSecretPayload {
 export interface BackendProviderKeyRecord
   extends BackendWorkspaceProviderKeyOwnership {
   encryptedSecret: BackendEncryptedSecretPayload;
+  secretRef?: string;
   status: BackendProviderKeyStatus;
   maskedFingerprint?: string;
   keyFingerprintSuffix?: string;
@@ -52,6 +57,79 @@ export interface BackendProviderKeyRecord
   rotatedAt?: string;
   disabledAt?: string;
 }
+
+export interface BackendProviderKeyCreateInput {
+  providerId: BackendSupportedProviderId;
+  workspaceId: string;
+  ownerId: string;
+  createdByUserId: string;
+  encryptedSecret?: BackendEncryptedSecretPayload;
+  secretRef?: string;
+  maskedFingerprint?: string;
+  keyFingerprintSuffix?: string;
+}
+
+export interface BackendProviderKeyReplaceInput {
+  providerKeyId: string;
+  providerId: BackendSupportedProviderId;
+  workspaceId: string;
+  requesterUserId: string;
+  encryptedSecret?: BackendEncryptedSecretPayload;
+  secretRef?: string;
+  maskedFingerprint?: string;
+  keyFingerprintSuffix?: string;
+}
+
+export interface BackendProviderKeyRevokeInput {
+  providerKeyId: string;
+  workspaceId: string;
+  requesterUserId: string;
+}
+
+export type BackendProviderKeyStorageResult =
+  | {
+      kind: "stored";
+      status: "stored";
+      connection: BackendRedactedProviderConnectionSummary;
+    }
+  | {
+      kind: "replaced";
+      status: "replaced";
+      connection: BackendRedactedProviderConnectionSummary;
+    }
+  | {
+      kind: "revoked";
+      status: "revoked";
+      connection: BackendRedactedProviderConnectionSummary;
+    }
+  | {
+      kind: "unavailable";
+      status: "unavailable";
+      code: "storage_not_configured" | "repository_unavailable";
+      message: string;
+    }
+  | {
+      kind: "unauthorized";
+      status: "unauthorized";
+      code: "workspace_owner_or_admin_required" | "workspace_permission_not_verified";
+      message: string;
+    }
+  | {
+      kind: "conflict";
+      status: "conflict";
+      code: "active_provider_key_exists" | "record_version_conflict";
+      message: string;
+    }
+  | {
+      kind: "invalid_provider";
+      status: "invalid_provider";
+      message: string;
+    }
+  | {
+      kind: "vault_unavailable";
+      status: "vault_unavailable";
+      message: string;
+    };
 
 export type BackendCreditLedgerEntryKind =
   BackendWorkspaceCreditLedgerEntry["entryKind"];
@@ -357,6 +435,15 @@ export interface BackendProviderKeyRepository {
     providerKeyId: string,
   ): Promise<BackendProviderKeyRecord | undefined>;
   listForWorkspace(workspaceId: string): Promise<BackendProviderKeyRecord[]>;
+  createProviderKey(
+    input: BackendProviderKeyCreateInput,
+  ): Promise<BackendProviderKeyStorageResult>;
+  replaceProviderKey(
+    input: BackendProviderKeyReplaceInput,
+  ): Promise<BackendProviderKeyStorageResult>;
+  revokeProviderKey(
+    input: BackendProviderKeyRevokeInput,
+  ): Promise<BackendProviderKeyStorageResult>;
 }
 
 export interface BackendCreditLedgerRepository {
