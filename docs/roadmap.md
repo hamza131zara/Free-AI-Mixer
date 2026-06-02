@@ -1062,3 +1062,11 @@ Status:
 - The runbook requires clean git status, confirmed local/staging target, existing `app_users` and `workspaces`, backend-only service-role handling, and production no-go review.
 - No migration execution, schema apply, frontend API key input, provider settings route behavior change, provider SDK/API call, test connection, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
 - Live BYOK remains gated by a separately performed and verified local/staging schema apply, then backend-only route runtime smoke with fake placeholder keys.
+
+## Phase 79 status
+
+- Phase 79: BYOK local browser fake-key smoke regression pack.
+- Scope: add deterministic Playwright coverage for the browser Provider Settings save/replace/remove fake-key flow plus a local/staging-only browser smoke runbook.
+- The regression locks authenticated Provider Settings access shape, provider selector/input presence, input clearing, redacted stored/replaced summaries, revoked controls returning to save/add state, disabled test connection, no browser persistence of fake keys, and no fake connected/verified/test-passed wording.
+- The runbook documents local Supabase, backend, and frontend startup expectations; fake-key-only browser steps; DevTools persistence checks; and safe DB verification without selecting `encrypted_payload` or `secret_ref` values.
+- No backend behavior change, real provider key, provider SDK/API call, test connection, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.

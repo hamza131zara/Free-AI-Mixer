@@ -13387,3 +13387,29 @@ Safety boundaries:
 - no fake connected, verified, or test-passed provider state was added
 - no service-role or encryption key exposure was added
 - no credits, billing, generation, export, admin, event, or audit runtime behavior changed
+
+## Phase 79 - BYOK Local Browser Smoke Regression Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- deterministic Playwright regression coverage for the local browser BYOK fake-key flow
+- mocked authenticated Provider Settings access without requiring local Supabase, service-role keys, JWTs, encryption keys, or real provider keys
+- save, replace, and remove browser behavior locked to redacted summaries and input clearing
+- revoke returns controls to the add/save state
+- local/staging-only manual smoke runbook for the real local Supabase + backend + frontend sequence
+- safe DB verification guidance that uses boolean presence checks instead of selecting `encrypted_payload` or `secret_ref` values
+
+Safety boundaries:
+
+- no backend behavior changed
+- no frontend feature behavior changed
+- no real provider keys are used
+- no provider SDK/API calls were added
+- no test-connection implementation was added
+- no fake connected, verified, or test-passed provider state was added
+- no service-role, JWT, encryption key, provider key, encrypted payload, or secret reference exposure was added
+- no credits, billing, generation, or export runtime behavior changed
