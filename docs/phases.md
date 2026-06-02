@@ -13332,3 +13332,31 @@ Safety boundaries:
 - no service-role exposure through `VITE_*` was added
 - no raw key, encrypted payload, secret reference, IV, tag, ciphertext details, raw provider error, token, env value, or service-role-like value is allowed in browser-facing responses
 - no credits, billing, generation, export, admin, event, or audit runtime behavior changed
+
+## Phase 68 - BYOK Provider Keys Executable Local/Staging Schema Prep Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- executable/idempotent local and staging provider key schema prep
+- `provider_keys` create-if-missing table shape aligned with the Supabase provider key repository adapter
+- backend ownership columns for workspace, owner app user, created-by app user, and updated-by app user
+- backend-only encrypted payload and external secret reference storage handle columns
+- storage mode, key version, algorithm, encryption algorithm, status, verification status, sanitized verification error code, reverification flag, and lifecycle timestamps
+- unique active workspace/provider index
+- default-deny RLS posture with no client-facing policies
+- focused static coverage proving schema/repository alignment and no plaintext provider-key schema fields
+
+Safety boundaries:
+
+- no migration was executed
+- no frontend API key input was added
+- no provider settings route behavior changed
+- no provider SDK/API calls were added
+- no test-connection implementation was added
+- no fake connected, verified, or test-passed provider state was added
+- no service-role or encryption key exposure was added
+- no credits, billing, generation, export, admin, event, or audit runtime behavior changed

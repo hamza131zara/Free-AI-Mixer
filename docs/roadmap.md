@@ -1046,3 +1046,11 @@ Status:
 - Responses remain redacted and browser-safe for stored, replaced, revoked, conflict, invalid request/provider, not found, forbidden, sign-in-required, and unavailable outcomes.
 - Test connection remains unavailable.
 - No frontend API key input, browser provider-key storage, migration execution, provider SDK/API call, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
+
+## Phase 68 status
+
+- Phase 68: BYOK provider keys executable local/staging schema prep pack.
+- Scope: promote the provider key schema draft into executable/idempotent local and staging prep SQL, keep the schema mirror aligned, and add focused static coverage for schema/repository alignment.
+- The schema prep includes repository-required provider key metadata columns, backend-only encrypted payload or external secret reference handles, unique active workspace/provider indexing, sanitized verification error code shape, lifecycle timestamps, default-deny RLS, and comments forbidding plaintext keys and raw provider errors.
+- No migration execution, frontend API key input, provider settings route behavior change, provider SDK/API call, test connection, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
+- Live BYOK remains gated by separate manual local/staging schema application, backend runtime smoke, and a later approved frontend input phase.

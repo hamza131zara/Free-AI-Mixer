@@ -1,6 +1,6 @@
--- Phase 59 provider key schema draft mirror.
--- This schema mirror documents the intended BYOK provider key shape only.
--- It is not executed by this phase.
+-- Phase 68 provider key schema mirror.
+-- This mirror documents the executable local/staging BYOK provider key shape.
+-- It is not executed by tests or by this phase.
 
 create table if not exists provider_keys (
   provider_key_id uuid primary key,
@@ -10,10 +10,11 @@ create table if not exists provider_keys (
   provider_name text not null,
   encrypted_payload text,
   secret_ref text,
-  storage_mode text not null,
+  storage_mode text not null default 'encrypted_payload',
   key_version text not null,
   encryption_algorithm text not null,
-  status text not null,
+  algorithm text,
+  status text not null default 'active',
   verification_status text not null default 'not_validated',
   last_verified_at timestamptz,
   last_verification_error_code text,
@@ -56,7 +57,7 @@ create table if not exists provider_keys (
 );
 
 comment on table provider_keys is
-  'Draft BYOK provider key metadata table. Plaintext provider keys, raw provider errors, service-role values, provider credentials, provider account metadata, and browser-visible secret material are forbidden.';
+  'Local/staging BYOK provider key metadata table. Plaintext provider keys, raw provider errors, service-role values, provider credentials, provider account metadata, and browser-visible secret material are forbidden.';
 
 comment on column provider_keys.encrypted_payload is
   'Backend-only encrypted provider key payload. Never return to frontend responses, logs, screenshots, events, or docs examples.';
@@ -67,13 +68,28 @@ comment on column provider_keys.secret_ref is
 comment on column provider_keys.last_verification_error_code is
   'Sanitized verification error code only. Raw provider error bodies and account metadata are forbidden.';
 
+comment on column provider_keys.storage_mode is
+  'Storage mode must be encrypted_payload or external_secret_ref; active records must use exactly one backend-only storage reference.';
+
+comment on column provider_keys.created_by_user_id is
+  'Backend-derived app user id that created the provider key metadata record. Do not trust frontend user or workspace identifiers.';
+
+comment on column provider_keys.updated_by_user_id is
+  'Backend-derived app user id for the last mutation. Do not trust frontend user or workspace identifiers.';
+
 create unique index if not exists provider_keys_one_active_per_workspace_provider_idx
   on provider_keys (workspace_id, provider_name)
   where status = 'active'
     and deleted_at is null;
 
+create index if not exists provider_keys_workspace_provider_deleted_idx
+  on provider_keys (workspace_id, provider_name, deleted_at);
+
+create index if not exists provider_keys_workspace_verification_idx
+  on provider_keys (workspace_id, verification_status, needs_reverification);
+
 alter table provider_keys enable row level security;
 
 -- Default-deny RLS posture:
--- No client-facing policies are added in this draft.
--- Backend/service-role-only access rules remain deferred to a later approved phase.
+-- No client-facing policies are added in this schema mirror.
+-- Backend/service-role-only access remains the intended runtime boundary.

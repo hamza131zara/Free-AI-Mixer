@@ -204,6 +204,25 @@ Phase 65 keeps these no-go items:
 - No service-role exposure through `VITE_*`.
 - No credits, billing, generation, export, admin, event, or audit runtime expansion.
 
+## Phase 68 Executable Local/Staging Schema Prep
+
+Merged Phase 68 promotes the provider key schema draft into an executable, idempotent local/staging schema prep file without running it.
+
+The schema prep now includes:
+
+- `create table if not exists provider_keys` with all repository-required columns.
+- Backend ownership columns for workspace, owner app user, created-by app user, and updated-by app user.
+- Provider metadata columns for `provider_id` and `provider_name`.
+- Backend-only storage handle columns for `encrypted_payload` and `secret_ref`.
+- `storage_mode`, `key_version`, `algorithm`, `encryption_algorithm`, status, verification status, sanitized verification error code, and reverification flags.
+- Created, updated, rotated, revoked, disabled, and deleted timestamps.
+- A unique active workspace/provider index.
+- Mutually exclusive active storage reference checks for encrypted payload versus external secret reference.
+- Default-deny RLS posture with no client-facing policies.
+- Comments forbidding plaintext provider keys, raw provider errors, service-role values, provider credentials, provider account metadata, and browser-visible secret material.
+
+Phase 68 does not execute migrations, add frontend API key input, change Provider Settings route behavior, add provider SDK/API calls, implement test connection, add fake connected/verified state, expose service-role or encryption keys, or change credits, billing, generation, or export runtime.
+
 ## Future Recommended Architecture
 
 Future BYOK should use a backend-only provider secret boundary:
@@ -515,8 +534,7 @@ The following remain deferred:
 - Encrypted vault runtime.
 - Provider SDK/API verification.
 - Provider key UI input fields.
-- Routes and mutations becoming live.
-- Migrations.
+- Migration execution in local/staging or production.
 - Active workspace selection.
 - Billing and credits ledger.
 - Generation/export runtime integration.
