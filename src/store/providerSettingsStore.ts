@@ -143,7 +143,18 @@ const applyMutationResult = (
 > => ({
   connections:
     result.kind === "mutation_success"
-      ? upsertConnection(currentConnections, result.connection)
+      ? upsertConnection(
+          currentConnections,
+          result.status === "revoked"
+            ? {
+                ...result.connection,
+                canManage: false,
+                createdAt: undefined,
+                keyFingerprintSuffix: undefined,
+                maskedFingerprint: undefined,
+              }
+            : result.connection,
+        )
       : currentConnections,
   mutationMessage: result.message,
   mutationStatus: result.kind,

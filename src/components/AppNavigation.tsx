@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { ChevronDown, Menu, UserCircle, X } from "lucide-react";
 import {
   accountNavigationItems,
@@ -17,6 +18,7 @@ const accountMenuTriggerLabel = (email?: string): string =>
 
 export function AppNavigation() {
   const currentRoute = useNavigationStore(selectCurrentRoute);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const mobileMenuOpen = useNavigationStore((state) => state.mobileMenuOpen);
   const navigateTo = useNavigationStore((state) => state.navigateTo);
   const toggleMobileMenu = useNavigationStore((state) => state.toggleMobileMenu);
@@ -25,7 +27,17 @@ export function AppNavigation() {
   const identity = useAuthStore((state) => state.identity);
   const pendingAction = useAuthStore((state) => state.pendingAction);
   const logout = useAuthStore((state) => state.logout);
+
+  useEffect(() => {
+    setAccountMenuOpen(false);
+  }, [currentRoute.path]);
+
+  const closeAccountMenu = (): void => {
+    setAccountMenuOpen(false);
+  };
+
   const handleLogout = (): void => {
+    closeAccountMenu();
     void logout().then(() => {
       if (useAuthStore.getState().status === "unauthenticated") {
         navigateTo("/login");
@@ -33,6 +45,7 @@ export function AppNavigation() {
     });
   };
   const navigateToAccountRoute = (path: string): void => {
+    closeAccountMenu();
     navigateTo(path);
   };
 
@@ -81,43 +94,48 @@ export function AppNavigation() {
           </div>
           <div className="nav-group nav-group-auth nav-group-desktop-auth">
             {authStatus === "authenticated" ? (
-              <details className="account-menu" data-testid="account-menu">
-                <summary
+              <div className="account-menu" data-testid="account-menu">
+                <button
+                  type="button"
                   className="account-menu-trigger"
                   aria-label={accountMenuTriggerLabel(identity?.email)}
+                  aria-expanded={accountMenuOpen}
                   data-testid="account-menu-trigger"
+                  onClick={() => setAccountMenuOpen((isOpen) => !isOpen)}
                 >
                   <UserCircle aria-hidden="true" size={18} />
                   <span className="account-menu-trigger-copy" data-testid="account-nav-identity">
                     {identity?.email ?? "Signed in"}
                   </span>
                   <ChevronDown aria-hidden="true" size={16} />
-                </summary>
-                <div className="account-menu-panel" data-testid="account-menu-panel">
-                  {accountNavigationItems.map((route) => (
+                </button>
+                {accountMenuOpen ? (
+                  <div className="account-menu-panel" data-testid="account-menu-panel">
+                    {accountNavigationItems.map((route) => (
+                      <button
+                        key={`account-menu-${route.id}`}
+                        type="button"
+                        className={
+                          isActivePath(currentRoute.path, route.path)
+                            ? "account-menu-item account-menu-item-active"
+                            : "account-menu-item"
+                        }
+                        onClick={() => navigateToAccountRoute(route.path)}
+                      >
+                        {route.label}
+                      </button>
+                    ))}
                     <button
-                      key={`account-menu-${route.id}`}
                       type="button"
-                      className={
-                        isActivePath(currentRoute.path, route.path)
-                          ? "account-menu-item account-menu-item-active"
-                          : "account-menu-item"
-                      }
-                      onClick={() => navigateToAccountRoute(route.path)}
+                      className="account-menu-item account-menu-logout"
+                      onClick={handleLogout}
+                      disabled={pendingAction === "logout"}
                     >
-                      {route.label}
+                      {pendingAction === "logout" ? "Logging out..." : "Log out"}
                     </button>
-                  ))}
-                  <button
-                    type="button"
-                    className="account-menu-item account-menu-logout"
-                    onClick={handleLogout}
-                    disabled={pendingAction === "logout"}
-                  >
-                    {pendingAction === "logout" ? "Logging out..." : "Log out"}
-                  </button>
-                </div>
-              </details>
+                  </div>
+                ) : null}
+              </div>
             ) : (
               authNavigationItems.map((route) => (
                 <button
