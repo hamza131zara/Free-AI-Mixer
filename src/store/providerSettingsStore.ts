@@ -7,6 +7,7 @@ import {
   replaceProviderConnectionKey,
   revokeProviderConnectionKey,
   saveProviderConnectionKey,
+  testProviderConnectionKey,
 } from "../services/providerSettingsService";
 import type {
   ProviderCatalogEntry,
@@ -34,7 +35,7 @@ export interface ProviderSettingsStoreState {
   connections: RedactedProviderConnectionSummary[];
   mutationMessage?: string;
   mutationStatus?: ProviderMutationAvailabilityResult["kind"];
-  pendingAction: "refresh" | "save" | "replace" | "revoke" | null;
+  pendingAction: "refresh" | "save" | "replace" | "revoke" | "test" | null;
   refreshProviderSettings: () => Promise<void>;
   replaceProviderConnection: (
     providerId: SupportedProviderId,
@@ -46,6 +47,9 @@ export interface ProviderSettingsStoreState {
   saveProviderConnection: (
     providerId: SupportedProviderId,
     apiKey: string,
+  ) => Promise<ProviderMutationAvailabilityResult>;
+  testProviderConnection: (
+    providerId: SupportedProviderId,
   ) => Promise<ProviderMutationAvailabilityResult>;
 }
 
@@ -155,6 +159,8 @@ const applyMutationResult = (
               }
             : result.connection,
         )
+      : result.kind === "validation_result" && result.connection
+        ? upsertConnection(currentConnections, result.connection)
       : currentConnections,
   mutationMessage: result.message,
   mutationStatus: result.kind,
@@ -233,6 +239,19 @@ export const useProviderSettingsStore = create<ProviderSettingsStoreState>((set)
       pendingAction: "save",
     });
     const result = await saveProviderConnectionKey(providerId, apiKey);
+    set((state) => ({
+      ...applyMutationResult(result, state.connections),
+      pendingAction: null,
+    }));
+    return result;
+  },
+  testProviderConnection: async (providerId) => {
+    set({
+      mutationMessage: undefined,
+      mutationStatus: undefined,
+      pendingAction: "test",
+    });
+    const result = await testProviderConnectionKey(providerId);
     set((state) => ({
       ...applyMutationResult(result, state.connections),
       pendingAction: null,

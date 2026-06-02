@@ -12,7 +12,7 @@ const isSameOriginRelativePath = (value: string): boolean =>
   value.startsWith("/") && !value.startsWith("//");
 
 const providerConnectionMutationPathPattern =
-  /^\/provider-settings\/connections\/(openai|runway|luma|google|stability|replicate)$/;
+  /^\/provider-settings\/connections\/(openai|runway|luma|google|stability|replicate)(\/test)?$/;
 
 const isAllowedAuthenticatedPath = (value: string): boolean =>
   allowedAuthenticatedPaths.has(value) ||

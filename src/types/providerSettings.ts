@@ -31,6 +31,15 @@ export type ProviderValidationStatus =
   | "validation_failed"
   | "validated";
 
+export type ProviderValidationMutationStatus =
+  | "validated"
+  | "validation_failed"
+  | "validation_unavailable"
+  | "provider_unavailable"
+  | "rate_limited"
+  | "timeout"
+  | "vault_decrypt_failed";
+
 export type ProviderConnectionUnavailableReason =
   | "secure_provider_key_storage_not_enabled"
   | "workspace_permission_not_verified";
@@ -106,12 +115,19 @@ export type ProviderMutationAvailabilityResult =
       connection: RedactedProviderConnectionSummary;
     }
   | {
+      kind: "validation_result";
+      status: ProviderValidationMutationStatus;
+      message: string;
+      connection?: RedactedProviderConnectionSummary;
+    }
+  | {
       kind: "mutation_unavailable";
       status: "unavailable";
       code:
         | "auth_not_configured"
         | "auth_provider_unavailable"
         | "provider_key_repository_unavailable"
+        | "validation_unavailable"
         | "secure_provider_key_storage_not_enabled"
         | "workspace_permission_not_verified"
         | "vault_unavailable";

@@ -23,7 +23,7 @@ const providerActionLabels = [
   "Add key",
   "Replace key",
   "Remove key",
-  "Test connection",
+  "Test connection unavailable",
 ] as const;
 
 export function ProviderSettingsPage() {
@@ -41,6 +41,7 @@ export function ProviderSettingsPage() {
   const replaceProviderConnection = useProviderSettingsStore((state) => state.replaceProviderConnection);
   const revokeProviderConnection = useProviderSettingsStore((state) => state.revokeProviderConnection);
   const saveProviderConnection = useProviderSettingsStore((state) => state.saveProviderConnection);
+  const testProviderConnection = useProviderSettingsStore((state) => state.testProviderConnection);
   const navigateTo = useNavigationStore((state) => state.navigateTo);
   const keyFormRef = useRef<HTMLFormElement | null>(null);
   const [selectedProviderId, setSelectedProviderId] = useState<SupportedProviderId | "">("");
@@ -74,7 +75,8 @@ export function ProviderSettingsPage() {
   const isMutating =
     pendingAction === "save" ||
     pendingAction === "replace" ||
-    pendingAction === "revoke";
+    pendingAction === "revoke" ||
+    pendingAction === "test";
 
   const handleKeySubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -104,6 +106,15 @@ export function ProviderSettingsPage() {
 
     keyFormRef.current?.reset();
     void revokeProviderConnection(selectedProviderId);
+  };
+
+  const handleValidation = () => {
+    if (!selectedProviderId || !hasStoredSummary) {
+      return;
+    }
+
+    keyFormRef.current?.reset();
+    void testProviderConnection(selectedProviderId);
   };
 
   return (
@@ -285,9 +296,13 @@ export function ProviderSettingsPage() {
               localStorage/sessionStorage, and not shown again after submit.
             </p>
             <p>
-              Stored keys are encrypted server-side. Provider validation is not
-              enabled yet, so saved keys appear as stored server-side, not
-              validated yet.
+              Stored keys are encrypted server-side. Provider validation may
+              remain unavailable unless backend mock/local validation is
+              explicitly configured.
+            </p>
+            <p>
+              Validation uses the stored backend key reference only. No key is
+              sent from the browser.
             </p>
             <form
               ref={keyFormRef}
@@ -343,8 +358,17 @@ export function ProviderSettingsPage() {
                 >
                   {pendingAction === "revoke" ? "Removing..." : "Remove key"}
                 </button>
-                <button type="button" className="secondary" disabled>
-                  Test connection unavailable
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={!hasStoredSummary || isMutating}
+                  onClick={handleValidation}
+                >
+                  {pendingAction === "test"
+                    ? "Validating..."
+                    : hasStoredSummary
+                      ? "Validate stored key"
+                      : "Store key before validation"}
                 </button>
               </div>
             </form>
@@ -359,7 +383,9 @@ export function ProviderSettingsPage() {
               <div className="status-callout" data-testid="provider-key-redacted-summary">
                 <span className="status-kicker">Redacted backend summary</span>
                 <strong>
-                  {hasStoredSummary
+                  {selectedConnection.verificationStatus === "validated"
+                    ? "Validated by backend"
+                    : hasStoredSummary
                     ? "Stored server-side, not validated yet."
                     : "Not connected yet."}
                 </strong>

@@ -2,6 +2,7 @@ import type {
   ProviderCatalogResult,
   ProviderConnectionsResult,
   ProviderMutationAvailabilityResult,
+  ProviderValidationMutationStatus,
   ProviderRoutingPreferences,
   ProviderRoutingPolicyResult,
   ProviderSettingsStatusResult,
@@ -84,11 +85,18 @@ type BackendProviderConnectionMutationResponse =
       connection: RedactedProviderConnectionSummary;
     }
   | {
+      kind: "provider_settings_connection_validation_result";
+      status: ProviderValidationMutationStatus;
+      message?: string;
+      connection?: RedactedProviderConnectionSummary;
+    }
+  | {
       kind: "provider_settings_mutation_unavailable";
       status:
         | "auth_not_configured"
         | "auth_provider_unavailable"
         | "provider_key_repository_unavailable"
+        | "validation_unavailable"
         | "secure_provider_key_storage_not_enabled"
         | "workspace_permission_not_verified"
         | "vault_unavailable";
@@ -407,6 +415,15 @@ const mapMutationResponse = (
     };
   }
 
+  if (payload.kind === "provider_settings_connection_validation_result") {
+    return {
+      kind: "validation_result",
+      status: payload.status,
+      message: getValidationResultMessage(payload.status, payload.message),
+      connection: payload.connection,
+    };
+  }
+
   if (payload.kind === "provider_settings_sign_in_required") {
     return {
       kind: "sign_in_required",
@@ -443,6 +460,11 @@ const mapMutationResponse = (
     payload.kind === "provider_settings_invalid_provider" ||
     payload.kind === "provider_settings_connection_not_found"
   ) {
+    const fallbackMessage =
+      payload.kind === "provider_settings_connection_not_found"
+        ? "No active stored key found for this provider."
+        : "Provider key metadata could not be updated with the current request.";
+
     return {
       kind:
         payload.kind === "provider_settings_invalid_request"
@@ -452,8 +474,9 @@ const mapMutationResponse = (
             : "not_found",
       status: payload.status,
       message:
-        payload.message ??
-        "Provider key metadata could not be updated with the current request.",
+        payload.kind === "provider_settings_connection_not_found"
+          ? fallbackMessage
+          : payload.message ?? fallbackMessage,
     };
   }
 
@@ -465,6 +488,41 @@ const mapMutationResponse = (
       payload.message ??
       "Secure provider key storage is not enabled yet, so this BYOK action remains unavailable.",
   };
+};
+
+const getValidationResultMessage = (
+  status: ProviderValidationMutationStatus,
+  message?: string,
+): string => {
+  if (status === "validated") {
+    return "Validated by backend";
+  }
+
+  if (status === "validation_failed") {
+    return "Validation failed. Check the stored key or replace it.";
+  }
+
+  if (status === "validation_unavailable") {
+    return "Provider validation is unavailable on this backend.";
+  }
+
+  if (status === "timeout") {
+    return "Validation timed out. Try again later.";
+  }
+
+  if (status === "rate_limited") {
+    return "Validation is rate limited. Wait before retrying.";
+  }
+
+  if (status === "provider_unavailable") {
+    return "Provider validation endpoint is unavailable.";
+  }
+
+  if (status === "vault_decrypt_failed") {
+    return "Stored key could not be validated safely. Replace the key.";
+  }
+
+  return message ?? "Provider validation is unavailable on this backend.";
 };
 
 const requestProviderConnectionMutation = async (
@@ -550,6 +608,23 @@ export const revokeProviderConnectionKey = async (
   return requestProviderConnectionMutation(
     `${providerConnectionsEndpoint}/${providerId}`,
     "DELETE",
+  );
+};
+
+export const testProviderConnectionKey = async (
+  providerId: string,
+): Promise<ProviderMutationAvailabilityResult> => {
+  if (!isSupportedProviderId(providerId)) {
+    return {
+      kind: "invalid_provider",
+      status: "invalid_provider",
+      message: "Unsupported provider.",
+    };
+  }
+
+  return requestProviderConnectionMutation(
+    `${providerConnectionsEndpoint}/${providerId}/test`,
+    "POST",
   );
 };
 
