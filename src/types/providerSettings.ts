@@ -100,13 +100,21 @@ export interface ProviderRoutingPolicyResult {
 
 export type ProviderMutationAvailabilityResult =
   | {
+      kind: "mutation_success";
+      status: "stored" | "replaced" | "revoked";
+      message: string;
+      connection: RedactedProviderConnectionSummary;
+    }
+  | {
       kind: "mutation_unavailable";
       status: "unavailable";
       code:
         | "auth_not_configured"
         | "auth_provider_unavailable"
+        | "provider_key_repository_unavailable"
         | "secure_provider_key_storage_not_enabled"
-        | "workspace_permission_not_verified";
+        | "workspace_permission_not_verified"
+        | "vault_unavailable";
       message: string;
     }
   | {
@@ -119,6 +127,16 @@ export type ProviderMutationAvailabilityResult =
       kind: "forbidden";
       status: "forbidden";
       code: "workspace_owner_or_admin_required";
+      message: string;
+    }
+  | {
+      kind: "mutation_conflict";
+      status: "conflict";
+      message: string;
+    }
+  | {
+      kind: "invalid_request" | "invalid_provider" | "not_found";
+      status: "invalid_request" | "invalid_provider" | "not_found";
       message: string;
     };
 

@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { providerCapabilityLabels } from "../services/providerCapabilityLabels";
 import { useProviderSettingsStore } from "../store/providerSettingsStore";
 import { useNavigationStore } from "../store/navigationStore";
+import type { SupportedProviderId } from "../types/providerSettings";
 
 const productPolicyCards = [
   "Bring your own API key to use your provider balance or free trial credits through Free AI Mixer later.",
@@ -32,13 +34,77 @@ export function ProviderSettingsPage() {
   const accessMessage = useProviderSettingsStore((state) => state.accessMessage);
   const routingPreferences = useProviderSettingsStore((state) => state.routingPreferences);
   const connections = useProviderSettingsStore((state) => state.connections);
+  const mutationMessage = useProviderSettingsStore((state) => state.mutationMessage);
+  const mutationStatus = useProviderSettingsStore((state) => state.mutationStatus);
   const pendingAction = useProviderSettingsStore((state) => state.pendingAction);
   const refreshProviderSettings = useProviderSettingsStore((state) => state.refreshProviderSettings);
+  const replaceProviderConnection = useProviderSettingsStore((state) => state.replaceProviderConnection);
+  const revokeProviderConnection = useProviderSettingsStore((state) => state.revokeProviderConnection);
+  const saveProviderConnection = useProviderSettingsStore((state) => state.saveProviderConnection);
   const navigateTo = useNavigationStore((state) => state.navigateTo);
+  const keyFormRef = useRef<HTMLFormElement | null>(null);
+  const [selectedProviderId, setSelectedProviderId] = useState<SupportedProviderId | "">("");
 
   useEffect(() => {
     void refreshProviderSettings();
   }, [refreshProviderSettings]);
+
+  useEffect(() => {
+    if (selectedProviderId || providers.length === 0) {
+      return;
+    }
+
+    setSelectedProviderId(providers[0].id);
+  }, [providers, selectedProviderId]);
+
+  const selectedConnection = selectedProviderId
+    ? connections.find((connection) => connection.providerId === selectedProviderId)
+    : undefined;
+  const selectedProvider = selectedProviderId
+    ? providers.find((provider) => provider.id === selectedProviderId)
+    : undefined;
+  const hasStoredSummary = Boolean(
+    selectedConnection?.canManage &&
+      (selectedConnection.maskedFingerprint ||
+        selectedConnection.keyFingerprintSuffix ||
+        selectedConnection.createdAt),
+  );
+  const canShowKeyForm =
+    accessStatus === "authenticated" && providers.length > 0 && selectedProviderId !== "";
+  const isMutating =
+    pendingAction === "save" ||
+    pendingAction === "replace" ||
+    pendingAction === "revoke";
+
+  const handleKeySubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!selectedProviderId) {
+      return;
+    }
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const apiKey = String(formData.get("apiKey") ?? "").trim();
+    form.reset();
+
+    if (!apiKey) {
+      return;
+    }
+
+    void (hasStoredSummary
+      ? replaceProviderConnection(selectedProviderId, apiKey)
+      : saveProviderConnection(selectedProviderId, apiKey));
+  };
+
+  const handleRevoke = () => {
+    if (!selectedProviderId || !hasStoredSummary) {
+      return;
+    }
+
+    keyFormRef.current?.reset();
+    void revokeProviderConnection(selectedProviderId);
+  };
 
   return (
     <section className="provider-settings-page" data-testid="provider-settings-page">
@@ -55,6 +121,12 @@ export function ProviderSettingsPage() {
             Provider key setup is not enabled in this beta. API key input, save,
             replace, remove, and verification flows require future encrypted
             backend storage before they can become live.
+          </p>
+          <p className="placeholder-description">
+            Limited BYOK key storage can be enabled only when the authenticated
+            backend route gate, workspace authorization, repository, and vault
+            are configured. Provider validation and generation routing remain
+            disabled.
           </p>
           <div className="hero-actions">
             <button
@@ -201,6 +273,117 @@ export function ProviderSettingsPage() {
           <p className="eyebrow">Connection status</p>
           <h2>Read-only provider connection summaries</h2>
         </div>
+        {canShowKeyForm ? (
+          <article className="info-card provider-key-form-card" data-testid="provider-key-form-card">
+            <div className="section-header compact-section-header">
+              <p className="eyebrow">Backend encrypted storage</p>
+              <h3>Manage a provider key</h3>
+            </div>
+            <p>
+              The key is sent only to the backend over the authenticated same-origin
+              route. It is not stored in the browser, not written to
+              localStorage/sessionStorage, and not shown again after submit.
+            </p>
+            <p>
+              Stored keys are encrypted server-side. Provider validation is not
+              enabled yet, so saved keys appear as stored server-side, not
+              validated yet.
+            </p>
+            <form
+              ref={keyFormRef}
+              className="provider-key-form"
+              data-testid="provider-key-form"
+              onSubmit={handleKeySubmit}
+            >
+              <label htmlFor="provider-key-provider">Provider</label>
+              <select
+                id="provider-key-provider"
+                data-testid="provider-key-provider-select"
+                value={selectedProviderId}
+                onChange={(event) =>
+                  setSelectedProviderId(event.target.value as SupportedProviderId)
+                }
+              >
+                {providers.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.displayName}
+                  </option>
+                ))}
+              </select>
+
+              <label htmlFor="provider-key-input">API key</label>
+              <input
+                id="provider-key-input"
+                name="apiKey"
+                type="password"
+                autoComplete="off"
+                data-testid="provider-key-input"
+                placeholder="Paste provider key for backend encrypted storage"
+                required
+              />
+              <p className="form-helper">
+                {selectedProvider
+                  ? `${selectedProvider.displayName} provider costs remain billed to your provider account.`
+                  : "Provider costs remain separate from Free AI Mixer credits."}
+              </p>
+
+              <div className="hero-actions">
+                <button type="submit" disabled={isMutating}>
+                  {pendingAction === "save" || pendingAction === "replace"
+                    ? "Saving..."
+                    : hasStoredSummary
+                      ? "Replace key"
+                      : "Save key"}
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={!hasStoredSummary || isMutating}
+                  onClick={handleRevoke}
+                >
+                  {pendingAction === "revoke" ? "Removing..." : "Remove key"}
+                </button>
+                <button type="button" className="secondary" disabled>
+                  Test connection unavailable
+                </button>
+              </div>
+            </form>
+            {mutationMessage ? (
+              <div className="status-callout" data-testid="provider-key-mutation-message">
+                <span className="status-kicker">Provider key update</span>
+                <strong>{mutationStatus ?? "mutation_unavailable"}</strong>
+                <p>{mutationMessage}</p>
+              </div>
+            ) : null}
+            {selectedConnection ? (
+              <div className="status-callout" data-testid="provider-key-redacted-summary">
+                <span className="status-kicker">Redacted backend summary</span>
+                <strong>
+                  {hasStoredSummary
+                    ? "Stored server-side, not validated yet."
+                    : "Not connected yet."}
+                </strong>
+                <p>{selectedConnection.maskedKeySummary ?? "No stored key summary yet."}</p>
+                {selectedConnection.maskedFingerprint ? (
+                  <p>Masked fingerprint: {selectedConnection.maskedFingerprint}</p>
+                ) : null}
+                {selectedConnection.keyFingerprintSuffix ? (
+                  <p>Suffix: {selectedConnection.keyFingerprintSuffix}</p>
+                ) : null}
+                <p>
+                  Verification status:{" "}
+                  <strong>
+                    {selectedConnection.verificationStatus ?? "not_validated"}
+                  </strong>
+                </p>
+                <p>
+                  Needs reverification:{" "}
+                  <strong>{selectedConnection.needsReverification ? "yes" : "no"}</strong>
+                </p>
+              </div>
+            ) : null}
+          </article>
+        ) : null}
         <div className="provider-card-grid">
           {connections.map((connection) => (
             <article
@@ -214,6 +397,24 @@ export function ProviderSettingsPage() {
               <p>
                 Last validation status:{" "}
                 <strong>{connection.lastValidationStatus ?? "not_enabled_yet"}</strong>
+              </p>
+              {connection.maskedFingerprint ? (
+                <p>
+                  <strong>Masked fingerprint:</strong> {connection.maskedFingerprint}
+                </p>
+              ) : null}
+              {connection.keyFingerprintSuffix ? (
+                <p>
+                  <strong>Suffix:</strong> {connection.keyFingerprintSuffix}
+                </p>
+              ) : null}
+              <p>
+                Verification status:{" "}
+                <strong>{connection.verificationStatus ?? "not_enabled_yet"}</strong>
+              </p>
+              <p>
+                Needs reverification:{" "}
+                <strong>{connection.needsReverification ? "yes" : "no"}</strong>
               </p>
               <p>
                 Keys will later be encrypted backend-side, never shown again after

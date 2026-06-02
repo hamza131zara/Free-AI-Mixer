@@ -481,6 +481,42 @@ button.icon-button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.provider-key-form-card {
+  margin-bottom: 20px;
+}
+
+.compact-section-header {
+  margin-bottom: 12px;
+}
+
+.provider-key-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.provider-key-form label {
+  font-weight: 800;
+}
+
+.provider-key-form select,
+.provider-key-form input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.form-helper {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+}
+
 .placeholder-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

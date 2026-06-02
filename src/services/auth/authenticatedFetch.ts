@@ -4,11 +4,19 @@ const allowedAuthenticatedPaths = new Set([
   "/project-library/projects",
   "/project-library/history",
   "/provider-settings/status",
+  "/provider-settings/connections",
   "/credits/status",
 ]);
 
 const isSameOriginRelativePath = (value: string): boolean =>
   value.startsWith("/") && !value.startsWith("//");
+
+const providerConnectionMutationPathPattern =
+  /^\/provider-settings\/connections\/(openai|runway|luma|google|stability|replicate)$/;
+
+const isAllowedAuthenticatedPath = (value: string): boolean =>
+  allowedAuthenticatedPaths.has(value) ||
+  providerConnectionMutationPathPattern.test(value);
 
 interface AuthenticatedFetchDependencies {
   fetch: typeof globalThis.fetch;
@@ -30,7 +38,7 @@ export const createAuthenticatedFetch = (
       );
     }
 
-    if (!allowedAuthenticatedPaths.has(input)) {
+    if (!isAllowedAuthenticatedPath(input)) {
       return dependencies.fetch(input, init);
     }
 

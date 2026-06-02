@@ -66,12 +66,52 @@ type BackendProviderSettingsResponse =
 
 type BackendProviderConnectionMutationResponse =
   | {
+      kind: "provider_settings_connection_stored";
+      status: "stored";
+      message?: string;
+      connection: RedactedProviderConnectionSummary;
+    }
+  | {
+      kind: "provider_settings_connection_replaced";
+      status: "replaced";
+      message?: string;
+      connection: RedactedProviderConnectionSummary;
+    }
+  | {
+      kind: "provider_settings_connection_revoked";
+      status: "revoked";
+      message?: string;
+      connection: RedactedProviderConnectionSummary;
+    }
+  | {
       kind: "provider_settings_mutation_unavailable";
       status:
         | "auth_not_configured"
         | "auth_provider_unavailable"
+        | "provider_key_repository_unavailable"
         | "secure_provider_key_storage_not_enabled"
-        | "workspace_permission_not_verified";
+        | "workspace_permission_not_verified"
+        | "vault_unavailable";
+      message?: string;
+    }
+  | {
+      kind: "provider_settings_invalid_request";
+      status: "invalid_request";
+      message?: string;
+    }
+  | {
+      kind: "provider_settings_mutation_conflict";
+      status: "conflict";
+      message?: string;
+    }
+  | {
+      kind: "provider_settings_connection_not_found";
+      status: "not_found";
+      message?: string;
+    }
+  | {
+      kind: "provider_settings_invalid_provider";
+      status: "invalid_provider";
       message?: string;
     }
   | {
@@ -90,6 +130,15 @@ const providerCatalogEndpoint = "/provider-settings/catalog";
 const providerStatusEndpoint = "/provider-settings/status";
 const providerConnectionsEndpoint = "/provider-settings/connections";
 const providerRoutingPolicyEndpoint = "/provider-settings/routing-policy";
+
+const supportedProviderIds = new Set([
+  "openai",
+  "runway",
+  "luma",
+  "google",
+  "stability",
+  "replicate",
+]);
 
 const parseJson = async <Payload>(response: Response): Promise<Payload | undefined> => {
   const responseText = await response.text();
@@ -298,12 +347,22 @@ export const requestUnavailableProviderConnectionMutation = async (
       };
     }
 
+    if (payload.kind === "provider_settings_mutation_unavailable") {
+      return {
+        kind: "mutation_unavailable",
+        status: "unavailable",
+        code: payload.status,
+        message:
+          payload.message ??
+          "Secure provider key storage is not enabled yet, so this BYOK action remains unavailable.",
+      };
+    }
+
     return {
       kind: "mutation_unavailable",
       status: "unavailable",
-      code: payload.status,
+      code: "secure_provider_key_storage_not_enabled",
       message:
-        payload.message ??
         "Secure provider key storage is not enabled yet, so this BYOK action remains unavailable.",
     };
   } catch {
@@ -315,6 +374,183 @@ export const requestUnavailableProviderConnectionMutation = async (
         "Secure provider key storage is not enabled yet, so this BYOK action remains unavailable.",
     };
   }
+};
+
+const isSupportedProviderId = (providerId: string): boolean =>
+  supportedProviderIds.has(providerId);
+
+const mapMutationResponse = (
+  payload: BackendProviderConnectionMutationResponse | undefined,
+): ProviderMutationAvailabilityResult => {
+  if (!payload) {
+    return {
+      kind: "mutation_unavailable",
+      status: "unavailable",
+      code: "secure_provider_key_storage_not_enabled",
+      message:
+        "Provider key storage returned an empty response. No key material was retained in the browser.",
+    };
+  }
+
+  if (
+    payload.kind === "provider_settings_connection_stored" ||
+    payload.kind === "provider_settings_connection_replaced" ||
+    payload.kind === "provider_settings_connection_revoked"
+  ) {
+    return {
+      kind: "mutation_success",
+      status: payload.status,
+      message:
+        payload.message ??
+        "Provider key metadata was updated server-side. Provider validation is not enabled yet.",
+      connection: payload.connection,
+    };
+  }
+
+  if (payload.kind === "provider_settings_sign_in_required") {
+    return {
+      kind: "sign_in_required",
+      status: "unauthenticated",
+      reason: payload.reason,
+      message:
+        payload.message ?? "Sign in is required before provider settings can be managed.",
+    };
+  }
+
+  if (payload.kind === "provider_settings_forbidden") {
+    return {
+      kind: "forbidden",
+      status: "forbidden",
+      code: payload.status,
+      message:
+        payload.message ??
+        "Workspace owner or workspace admin permission is required before provider keys can be managed.",
+    };
+  }
+
+  if (payload.kind === "provider_settings_mutation_conflict") {
+    return {
+      kind: "mutation_conflict",
+      status: "conflict",
+      message:
+        payload.message ??
+        "An active provider key already exists for this workspace/provider.",
+    };
+  }
+
+  if (
+    payload.kind === "provider_settings_invalid_request" ||
+    payload.kind === "provider_settings_invalid_provider" ||
+    payload.kind === "provider_settings_connection_not_found"
+  ) {
+    return {
+      kind:
+        payload.kind === "provider_settings_invalid_request"
+          ? "invalid_request"
+          : payload.kind === "provider_settings_invalid_provider"
+            ? "invalid_provider"
+            : "not_found",
+      status: payload.status,
+      message:
+        payload.message ??
+        "Provider key metadata could not be updated with the current request.",
+    };
+  }
+
+  return {
+    kind: "mutation_unavailable",
+    status: "unavailable",
+    code: payload.status,
+    message:
+      payload.message ??
+      "Secure provider key storage is not enabled yet, so this BYOK action remains unavailable.",
+  };
+};
+
+const requestProviderConnectionMutation = async (
+  endpoint: string,
+  method: "POST" | "DELETE" | "PUT",
+  body?: unknown,
+): Promise<ProviderMutationAvailabilityResult> => {
+  try {
+    const response = await fetchWithOptionalAccountBearer(endpoint, {
+      ...(body
+        ? {
+            body: JSON.stringify(body),
+            headers: { "content-type": "application/json" },
+          }
+        : {}),
+      credentials: "same-origin",
+      method,
+    });
+    const payload = await parseJson<BackendProviderConnectionMutationResponse>(
+      response,
+    );
+
+    return mapMutationResponse(payload);
+  } catch {
+    return {
+      kind: "mutation_unavailable",
+      status: "unavailable",
+      code: "secure_provider_key_storage_not_enabled",
+      message:
+        "Provider key storage is currently unavailable. No key material was retained in the browser.",
+    };
+  }
+};
+
+export const saveProviderConnectionKey = async (
+  providerId: string,
+  apiKey: string,
+): Promise<ProviderMutationAvailabilityResult> => {
+  if (!isSupportedProviderId(providerId)) {
+    return {
+      kind: "invalid_provider",
+      status: "invalid_provider",
+      message: "Unsupported provider.",
+    };
+  }
+
+  return requestProviderConnectionMutation(providerConnectionsEndpoint, "POST", {
+    apiKey,
+    providerId,
+  });
+};
+
+export const replaceProviderConnectionKey = async (
+  providerId: string,
+  apiKey: string,
+): Promise<ProviderMutationAvailabilityResult> => {
+  if (!isSupportedProviderId(providerId)) {
+    return {
+      kind: "invalid_provider",
+      status: "invalid_provider",
+      message: "Unsupported provider.",
+    };
+  }
+
+  return requestProviderConnectionMutation(
+    `${providerConnectionsEndpoint}/${providerId}`,
+    "PUT",
+    { apiKey },
+  );
+};
+
+export const revokeProviderConnectionKey = async (
+  providerId: string,
+): Promise<ProviderMutationAvailabilityResult> => {
+  if (!isSupportedProviderId(providerId)) {
+    return {
+      kind: "invalid_provider",
+      status: "invalid_provider",
+      message: "Unsupported provider.",
+    };
+  }
+
+  return requestProviderConnectionMutation(
+    `${providerConnectionsEndpoint}/${providerId}`,
+    "DELETE",
+  );
 };
 
 export const getProviderSettingsStatus = async (): Promise<ProviderSettingsStatusResult> => {
