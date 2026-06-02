@@ -243,7 +243,7 @@ test.describe("phase63 BYOK vault repository composition boundary", () => {
     });
   });
 
-  test("explicit route-live gate is parsed but does not make provider settings mutations live yet", async () => {
+  test("explicit route-live gate is parsed and provider settings live wiring remains gated", async () => {
     expect(parseByokProviderKeysRuntimeGate({}).enabled).toBe(false);
     expect(
       parseByokProviderKeysRuntimeGate({
@@ -256,17 +256,19 @@ test.describe("phase63 BYOK vault repository composition boundary", () => {
 
     expect(appSource).toContain("providerKeysRuntimeEnabled");
     expect(providerSettingsRoute).toContain("providerKeysRuntimeEnabled");
+    expect(providerSettingsRoute).toContain("getLiveDependencies");
     expect(providerSettingsRoute).toContain("secure_provider_key_storage_not_enabled");
     expect(providerSettingsRoute).not.toContain("if (options.providerKeysRuntimeEnabled)");
-    expect(providerSettingsRoute).not.toContain(".createProviderKey(");
-    expect(providerSettingsRoute).not.toContain(".replaceProviderKey(");
-    expect(providerSettingsRoute).not.toContain(".revokeProviderKey(");
+    expect(providerSettingsRoute).toContain(".createProviderKey(");
+    expect(providerSettingsRoute).toContain(".replaceProviderKey(");
+    expect(providerSettingsRoute).toContain(".revokeProviderKey(");
+    expect(providerSettingsRoute).not.toContain(".decryptProviderKey(");
   });
 
-  test("provider settings mutation routes remain unavailable even with vault repository and route gate dependencies", async () => {
+  test("provider settings mutation routes remain unavailable when route gate is off even with vault and repository dependencies", async () => {
     const { baseUrl, server } = await startProviderSettingsApp({
       providerKeyRepository: createFakeProviderKeyRepository(),
-      providerKeysRuntimeEnabled: true,
+      providerKeysRuntimeEnabled: false,
       providerSecretVault: buildVaultFromEnv(buildByokEnv()),
     });
 

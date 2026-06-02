@@ -13305,3 +13305,30 @@ Safety boundaries:
 - no service-role exposure through `VITE_*` was added
 - no raw key, encrypted payload, secret reference, IV, tag, ciphertext details, raw provider error, or service-role-like value is allowed in browser-facing responses
 - no credits, billing, generation, export, admin, event, or audit runtime behavior changed
+
+## Phase 65 - BYOK Provider Key Backend Route Wiring Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only Provider Settings create, replace, and revoke route wiring
+- explicit `FREE_AI_MIXER_BYOK_PROVIDER_KEYS_RUNTIME_ENABLED` live gate
+- backend-authenticated session, backend-derived workspace context, and workspace owner/admin authorization required before raw provider key handling
+- configured provider secret vault and composed provider key repository required before live mutation behavior
+- redacted stored, replaced, revoked, conflict, invalid request/provider, not found, forbidden, sign-in-required, and unavailable responses
+- test connection remains unavailable
+
+Safety boundaries:
+
+- no frontend API key input was added
+- no browser storage of provider keys was added
+- no migration was executed
+- no provider SDK/API calls were added
+- no test-connection implementation was added
+- no fake connected, verified, or test-passed provider state was added
+- no service-role exposure through `VITE_*` was added
+- no raw key, encrypted payload, secret reference, IV, tag, ciphertext details, raw provider error, token, env value, or service-role-like value is allowed in browser-facing responses
+- no credits, billing, generation, export, admin, event, or audit runtime behavior changed

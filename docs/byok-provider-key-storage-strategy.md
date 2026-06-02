@@ -176,6 +176,34 @@ Phase 63 keeps these no-go items:
 - No raw key, encrypted payload, secret reference, IV, tag, ciphertext details, raw provider errors, or service-role-like values in browser-facing responses.
 - No credits, billing, generation, export, admin, event, or audit runtime expansion.
 
+## Phase 65 Backend Route Wiring Boundary
+
+Merged Phase 65 wires backend-only Provider Settings create, replace, and revoke provider key mutations behind the explicit route-live gate `FREE_AI_MIXER_BYOK_PROVIDER_KEYS_RUNTIME_ENABLED`.
+
+The route wiring requires all of the following before live mutation behavior is allowed:
+
+- Verified backend-authenticated requester context.
+- Backend-derived workspace and app-user context.
+- Workspace owner or workspace admin authorization from backend membership truth.
+- Configured provider secret vault readiness.
+- Composed provider key repository.
+- Explicit route-live gate set to enabled.
+
+Create and replace requests accept raw provider keys only after auth, workspace, owner/admin, route gate, vault, and repository checks pass. Raw keys are passed only to the backend vault boundary and are never echoed in browser responses. Revoke uses the active backend provider key record for the workspace/provider and does not require a raw key body.
+
+Responses remain redacted and browser-safe. They may include stored, replaced, revoked, conflict, invalid request, invalid provider, not found, forbidden, sign-in-required, or unavailable outcomes, but they must not include raw provider keys, replacement keys, encrypted payloads, secret references, IV, tag, ciphertext, provider raw errors, provider credentials, tokens, service-role-like values, or env values.
+
+Phase 65 keeps these no-go items:
+
+- No frontend API key input.
+- No browser storage of provider keys.
+- No migration execution.
+- No provider SDK/API calls.
+- No test-connection implementation.
+- No fake connected, verified, or test-passed provider state.
+- No service-role exposure through `VITE_*`.
+- No credits, billing, generation, export, admin, event, or audit runtime expansion.
+
 ## Future Recommended Architecture
 
 Future BYOK should use a backend-only provider secret boundary:

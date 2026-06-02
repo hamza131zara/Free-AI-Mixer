@@ -1037,3 +1037,12 @@ Status:
 - Provider Settings mutation routes remain unavailable/fail-closed even when vault and repository dependencies exist.
 - No frontend API key input, live route mutation behavior, migration execution, provider SDK/API call, test-connection implementation, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
 - Live BYOK remains deferred until a later approved phase implements route add/replace/revoke behavior under backend auth, workspace owner/admin authorization, configured vault/repository dependencies, and browser-safe redacted responses only.
+
+## Phase 65 status
+
+- Phase 65: backend-only BYOK provider key route wiring pack.
+- Scope: Provider Settings create, replace, and revoke route wiring behind `FREE_AI_MIXER_BYOK_PROVIDER_KEYS_RUNTIME_ENABLED`.
+- Live mutation behavior requires backend-authenticated session, backend-derived workspace context, workspace owner/admin authorization, configured provider secret vault, and composed provider key repository.
+- Responses remain redacted and browser-safe for stored, replaced, revoked, conflict, invalid request/provider, not found, forbidden, sign-in-required, and unavailable outcomes.
+- Test connection remains unavailable.
+- No frontend API key input, browser provider-key storage, migration execution, provider SDK/API call, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.

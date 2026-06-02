@@ -14,18 +14,29 @@ import {
 } from "../authorization/providerKeyAuthorization";
 import type {
   BackendProviderCatalogResponse,
+  BackendProviderConnectionCreateRequest,
   BackendProviderConnectionMutationResponse,
+  BackendProviderConnectionReplaceRequest,
   BackendProviderConnectionsResponse,
   BackendProviderRoutingPreferences,
   BackendProviderRoutingPolicyResponse,
   BackendProviderSettingsStatusResponse,
+  BackendSupportedProviderId,
 } from "../contracts/providerSettingsHttpTypes";
 import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
 import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProviderRuntimeConfig";
 import { createNotConfiguredProviderSecretVault } from "../providers/notConfiguredProviderSecretVault";
 import { getProviderCatalog } from "../providers/providerCatalog";
-import type { ProviderSecretVault } from "../providers/providerSecretVault";
-import type { BackendProviderKeyRepository } from "../repositories/repositoryContracts";
+import type {
+  ProviderSecretVault,
+  ProviderSecretVaultOperationResult,
+  ProviderSecretVaultSecretHandle,
+} from "../providers/providerSecretVault";
+import type {
+  BackendProviderKeyRecord,
+  BackendProviderKeyRepository,
+  BackendProviderKeyStorageResult,
+} from "../repositories/repositoryContracts";
 
 export interface CreateProviderSettingsRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
@@ -47,6 +58,7 @@ type ProviderMutationBoundaryDecision =
       status:
         | "auth_not_configured"
         | "auth_provider_unavailable"
+        | "provider_key_repository_unavailable"
         | "secure_provider_key_storage_not_enabled"
         | "workspace_permission_not_verified";
       message: string;
@@ -55,6 +67,27 @@ type ProviderMutationBoundaryDecision =
       kind: "forbidden";
       status: "workspace_owner_or_admin_required";
       message: string;
+    };
+
+type ProviderMutationAuthContext = {
+  requesterUserId: string;
+  workspaceId: string;
+};
+
+type ProviderMutationLiveDependencies = {
+  providerKeyRepository: BackendProviderKeyRepository;
+  providerSecretVault: ProviderSecretVault;
+};
+
+type ProviderMutationExecutionResult =
+  | {
+      kind: "response";
+      statusCode: number;
+      body: BackendProviderConnectionMutationResponse;
+    }
+  | {
+      kind: "boundary";
+      decision: ProviderMutationBoundaryDecision;
     };
 
 const defaultRoutingPreferences: BackendProviderRoutingPreferences = {
@@ -108,6 +141,458 @@ const respondMutationBoundaryDecision = (
     status: decision.status,
     message: decision.message,
   });
+};
+
+const respondMutationExecutionResult = (
+  response: Response<BackendProviderConnectionMutationResponse>,
+  result: ProviderMutationExecutionResult,
+): void => {
+  if (result.kind === "boundary") {
+    respondMutationBoundaryDecision(response, result.decision);
+    return;
+  }
+
+  response.status(result.statusCode).json(result.body);
+};
+
+const supportedProviderIds = new Set<BackendSupportedProviderId>(
+  getProviderCatalog().map((provider) => provider.id),
+);
+
+const isSupportedProviderId = (
+  providerId: string,
+): providerId is BackendSupportedProviderId =>
+  supportedProviderIds.has(providerId as BackendSupportedProviderId);
+
+const getProviderIdFromRouteParam = (
+  providerId: unknown,
+): BackendSupportedProviderId | undefined =>
+  typeof providerId === "string" && isSupportedProviderId(providerId)
+    ? providerId
+    : undefined;
+
+const normalizeApiKeyFromBody = (
+  body: unknown,
+): string | undefined => {
+  const apiKey =
+    body && typeof body === "object" && "apiKey" in body
+      ? (body as BackendProviderConnectionCreateRequest | BackendProviderConnectionReplaceRequest).apiKey
+      : undefined;
+
+  if (typeof apiKey !== "string") {
+    return undefined;
+  }
+
+  const trimmed = apiKey.trim();
+
+  if (trimmed.length === 0 || trimmed.length > 4096) {
+    return undefined;
+  }
+
+  return trimmed;
+};
+
+const storageHandleToRepositoryInput = (
+  secretHandle: ProviderSecretVaultSecretHandle,
+):
+  | { encryptedSecret: { encryptedPayload: string; keyVersion: string; algorithm: string } }
+  | { secretRef: string } => {
+  if (secretHandle.kind === "encrypted_secret") {
+    return {
+      encryptedSecret: {
+        algorithm: secretHandle.algorithm,
+        encryptedPayload: secretHandle.encryptedPayload,
+        keyVersion: secretHandle.keyVersion,
+      },
+    };
+  }
+
+  return {
+    secretRef: secretHandle.secretRef,
+  };
+};
+
+const getVaultUnavailableDecision = (): ProviderMutationBoundaryDecision => ({
+  kind: "mutation_unavailable",
+  status: "secure_provider_key_storage_not_enabled",
+  message: "Secure provider key storage is not enabled yet.",
+});
+
+const getRepositoryUnavailableDecision = (): ProviderMutationBoundaryDecision => ({
+  kind: "mutation_unavailable",
+  status: "provider_key_repository_unavailable",
+  message:
+    "Provider key repository storage is not configured on this backend yet.",
+});
+
+const getLiveDependencies = (
+  providerKeysRuntimeEnabled: boolean,
+  providerKeyRepository: BackendProviderKeyRepository | undefined,
+  providerSecretVault: ProviderSecretVault,
+): ProviderMutationExecutionResult | ProviderMutationLiveDependencies => {
+  if (!providerKeysRuntimeEnabled) {
+    return {
+      kind: "boundary",
+      decision: getVaultUnavailableDecision(),
+    };
+  }
+
+  if (!providerKeyRepository) {
+    return {
+      kind: "boundary",
+      decision: getRepositoryUnavailableDecision(),
+    };
+  }
+
+  const vaultReadiness = providerSecretVault.getVaultReadiness();
+
+  if (vaultReadiness.kind !== "vault_ready") {
+    return {
+      kind: "boundary",
+      decision: {
+        kind: "mutation_unavailable",
+        status: "secure_provider_key_storage_not_enabled",
+        message: vaultReadiness.message,
+      },
+    };
+  }
+
+  return {
+    providerKeyRepository,
+    providerSecretVault,
+  };
+};
+
+const getActiveProviderKeyRecord = async (
+  providerKeyRepository: BackendProviderKeyRepository,
+  workspaceId: string,
+  providerId: BackendSupportedProviderId,
+): Promise<BackendProviderKeyRecord | undefined> => {
+  const records = await providerKeyRepository.listForWorkspace(workspaceId);
+
+  return records.find(
+    (record) =>
+      record.status === "active" &&
+      record.deletedAt === undefined &&
+      record.providerName === providerId,
+  );
+};
+
+const mapStorageResultToMutationResponse = (
+  result: BackendProviderKeyStorageResult,
+): ProviderMutationExecutionResult => {
+  if (result.kind === "stored") {
+    return {
+      kind: "response",
+      statusCode: 201,
+      body: {
+        kind: "provider_settings_connection_stored",
+        status: "stored",
+        message: "Provider key was stored server-side.",
+        connection: result.connection,
+      },
+    };
+  }
+
+  if (result.kind === "replaced") {
+    return {
+      kind: "response",
+      statusCode: 200,
+      body: {
+        kind: "provider_settings_connection_replaced",
+        status: "replaced",
+        message: "Provider key was replaced server-side.",
+        connection: result.connection,
+      },
+    };
+  }
+
+  if (result.kind === "revoked") {
+    return {
+      kind: "response",
+      statusCode: 200,
+      body: {
+        kind: "provider_settings_connection_revoked",
+        status: "revoked",
+        message: "Provider key was revoked server-side.",
+        connection: result.connection,
+      },
+    };
+  }
+
+  if (result.kind === "conflict") {
+    return {
+      kind: "response",
+      statusCode: 409,
+      body: {
+        kind: "provider_settings_mutation_conflict",
+        status: "conflict",
+        message: result.message,
+      },
+    };
+  }
+
+  if (result.kind === "invalid_provider") {
+    return {
+      kind: "response",
+      statusCode: 400,
+      body: {
+        kind: "provider_settings_invalid_provider",
+        status: "invalid_provider",
+        message: result.message,
+      },
+    };
+  }
+
+  if (result.kind === "unauthorized") {
+    return {
+      kind: "boundary",
+      decision:
+        result.code === "workspace_owner_or_admin_required"
+          ? {
+              kind: "forbidden",
+              status: "workspace_owner_or_admin_required",
+              message: result.message,
+            }
+          : {
+              kind: "mutation_unavailable",
+              status: "workspace_permission_not_verified",
+              message: result.message,
+            },
+    };
+  }
+
+  return {
+    kind: "boundary",
+    decision:
+      result.kind === "unavailable" && result.code === "repository_unavailable"
+        ? getRepositoryUnavailableDecision()
+        : {
+            kind: "mutation_unavailable",
+            status: "secure_provider_key_storage_not_enabled",
+            message: result.message,
+          },
+  };
+};
+
+const mapVaultResultToUnavailableResponse = (
+  result: ProviderSecretVaultOperationResult,
+): ProviderMutationExecutionResult => {
+  if (result.kind === "vault_invalid_provider") {
+    return {
+      kind: "response",
+      statusCode: 400,
+      body: {
+        kind: "provider_settings_invalid_provider",
+        status: "invalid_provider",
+        message: result.message,
+      },
+    };
+  }
+
+  return {
+    kind: "boundary",
+    decision: {
+      kind: "mutation_unavailable",
+      status: "secure_provider_key_storage_not_enabled",
+      message:
+        result.kind === "vault_operation_unavailable"
+          ? result.message
+          : "Secure provider key storage is not available.",
+    },
+  };
+};
+
+const getInvalidRequestResponse = (
+  message: string,
+): ProviderMutationExecutionResult => ({
+  kind: "response",
+  statusCode: 400,
+  body: {
+    kind: "provider_settings_invalid_request",
+    status: "invalid_request",
+    message,
+  },
+});
+
+const createProviderKey = async (
+  request: Request,
+  authContext: ProviderMutationAuthContext,
+  dependencies: ProviderMutationLiveDependencies,
+): Promise<ProviderMutationExecutionResult> => {
+  const providerId =
+    request.body &&
+    typeof request.body === "object" &&
+    "providerId" in request.body &&
+    typeof request.body.providerId === "string" &&
+    isSupportedProviderId(request.body.providerId)
+      ? request.body.providerId
+      : undefined;
+
+  if (!providerId) {
+    return {
+      kind: "response",
+      statusCode: 400,
+      body: {
+        kind: "provider_settings_invalid_provider",
+        status: "invalid_provider",
+        message: "Unsupported provider.",
+      },
+    };
+  }
+
+  const plaintextKey = normalizeApiKeyFromBody(request.body);
+
+  if (!plaintextKey) {
+    return getInvalidRequestResponse("A provider API key is required.");
+  }
+
+  const vaultResult = await dependencies.providerSecretVault.storeProviderKey({
+    plaintextKey,
+    providerId,
+    requesterUserId: authContext.requesterUserId,
+    workspaceId: authContext.workspaceId,
+  });
+
+  if (vaultResult.kind !== "vault_provider_key_stored") {
+    return mapVaultResultToUnavailableResponse(vaultResult);
+  }
+
+  return mapStorageResultToMutationResponse(
+    await dependencies.providerKeyRepository.createProviderKey({
+      createdByUserId: authContext.requesterUserId,
+      ...storageHandleToRepositoryInput(vaultResult.secretHandle),
+      keyFingerprintSuffix: vaultResult.keyFingerprintSuffix,
+      maskedFingerprint: vaultResult.maskedFingerprint,
+      ownerId: authContext.requesterUserId,
+      providerId,
+      workspaceId: authContext.workspaceId,
+    }),
+  );
+};
+
+const replaceProviderKey = async (
+  request: Request,
+  authContext: ProviderMutationAuthContext,
+  dependencies: ProviderMutationLiveDependencies,
+): Promise<ProviderMutationExecutionResult> => {
+  const providerId = getProviderIdFromRouteParam(request.params.providerId);
+
+  if (!providerId) {
+    return {
+      kind: "response",
+      statusCode: 400,
+      body: {
+        kind: "provider_settings_invalid_provider",
+        status: "invalid_provider",
+        message: "Unsupported provider.",
+      },
+    };
+  }
+
+  const replacementPlaintextKey = normalizeApiKeyFromBody(request.body);
+
+  if (!replacementPlaintextKey) {
+    return getInvalidRequestResponse("A replacement provider API key is required.");
+  }
+
+  const activeRecord = await getActiveProviderKeyRecord(
+    dependencies.providerKeyRepository,
+    authContext.workspaceId,
+    providerId,
+  );
+
+  if (!activeRecord) {
+    return {
+      kind: "response",
+      statusCode: 404,
+      body: {
+        kind: "provider_settings_connection_not_found",
+        status: "not_found",
+        message: "Active provider key was not found for this workspace/provider.",
+      },
+    };
+  }
+
+  const vaultResult = await dependencies.providerSecretVault.rotateProviderKey({
+    providerId,
+    providerKeyId: activeRecord.providerKeyId,
+    replacementPlaintextKey,
+    requesterUserId: authContext.requesterUserId,
+    workspaceId: authContext.workspaceId,
+  });
+
+  if (vaultResult.kind !== "vault_provider_key_rotated") {
+    return mapVaultResultToUnavailableResponse(vaultResult);
+  }
+
+  return mapStorageResultToMutationResponse(
+    await dependencies.providerKeyRepository.replaceProviderKey({
+      providerId,
+      providerKeyId: activeRecord.providerKeyId,
+      requesterUserId: authContext.requesterUserId,
+      ...storageHandleToRepositoryInput(vaultResult.secretHandle),
+      keyFingerprintSuffix: vaultResult.keyFingerprintSuffix,
+      maskedFingerprint: vaultResult.maskedFingerprint,
+      workspaceId: authContext.workspaceId,
+    }),
+  );
+};
+
+const revokeProviderKey = async (
+  request: Request,
+  authContext: ProviderMutationAuthContext,
+  dependencies: ProviderMutationLiveDependencies,
+): Promise<ProviderMutationExecutionResult> => {
+  const providerId = getProviderIdFromRouteParam(request.params.providerId);
+
+  if (!providerId) {
+    return {
+      kind: "response",
+      statusCode: 400,
+      body: {
+        kind: "provider_settings_invalid_provider",
+        status: "invalid_provider",
+        message: "Unsupported provider.",
+      },
+    };
+  }
+
+  const activeRecord = await getActiveProviderKeyRecord(
+    dependencies.providerKeyRepository,
+    authContext.workspaceId,
+    providerId,
+  );
+
+  if (!activeRecord) {
+    return {
+      kind: "response",
+      statusCode: 404,
+      body: {
+        kind: "provider_settings_connection_not_found",
+        status: "not_found",
+        message: "Active provider key was not found for this workspace/provider.",
+      },
+    };
+  }
+
+  const vaultResult = await dependencies.providerSecretVault.revokeProviderKey({
+    providerKeyId: activeRecord.providerKeyId,
+    requesterUserId: authContext.requesterUserId,
+    workspaceId: authContext.workspaceId,
+  });
+
+  if (vaultResult.kind !== "vault_provider_key_revoked") {
+    return mapVaultResultToUnavailableResponse(vaultResult);
+  }
+
+  return mapStorageResultToMutationResponse(
+    await dependencies.providerKeyRepository.revokeProviderKey({
+      providerKeyId: activeRecord.providerKeyId,
+      requesterUserId: authContext.requesterUserId,
+      workspaceId: authContext.workspaceId,
+    }),
+  );
 };
 
 const getMutationUnavailableForAuthState = (
@@ -210,6 +695,15 @@ const createMutationHandler = (
   runtimeConfig: TrustedAuthProviderRuntimeConfig,
   workspaceMembershipRepository: WorkspaceMembershipRepository,
   providerSecretVault: ProviderSecretVault,
+  options: {
+    executeLiveMutation?: (
+      request: Request,
+      authContext: ProviderMutationAuthContext,
+      dependencies: ProviderMutationLiveDependencies,
+    ) => Promise<ProviderMutationExecutionResult>;
+    providerKeyRepository?: BackendProviderKeyRepository;
+    providerKeysRuntimeEnabled: boolean;
+  },
 ) => {
   return (
     request: Request,
@@ -235,19 +729,54 @@ const createMutationHandler = (
         return;
       }
 
-      const vaultReadiness = providerSecretVault.getVaultReadiness();
+      if (!options.executeLiveMutation) {
+        const vaultReadiness = providerSecretVault.getVaultReadiness();
 
-      respondMutationBoundaryDecision(response, {
-        kind: "mutation_unavailable",
-        status:
-          vaultReadiness.kind === "vault_unavailable"
-            ? "secure_provider_key_storage_not_enabled"
-            : "secure_provider_key_storage_not_enabled",
-        message:
-          vaultReadiness.kind === "vault_unavailable"
-            ? vaultReadiness.message
-            : "Secure provider key storage is not enabled yet.",
-      });
+        respondMutationBoundaryDecision(response, {
+          kind: "mutation_unavailable",
+          status: "secure_provider_key_storage_not_enabled",
+          message:
+            vaultReadiness.kind === "vault_unavailable"
+              ? vaultReadiness.message
+              : "Secure provider key storage is not enabled yet.",
+        });
+        return;
+      }
+
+      const requesterContext = getRequesterContextFromRequest(request);
+
+      if (requesterContext.kind !== "authenticated" || !requesterContext.workspaceId) {
+        respondMutationBoundaryDecision(response, {
+          kind: "mutation_unavailable",
+          status: "workspace_permission_not_verified",
+          message:
+            "Workspace permission verification is not configured yet, so provider key management remains unavailable in this phase.",
+        });
+        return;
+      }
+
+      const liveDependencies = getLiveDependencies(
+        options.providerKeysRuntimeEnabled,
+        options.providerKeyRepository,
+        providerSecretVault,
+      );
+
+      if ("kind" in liveDependencies) {
+        respondMutationExecutionResult(response, liveDependencies);
+        return;
+      }
+
+      respondMutationExecutionResult(
+        response,
+        await options.executeLiveMutation(
+          request,
+          {
+            requesterUserId: requesterContext.userId,
+            workspaceId: requesterContext.workspaceId,
+          },
+          liveDependencies,
+        ),
+      );
     })().catch(next);
   };
 };
@@ -261,8 +790,7 @@ export const createProviderSettingsRouter = (
     createWorkspaceMembershipNotConfiguredRepository();
   const providerSecretVault =
     options.providerSecretVault ?? createNotConfiguredProviderSecretVault();
-  void options.providerKeyRepository;
-  void options.providerKeysRuntimeEnabled;
+  const providerKeysRuntimeEnabled = options.providerKeysRuntimeEnabled === true;
 
   router.get(
     "/provider-settings/catalog",
@@ -380,6 +908,11 @@ export const createProviderSettingsRouter = (
       options.runtimeConfig,
       workspaceMembershipRepository,
       providerSecretVault,
+      {
+        executeLiveMutation: createProviderKey,
+        providerKeyRepository: options.providerKeyRepository,
+        providerKeysRuntimeEnabled,
+      },
     ),
   );
 
@@ -390,6 +923,11 @@ export const createProviderSettingsRouter = (
       options.runtimeConfig,
       workspaceMembershipRepository,
       providerSecretVault,
+      {
+        executeLiveMutation: revokeProviderKey,
+        providerKeyRepository: options.providerKeyRepository,
+        providerKeysRuntimeEnabled,
+      },
     ),
   );
 
@@ -400,6 +938,11 @@ export const createProviderSettingsRouter = (
       options.runtimeConfig,
       workspaceMembershipRepository,
       providerSecretVault,
+      {
+        executeLiveMutation: replaceProviderKey,
+        providerKeyRepository: options.providerKeyRepository,
+        providerKeysRuntimeEnabled,
+      },
     ),
   );
 
@@ -410,6 +953,10 @@ export const createProviderSettingsRouter = (
       options.runtimeConfig,
       workspaceMembershipRepository,
       providerSecretVault,
+      {
+        providerKeyRepository: options.providerKeyRepository,
+        providerKeysRuntimeEnabled,
+      },
     ),
   );
 
@@ -420,6 +967,10 @@ export const createProviderSettingsRouter = (
       options.runtimeConfig,
       workspaceMembershipRepository,
       providerSecretVault,
+      {
+        providerKeyRepository: options.providerKeyRepository,
+        providerKeysRuntimeEnabled,
+      },
     ),
   );
 

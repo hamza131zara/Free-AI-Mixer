@@ -149,14 +149,25 @@ export type BackendProviderConnectionMutationResponse =
       status:
         | "auth_not_configured"
         | "auth_provider_unavailable"
+        | "provider_key_repository_unavailable"
         | "secure_provider_key_storage_not_enabled"
         | "workspace_permission_not_verified"
         | "vault_unavailable";
       message: string;
     }
   | {
+      kind: "provider_settings_invalid_request";
+      status: "invalid_request";
+      message: string;
+    }
+  | {
       kind: "provider_settings_mutation_conflict";
       status: "conflict";
+      message: string;
+    }
+  | {
+      kind: "provider_settings_connection_not_found";
+      status: "not_found";
       message: string;
     }
   | {

@@ -256,7 +256,7 @@ test.describe("phase61 local encrypted provider secret vault boundary", () => {
     expect(serialized).not.toContain("header.payload.signature");
   });
 
-  test("provider settings routes remain fail closed and unwired to local encrypted vault", async () => {
+  test("provider settings routes do not import local vault config or decrypt provider keys", async () => {
     const providerSettingsRoute = await readSource("backend/routes/providerSettings.ts");
     const backendDependencies = await readSource("backend/composition/backendDependencies.ts");
     const appSource = await readSource("backend/app.ts");
@@ -268,11 +268,10 @@ test.describe("phase61 local encrypted provider secret vault boundary", () => {
     expect(backendDependencies).toContain("parseProviderSecretVaultConfig");
     expect(providerSettingsRoute).not.toContain("createLocalEncryptedProviderSecretVault");
     expect(providerSettingsRoute).not.toContain("parseProviderSecretVaultConfig");
-    expect(providerSettingsRoute).not.toContain(".storeProviderKey(");
-    expect(providerSettingsRoute).not.toContain(".rotateProviderKey(");
     expect(providerSettingsRoute).not.toContain(".decryptProviderKey(");
     expect(appSource).not.toContain(".storeProviderKey(");
-    expect(combinedRuntime).not.toContain(".createProviderKey(");
+    expect(backendDependencies).not.toContain(".storeProviderKey(");
+    expect(combinedRuntime).not.toContain(".decryptProviderKey(");
   });
 
   test("frontend source remains free of key input browser storage provider SDK calls and fake state", async () => {
