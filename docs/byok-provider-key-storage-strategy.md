@@ -223,6 +223,20 @@ The schema prep now includes:
 
 Phase 68 does not execute migrations, add frontend API key input, change Provider Settings route behavior, add provider SDK/API calls, implement test connection, add fake connected/verified state, expose service-role or encryption keys, or change credits, billing, generation, or export runtime.
 
+## Phase 70 Local/Staging Schema Apply Runbook
+
+Merged Phase 70 adds an operational runbook for applying the executable `provider_keys` schema prep to local or staging only.
+
+The runbook records:
+
+- The exact schema file: `backend/db/migrations/0003_provider_keys_schema_draft.sql`.
+- Pre-checks for clean git status, local/staging target confirmation, existing `app_users` and `workspaces`, and backend-only service-role handling.
+- Verification SQL that checks `provider_keys` existence, non-secret column shape, secret-handle column presence without selecting values, RLS enablement, zero policies, and required indexes.
+- Disposable local/staging rollback guidance.
+- Production no-go warnings.
+
+Phase 70 does not execute migrations, apply schema, add frontend API key input, change backend route behavior, call provider APIs, implement test connection, add fake connected/verified state, expose service-role or encryption keys, or change credits, billing, generation, or export runtime.
+
 ## Future Recommended Architecture
 
 Future BYOK should use a backend-only provider secret boundary:
@@ -535,6 +549,7 @@ The following remain deferred:
 - Provider SDK/API verification.
 - Provider key UI input fields.
 - Migration execution in local/staging or production.
+- Backend BYOK route runtime smoke after verified local/staging schema apply.
 - Active workspace selection.
 - Billing and credits ledger.
 - Generation/export runtime integration.

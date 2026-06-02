@@ -87,6 +87,8 @@ BYOK API key input, storage, replacement, removal, test connection, encrypted va
 
 Do not add raw provider API key fields, browser key storage, direct provider calls, fake connected state, or fake verification success while debugging auth.
 
+For local/staging provider key schema preparation, use [BYOK Provider Keys Schema Apply Runbook](./byok-provider-keys-schema-apply-runbook.md). That runbook is local/staging-only and must not be used as a production migration approval.
+
 ## Credits Boundary
 
 Credits, get-credits, refill, checkout, subscription, wallet mutation, ledger mutation, and billing runtime are intentionally not live. Credits pages must remain planning/readiness-only until a separately verified ledger and billing runtime exists.

@@ -13360,3 +13360,30 @@ Safety boundaries:
 - no fake connected, verified, or test-passed provider state was added
 - no service-role or encryption key exposure was added
 - no credits, billing, generation, export, admin, event, or audit runtime behavior changed
+
+## Phase 70 - BYOK Provider Keys Local/Staging Schema Apply Runbook + Verification Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- local/staging-only schema apply runbook for `provider_keys`
+- explicit reference to `backend/db/migrations/0003_provider_keys_schema_draft.sql`
+- pre-checks for clean git status, local/staging target, required account/workspace tables, and backend-only service-role handling
+- safe verification SQL for table existence, non-secret column shape, secret-handle column presence without selecting values, RLS enablement, zero policy count, and required indexes
+- disposable local/staging rollback guidance
+- focused static coverage proving the runbook does not print secrets, does not select secret-bearing values, warns against production, and keeps frontend/provider runtime blocked
+
+Safety boundaries:
+
+- no migration was executed
+- no schema was applied
+- no frontend API key input was added
+- no provider settings route behavior changed
+- no provider SDK/API calls were added
+- no test-connection implementation was added
+- no fake connected, verified, or test-passed provider state was added
+- no service-role or encryption key exposure was added
+- no credits, billing, generation, export, admin, event, or audit runtime behavior changed

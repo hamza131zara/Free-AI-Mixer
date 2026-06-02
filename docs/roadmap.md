@@ -1054,3 +1054,11 @@ Status:
 - The schema prep includes repository-required provider key metadata columns, backend-only encrypted payload or external secret reference handles, unique active workspace/provider indexing, sanitized verification error code shape, lifecycle timestamps, default-deny RLS, and comments forbidding plaintext keys and raw provider errors.
 - No migration execution, frontend API key input, provider settings route behavior change, provider SDK/API call, test connection, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
 - Live BYOK remains gated by separate manual local/staging schema application, backend runtime smoke, and a later approved frontend input phase.
+
+## Phase 70 status
+
+- Phase 70: BYOK provider keys local/staging schema apply runbook and verification pack.
+- Scope: add a local/staging-only runbook for applying `backend/db/migrations/0003_provider_keys_schema_draft.sql` and verifying table shape, RLS, zero policies, and required indexes without selecting `encrypted_payload` or `secret_ref` values.
+- The runbook requires clean git status, confirmed local/staging target, existing `app_users` and `workspaces`, backend-only service-role handling, and production no-go review.
+- No migration execution, schema apply, frontend API key input, provider settings route behavior change, provider SDK/API call, test connection, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
+- Live BYOK remains gated by a separately performed and verified local/staging schema apply, then backend-only route runtime smoke with fake placeholder keys.
