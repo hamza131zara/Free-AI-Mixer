@@ -16,6 +16,8 @@ create table if not exists provider_keys (
   key_version text not null,
   encryption_algorithm text not null,
   algorithm text,
+  key_fingerprint_suffix text,
+  masked_fingerprint text,
   status text not null default 'active',
   verification_status text not null default 'not_validated',
   last_verified_at timestamptz,
@@ -55,6 +57,16 @@ create table if not exists provider_keys (
     check (
       last_verification_error_code is null
       or last_verification_error_code ~ '^[a-z0-9_:-]{1,96}$'
+    ),
+  constraint provider_keys_key_fingerprint_suffix_check
+    check (
+      key_fingerprint_suffix is null
+      or key_fingerprint_suffix ~ '^[a-zA-Z0-9:_-]{1,128}$'
+    ),
+  constraint provider_keys_masked_fingerprint_check
+    check (
+      masked_fingerprint is null
+      or masked_fingerprint ~ '^[a-zA-Z0-9:_-]{1,256}$'
     )
 );
 
@@ -70,6 +82,8 @@ alter table provider_keys
   add column if not exists key_version text,
   add column if not exists encryption_algorithm text,
   add column if not exists algorithm text,
+  add column if not exists key_fingerprint_suffix text,
+  add column if not exists masked_fingerprint text,
   add column if not exists status text not null default 'active',
   add column if not exists verification_status text not null default 'not_validated',
   add column if not exists last_verified_at timestamptz,
@@ -192,6 +206,32 @@ begin
         or last_verification_error_code ~ '^[a-z0-9_:-]{1,96}$'
       );
   end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'provider_keys_key_fingerprint_suffix_check'
+  ) then
+    alter table provider_keys
+      add constraint provider_keys_key_fingerprint_suffix_check
+      check (
+        key_fingerprint_suffix is null
+        or key_fingerprint_suffix ~ '^[a-zA-Z0-9:_-]{1,128}$'
+      );
+  end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'provider_keys_masked_fingerprint_check'
+  ) then
+    alter table provider_keys
+      add constraint provider_keys_masked_fingerprint_check
+      check (
+        masked_fingerprint is null
+        or masked_fingerprint ~ '^[a-zA-Z0-9:_-]{1,256}$'
+      );
+  end if;
 end $$;
 
 comment on table provider_keys is
@@ -208,6 +248,12 @@ comment on column provider_keys.last_verification_error_code is
 
 comment on column provider_keys.storage_mode is
   'Storage mode must be encrypted_payload or external_secret_ref; active records must use exactly one backend-only storage reference.';
+
+comment on column provider_keys.key_fingerprint_suffix is
+  'Safe non-secret key fingerprint suffix for backend metadata only. Never store plaintext provider keys here.';
+
+comment on column provider_keys.masked_fingerprint is
+  'Safe non-secret masked fingerprint for backend metadata only. Never store plaintext provider keys here.';
 
 comment on column provider_keys.created_by_user_id is
   'Backend-derived app user id that created the provider key metadata record. Do not trust frontend user or workspace identifiers.';

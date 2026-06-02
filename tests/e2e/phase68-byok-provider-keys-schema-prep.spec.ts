@@ -88,6 +88,8 @@ test.describe("phase68 BYOK provider key executable schema prep", () => {
       "key_version text not null",
       "encryption_algorithm text not null",
       "algorithm text",
+      "key_fingerprint_suffix text",
+      "masked_fingerprint text",
       "status text not null default 'active'",
       "verification_status text not null default 'not_validated'",
       "last_verification_error_code text",
@@ -112,6 +114,8 @@ test.describe("phase68 BYOK provider key executable schema prep", () => {
       "provider_keys_verification_status_check",
       "provider_keys_active_storage_reference_check",
       "provider_keys_sanitized_verification_error_code_check",
+      "provider_keys_key_fingerprint_suffix_check",
+      "provider_keys_masked_fingerprint_check",
     ]) {
       expect(migration).toContain(requiredConstraint);
       expect(schemaMirror).toContain(requiredConstraint);
@@ -190,6 +194,8 @@ test.describe("phase68 BYOK provider key executable schema prep", () => {
       "browser-visible secret material",
       "Never return to frontend responses",
       "Raw provider error bodies and account metadata are forbidden",
+      "Safe non-secret key fingerprint suffix",
+      "Safe non-secret masked fingerprint",
     ]) {
       expect(combined).toContain(requiredWarning);
     }

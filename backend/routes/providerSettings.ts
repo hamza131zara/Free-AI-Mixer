@@ -1,5 +1,9 @@
 import { Router } from "express";
 import type { NextFunction, Request, Response } from "express";
+import type {
+  BackendAuthenticatedRequesterContext,
+  BackendRequesterContext,
+} from "../auth/requesterContext";
 import type { AsyncBackendRequesterContextResolver } from "../auth/requesterContextResolver";
 import {
   createWorkspaceMembershipNotConfiguredRepository,
@@ -72,6 +76,13 @@ type ProviderMutationBoundaryDecision =
 type ProviderMutationAuthContext = {
   requesterUserId: string;
   workspaceId: string;
+};
+
+type ProviderMutationResolvedRequester = {
+  authContext: ProviderMutationAuthContext;
+  requesterContext: BackendAuthenticatedRequesterContext & {
+    workspaceId: string;
+  };
 };
 
 type ProviderMutationLiveDependencies = {
@@ -595,18 +606,29 @@ const revokeProviderKey = async (
   );
 };
 
-const getMutationUnavailableForAuthState = (
-  request: Request,
+const mapSelectedRouteDeniedDecisionToMutationBoundary = (
+  accessDecision: Awaited<ReturnType<typeof resolveSelectedRouteAccess>>,
   runtimeConfig: TrustedAuthProviderRuntimeConfig,
-): ProviderMutationBoundaryDecision | undefined => {
-  const requesterDecision = decideRequesterContext(getRequesterContextFromRequest(request));
+): ProviderMutationBoundaryDecision => {
+  if (accessDecision.kind === "allowed") {
+    return {
+      kind: "mutation_unavailable",
+      status: "workspace_permission_not_verified",
+      message:
+        "Workspace permission verification is not configured yet, so provider key management remains unavailable in this phase.",
+    };
+  }
 
-  if (requesterDecision.kind === "verified_authenticated") {
-    return undefined;
+  if (accessDecision.code === "auth_required") {
+    return {
+      kind: "sign_in_required",
+      reason: "invalid_credentials",
+      message: "Sign in is required before provider settings can be managed.",
+    };
   }
 
   if (
-    requesterDecision.kind === "auth_not_configured" ||
+    accessDecision.code === "auth_not_configured" ||
     runtimeConfig.kind === "auth_provider_not_configured"
   ) {
     return {
@@ -616,22 +638,50 @@ const getMutationUnavailableForAuthState = (
     };
   }
 
+  if (accessDecision.code === "auth_unavailable") {
+    return {
+      kind: "mutation_unavailable",
+      status: "auth_provider_unavailable",
+      message:
+        "Authentication is configured but not available for provider key management yet.",
+    };
+  }
+
   return {
-    kind: "sign_in_required",
-    reason:
-      requesterDecision.kind === "invalid_credentials"
-        ? "invalid_credentials"
-        : "missing_credentials",
-    message: "Sign in is required before provider settings can be managed.",
+    kind: "mutation_unavailable",
+    status: "workspace_permission_not_verified",
+    message:
+      accessDecision.code === "workspace_runtime_not_configured"
+        ? accessDecision.message
+        : "Workspace permission verification is not configured yet, so provider key management remains unavailable in this phase.",
   };
 };
 
-const authorizeMutationForWorkspace = async (
-  request: Request,
-  action: ProviderKeyAction,
-  workspaceMembershipRepository: WorkspaceMembershipRepository,
-): Promise<ProviderMutationBoundaryDecision | undefined> => {
-  const requesterContext = getRequesterContextFromRequest(request);
+const getRequesterUserIdForMutation = (
+  requesterContext: BackendAuthenticatedRequesterContext,
+): string => requesterContext.appUserId ?? requesterContext.userId;
+
+const getResolvedRequesterFromContext = (
+  requesterContext: BackendRequesterContext,
+): ProviderMutationResolvedRequester | ProviderMutationBoundaryDecision => {
+  const requesterDecision = decideRequesterContext(requesterContext);
+
+  if (requesterDecision.kind !== "verified_authenticated") {
+    return requesterDecision.kind === "auth_not_configured"
+      ? {
+          kind: "mutation_unavailable",
+          status: "auth_not_configured",
+          message: "Authentication is not configured on this backend yet.",
+        }
+      : {
+          kind: "sign_in_required",
+          reason:
+            requesterDecision.kind === "invalid_credentials"
+              ? "invalid_credentials"
+              : "missing_credentials",
+          message: "Sign in is required before provider settings can be managed.",
+        };
+  }
 
   if (requesterContext.kind !== "authenticated" || !requesterContext.workspaceId) {
     return {
@@ -642,9 +692,59 @@ const authorizeMutationForWorkspace = async (
     };
   }
 
+  return {
+    authContext: {
+      requesterUserId: getRequesterUserIdForMutation(requesterContext),
+      workspaceId: requesterContext.workspaceId,
+    },
+    requesterContext: {
+      ...requesterContext,
+      workspaceId: requesterContext.workspaceId,
+    },
+  };
+};
+
+const resolveProviderMutationRequester = async (
+  request: Request,
+  runtimeConfig: TrustedAuthProviderRuntimeConfig,
+  routeAccessResolver?: AsyncBackendRequesterContextResolver,
+): Promise<ProviderMutationResolvedRequester | ProviderMutationBoundaryDecision> => {
+  if (routeAccessResolver) {
+    const accessDecision = await resolveSelectedRouteAccess({
+      headers: request.headers,
+      runtimeConfig,
+      requesterResolver: routeAccessResolver,
+    });
+
+    if (accessDecision.kind === "denied") {
+      return mapSelectedRouteDeniedDecisionToMutationBoundary(
+        accessDecision,
+        runtimeConfig,
+      );
+    }
+
+    return {
+      authContext: {
+        requesterUserId: accessDecision.requester.appUserId,
+        workspaceId: accessDecision.requester.workspaceId,
+      },
+      requesterContext: accessDecision.requester,
+    };
+  }
+
+  return getResolvedRequesterFromContext(getRequesterContextFromRequest(request));
+};
+
+const authorizeMutationForWorkspace = async (
+  requesterContext: BackendAuthenticatedRequesterContext & {
+    workspaceId: string;
+  },
+  action: ProviderKeyAction,
+  workspaceMembershipRepository: WorkspaceMembershipRepository,
+): Promise<ProviderMutationBoundaryDecision | undefined> => {
   const membershipAccess = decideWorkspaceMembershipAccess(
     await workspaceMembershipRepository.getMembership({
-      userId: requesterContext.userId,
+      userId: getRequesterUserIdForMutation(requesterContext),
       workspaceId: requesterContext.workspaceId,
     }),
   );
@@ -703,6 +803,7 @@ const createMutationHandler = (
     ) => Promise<ProviderMutationExecutionResult>;
     providerKeyRepository?: BackendProviderKeyRepository;
     providerKeysRuntimeEnabled: boolean;
+    routeAccessResolver?: AsyncBackendRequesterContextResolver;
   },
 ) => {
   return (
@@ -711,15 +812,19 @@ const createMutationHandler = (
     next: NextFunction,
   ): void => {
     void (async () => {
-      const authBoundary = getMutationUnavailableForAuthState(request, runtimeConfig);
+      const resolvedRequester = await resolveProviderMutationRequester(
+        request,
+        runtimeConfig,
+        options.routeAccessResolver,
+      );
 
-      if (authBoundary) {
-        respondMutationBoundaryDecision(response, authBoundary);
+      if ("kind" in resolvedRequester) {
+        respondMutationBoundaryDecision(response, resolvedRequester);
         return;
       }
 
       const workspaceBoundary = await authorizeMutationForWorkspace(
-        request,
+        resolvedRequester.requesterContext,
         action,
         workspaceMembershipRepository,
       );
@@ -743,18 +848,6 @@ const createMutationHandler = (
         return;
       }
 
-      const requesterContext = getRequesterContextFromRequest(request);
-
-      if (requesterContext.kind !== "authenticated" || !requesterContext.workspaceId) {
-        respondMutationBoundaryDecision(response, {
-          kind: "mutation_unavailable",
-          status: "workspace_permission_not_verified",
-          message:
-            "Workspace permission verification is not configured yet, so provider key management remains unavailable in this phase.",
-        });
-        return;
-      }
-
       const liveDependencies = getLiveDependencies(
         options.providerKeysRuntimeEnabled,
         options.providerKeyRepository,
@@ -770,10 +863,7 @@ const createMutationHandler = (
         response,
         await options.executeLiveMutation(
           request,
-          {
-            requesterUserId: requesterContext.userId,
-            workspaceId: requesterContext.workspaceId,
-          },
+          resolvedRequester.authContext,
           liveDependencies,
         ),
       );
@@ -912,6 +1002,7 @@ export const createProviderSettingsRouter = (
         executeLiveMutation: createProviderKey,
         providerKeyRepository: options.providerKeyRepository,
         providerKeysRuntimeEnabled,
+        routeAccessResolver: options.routeAccessResolver,
       },
     ),
   );
@@ -927,6 +1018,7 @@ export const createProviderSettingsRouter = (
         executeLiveMutation: revokeProviderKey,
         providerKeyRepository: options.providerKeyRepository,
         providerKeysRuntimeEnabled,
+        routeAccessResolver: options.routeAccessResolver,
       },
     ),
   );
@@ -942,6 +1034,7 @@ export const createProviderSettingsRouter = (
         executeLiveMutation: replaceProviderKey,
         providerKeyRepository: options.providerKeyRepository,
         providerKeysRuntimeEnabled,
+        routeAccessResolver: options.routeAccessResolver,
       },
     ),
   );
@@ -956,6 +1049,7 @@ export const createProviderSettingsRouter = (
       {
         providerKeyRepository: options.providerKeyRepository,
         providerKeysRuntimeEnabled,
+        routeAccessResolver: options.routeAccessResolver,
       },
     ),
   );
@@ -970,6 +1064,7 @@ export const createProviderSettingsRouter = (
       {
         providerKeyRepository: options.providerKeyRepository,
         providerKeysRuntimeEnabled,
+        routeAccessResolver: options.routeAccessResolver,
       },
     ),
   );

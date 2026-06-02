@@ -52,9 +52,11 @@ export interface ProviderKeyRow {
   encrypted_payload: string | null;
   secret_ref: string | null;
   storage_mode: "encrypted_payload" | "external_secret_ref";
-  key_version: string;
+  key_version: string | number;
   encryption_algorithm: string;
   algorithm: string | null;
+  key_fingerprint_suffix?: string | null;
+  masked_fingerprint?: string | null;
   status: BackendProviderKeyStatus;
   verification_status: BackendProviderKeyVerificationStatus | null;
   last_verified_at: string | null;
@@ -122,6 +124,56 @@ const isUniqueConstraintViolation = (
   );
 };
 
+const isLegacyIntegerKeyVersionViolation = (
+  error: ProviderKeysTableQueryResult<ProviderKeyRow>["error"],
+): boolean => {
+  if (!error) {
+    return false;
+  }
+
+  const normalized = error.message.toLowerCase();
+  return (
+    normalized.includes("key_version") &&
+    (normalized.includes("integer") ||
+      normalized.includes("invalid input syntax for type integer"))
+  );
+};
+
+const isMissingFingerprintColumnViolation = (
+  error: ProviderKeysTableQueryResult<ProviderKeyRow>["error"],
+): boolean => {
+  if (!error) {
+    return false;
+  }
+
+  const normalized = error.message.toLowerCase();
+  return (
+    error.code === "42703" ||
+    (normalized.includes("column") &&
+      (normalized.includes("key_fingerprint_suffix") ||
+        normalized.includes("masked_fingerprint"))) ||
+    (normalized.includes("could not find") &&
+      (normalized.includes("key_fingerprint_suffix") ||
+        normalized.includes("masked_fingerprint")))
+  );
+};
+
+const getLegacyIntegerKeyVersion = (
+  keyVersion: string | number,
+): number | undefined => {
+  if (typeof keyVersion === "number") {
+    return Number.isInteger(keyVersion) ? keyVersion : undefined;
+  }
+
+  const match = keyVersion.match(/^v(\d+)$/i);
+
+  if (!match) {
+    return undefined;
+  }
+
+  return Number.parseInt(match[1], 10);
+};
+
 const isSupportedProviderId = (
   providerId: string,
 ): providerId is BackendSupportedProviderId =>
@@ -158,7 +210,7 @@ const toBackendProviderKeyRecord = (
     ? {
         encryptedSecret: {
           encryptedPayload: row.encrypted_payload,
-          keyVersion: row.key_version,
+          keyVersion: String(row.key_version),
           algorithm: row.encryption_algorithm || row.algorithm || "unknown",
         },
       }
@@ -273,6 +325,8 @@ const toProviderKeyRow = (input: {
   providerId: BackendSupportedProviderId;
   providerKeyId?: string;
   secretRef?: string;
+  keyFingerprintSuffix?: string;
+  maskedFingerprint?: string;
   workspaceId: string;
 }): ProviderKeyRow => {
   const timestamp = nowIso();
@@ -294,6 +348,8 @@ const toProviderKeyRow = (input: {
     key_version: keyVersion,
     encryption_algorithm: algorithm,
     algorithm,
+    key_fingerprint_suffix: input.keyFingerprintSuffix ?? null,
+    masked_fingerprint: input.maskedFingerprint ?? null,
     status: "active",
     verification_status: "not_validated",
     last_verified_at: null,
@@ -307,6 +363,91 @@ const toProviderKeyRow = (input: {
     deleted_at: null,
     created_at: timestamp,
     updated_at: timestamp,
+  };
+};
+
+const withoutFingerprintColumns = (row: ProviderKeyRow): ProviderKeyRow => {
+  const { key_fingerprint_suffix: _keyFingerprintSuffix, masked_fingerprint: _maskedFingerprint, ...rest } = row;
+  return rest;
+};
+
+const withLegacyIntegerKeyVersion = (
+  row: ProviderKeyRow,
+): ProviderKeyRow | undefined => {
+  const legacyIntegerKeyVersion = getLegacyIntegerKeyVersion(row.key_version);
+
+  if (legacyIntegerKeyVersion === undefined) {
+    return undefined;
+  }
+
+  return {
+    ...row,
+    key_version: legacyIntegerKeyVersion,
+  };
+};
+
+const insertProviderKeyRow = async (
+  client: SupabaseProviderKeyClient,
+  row: ProviderKeyRow,
+): Promise<{
+  insertedRow: ProviderKeyRow;
+  result: ProviderKeysTableQueryResult<ProviderKeyRow>;
+}> => {
+  const attemptedRows: ProviderKeyRow[] = [];
+  const enqueueCandidate = (candidate: ProviderKeyRow | undefined): void => {
+    if (!candidate) {
+      return;
+    }
+
+    const serialized = JSON.stringify(candidate);
+
+    if (attemptedRows.some((attempted) => JSON.stringify(attempted) === serialized)) {
+      return;
+    }
+
+    attemptedRows.push(candidate);
+  };
+
+  enqueueCandidate(row);
+  enqueueCandidate(withLegacyIntegerKeyVersion(row));
+  enqueueCandidate(withoutFingerprintColumns(row));
+  enqueueCandidate(withLegacyIntegerKeyVersion(withoutFingerprintColumns(row)));
+
+  let lastResult: ProviderKeysTableQueryResult<ProviderKeyRow> | undefined;
+
+  for (const candidate of attemptedRows) {
+    const result = await client
+      .from("provider_keys")
+      .insert(candidate)
+      .select(providerKeySelectColumns)
+      .maybeSingle();
+
+    if (!result.error) {
+      return {
+        insertedRow: candidate,
+        result,
+      };
+    }
+
+    lastResult = result;
+
+    if (
+      !isLegacyIntegerKeyVersionViolation(result.error) &&
+      !isMissingFingerprintColumnViolation(result.error)
+    ) {
+      break;
+    }
+  }
+
+  return {
+    insertedRow: row,
+    result:
+      lastResult ?? {
+        data: null,
+        error: {
+          message: "Provider key row insert did not execute.",
+        },
+      },
   };
 };
 
@@ -379,17 +520,15 @@ export class SupabaseProviderKeyRepository
     const row = toProviderKeyRow({
       createdByUserId: input.createdByUserId,
       encryptedSecret: input.encryptedSecret,
+      keyFingerprintSuffix: input.keyFingerprintSuffix,
+      maskedFingerprint: input.maskedFingerprint,
       ownerId: input.ownerId,
       providerId: input.providerId,
       secretRef: input.secretRef,
       workspaceId: input.workspaceId,
     });
 
-    const result = await this.client
-      .from("provider_keys")
-      .insert(row)
-      .select(providerKeySelectColumns)
-      .maybeSingle();
+    const { insertedRow, result } = await insertProviderKeyRow(this.client, row);
 
     if (result.error) {
       if (isUniqueConstraintViolation(result.error)) {
@@ -405,7 +544,7 @@ export class SupabaseProviderKeyRepository
     }
 
     const storedRow =
-      result.data && !Array.isArray(result.data) ? result.data : row;
+      result.data && !Array.isArray(result.data) ? result.data : insertedRow;
 
     return {
       kind: "stored",
@@ -470,17 +609,18 @@ export class SupabaseProviderKeyRepository
     const replacementRow = toProviderKeyRow({
       createdByUserId: input.requesterUserId,
       encryptedSecret: input.encryptedSecret,
+      keyFingerprintSuffix: input.keyFingerprintSuffix,
+      maskedFingerprint: input.maskedFingerprint,
       ownerId: existing.owner_id,
       providerId: input.providerId,
       secretRef: input.secretRef,
       workspaceId: input.workspaceId,
     });
 
-    const result = await this.client
-      .from("provider_keys")
-      .insert(replacementRow)
-      .select(providerKeySelectColumns)
-      .maybeSingle();
+    const { insertedRow, result } = await insertProviderKeyRow(
+      this.client,
+      replacementRow,
+    );
 
     if (result.error) {
       if (isUniqueConstraintViolation(result.error)) {
@@ -497,7 +637,7 @@ export class SupabaseProviderKeyRepository
     }
 
     const storedRow =
-      result.data && !Array.isArray(result.data) ? result.data : replacementRow;
+      result.data && !Array.isArray(result.data) ? result.data : insertedRow;
 
     return {
       kind: "replaced",
