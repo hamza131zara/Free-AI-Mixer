@@ -39,6 +39,13 @@ export type BackendProviderConnectionMutationStatus =
   | "stored"
   | "replaced"
   | "revoked"
+  | "validated"
+  | "validation_failed"
+  | "validation_unavailable"
+  | "provider_unavailable"
+  | "rate_limited"
+  | "timeout"
+  | "vault_decrypt_failed"
   | "unavailable"
   | "unauthorized"
   | "conflict"
@@ -145,11 +152,26 @@ export type BackendProviderConnectionMutationResponse =
       connection: BackendRedactedProviderConnectionSummary;
     }
   | {
+      kind: "provider_settings_connection_validation_result";
+      status:
+        | "validated"
+        | "validation_failed"
+        | "validation_unavailable"
+        | "provider_unavailable"
+        | "rate_limited"
+        | "timeout"
+        | "vault_decrypt_failed"
+        | "vault_unavailable";
+      message: string;
+      connection?: BackendRedactedProviderConnectionSummary;
+    }
+  | {
       kind: "provider_settings_mutation_unavailable";
       status:
         | "auth_not_configured"
         | "auth_provider_unavailable"
         | "provider_key_repository_unavailable"
+        | "validation_unavailable"
         | "secure_provider_key_storage_not_enabled"
         | "workspace_permission_not_verified"
         | "vault_unavailable";

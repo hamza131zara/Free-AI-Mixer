@@ -4,6 +4,8 @@ export const byokVaultEnvNames = {
   keyVersion: "FREE_AI_MIXER_BYOK_ENCRYPTION_KEY_VERSION",
   keyPrefix: "FREE_AI_MIXER_BYOK_ENCRYPTION_KEY_",
   providerKeysRuntimeEnabled: "FREE_AI_MIXER_BYOK_PROVIDER_KEYS_RUNTIME_ENABLED",
+  providerValidationRuntimeEnabled:
+    "FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED",
 } as const;
 
 export interface ProviderSecretVaultLocalEncryptedPayloadConfig {
@@ -34,6 +36,11 @@ export type ProviderSecretVaultEnv = Record<string, string | undefined>;
 
 export interface ByokProviderKeysRuntimeGate {
   kind: "byok_provider_keys_runtime_gate";
+  enabled: boolean;
+}
+
+export interface ByokProviderValidationRuntimeGate {
+  kind: "byok_provider_validation_runtime_gate";
   enabled: boolean;
 }
 
@@ -121,4 +128,11 @@ export const parseByokProviderKeysRuntimeGate = (
 ): ByokProviderKeysRuntimeGate => ({
   kind: "byok_provider_keys_runtime_gate",
   enabled: env[byokVaultEnvNames.providerKeysRuntimeEnabled] === "1",
+});
+
+export const parseByokProviderValidationRuntimeGate = (
+  env: ProviderSecretVaultEnv = process.env,
+): ByokProviderValidationRuntimeGate => ({
+  kind: "byok_provider_validation_runtime_gate",
+  enabled: env[byokVaultEnvNames.providerValidationRuntimeEnabled] === "1",
 });

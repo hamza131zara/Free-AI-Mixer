@@ -261,6 +261,36 @@ Phase 81 keeps these no-go items:
 - No raw key, decrypted key, encrypted payload, secret reference, raw provider error, provider account metadata, token, JWT, service-role, or platform secret in route responses.
 - No credits, billing, generation, or export runtime expansion.
 
+## Phase 83 Mock Validation Runtime Wiring Boundary
+
+Merged Phase 83 wires `/provider-settings/connections/:providerId/test` to a backend-only validation executor for local/mock validation only.
+
+The route remains unavailable by default. Mock validation can run only when all of the following are true:
+
+- `FREE_AI_MIXER_BYOK_PROVIDER_KEYS_RUNTIME_ENABLED=1`
+- `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED=1`
+- backend auth resolves an authenticated requester and workspace
+- backend workspace membership proves owner or admin authority
+- a configured provider key repository exists
+- a ready provider secret vault exists
+- an active stored provider key exists for the workspace/provider
+- a ready injected/mock validation adapter is available
+
+The mock validation adapter is deterministic and local-only. It does not import provider SDKs, does not call `fetch`, does not call provider endpoints, does not decrypt keys, and does not use real provider keys. It validates by stored provider key reference only: `providerId`, `workspaceId`, and `providerKeyId`.
+
+Validation state updates are limited to safe repository fields: `verification_status`, `last_verified_at` on mock success, sanitized `last_verification_error_code` on mock failure, `needs_reverification`, and updater metadata. Browser-visible responses remain redacted connection summaries only.
+
+Phase 83 keeps these no-go items:
+
+- No real provider API calls.
+- No real provider keys.
+- No provider SDK/package/import.
+- No frontend Test Connection activation.
+- No fake connected, verified, or test-passed state.
+- No platform key fallback.
+- No raw key, decrypted key, encrypted payload, secret reference, raw provider error, provider account metadata, token, JWT, service-role, or platform secret in route responses.
+- No credits, billing, generation, or export runtime expansion.
+
 ## Future Recommended Architecture
 
 Future BYOK should use a backend-only provider secret boundary:

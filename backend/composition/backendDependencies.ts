@@ -16,12 +16,16 @@ import {
 } from "./repositoryComposition";
 import { createLocalEncryptedProviderSecretVault } from "../providers/localEncryptedProviderSecretVault";
 import { createNotConfiguredProviderSecretVault } from "../providers/notConfiguredProviderSecretVault";
+import { createNotConfiguredProviderValidationAdapter } from "../providers/notConfiguredProviderValidationAdapter";
 import {
   parseByokProviderKeysRuntimeGate,
+  parseByokProviderValidationRuntimeGate,
   parseProviderSecretVaultConfig,
+  type ByokProviderValidationRuntimeGate,
   type ByokProviderKeysRuntimeGate,
 } from "../providers/providerSecretVaultConfig";
 import type { ProviderSecretVault } from "../providers/providerSecretVault";
+import type { ProviderValidationAdapter } from "../providers/providerValidationAdapter";
 import {
   drainRenderWorkerOnce,
   type RenderWorkerDrainResult,
@@ -48,6 +52,10 @@ export interface BackendDependencies {
   providerSecretVault: ProviderSecretVault;
   /** Explicit BYOK provider-key route-live gate. Parsed but not live in Phase 63. */
   byokProviderKeysRuntimeGate: ByokProviderKeysRuntimeGate;
+  /** Internal provider validation adapter. Defaults fail-closed with no provider call. */
+  providerValidationAdapter: ProviderValidationAdapter;
+  /** Explicit BYOK provider-validation runtime gate. */
+  byokProviderValidationRuntimeGate: ByokProviderValidationRuntimeGate;
   /** Internal render snapshot store (process-memory only) */
   renderInputSnapshotStore: RenderInputSnapshotStore;
 }
@@ -73,6 +81,9 @@ export const createBackendDependencies = (): BackendDependencies => {
       ? createLocalEncryptedProviderSecretVault(byokVaultConfig)
       : createNotConfiguredProviderSecretVault();
   const byokProviderKeysRuntimeGate = parseByokProviderKeysRuntimeGate();
+  const providerValidationAdapter = createNotConfiguredProviderValidationAdapter();
+  const byokProviderValidationRuntimeGate =
+    parseByokProviderValidationRuntimeGate();
 
   const pathPolicy: RenderOutputPathPolicy = {
     roots,
@@ -127,6 +138,8 @@ export const createBackendDependencies = (): BackendDependencies => {
     repositoryComposition,
     providerSecretVault,
     byokProviderKeysRuntimeGate,
+    providerValidationAdapter,
+    byokProviderValidationRuntimeGate,
     renderInputSnapshotStore,
   };
 };

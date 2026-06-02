@@ -1077,3 +1077,13 @@ Status:
 - Scope: add a backend-only provider validation adapter contract, not-configured fail-closed adapter, validation result union, repository validation-state update contract, and focused route/source/redaction tests.
 - Provider validation remains disabled. `/provider-settings/connections/:providerId/test` still returns unavailable after auth/owner-admin checks because no live validation executor is wired.
 - No real provider API call, real provider key, frontend provider SDK call, test connection activation, fake connected/verified/test-passed state, raw provider error exposure, credits/billing mutation, or generation/export integration is included.
+
+## Phase 83 status
+
+- Phase 83: BYOK provider validation mock runtime wiring pack.
+- Scope: wire `/provider-settings/connections/:providerId/test` to a backend-only validation executor behind `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED`.
+- The route requires backend auth, backend-derived workspace context, owner/admin authorization, provider key repository, ready vault, active stored provider key lookup, validation gate, and injected/mock adapter readiness.
+- The mock adapter is deterministic and local-only: no provider SDKs, no `fetch`, no external endpoints, no real provider keys, and no platform key fallback.
+- Validation updates only safe metadata fields and returns redacted connection summaries.
+- Default/production behavior remains fail-closed; frontend Test Connection remains unavailable.
+- No real provider API call, provider SDK import, real provider key, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.

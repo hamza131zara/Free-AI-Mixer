@@ -13437,3 +13437,31 @@ Safety boundaries:
 - no fake connected, verified, or test-passed provider state was added
 - no raw provider error exposure was added
 - no credits, billing, generation, or export runtime behavior changed
+
+## Phase 83 - BYOK Provider Validation Mock Runtime Wiring Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only mock/local provider validation route wiring
+- explicit `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED` gate parsing
+- deterministic mock provider validation adapter with no provider SDK, no `fetch`, and no external provider endpoint calls
+- `/provider-settings/connections/:providerId/test` executor wired only through backend auth, backend-derived workspace context, owner/admin authorization, active stored-key lookup, repository, vault readiness, validation gate, and injected/mock validation adapter readiness
+- safe validation state updates for verification status, verified timestamp, sanitized error code, and reverification flag
+- redacted validation result responses for validated, validation failed, unavailable, rate-limited, timeout, provider-unavailable, key-not-found, invalid-provider, and vault-decrypt-failed outcomes
+
+Safety boundaries:
+
+- route remains unavailable by default
+- no real provider API call was added
+- no real provider key was used
+- no provider SDK/package/import was added
+- no frontend UI activation was added
+- no test connection button behavior changed
+- no fake connected, verified, or test-passed provider state was added
+- no platform key fallback was added
+- no raw key, decrypted key, encrypted payload, secret reference, raw provider error, provider account metadata, token, JWT, service-role, or platform secret is allowed in route responses
+- no credits, billing, generation, or export runtime behavior changed

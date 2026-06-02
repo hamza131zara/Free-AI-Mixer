@@ -36,10 +36,16 @@ import type {
   ProviderSecretVaultOperationResult,
   ProviderSecretVaultSecretHandle,
 } from "../providers/providerSecretVault";
-import type { ProviderValidationAdapter } from "../providers/providerValidationAdapter";
+import { createNotConfiguredProviderValidationAdapter } from "../providers/notConfiguredProviderValidationAdapter";
+import {
+  mapProviderValidationResultToStateInput as toProviderValidationStateInput,
+  type ProviderValidationAdapter,
+  type ProviderValidationResult,
+} from "../providers/providerValidationAdapter";
 import type {
   BackendProviderKeyRecord,
   BackendProviderKeyRepository,
+  BackendProviderKeyValidationStateResult,
   BackendProviderKeyStorageResult,
 } from "../repositories/repositoryContracts";
 
@@ -50,6 +56,7 @@ export interface CreateProviderSettingsRouterOptions {
   providerKeyRepository?: BackendProviderKeyRepository;
   providerKeysRuntimeEnabled?: boolean;
   providerValidationAdapter?: ProviderValidationAdapter;
+  providerValidationRuntimeEnabled?: boolean;
   routeAccessResolver?: AsyncBackendRequesterContextResolver;
 }
 
@@ -65,6 +72,7 @@ type ProviderMutationBoundaryDecision =
         | "auth_not_configured"
         | "auth_provider_unavailable"
         | "provider_key_repository_unavailable"
+        | "validation_unavailable"
         | "secure_provider_key_storage_not_enabled"
         | "workspace_permission_not_verified";
       message: string;
@@ -608,6 +616,227 @@ const revokeProviderKey = async (
   );
 };
 
+const getValidationUnavailableResponse = (
+  message = "Provider validation is not enabled yet.",
+): ProviderMutationExecutionResult => ({
+  kind: "response",
+  statusCode: 503,
+  body: {
+    kind: "provider_settings_connection_validation_result",
+    status: "validation_unavailable",
+    message,
+  },
+});
+
+const mapValidationStateResultToResponse = (
+  validationResult: ProviderValidationResult,
+  stateResult: BackendProviderKeyValidationStateResult,
+): ProviderMutationExecutionResult => {
+  if (stateResult.kind === "validation_state_unavailable") {
+    return {
+      kind: "boundary",
+      decision:
+        stateResult.code === "repository_unavailable"
+          ? getRepositoryUnavailableDecision()
+          : getVaultUnavailableDecision(),
+    };
+  }
+
+  if (stateResult.kind === "validation_state_not_found") {
+    return {
+      kind: "response",
+      statusCode: 404,
+      body: {
+        kind: "provider_settings_connection_not_found",
+        status: "not_found",
+        message: stateResult.message,
+      },
+    };
+  }
+
+  return {
+    kind: "response",
+    statusCode: 200,
+    body: {
+      kind: "provider_settings_connection_validation_result",
+      status:
+        validationResult.kind === "validated"
+          ? "validated"
+          : validationResult.kind === "validation_failed"
+            ? "validation_failed"
+            : "validation_unavailable",
+      message: validationResult.message,
+      connection: stateResult.connection,
+    },
+  };
+};
+
+const mapValidationResultToResponse = (
+  result: ProviderValidationResult,
+): ProviderMutationExecutionResult => {
+  if (result.kind === "invalid_provider") {
+    return {
+      kind: "response",
+      statusCode: 400,
+      body: {
+        kind: "provider_settings_invalid_provider",
+        status: "invalid_provider",
+        message: result.message,
+      },
+    };
+  }
+
+  if (result.kind === "key_not_found") {
+    return {
+      kind: "response",
+      statusCode: 404,
+      body: {
+        kind: "provider_settings_connection_not_found",
+        status: "not_found",
+        message: result.message,
+      },
+    };
+  }
+
+  if (result.kind === "vault_decrypt_failed") {
+    return {
+      kind: "response",
+      statusCode: 503,
+      body: {
+        kind: "provider_settings_connection_validation_result",
+        status: "vault_decrypt_failed",
+        message: result.message,
+      },
+    };
+  }
+
+  if (result.kind === "timeout") {
+    return {
+      kind: "response",
+      statusCode: 504,
+      body: {
+        kind: "provider_settings_connection_validation_result",
+        status: "timeout",
+        message: result.message,
+      },
+    };
+  }
+
+  if (result.kind === "rate_limited") {
+    return {
+      kind: "response",
+      statusCode: 429,
+      body: {
+        kind: "provider_settings_connection_validation_result",
+        status: "rate_limited",
+        message: result.message,
+      },
+    };
+  }
+
+  if (result.kind === "provider_unavailable") {
+    return {
+      kind: "response",
+      statusCode: 503,
+      body: {
+        kind: "provider_settings_connection_validation_result",
+        status: "provider_unavailable",
+        message: result.message,
+      },
+    };
+  }
+
+  return getValidationUnavailableResponse(result.message);
+};
+
+const validateProviderConnection = async (
+  request: Request,
+  authContext: ProviderMutationAuthContext,
+  dependencies: ProviderMutationLiveDependencies,
+  options: {
+    providerValidationAdapter: ProviderValidationAdapter;
+    providerValidationRuntimeEnabled: boolean;
+  },
+): Promise<ProviderMutationExecutionResult> => {
+  if (!options.providerValidationRuntimeEnabled) {
+    return getValidationUnavailableResponse();
+  }
+
+  const providerId = getProviderIdFromRouteParam(request.params.providerId);
+
+  if (!providerId) {
+    return {
+      kind: "response",
+      statusCode: 400,
+      body: {
+        kind: "provider_settings_invalid_provider",
+        status: "invalid_provider",
+        message: "Unsupported provider.",
+      },
+    };
+  }
+
+  const validationReadiness = options.providerValidationAdapter.getReadiness();
+
+  if (validationReadiness.kind !== "validation_ready") {
+    return getValidationUnavailableResponse(validationReadiness.message);
+  }
+
+  if (!dependencies.providerKeyRepository.updateProviderKeyValidationState) {
+    return {
+      kind: "boundary",
+      decision: getRepositoryUnavailableDecision(),
+    };
+  }
+
+  const activeRecord = await getActiveProviderKeyRecord(
+    dependencies.providerKeyRepository,
+    authContext.workspaceId,
+    providerId,
+  );
+
+  if (!activeRecord) {
+    return {
+      kind: "response",
+      statusCode: 404,
+      body: {
+        kind: "provider_settings_connection_not_found",
+        status: "not_found",
+        message: "Active provider key was not found for this workspace/provider.",
+      },
+    };
+  }
+
+  const validateStoredKey =
+    options.providerValidationAdapter.validateStoredProviderKey.bind(
+      options.providerValidationAdapter,
+    );
+  const validationResult = await validateStoredKey({
+    providerId,
+    providerKeyId: activeRecord.providerKeyId,
+    requesterUserId: authContext.requesterUserId,
+    workspaceId: authContext.workspaceId,
+  });
+
+  if (
+    validationResult.kind !== "validated" &&
+    validationResult.kind !== "validation_failed"
+  ) {
+    return mapValidationResultToResponse(validationResult);
+  }
+
+  return mapValidationStateResultToResponse(
+    validationResult,
+    await dependencies.providerKeyRepository.updateProviderKeyValidationState(
+      toProviderValidationStateInput(validationResult, {
+        providerKeyId: activeRecord.providerKeyId,
+        requesterUserId: authContext.requesterUserId,
+        workspaceId: authContext.workspaceId,
+      }),
+    ),
+  );
+};
+
 const mapSelectedRouteDeniedDecisionToMutationBoundary = (
   accessDecision: Awaited<ReturnType<typeof resolveSelectedRouteAccess>>,
   runtimeConfig: TrustedAuthProviderRuntimeConfig,
@@ -883,6 +1112,11 @@ export const createProviderSettingsRouter = (
   const providerSecretVault =
     options.providerSecretVault ?? createNotConfiguredProviderSecretVault();
   const providerKeysRuntimeEnabled = options.providerKeysRuntimeEnabled === true;
+  const providerValidationAdapter =
+    options.providerValidationAdapter ??
+    createNotConfiguredProviderValidationAdapter();
+  const providerValidationRuntimeEnabled =
+    options.providerValidationRuntimeEnabled === true;
 
   router.get(
     "/provider-settings/catalog",
@@ -1049,6 +1283,11 @@ export const createProviderSettingsRouter = (
       workspaceMembershipRepository,
       providerSecretVault,
       {
+        executeLiveMutation: (request, authContext, dependencies) =>
+          validateProviderConnection(request, authContext, dependencies, {
+            providerValidationAdapter,
+            providerValidationRuntimeEnabled,
+          }),
         providerKeyRepository: options.providerKeyRepository,
         providerKeysRuntimeEnabled,
         routeAccessResolver: options.routeAccessResolver,

@@ -200,6 +200,9 @@ export const createApp = (): Express => {
       runtimeConfig: authRuntimeConfig,
       providerSecretVault: backendDeps.providerSecretVault,
       providerKeysRuntimeEnabled: backendDeps.byokProviderKeysRuntimeGate.enabled,
+      providerValidationAdapter: backendDeps.providerValidationAdapter,
+      providerValidationRuntimeEnabled:
+        backendDeps.byokProviderValidationRuntimeGate.enabled,
       ...(routeAccessResolver ? { routeAccessResolver } : {}),
       ...(repositories
         ? {
