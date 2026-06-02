@@ -1070,3 +1070,10 @@ Status:
 - The regression locks authenticated Provider Settings access shape, provider selector/input presence, input clearing, redacted stored/replaced summaries, revoked controls returning to save/add state, disabled test connection, no browser persistence of fake keys, and no fake connected/verified/test-passed wording.
 - The runbook documents local Supabase, backend, and frontend startup expectations; fake-key-only browser steps; DevTools persistence checks; and safe DB verification without selecting `encrypted_payload` or `secret_ref` values.
 - No backend behavior change, real provider key, provider SDK/API call, test connection, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
+
+## Phase 81 status
+
+- Phase 81: BYOK provider validation contract boundary pack.
+- Scope: add a backend-only provider validation adapter contract, not-configured fail-closed adapter, validation result union, repository validation-state update contract, and focused route/source/redaction tests.
+- Provider validation remains disabled. `/provider-settings/connections/:providerId/test` still returns unavailable after auth/owner-admin checks because no live validation executor is wired.
+- No real provider API call, real provider key, frontend provider SDK call, test connection activation, fake connected/verified/test-passed state, raw provider error exposure, credits/billing mutation, or generation/export integration is included.

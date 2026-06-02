@@ -13413,3 +13413,27 @@ Safety boundaries:
 - no fake connected, verified, or test-passed provider state was added
 - no service-role, JWT, encryption key, provider key, encrypted payload, or secret reference exposure was added
 - no credits, billing, generation, or export runtime behavior changed
+
+## Phase 81 - BYOK Provider Validation Contract Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only provider validation adapter contract
+- not-configured validation adapter that fails closed and makes no provider API call
+- validation result union for unavailable, validated, validation failed, provider unavailable, rate limited, timeout, invalid provider, key not found, and vault decrypt failed outcomes
+- repository validation-state update contract for status, verified timestamp, sanitized error code, and reverification flag
+- focused tests proving `/provider-settings/connections/:providerId/test` remains unavailable and owner/admin authorization is still required
+
+Safety boundaries:
+
+- no real provider API call was added
+- no real provider key was used
+- no frontend UI activation was added
+- no test connection behavior was enabled
+- no fake connected, verified, or test-passed provider state was added
+- no raw provider error exposure was added
+- no credits, billing, generation, or export runtime behavior changed

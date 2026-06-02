@@ -36,6 +36,7 @@ import type {
   ProviderSecretVaultOperationResult,
   ProviderSecretVaultSecretHandle,
 } from "../providers/providerSecretVault";
+import type { ProviderValidationAdapter } from "../providers/providerValidationAdapter";
 import type {
   BackendProviderKeyRecord,
   BackendProviderKeyRepository,
@@ -48,6 +49,7 @@ export interface CreateProviderSettingsRouterOptions {
   providerSecretVault?: ProviderSecretVault;
   providerKeyRepository?: BackendProviderKeyRepository;
   providerKeysRuntimeEnabled?: boolean;
+  providerValidationAdapter?: ProviderValidationAdapter;
   routeAccessResolver?: AsyncBackendRequesterContextResolver;
 }
 

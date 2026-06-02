@@ -5,6 +5,8 @@ import type {
   BackendProviderKeyRepository,
   BackendProviderKeyReplaceInput,
   BackendProviderKeyRevokeInput,
+  BackendProviderKeyValidationStateInput,
+  BackendProviderKeyValidationStateResult,
   BackendProviderKeyStatus,
   BackendProviderKeyStorageResult,
   BackendProviderKeyVerificationStatus,
@@ -692,6 +694,51 @@ export class SupabaseProviderKeyRepository
         lastValidationStatus: "not_validated",
         needsReverification: true,
       },
+    };
+  }
+
+  async updateProviderKeyValidationState(
+    input: BackendProviderKeyValidationStateInput,
+  ): Promise<BackendProviderKeyValidationStateResult> {
+    const result = await this.client
+      .from("provider_keys")
+      .update({
+        last_verification_error_code:
+          input.verificationStatus === "validated"
+            ? null
+            : input.lastVerificationErrorCode ?? "validation_unavailable",
+        last_verified_at:
+          input.verificationStatus === "validated"
+            ? input.lastVerifiedAt ?? nowIso()
+            : null,
+        needs_reverification: input.needsReverification,
+        updated_at: nowIso(),
+        updated_by_user_id: input.requesterUserId,
+        verification_status: input.verificationStatus,
+      })
+      .eq("provider_key_id", input.providerKeyId)
+      .eq("workspace_id", input.workspaceId)
+      .eq("status", "active")
+      .is("deleted_at", null)
+      .select(providerKeySelectColumns)
+      .maybeSingle();
+
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
+    if (!result.data || Array.isArray(result.data)) {
+      return {
+        kind: "validation_state_not_found",
+        status: "not_found",
+        message: "Active provider key record was not found for this workspace.",
+      };
+    }
+
+    return {
+      kind: "validation_state_updated",
+      status: "updated",
+      connection: toRedactedConnectionSummary(result.data),
     };
   }
 }

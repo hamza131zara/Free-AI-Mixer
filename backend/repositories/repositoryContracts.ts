@@ -95,6 +95,16 @@ export interface BackendProviderKeyRevokeInput {
   requesterUserId: string;
 }
 
+export interface BackendProviderKeyValidationStateInput {
+  providerKeyId: string;
+  workspaceId: string;
+  requesterUserId: string;
+  verificationStatus: BackendProviderKeyVerificationStatus;
+  lastVerifiedAt?: string;
+  lastVerificationErrorCode?: string;
+  needsReverification: boolean;
+}
+
 export type BackendProviderKeyStorageResult =
   | {
       kind: "stored";
@@ -137,6 +147,24 @@ export type BackendProviderKeyStorageResult =
   | {
       kind: "vault_unavailable";
       status: "vault_unavailable";
+      message: string;
+    };
+
+export type BackendProviderKeyValidationStateResult =
+  | {
+      kind: "validation_state_updated";
+      status: "updated";
+      connection: BackendRedactedProviderConnectionSummary;
+    }
+  | {
+      kind: "validation_state_unavailable";
+      status: "unavailable";
+      code: "repository_unavailable" | "storage_not_configured";
+      message: string;
+    }
+  | {
+      kind: "validation_state_not_found";
+      status: "not_found";
       message: string;
     };
 
@@ -453,6 +481,9 @@ export interface BackendProviderKeyRepository {
   revokeProviderKey(
     input: BackendProviderKeyRevokeInput,
   ): Promise<BackendProviderKeyStorageResult>;
+  updateProviderKeyValidationState?(
+    input: BackendProviderKeyValidationStateInput,
+  ): Promise<BackendProviderKeyValidationStateResult>;
 }
 
 export interface BackendCreditLedgerRepository {

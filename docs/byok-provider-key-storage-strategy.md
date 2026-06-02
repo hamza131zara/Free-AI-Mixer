@@ -237,6 +237,30 @@ The runbook records:
 
 Phase 70 does not execute migrations, apply schema, add frontend API key input, change backend route behavior, call provider APIs, implement test connection, add fake connected/verified state, expose service-role or encryption keys, or change credits, billing, generation, or export runtime.
 
+## Phase 81 Provider Validation Contract Boundary
+
+Merged Phase 81 adds a backend-only provider validation contract boundary without enabling real provider validation.
+
+The boundary includes:
+
+- A provider validation adapter interface with `getReadiness()` and `validateStoredProviderKey(...)`.
+- Validation result contracts for unavailable, validated, validation failed, provider unavailable, rate limited, timeout, invalid provider, key not found, and vault decrypt failed outcomes.
+- A not-configured validation adapter that always fails closed and makes no provider API call.
+- A repository validation-state update contract for `verification_status`, `last_verified_at`, sanitized `last_verification_error_code`, and `needs_reverification`.
+- A safe mapping helper that records `last_verified_at` only for true validation success and records sanitized error codes for failure states.
+
+Provider Settings test connection remains unavailable. Phase 81 does not wire the validation adapter into `/provider-settings/connections/:providerId/test`, does not decrypt keys for validation, does not call OpenAI or any provider API, does not add frontend activation, and does not create fake connected, verified, or test-passed state.
+
+Phase 81 keeps these no-go items:
+
+- No real provider API calls.
+- No real provider keys.
+- No frontend provider SDK calls.
+- No test connection activation.
+- No platform key fallback.
+- No raw key, decrypted key, encrypted payload, secret reference, raw provider error, provider account metadata, token, JWT, service-role, or platform secret in route responses.
+- No credits, billing, generation, or export runtime expansion.
+
 ## Future Recommended Architecture
 
 Future BYOK should use a backend-only provider secret boundary:
