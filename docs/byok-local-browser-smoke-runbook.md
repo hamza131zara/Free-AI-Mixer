@@ -69,6 +69,16 @@ FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER=mock_local
 
 If the runtime gate is off, or if the adapter env is missing or anything other than `mock_local`, the backend must fail closed with validation unavailable. Do not use production Supabase, real provider keys, provider SDKs, or provider endpoints for this smoke.
 
+Phase 90 adds a backend-only OpenAI minimal validation adapter boundary for a future controlled real-provider smoke. That path is not part of this fake-key browser smoke. It requires all of the following explicit backend gates and must be run only in a separately approved local/staging real-key smoke:
+
+```text
+FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED=1
+FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER=openai_minimal
+FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ALLOW_REAL_PROVIDER_CALLS=1
+```
+
+Automated tests for the OpenAI adapter must mock remote calls. Do not use real OpenAI keys, production Supabase, provider SDKs, generation endpoints, upload endpoints, model execution, or provider account metadata in this fake-key smoke.
+
 Start the frontend with ignored local client env:
 
 ```text
@@ -184,6 +194,7 @@ where tablename = 'provider_keys';
 - Revoke the fake key through the Provider Settings UI.
 - Verify no active OpenAI key remains for the local/staging smoke account.
 - If mock validation was enabled, remove or unset `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER` and `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED` after the smoke.
+- If a separate OpenAI minimal validation smoke was approved, remove or unset `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ALLOW_REAL_PROVIDER_CALLS` and `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER` after the smoke.
 - Stop local processes when the smoke is complete.
 - Do not commit local env files, logs, screenshots, traces, or copied request payloads.
 
@@ -191,7 +202,7 @@ where tablename = 'provider_keys';
 
 - Real provider keys.
 - Provider SDK/API calls.
-- Real provider validation.
+- Real provider validation with real keys outside a separately approved local/staging smoke.
 - Production validation adapter selection.
 - BYOK-backed generation or export routing.
 - Credits, get-free-credits, wallet, checkout, subscription, or billing mutation.

@@ -1095,3 +1095,12 @@ Status:
 - Default and production behavior remain not-configured/fail-closed, so runtime gate alone cannot create validation success.
 - The local browser smoke runbook now documents the two-env requirement, fake-key-only browser flow, safe DB checks, and cleanup.
 - No frontend changes, real provider API calls, provider SDK/import/fetch, real provider keys, fake connected/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
+
+## Phase 90 status
+
+- Phase 90: BYOK OpenAI minimal real validation adapter boundary pack.
+- Scope: add a backend-only OpenAI minimal validation adapter that can be composed only when validation runtime, `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER=openai_minimal`, `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ALLOW_REAL_PROVIDER_CALLS=1`, repository, and vault readiness are all present.
+- The adapter uses backend `fetch` only against `GET https://api.openai.com/v1/models`, with timeout handling and safe status mapping.
+- Automated tests mock remote provider calls and require no real provider keys.
+- Default behavior remains not-configured/fail-closed, and `mock_local` behavior remains unchanged.
+- No frontend changes, provider SDK import, generation/upload/model execution endpoint, platform key fallback, fake connected/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.

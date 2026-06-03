@@ -314,6 +314,39 @@ Phase 87 keeps these no-go items:
 - No service-role, JWT, encryption key, provider key, encrypted payload, secret reference, or raw provider error exposure.
 - No credits, billing, generation, or export runtime expansion.
 
+## Phase 90 OpenAI Minimal Validation Adapter Boundary
+
+Merged Phase 90 adds a backend-only OpenAI minimal validation adapter boundary for future controlled real-provider validation.
+
+The adapter is composed only when all explicit backend gates are enabled:
+
+- `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED=1`
+- `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER=openai_minimal`
+- `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ALLOW_REAL_PROVIDER_CALLS=1`
+
+Default behavior remains fail-closed, and `mock_local` behavior remains unchanged.
+
+The OpenAI adapter:
+
+- uses backend `fetch` only, not an OpenAI SDK
+- targets `GET https://api.openai.com/v1/models`
+- supports only the `openai` provider
+- retrieves and decrypts the stored backend key only inside backend adapter scope
+- uses an abort timeout
+- maps only safe status categories to the existing validation result union
+- does not store or return model lists, provider response bodies, request ids, headers, account or organization metadata, raw provider errors, raw keys, encrypted payloads, or secret references
+
+Phase 90 tests mock the remote provider call. The phase does not require real OpenAI keys and does not perform real provider network validation in automated tests.
+
+Phase 90 keeps these no-go items:
+
+- No frontend changes.
+- No provider SDK/package/import.
+- No generation, upload, file, chat, responses, image, audio, video, or model execution endpoint usage.
+- No platform key fallback.
+- No fake connected, verified-provider, or test-passed state.
+- No credits, billing, generation, or export runtime expansion.
+
 ## Future Recommended Architecture
 
 Future BYOK should use a backend-only provider secret boundary:

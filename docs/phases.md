@@ -13488,3 +13488,29 @@ Safety boundaries:
 - no fake connected, verified, or test-passed provider state was added
 - no service-role, JWT, encryption key, provider key, encrypted payload, secret reference, or raw provider error exposure was added
 - no credits, billing, generation, or export runtime behavior changed
+
+## Phase 90 - BYOK OpenAI Minimal Real Validation Adapter Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only OpenAI minimal validation adapter boundary
+- explicit real-call gate `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ALLOW_REAL_PROVIDER_CALLS`
+- adapter composition only when validation runtime, `openai_minimal` adapter selection, real-call gate, repository, and vault readiness are all available
+- backend `fetch` to `GET https://api.openai.com/v1/models` only
+- mocked remote-call tests for success, invalid credentials, rate limit, timeout, provider unavailable, unsupported provider, key lookup, and vault decrypt failure mapping
+
+Safety boundaries:
+
+- default behavior remains not-configured and fail-closed
+- `mock_local` behavior remains unchanged
+- no frontend files changed
+- no provider SDK/package/import was added
+- no generation, upload, file, chat, responses, image, audio, video, or model execution endpoint usage was added
+- no real provider key is required by tests
+- no model list, response body, request id, headers, account metadata, raw provider error, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned or stored
+- no fake connected, verified-provider, or test-passed provider state was added
+- no credits, billing, generation, or export runtime behavior changed

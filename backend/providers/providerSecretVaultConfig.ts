@@ -7,6 +7,8 @@ export const byokVaultEnvNames = {
   providerValidationRuntimeEnabled:
     "FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED",
   providerValidationAdapter: "FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER",
+  providerValidationAllowRealProviderCalls:
+    "FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ALLOW_REAL_PROVIDER_CALLS",
 } as const;
 
 export interface ProviderSecretVaultLocalEncryptedPayloadConfig {
@@ -47,7 +49,8 @@ export interface ByokProviderValidationRuntimeGate {
 
 export interface ByokProviderValidationAdapterSelection {
   kind: "byok_provider_validation_adapter_selection";
-  adapter: "not_configured" | "mock_local";
+  adapter: "not_configured" | "mock_local" | "openai_minimal";
+  allowRealProviderCalls: boolean;
 }
 
 const unavailable = (
@@ -145,10 +148,19 @@ export const parseByokProviderValidationRuntimeGate = (
 
 export const parseByokProviderValidationAdapterSelection = (
   env: ProviderSecretVaultEnv = process.env,
-): ByokProviderValidationAdapterSelection => ({
-  kind: "byok_provider_validation_adapter_selection",
-  adapter:
+): ByokProviderValidationAdapterSelection => {
+  const adapter =
     env[byokVaultEnvNames.providerValidationAdapter] === "mock_local"
       ? "mock_local"
-      : "not_configured",
-});
+      : env[byokVaultEnvNames.providerValidationAdapter] === "openai_minimal" &&
+          env[byokVaultEnvNames.providerValidationAllowRealProviderCalls] === "1"
+        ? "openai_minimal"
+        : "not_configured";
+
+  return {
+    kind: "byok_provider_validation_adapter_selection",
+    adapter,
+    allowRealProviderCalls:
+      env[byokVaultEnvNames.providerValidationAllowRealProviderCalls] === "1",
+  };
+};

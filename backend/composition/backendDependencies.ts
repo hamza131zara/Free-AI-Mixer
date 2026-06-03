@@ -18,6 +18,7 @@ import { createLocalEncryptedProviderSecretVault } from "../providers/localEncry
 import { createNotConfiguredProviderSecretVault } from "../providers/notConfiguredProviderSecretVault";
 import { createNotConfiguredProviderValidationAdapter } from "../providers/notConfiguredProviderValidationAdapter";
 import { createMockProviderValidationAdapter } from "../providers/mockProviderValidationAdapter";
+import { createOpenAiProviderValidationAdapter } from "../providers/openAiProviderValidationAdapter";
 import {
   parseByokProviderValidationAdapterSelection,
   parseByokProviderKeysRuntimeGate,
@@ -80,6 +81,10 @@ export const createBackendDependencies = (): BackendDependencies => {
     supabaseConfig,
     createSupabaseClientFactory(supabaseConfig),
   );
+  const databaseRepositories =
+    repositoryComposition.kind === "repository_composition_available"
+      ? repositoryComposition.createRepositories()
+      : undefined;
   const byokVaultConfig = parseProviderSecretVaultConfig();
   const providerSecretVault =
     byokVaultConfig.kind === "configured"
@@ -94,7 +99,14 @@ export const createBackendDependencies = (): BackendDependencies => {
     byokProviderValidationRuntimeGate.enabled &&
     byokProviderValidationAdapterSelection.adapter === "mock_local"
       ? createMockProviderValidationAdapter()
-      : createNotConfiguredProviderValidationAdapter();
+      : byokProviderValidationRuntimeGate.enabled &&
+          byokProviderValidationAdapterSelection.adapter === "openai_minimal" &&
+          databaseRepositories
+        ? createOpenAiProviderValidationAdapter({
+            providerKeyRepository: databaseRepositories.providerKeyRepository,
+            providerSecretVault,
+          })
+        : createNotConfiguredProviderValidationAdapter();
 
   const pathPolicy: RenderOutputPathPolicy = {
     roots,
@@ -106,11 +118,10 @@ export const createBackendDependencies = (): BackendDependencies => {
 
   const usePersistence = process.env.FREE_AI_MIXER_PERSISTENCE_ENABLED === "true";
   const registry: ExportJobRegistry =
-    repositoryComposition.kind === "repository_composition_available"
+    databaseRepositories
       ? new SupabaseExportJobRegistry({
           dependencies: {
-            jobsRepository:
-              repositoryComposition.createRepositories().exportJobsRepository,
+            jobsRepository: databaseRepositories.exportJobsRepository,
           },
         })
       : usePersistence
