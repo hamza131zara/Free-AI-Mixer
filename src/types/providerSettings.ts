@@ -22,7 +22,7 @@ export type ProviderCapability =
 
 export type ProviderRoutingPreference = "manual" | "priority" | "auto";
 
-export type ProviderConnectionStatus = "not_connected" | "unavailable";
+export type ProviderConnectionStatus = "not_connected" | "stored" | "unavailable";
 
 export type ProviderValidationStatus =
   | "not_enabled_yet"

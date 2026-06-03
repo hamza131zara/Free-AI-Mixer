@@ -418,7 +418,13 @@ export function ProviderSettingsPage() {
               data-testid={`provider-connection-${connection.providerId}`}
             >
               <p className="info-card-label">{connection.providerId}</p>
-              <h3>{connection.status === "not_connected" ? "Not connected yet" : "Unavailable"}</h3>
+              <h3>
+                {connection.status === "stored"
+                  ? "Stored server-side"
+                  : connection.status === "not_connected"
+                    ? "Not connected yet"
+                    : "Unavailable"}
+              </h3>
               <p>{connection.maskedKeySummary ?? "Secure API key connection is not enabled yet."}</p>
               <p>
                 Last validation status:{" "}

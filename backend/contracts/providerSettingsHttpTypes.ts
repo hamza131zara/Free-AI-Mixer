@@ -22,7 +22,10 @@ export type BackendProviderCapability =
 
 export type BackendProviderRoutingPreference = "manual" | "priority" | "auto";
 
-export type BackendProviderConnectionStatus = "not_connected" | "unavailable";
+export type BackendProviderConnectionStatus =
+  | "not_connected"
+  | "stored"
+  | "unavailable";
 
 export type BackendProviderValidationStatus =
   | "not_enabled_yet"

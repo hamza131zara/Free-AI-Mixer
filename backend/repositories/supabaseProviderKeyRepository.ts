@@ -259,7 +259,7 @@ const toBackendProviderKeyRecord = (
 
 const toRedactedConnectionSummary = (
   row: ProviderKeyRow,
-  status: BackendProviderConnectionStatus = "not_connected",
+  status: BackendProviderConnectionStatus = "stored",
 ): BackendRedactedProviderConnectionSummary => {
   const providerId = row.provider_id ?? row.provider_name;
 
@@ -283,7 +283,7 @@ const toRedactedConnectionSummary = (
     providerId,
     status,
     maskedKeySummary:
-      status === "not_connected"
+      status === "stored" || status === "not_connected"
         ? `Provider key metadata is stored server-side only; record ending ${suffix}.`
         : "Provider key storage metadata is unavailable.",
     maskedFingerprint: `provider-key:${suffix}`,
