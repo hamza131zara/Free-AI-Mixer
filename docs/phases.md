@@ -13592,3 +13592,30 @@ Safety boundaries:
 - local/internal storage refs remain internal-only and are not public metadata
 - no local path, provider URL, raw provider response, raw prompt, request id, account metadata, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+
+## Phase 100 - OpenAI Image Adapter Generated Artifact Storage Integration Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only adapter-level integration between the OpenAI image generation adapter and generated image artifact storage
+- optional `generatedImageArtifactStorage` and max image byte limit injection on the OpenAI image adapter
+- mocked OpenAI 2xx `data[0].b64_json` output can be verified through generated image artifact verification and stored through injected local storage
+- generated adapter result returns safe metadata-only artifact details after successful verification and storage
+
+Safety boundaries:
+
+- no storage injection keeps the existing `artifact_storage_unavailable` behavior
+- not-configured or failing storage maps to `artifact_storage_unavailable`
+- provider URL output is not fetched or passed through
+- invalid, empty, mismatched, or oversized base64 maps to safe sanitized failure
+- `/generation/jobs` remains disabled and `vendorCallsEnabled` remains false
+- adapter is not composed into backend dependencies
+- no real provider API call was added
+- no frontend files changed
+- no public URL, signed URL, generated image stream route, or export route reuse was added
+- no local path, internal storage ref, provider URL, base64 image, provider body, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added

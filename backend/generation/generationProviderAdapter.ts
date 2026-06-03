@@ -66,6 +66,7 @@ export interface BackendGenerationSafeArtifactMetadata {
   createdAt: string;
   generationKind: BackendGenerationKind;
   providerId: BackendGenerationProviderId;
+  sha256?: string;
   sizeBytes?: number;
   status: "metadata_only";
   storageState: BackendGenerationSafeArtifactStorageState;

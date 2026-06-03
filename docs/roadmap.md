@@ -1130,3 +1130,12 @@ Status:
 - Local storage is backend-controlled, temp-file-first, atomically renamed after verification, and returns only safe metadata plus an internal storage ref.
 - `/generation/jobs` remains disabled, `vendorCallsEnabled` remains false, and OpenAI 2xx output still maps to `artifact_storage_unavailable`.
 - No real provider call, frontend change, public/signed URL delivery, generated-image stream route, fake success/progress/artifact, credits/billing mutation, export route behavior, or public launch behavior is included.
+
+## Phase 100 status
+
+- Phase 100: OpenAI image adapter generated artifact storage integration pack.
+- Scope: let the backend-only OpenAI image adapter optionally verify mocked `b64_json` output and store it through explicitly injected generated-image artifact storage.
+- Safe generated results are possible only in direct adapter tests after verified bytes and successful local storage; route runtime remains disabled.
+- Provider URL output is rejected and not fetched.
+- `/generation/jobs` remains disabled, `vendorCallsEnabled` remains false, and the adapter is not composed into backend dependencies.
+- No real provider call, frontend change, public/signed URL delivery, generated-image stream route, fake progress, credits/billing mutation, export route behavior, or public launch behavior is included.

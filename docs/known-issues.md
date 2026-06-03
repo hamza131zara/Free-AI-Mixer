@@ -2894,3 +2894,10 @@ Still deferred:
   - `/generation/jobs` remains disabled and OpenAI provider 2xx output still cannot become user-visible success.
   - No fake success/progress/artifact, credits/billing mutation, export route behavior, or public launch behavior is included.
 
+- Phase 100 adds OpenAI adapter/storage integration at test boundary only:
+  - Adapter-level mocked `b64_json` output can become safe metadata after injected storage verifies and stores it.
+  - The adapter is not route-wired or dependency-composed.
+  - `/generation/jobs` remains disabled and `vendorCallsEnabled` remains false.
+  - Generated image delivery remains unavailable.
+  - No public URL, signed URL, stream route, frontend bytes/base64, fake progress, credits/billing mutation, export route behavior, or public launch behavior is included.
+
