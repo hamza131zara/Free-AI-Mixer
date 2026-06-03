@@ -11,6 +11,7 @@ Use this smoke to verify:
 - Provider Settings can save, replace, and remove a fake provider key through the backend.
 - Provider Settings can validate the stored fake key through the backend mock/local adapter only when explicitly enabled.
 - The browser does not retain the fake key in visible UI, URL, cookies, `localStorage`, or `sessionStorage`.
+- Test connection remains disabled unless both mock/local validation env gates are enabled.
 - Test connection remains unavailable unless both mock/local validation env gates are enabled.
 - No fake connected, verified, or test-passed state appears.
 

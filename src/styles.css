@@ -278,6 +278,24 @@ button.icon-button {
   box-shadow: 0 24px 50px rgba(8, 17, 36, 0.3);
 }
 
+.account-menu-identity {
+  display: grid;
+  gap: 3px;
+  max-width: 260px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  padding: 4px 10px 10px;
+  color: rgba(231, 239, 255, 0.84);
+  font-size: 0.82rem;
+}
+
+.account-menu-identity strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .account-menu-item {
   justify-content: flex-start;
   min-height: 38px;

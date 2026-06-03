@@ -138,6 +138,52 @@ const upsertConnection = (
   );
 };
 
+const hasActiveManageableSummary = (
+  connection: RedactedProviderConnectionSummary | undefined,
+): boolean =>
+  Boolean(
+    connection?.canManage &&
+      (connection.maskedFingerprint ||
+        connection.keyFingerprintSuffix ||
+        connection.createdAt),
+  );
+
+const mergeRefreshedConnections = (
+  currentConnections: RedactedProviderConnectionSummary[],
+  refreshedConnections: RedactedProviderConnectionSummary[],
+): RedactedProviderConnectionSummary[] => {
+  const currentByProvider = new Map(
+    currentConnections.map((connection) => [connection.providerId, connection]),
+  );
+  const refreshedProviderIds = new Set(
+    refreshedConnections.map((connection) => connection.providerId),
+  );
+  const mergedConnections: RedactedProviderConnectionSummary[] = refreshedConnections.map((connection) => {
+    const current = currentByProvider.get(connection.providerId);
+
+    if (
+      current &&
+      hasActiveManageableSummary(current) &&
+      !hasActiveManageableSummary(connection)
+    ) {
+      return current;
+    }
+
+    return connection;
+  });
+
+  for (const connection of currentConnections) {
+    if (
+      hasActiveManageableSummary(connection) &&
+      !refreshedProviderIds.has(connection.providerId)
+    ) {
+      mergedConnections.push(connection);
+    }
+  }
+
+  return mergedConnections;
+};
+
 const applyMutationResult = (
   result: ProviderMutationAvailabilityResult,
   currentConnections: RedactedProviderConnectionSummary[],
@@ -196,15 +242,15 @@ export const useProviderSettingsStore = create<ProviderSettingsStoreState>((set)
     const resolvedRoutingPreferences =
       routingPolicyResult.routingPreferences ?? statusProjection.routingPreferences;
 
-    set({
+    set((state) => ({
       catalogStatus: catalogResult.providers.length > 0 ? "ready" : "unavailable",
       catalogMessage: catalogResult.message,
       providers: catalogResult.providers,
       ...statusProjection,
       routingPreferences: resolvedRoutingPreferences,
-      connections: resolvedConnections,
+      connections: mergeRefreshedConnections(state.connections, resolvedConnections),
       pendingAction: null,
-    });
+    }));
   },
   replaceProviderConnection: async (providerId, apiKey) => {
     set({

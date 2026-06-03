@@ -16,6 +16,9 @@ const isActivePath = (currentPath: string, targetPath: string): boolean =>
 const accountMenuTriggerLabel = (email?: string): string =>
   email ? `Account menu for ${email}` : "Account menu";
 
+const accountMenuTriggerCopy = (email?: string): string =>
+  email ? "Account" : "Signed in";
+
 export function AppNavigation() {
   const currentRoute = useNavigationStore(selectCurrentRoute);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -105,12 +108,16 @@ export function AppNavigation() {
                 >
                   <UserCircle aria-hidden="true" size={18} />
                   <span className="account-menu-trigger-copy" data-testid="account-nav-identity">
-                    {identity?.email ?? "Signed in"}
+                    {accountMenuTriggerCopy(identity?.email)}
                   </span>
                   <ChevronDown aria-hidden="true" size={16} />
                 </button>
                 {accountMenuOpen ? (
                   <div className="account-menu-panel" data-testid="account-menu-panel">
+                    <div className="account-menu-identity" data-testid="account-menu-identity">
+                      <span>Signed in as</span>
+                      <strong>{identity?.email ?? "Account"}</strong>
+                    </div>
                     {accountNavigationItems.map((route) => (
                       <button
                         key={`account-menu-${route.id}`}
