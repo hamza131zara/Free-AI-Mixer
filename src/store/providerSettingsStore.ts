@@ -184,6 +184,46 @@ const mergeRefreshedConnections = (
   return mergedConnections;
 };
 
+const mergeStatusAndConnectionsResults = (
+  statusConnections: RedactedProviderConnectionSummary[],
+  connectionsResponseConnections: RedactedProviderConnectionSummary[],
+): RedactedProviderConnectionSummary[] => {
+  if (connectionsResponseConnections.length === 0) {
+    return statusConnections;
+  }
+
+  const statusByProvider = new Map(
+    statusConnections.map((connection) => [connection.providerId, connection]),
+  );
+  const connectionsByProvider = new Map(
+    connectionsResponseConnections.map((connection) => [
+      connection.providerId,
+      connection,
+    ]),
+  );
+  const providerIds = new Set([
+    ...statusByProvider.keys(),
+    ...connectionsByProvider.keys(),
+  ]);
+
+  return [...providerIds].map((providerId) => {
+    const statusConnection = statusByProvider.get(providerId);
+    const connectionsResponseConnection = connectionsByProvider.get(providerId);
+
+    if (hasActiveManageableSummary(connectionsResponseConnection)) {
+      return connectionsResponseConnection;
+    }
+
+    if (hasActiveManageableSummary(statusConnection)) {
+      return statusConnection;
+    }
+
+    return connectionsResponseConnection ?? statusConnection;
+  }).filter((connection): connection is RedactedProviderConnectionSummary =>
+    Boolean(connection),
+  );
+};
+
 const applyMutationResult = (
   result: ProviderMutationAvailabilityResult,
   currentConnections: RedactedProviderConnectionSummary[],
@@ -235,10 +275,10 @@ export const useProviderSettingsStore = create<ProviderSettingsStoreState>((set)
     ]);
 
     const statusProjection = applyStatusResult(statusResult);
-    const resolvedConnections =
-      connectionsResult.connections.length > 0
-        ? connectionsResult.connections
-        : statusProjection.connections;
+    const resolvedConnections = mergeStatusAndConnectionsResults(
+      statusProjection.connections,
+      connectionsResult.connections,
+    );
     const resolvedRoutingPreferences =
       routingPolicyResult.routingPreferences ?? statusProjection.routingPreferences;
 

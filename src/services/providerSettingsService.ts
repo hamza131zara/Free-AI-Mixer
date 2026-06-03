@@ -268,7 +268,7 @@ export const getProviderCatalog = async (): Promise<ProviderCatalogResult> => {
 
 export const getProviderConnections = async (): Promise<ProviderConnectionsResult> => {
   try {
-    const response = await fetch(providerConnectionsEndpoint, {
+    const response = await fetchWithOptionalAccountBearer(providerConnectionsEndpoint, {
       method: "GET",
       credentials: "same-origin",
     });
