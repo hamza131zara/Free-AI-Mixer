@@ -110,6 +110,31 @@ const providerKeySelectColumns = [
   "updated_at",
 ].join(", ");
 
+const providerKeyRedactedSummarySelectColumns = [
+  "provider_key_id",
+  "workspace_id",
+  "owner_id",
+  "provider_id",
+  "provider_name",
+  "storage_mode",
+  "key_version",
+  "encryption_algorithm",
+  "algorithm",
+  "status",
+  "verification_status",
+  "last_verified_at",
+  "last_verification_error_code",
+  "needs_reverification",
+  "created_by_user_id",
+  "updated_by_user_id",
+  "rotated_at",
+  "revoked_at",
+  "disabled_at",
+  "deleted_at",
+  "created_at",
+  "updated_at",
+].join(", ");
+
 const isUniqueConstraintViolation = (
   error: ProviderKeysTableQueryResult<ProviderKeyRow>["error"],
 ): boolean => {
@@ -483,6 +508,21 @@ export class SupabaseProviderKeyRepository
     );
 
     return rows.map(toBackendProviderKeyRecord);
+  }
+
+  async listRedactedConnectionSummariesForWorkspace(
+    workspaceId: string,
+  ): Promise<BackendRedactedProviderConnectionSummary[]> {
+    const rows = await getManyRows(
+      this.client
+        .from("provider_keys")
+        .select(providerKeyRedactedSummarySelectColumns)
+        .eq("workspace_id", workspaceId)
+        .eq("status", "active")
+        .is("deleted_at", null),
+    );
+
+    return rows.map((row) => toRedactedConnectionSummary(row));
   }
 
   async createProviderKey(

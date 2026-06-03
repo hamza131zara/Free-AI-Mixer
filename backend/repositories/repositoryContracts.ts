@@ -472,6 +472,9 @@ export interface BackendProviderKeyRepository {
     providerKeyId: string,
   ): Promise<BackendProviderKeyRecord | undefined>;
   listForWorkspace(workspaceId: string): Promise<BackendProviderKeyRecord[]>;
+  listRedactedConnectionSummariesForWorkspace?(
+    workspaceId: string,
+  ): Promise<BackendRedactedProviderConnectionSummary[]>;
   createProviderKey(
     input: BackendProviderKeyCreateInput,
   ): Promise<BackendProviderKeyStorageResult>;

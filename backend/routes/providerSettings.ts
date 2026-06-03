@@ -22,6 +22,7 @@ import type {
   BackendProviderConnectionMutationResponse,
   BackendProviderConnectionReplaceRequest,
   BackendProviderConnectionsResponse,
+  BackendRedactedProviderConnectionSummary,
   BackendProviderRoutingPreferences,
   BackendProviderRoutingPolicyResponse,
   BackendProviderSettingsStatusResponse,
@@ -133,6 +134,40 @@ const buildConnectionSummaries = () =>
     canManage: false,
     unavailableReason: "secure_provider_key_storage_not_enabled" as const,
   }));
+
+const mergeRedactedConnectionSummaries = (
+  redactedSummaries: BackendRedactedProviderConnectionSummary[],
+): BackendRedactedProviderConnectionSummary[] => {
+  const redactedByProviderId = new Map(
+    redactedSummaries
+      .filter((summary) => isSupportedProviderId(summary.providerId))
+      .map((summary) => [summary.providerId, summary]),
+  );
+
+  return buildConnectionSummaries().map(
+    (summary) => redactedByProviderId.get(summary.providerId) ?? summary,
+  );
+};
+
+const hasActiveRedactedConnectionSummary = (
+  summary: BackendRedactedProviderConnectionSummary,
+): boolean =>
+  summary.canManage === true &&
+  Boolean(summary.maskedFingerprint || summary.keyFingerprintSuffix);
+
+const buildProviderSettingsStatusMessage = (
+  connections: BackendRedactedProviderConnectionSummary[],
+): string =>
+  connections.some(hasActiveRedactedConnectionSummary)
+    ? "Provider settings are available with redacted backend-stored key summaries. Provider validation remains backend-gated and routing execution is not enabled yet."
+    : "Provider settings foundation is available, but secure API key connection, real validation, and routing execution are not enabled yet.";
+
+const buildProviderSettingsConnectionsMessage = (
+  connections: BackendRedactedProviderConnectionSummary[],
+): string =>
+  connections.some(hasActiveRedactedConnectionSummary)
+    ? "Connection summaries include active backend-stored key metadata only; key material is never returned to the browser."
+    : "Connection summaries are metadata-only until secure backend provider key storage and verification are implemented.";
 
 const respondMutationBoundaryDecision = (
   response: Response<BackendProviderConnectionMutationResponse>,
@@ -1021,6 +1056,41 @@ const authorizeMutationForWorkspace = async (
   };
 };
 
+const getRedactedConnectionSummariesForRequester = async (
+  resolvedRequester: ProviderMutationResolvedRequester,
+  options: {
+    providerKeyRepository?: BackendProviderKeyRepository;
+    providerKeysRuntimeEnabled: boolean;
+    providerSecretVault: ProviderSecretVault;
+    workspaceMembershipRepository: WorkspaceMembershipRepository;
+  },
+): Promise<BackendRedactedProviderConnectionSummary[]> => {
+  const workspaceBoundary = await authorizeMutationForWorkspace(
+    resolvedRequester.requesterContext,
+    "view_masked_key_fingerprint",
+    options.workspaceMembershipRepository,
+  );
+
+  if (workspaceBoundary) {
+    return buildConnectionSummaries();
+  }
+
+  if (
+    !options.providerKeysRuntimeEnabled ||
+    !options.providerKeyRepository?.listRedactedConnectionSummariesForWorkspace ||
+    options.providerSecretVault.getVaultReadiness().kind !== "vault_ready"
+  ) {
+    return buildConnectionSummaries();
+  }
+
+  const activeSummaries =
+    await options.providerKeyRepository.listRedactedConnectionSummariesForWorkspace(
+      resolvedRequester.authContext.workspaceId,
+    );
+
+  return mergeRedactedConnectionSummaries(activeSummaries);
+};
+
 const createMutationHandler = (
   action: ProviderKeyAction,
   runtimeConfig: TrustedAuthProviderRuntimeConfig,
@@ -1141,14 +1211,30 @@ export const createProviderSettingsRouter = (
         });
 
         if (accessDecision.kind === "allowed") {
+          const resolvedRequester: ProviderMutationResolvedRequester = {
+            authContext: {
+              requesterUserId: accessDecision.requester.appUserId,
+              workspaceId: accessDecision.requester.workspaceId,
+            },
+            requesterContext: accessDecision.requester,
+          };
+          const connections = await getRedactedConnectionSummariesForRequester(
+            resolvedRequester,
+            {
+              providerKeyRepository: options.providerKeyRepository,
+              providerKeysRuntimeEnabled,
+              providerSecretVault,
+              workspaceMembershipRepository,
+            },
+          );
+
           response.status(200).json({
             kind: "provider_settings_status",
             status: "authenticated",
-            message:
-              "Provider settings foundation is available, but secure API key connection, real validation, and routing execution are not enabled yet.",
+            message: buildProviderSettingsStatusMessage(connections),
             activeWorkspaceId: accessDecision.requester.workspaceId,
             routingPreferences: defaultRoutingPreferences,
-            connections: buildConnectionSummaries(),
+            connections,
           });
           return;
         }
@@ -1193,25 +1279,40 @@ export const createProviderSettingsRouter = (
 
   router.get(
     "/provider-settings/connections",
-    (request, response: Response<BackendProviderConnectionsResponse>) => {
-      const requesterContext = getRequesterContextFromRequest(request);
+    (request, response: Response<BackendProviderConnectionsResponse>, next) => {
+      void (async () => {
+        const resolvedRequester = await resolveProviderMutationRequester(
+          request,
+          options.runtimeConfig,
+          options.routeAccessResolver,
+        );
 
-      if (requesterContext.kind === "authenticated") {
+        if (!("kind" in resolvedRequester)) {
+          const connections = await getRedactedConnectionSummariesForRequester(
+            resolvedRequester,
+            {
+              providerKeyRepository: options.providerKeyRepository,
+              providerKeysRuntimeEnabled,
+              providerSecretVault,
+              workspaceMembershipRepository,
+            },
+          );
+
+          response.status(200).json({
+            kind: "provider_settings_connections",
+            message: buildProviderSettingsConnectionsMessage(connections),
+            connections,
+          });
+          return;
+        }
+
         response.status(200).json({
           kind: "provider_settings_connections",
           message:
-            "Connection summaries are metadata-only until secure backend provider key storage and verification are implemented.",
+            "Connection summaries remain read-only and not_connected until verified auth and secure provider key storage are implemented.",
           connections: buildConnectionSummaries(),
         });
-        return;
-      }
-
-      response.status(200).json({
-        kind: "provider_settings_connections",
-        message:
-          "Connection summaries remain read-only and not_connected until verified auth and secure provider key storage are implemented.",
-        connections: buildConnectionSummaries(),
-      });
+      })().catch(next);
     },
   );
 
