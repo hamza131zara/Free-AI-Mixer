@@ -1121,3 +1121,12 @@ Status:
 - A provider 2xx response remains non-deliverable and maps to `artifact_storage_unavailable` because generated artifact storage is not approved.
 - `/generation/jobs` remains disabled and `vendorCallsEnabled` remains false.
 - No real provider call, provider SDK import, frontend change, fake success/progress/artifact, generated asset URL, credits/billing mutation, export route behavior, or public launch behavior is included.
+
+## Phase 98 status
+
+- Phase 98: generated image artifact storage boundary pack.
+- Scope: add backend-only verification and local/staging storage contracts for future provider-generated image bytes.
+- Verification supports PNG, JPEG, and WEBP magic-byte checks, max byte size, positive size, content-type/format matching, and SHA-256 metadata.
+- Local storage is backend-controlled, temp-file-first, atomically renamed after verification, and returns only safe metadata plus an internal storage ref.
+- `/generation/jobs` remains disabled, `vendorCallsEnabled` remains false, and OpenAI 2xx output still maps to `artifact_storage_unavailable`.
+- No real provider call, frontend change, public/signed URL delivery, generated-image stream route, fake success/progress/artifact, credits/billing mutation, export route behavior, or public launch behavior is included.

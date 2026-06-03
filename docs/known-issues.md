@@ -2887,3 +2887,10 @@ Still deferred:
   - OpenAI image provider success is not deliverable until artifact storage is approved.
   - No generated image URL, base64 image, local path, signed URL, public URL, fake artifact success, credits/billing mutation, export route behavior, or public launch behavior is included.
 
+- Phase 98 adds a generated image artifact storage boundary:
+  - The verifier/storage seam is backend-only.
+  - Generated image delivery remains unavailable.
+  - No public URL, signed URL, frontend bytes/base64, stream route, or export route reuse is included.
+  - `/generation/jobs` remains disabled and OpenAI provider 2xx output still cannot become user-visible success.
+  - No fake success/progress/artifact, credits/billing mutation, export route behavior, or public launch behavior is included.
+

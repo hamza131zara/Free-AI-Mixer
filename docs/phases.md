@@ -13565,3 +13565,30 @@ Safety boundaries:
 - 2xx provider responses map to `artifact_storage_unavailable` until generated artifact storage is approved
 - no provider URL, base64 image, bytes, local path, signed URL, public URL, raw provider body, request id, account metadata, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+
+## Phase 98 - Generated Image Artifact Storage Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only generated image artifact verification boundary
+- backend-only local generated image artifact storage boundary
+- generated image metadata contract for artifact id, job id, workspace id, owner id, provider id, generated-image kind, png/jpeg/webp format, content type, byte size, SHA-256, lifecycle status, and creation timestamp
+- verification covers safe base64/bytes decode, non-empty bytes, max byte size, content type/format match, PNG/JPEG/WEBP magic-byte checks, and SHA-256 computation
+- local storage writes verified bytes to a backend-controlled root via temp-file write and atomic rename
+- cleanup is scoped by job/artifact identity and validates root containment before deletion
+
+Safety boundaries:
+
+- no real provider API call was added
+- no generated image is created by tests
+- no frontend files changed
+- `/generation/jobs` remains disabled and `vendorCallsEnabled` remains false
+- OpenAI image adapter still maps provider 2xx output to `artifact_storage_unavailable`
+- no public URL, signed URL, frontend bytes/base64, generated image stream route, or export route reuse was added
+- local/internal storage refs remain internal-only and are not public metadata
+- no local path, provider URL, raw provider response, raw prompt, request id, account metadata, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
