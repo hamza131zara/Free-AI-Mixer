@@ -658,6 +658,8 @@ Future generation must use a backend-owned stored key reference, never a raw API
 
 OpenAI BYOK validation through `GET /v1/models` only proves a stored key can be minimally validated. It does not prove image/video generation readiness, artifact storage readiness, credits/billing readiness, or export delivery readiness.
 
+Phase 96 adds an OpenAI Images API adapter boundary for future generation tests. It targets `POST /v1/images/generations` with a single stored-key image request in mocked tests only. A provider success response still maps to an artifact-storage-unavailable result until generated artifact storage is approved, so no provider URL, base64 image, local path, signed URL, public URL, or fake generated artifact should be shown to users.
+
 ## Deferred Items
 
 The following remain deferred:

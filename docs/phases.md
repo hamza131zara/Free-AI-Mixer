@@ -13539,3 +13539,29 @@ Safety boundaries:
 - no frontend files changed
 - no fake success, fake progress, fake artifact, public artifact delivery, or signed URL behavior was added
 - no credits, billing, generation execution, or export runtime behavior changed
+
+## Phase 96 - OpenAI Image Generation Adapter Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only OpenAI image generation adapter boundary
+- adapter targets `POST https://api.openai.com/v1/images/generations`
+- initial request shape is single-image only: `model: gpt-image-2`, prompt, `n: 1`, `size: 1024x1024`, and low/default quality
+- adapter uses stored provider key references and backend vault decrypt only inside local adapter scope
+- mocked remote-call tests cover success-without-storage, invalid prompt, invalid credentials, rate limit, timeout, provider unavailable, unsupported provider, missing key, and vault decrypt failure
+
+Safety boundaries:
+
+- `/generation/jobs` remains disabled and does not call the adapter
+- runtime summary still reports `vendorCallsEnabled: false`
+- no real provider API call is required or executed by tests
+- no provider SDK/package/import was added
+- no frontend files changed
+- no Responses, chat, files, uploads, edits, variations, streaming, mask, or multi-image behavior was added
+- 2xx provider responses map to `artifact_storage_unavailable` until generated artifact storage is approved
+- no provider URL, base64 image, bytes, local path, signed URL, public URL, raw provider body, request id, account metadata, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added

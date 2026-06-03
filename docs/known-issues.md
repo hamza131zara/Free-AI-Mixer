@@ -2881,3 +2881,9 @@ Still deferred:
   - BYOK validation does not imply generation readiness.
   - No real provider calls, generation artifacts, signed URLs, fake success/progress, credits/billing mutation, export integration, or public launch behavior is included.
 
+- Phase 96 adds an OpenAI image generation adapter boundary:
+  - The adapter is not route-wired.
+  - `/generation/jobs` remains disabled.
+  - OpenAI image provider success is not deliverable until artifact storage is approved.
+  - No generated image URL, base64 image, local path, signed URL, public URL, fake artifact success, credits/billing mutation, export route behavior, or public launch behavior is included.
+

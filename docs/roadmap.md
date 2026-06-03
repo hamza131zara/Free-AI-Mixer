@@ -1112,3 +1112,12 @@ Status:
 - `/generation/jobs` remains disabled and `vendorCallsEnabled` remains false.
 - OpenAI BYOK validation readiness must not be treated as generation readiness.
 - No real provider API call, provider SDK import, frontend change, fake success/progress/artifact, credits/billing mutation, generation execution, export integration, or public launch behavior is included.
+
+## Phase 96 status
+
+- Phase 96: OpenAI image generation adapter boundary pack.
+- Scope: add a backend-only OpenAI Images API adapter boundary for future stored-key image generation.
+- The adapter targets `POST https://api.openai.com/v1/images/generations` with `gpt-image-2`, one image, default safe size, and mocked remote-call tests only.
+- A provider 2xx response remains non-deliverable and maps to `artifact_storage_unavailable` because generated artifact storage is not approved.
+- `/generation/jobs` remains disabled and `vendorCallsEnabled` remains false.
+- No real provider call, provider SDK import, frontend change, fake success/progress/artifact, generated asset URL, credits/billing mutation, export route behavior, or public launch behavior is included.

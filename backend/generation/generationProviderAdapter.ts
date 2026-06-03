@@ -87,7 +87,7 @@ export type BackendGenerationProviderExecutionResult =
   | {
       kind: "generation_failed";
       status: "generation_failed";
-      errorCode: "generation_failed";
+      errorCode: "generation_failed" | "invalid_credentials";
       message: string;
     }
   | {
@@ -152,6 +152,7 @@ const generationProviderSafeErrorCodes = new Set<
   "artifact_storage_unavailable",
   "generation_failed",
   "generation_unavailable",
+  "invalid_credentials",
   "invalid_prompt",
   "invalid_provider",
   "key_not_found",

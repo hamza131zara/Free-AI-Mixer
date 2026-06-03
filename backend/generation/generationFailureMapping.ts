@@ -10,6 +10,7 @@ export type BackendGenerationFailureCode =
   | "fallback_disabled"
   | "vendor_calls_disabled"
   | "provider_key_not_configured"
+  | "invalid_credentials"
   | "provider_unavailable"
   | "rate_limited"
   | "timeout"
@@ -109,6 +110,14 @@ const generationFailureMappings: Record<
     code: "provider_key_not_configured",
     message:
       "A verified backend-owned provider key is required before runtime execution can begin.",
+    httpStatus: 403,
+    retryable: false,
+    allowsFallback: false,
+  },
+  invalid_credentials: {
+    code: "invalid_credentials",
+    message:
+      "Stored provider credentials were rejected by the provider with a sanitized backend error.",
     httpStatus: 403,
     retryable: false,
     allowsFallback: false,
