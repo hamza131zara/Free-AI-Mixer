@@ -1104,3 +1104,11 @@ Status:
 - Automated tests mock remote provider calls and require no real provider keys.
 - Default behavior remains not-configured/fail-closed, and `mock_local` behavior remains unchanged.
 - No frontend changes, provider SDK import, generation/upload/model execution endpoint, platform key fallback, fake connected/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
+
+## Phase 94 status
+
+- Phase 94: real provider generation contract boundary pack.
+- Scope: add backend-only contracts for a future stored-key image generation adapter, safe generation input/result unions, safe artifact metadata, sanitized failure mapping, and future generation env gate names.
+- `/generation/jobs` remains disabled and `vendorCallsEnabled` remains false.
+- OpenAI BYOK validation readiness must not be treated as generation readiness.
+- No real provider API call, provider SDK import, frontend change, fake success/progress/artifact, credits/billing mutation, generation execution, export integration, or public launch behavior is included.

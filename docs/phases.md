@@ -13514,3 +13514,28 @@ Safety boundaries:
 - no model list, response body, request id, headers, account metadata, raw provider error, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned or stored
 - no fake connected, verified-provider, or test-passed provider state was added
 - no credits, billing, generation, or export runtime behavior changed
+
+## Phase 94 - Real Provider Generation Contract Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only generation provider adapter contract for future stored-key image generation
+- safe stored-key input shape with `providerId`, `workspaceId`, `providerKeyId`, `prompt`, `generationKind: image`, and request/job identifiers
+- safe generation result union for unavailable, generated, failed, provider unavailable, rate limited, timeout, invalid provider, key not found, vault decrypt failed, invalid prompt, and artifact storage unavailable states
+- safe artifact metadata shape that is metadata-only and does not include public URLs, signed URLs, local file paths, provider response bodies, provider account metadata, or secret material
+- future generation env gate names documented in code only: `FREE_AI_MIXER_GENERATION_RUNTIME_ENABLED`, `FREE_AI_MIXER_GENERATION_PROVIDER_ADAPTER`, and `FREE_AI_MIXER_GENERATION_ALLOW_REAL_PROVIDER_CALLS`
+
+Safety boundaries:
+
+- `/generation/jobs` remains disabled and returns `generation_runtime_disabled`
+- runtime summary still reports `vendorCallsEnabled: false`
+- no provider adapter is route-wired for execution
+- no real provider API call was added
+- no provider SDK/package/import or generation provider fetch was added
+- no frontend files changed
+- no fake success, fake progress, fake artifact, public artifact delivery, or signed URL behavior was added
+- no credits, billing, generation execution, or export runtime behavior changed

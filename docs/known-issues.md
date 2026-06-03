@@ -2874,3 +2874,10 @@ Still deferred:
   - publicLaunchApproved remains false until manual approval.
   - This phase supports a go/no-go decision; it does not automatically launch the platform.
 
+- Phase 94 adds a backend-only real provider generation contract boundary:
+  - Real generation remains blocked.
+  - `/generation/jobs` remains disabled.
+  - `vendorCallsEnabled` remains false.
+  - BYOK validation does not imply generation readiness.
+  - No real provider calls, generation artifacts, signed URLs, fake success/progress, credits/billing mutation, export integration, or public launch behavior is included.
+

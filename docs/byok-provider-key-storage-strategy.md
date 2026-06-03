@@ -650,6 +650,14 @@ Before live BYOK, tests should prove:
 - No provider SDK/API calls until explicitly approved.
 - No generation, export, credits, billing, admin, event, audit, or analytics runtime expansion.
 
+## Generation Boundary Note
+
+Phase 94 adds a backend-only contract boundary for future stored-key provider generation. That boundary is not a live generation implementation.
+
+Future generation must use a backend-owned stored key reference, never a raw API key in the browser request body. The contract may name `providerId`, `workspaceId`, `providerKeyId`, prompt, job/request identifiers, and safe image-generation options, but it must not return or store raw provider responses, provider account metadata, local paths, public URLs, signed URLs, encrypted payload values, secret references, JWTs, service-role values, or encryption keys.
+
+OpenAI BYOK validation through `GET /v1/models` only proves a stored key can be minimally validated. It does not prove image/video generation readiness, artifact storage readiness, credits/billing readiness, or export delivery readiness.
+
 ## Deferred Items
 
 The following remain deferred:
@@ -662,5 +670,5 @@ The following remain deferred:
 - Backend BYOK route runtime smoke after verified local/staging schema apply.
 - Active workspace selection.
 - Billing and credits ledger.
-- Generation/export runtime integration.
+- Generation/export runtime integration and real provider generation execution.
 - Event/audit persistence.
