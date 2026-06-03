@@ -1087,3 +1087,11 @@ Status:
 - Validation updates only safe metadata fields and returns redacted connection summaries.
 - Default/production behavior remains fail-closed; frontend Test Connection remains unavailable.
 - No real provider API call, provider SDK import, real provider key, fake connected/verified/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.
+
+## Phase 87 status
+
+- Phase 87: BYOK mock validation adapter composition for local browser smoke.
+- Scope: compose the mock/local validation adapter only when `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED=1` and `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER=mock_local` are both set.
+- Default and production behavior remain not-configured/fail-closed, so runtime gate alone cannot create validation success.
+- The local browser smoke runbook now documents the two-env requirement, fake-key-only browser flow, safe DB checks, and cleanup.
+- No frontend changes, real provider API calls, provider SDK/import/fetch, real provider keys, fake connected/test-passed state, credits/billing mutation, generation/export integration, or public launch behavior is included.

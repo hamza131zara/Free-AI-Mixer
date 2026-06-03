@@ -9,8 +9,9 @@ Use this smoke to verify:
 - Local Supabase, backend, and frontend can run together.
 - A confirmed local/staging tester can log in.
 - Provider Settings can save, replace, and remove a fake provider key through the backend.
+- Provider Settings can validate the stored fake key through the backend mock/local adapter only when explicitly enabled.
 - The browser does not retain the fake key in visible UI, URL, cookies, `localStorage`, or `sessionStorage`.
-- Test connection remains disabled and unavailable.
+- Test connection remains unavailable unless both mock/local validation env gates are enabled.
 - No fake connected, verified, or test-passed state appears.
 
 ## Required Local Preconditions
@@ -54,7 +55,18 @@ FREE_AI_MIXER_BYOK_VAULT_PROVIDER
 FREE_AI_MIXER_BYOK_ENCRYPTION_KEY_VERSION
 FREE_AI_MIXER_BYOK_ENCRYPTION_KEY_V1
 FREE_AI_MIXER_BYOK_PROVIDER_KEYS_RUNTIME_ENABLED
+FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED
+FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER
 ```
+
+Mock/local validation success requires both:
+
+```text
+FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED=1
+FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER=mock_local
+```
+
+If the runtime gate is off, or if the adapter env is missing or anything other than `mock_local`, the backend must fail closed with validation unavailable. Do not use production Supabase, real provider keys, provider SDKs, or provider endpoints for this smoke.
 
 Start the frontend with ignored local client env:
 
@@ -84,10 +96,12 @@ Never define a `VITE_*SERVICE_ROLE*` value.
 9. Enter `FAKE_PHASE79_OPENAI_REPLACEMENT_KEY_DO_NOT_STORE`.
 10. Click `Replace key`.
 11. Confirm the input clears and the UI shows only a redacted replacement summary.
-12. Click `Remove key`.
-13. Confirm controls return to `Save key` / add-key state and remove is disabled until a new active key exists.
-14. Confirm `Test connection unavailable` remains disabled.
-15. Confirm no connected, verified, or test-passed wording appears.
+12. Click `Validate stored key`.
+13. With the two mock/local validation env gates enabled, confirm the UI shows `Validated by backend`.
+14. With either validation env gate disabled, confirm the UI shows validation unavailable and no success state.
+15. Click `Remove key`.
+16. Confirm controls return to `Save key` / add-key state and remove is disabled until a new active key exists.
+17. Confirm no connected, verified, test-passed, live-provider-ready, or generation-enabled wording appears.
 
 ## Browser No-Persistence Check
 
@@ -122,10 +136,12 @@ select
   provider_name,
   status,
   verification_status,
+  last_verified_at is not null as has_last_verified_at,
+  last_verification_error_code,
   count(*) as row_count
 from provider_keys
-group by provider_name, status, verification_status
-order by provider_name, status, verification_status;
+group by provider_name, status, verification_status, has_last_verified_at, last_verification_error_code
+order by provider_name, status, verification_status, has_last_verified_at, last_verification_error_code;
 ```
 
 Allowed boolean presence check:
@@ -166,6 +182,7 @@ where tablename = 'provider_keys';
 
 - Revoke the fake key through the Provider Settings UI.
 - Verify no active OpenAI key remains for the local/staging smoke account.
+- If mock validation was enabled, remove or unset `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER` and `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED` after the smoke.
 - Stop local processes when the smoke is complete.
 - Do not commit local env files, logs, screenshots, traces, or copied request payloads.
 
@@ -173,8 +190,8 @@ where tablename = 'provider_keys';
 
 - Real provider keys.
 - Provider SDK/API calls.
-- Test connection.
 - Real provider validation.
+- Production validation adapter selection.
 - BYOK-backed generation or export routing.
 - Credits, get-free-credits, wallet, checkout, subscription, or billing mutation.
 - Production use without separate production security, RLS, secret-management, and rollback approval.

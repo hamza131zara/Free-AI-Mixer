@@ -13465,3 +13465,26 @@ Safety boundaries:
 - no platform key fallback was added
 - no raw key, decrypted key, encrypted payload, secret reference, raw provider error, provider account metadata, token, JWT, service-role, or platform secret is allowed in route responses
 - no credits, billing, generation, or export runtime behavior changed
+
+## Phase 87 - BYOK Mock Validation Adapter Composition for Local Browser Smoke
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- explicit local/test-only validation adapter selection through `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER=mock_local`
+- mock adapter composition only when `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED=1` is also enabled
+- default not-configured validation adapter preserved for production/default fail-closed behavior
+- local browser smoke runbook updated to require both explicit mock-validation env values before expecting validation success
+
+Safety boundaries:
+
+- no frontend files changed
+- no real provider API call was added
+- no provider SDK/package/import or external provider fetch was added
+- no real provider key was used
+- no fake connected, verified, or test-passed provider state was added
+- no service-role, JWT, encryption key, provider key, encrypted payload, secret reference, or raw provider error exposure was added
+- no credits, billing, generation, or export runtime behavior changed

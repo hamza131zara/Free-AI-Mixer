@@ -269,6 +269,7 @@ The route remains unavailable by default. Mock validation can run only when all 
 
 - `FREE_AI_MIXER_BYOK_PROVIDER_KEYS_RUNTIME_ENABLED=1`
 - `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED=1`
+- `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER=mock_local`
 - backend auth resolves an authenticated requester and workspace
 - backend workspace membership proves owner or admin authority
 - a configured provider key repository exists
@@ -289,6 +290,28 @@ Phase 83 keeps these no-go items:
 - No fake connected, verified, or test-passed state.
 - No platform key fallback.
 - No raw key, decrypted key, encrypted payload, secret reference, raw provider error, provider account metadata, token, JWT, service-role, or platform secret in route responses.
+- No credits, billing, generation, or export runtime expansion.
+
+## Phase 87 Mock Validation Adapter Composition Boundary
+
+Merged Phase 87 makes the local/mock validation adapter selectable through normal backend dependency composition without changing the route authorization or frontend behavior.
+
+Default and production behavior remain fail-closed. The backend composes the not-configured validation adapter unless both explicit local/test-only env values are present:
+
+- `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED=1`
+- `FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER=mock_local`
+
+The adapter selection env does not bypass route requirements. Mock validation still requires backend auth, backend-derived workspace context, workspace owner/admin authority, provider key repository, ready vault, active stored key lookup, and redacted validation state updates.
+
+Phase 87 keeps these no-go items:
+
+- No real provider API calls.
+- No provider SDK/package/import or external provider `fetch`.
+- No real provider keys.
+- No frontend changes.
+- No fake connected, verified, or test-passed provider state.
+- No platform key fallback.
+- No service-role, JWT, encryption key, provider key, encrypted payload, secret reference, or raw provider error exposure.
 - No credits, billing, generation, or export runtime expansion.
 
 ## Future Recommended Architecture

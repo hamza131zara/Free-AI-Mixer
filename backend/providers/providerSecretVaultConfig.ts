@@ -6,6 +6,7 @@ export const byokVaultEnvNames = {
   providerKeysRuntimeEnabled: "FREE_AI_MIXER_BYOK_PROVIDER_KEYS_RUNTIME_ENABLED",
   providerValidationRuntimeEnabled:
     "FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_RUNTIME_ENABLED",
+  providerValidationAdapter: "FREE_AI_MIXER_BYOK_PROVIDER_VALIDATION_ADAPTER",
 } as const;
 
 export interface ProviderSecretVaultLocalEncryptedPayloadConfig {
@@ -42,6 +43,11 @@ export interface ByokProviderKeysRuntimeGate {
 export interface ByokProviderValidationRuntimeGate {
   kind: "byok_provider_validation_runtime_gate";
   enabled: boolean;
+}
+
+export interface ByokProviderValidationAdapterSelection {
+  kind: "byok_provider_validation_adapter_selection";
+  adapter: "not_configured" | "mock_local";
 }
 
 const unavailable = (
@@ -135,4 +141,14 @@ export const parseByokProviderValidationRuntimeGate = (
 ): ByokProviderValidationRuntimeGate => ({
   kind: "byok_provider_validation_runtime_gate",
   enabled: env[byokVaultEnvNames.providerValidationRuntimeEnabled] === "1",
+});
+
+export const parseByokProviderValidationAdapterSelection = (
+  env: ProviderSecretVaultEnv = process.env,
+): ByokProviderValidationAdapterSelection => ({
+  kind: "byok_provider_validation_adapter_selection",
+  adapter:
+    env[byokVaultEnvNames.providerValidationAdapter] === "mock_local"
+      ? "mock_local"
+      : "not_configured",
 });

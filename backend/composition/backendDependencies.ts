@@ -17,10 +17,13 @@ import {
 import { createLocalEncryptedProviderSecretVault } from "../providers/localEncryptedProviderSecretVault";
 import { createNotConfiguredProviderSecretVault } from "../providers/notConfiguredProviderSecretVault";
 import { createNotConfiguredProviderValidationAdapter } from "../providers/notConfiguredProviderValidationAdapter";
+import { createMockProviderValidationAdapter } from "../providers/mockProviderValidationAdapter";
 import {
+  parseByokProviderValidationAdapterSelection,
   parseByokProviderKeysRuntimeGate,
   parseByokProviderValidationRuntimeGate,
   parseProviderSecretVaultConfig,
+  type ByokProviderValidationAdapterSelection,
   type ByokProviderValidationRuntimeGate,
   type ByokProviderKeysRuntimeGate,
 } from "../providers/providerSecretVaultConfig";
@@ -54,6 +57,8 @@ export interface BackendDependencies {
   byokProviderKeysRuntimeGate: ByokProviderKeysRuntimeGate;
   /** Internal provider validation adapter. Defaults fail-closed with no provider call. */
   providerValidationAdapter: ProviderValidationAdapter;
+  /** Explicit local/test-only provider validation adapter selection. */
+  byokProviderValidationAdapterSelection: ByokProviderValidationAdapterSelection;
   /** Explicit BYOK provider-validation runtime gate. */
   byokProviderValidationRuntimeGate: ByokProviderValidationRuntimeGate;
   /** Internal render snapshot store (process-memory only) */
@@ -81,9 +86,15 @@ export const createBackendDependencies = (): BackendDependencies => {
       ? createLocalEncryptedProviderSecretVault(byokVaultConfig)
       : createNotConfiguredProviderSecretVault();
   const byokProviderKeysRuntimeGate = parseByokProviderKeysRuntimeGate();
-  const providerValidationAdapter = createNotConfiguredProviderValidationAdapter();
   const byokProviderValidationRuntimeGate =
     parseByokProviderValidationRuntimeGate();
+  const byokProviderValidationAdapterSelection =
+    parseByokProviderValidationAdapterSelection();
+  const providerValidationAdapter =
+    byokProviderValidationRuntimeGate.enabled &&
+    byokProviderValidationAdapterSelection.adapter === "mock_local"
+      ? createMockProviderValidationAdapter()
+      : createNotConfiguredProviderValidationAdapter();
 
   const pathPolicy: RenderOutputPathPolicy = {
     roots,
@@ -139,6 +150,7 @@ export const createBackendDependencies = (): BackendDependencies => {
     providerSecretVault,
     byokProviderKeysRuntimeGate,
     providerValidationAdapter,
+    byokProviderValidationAdapterSelection,
     byokProviderValidationRuntimeGate,
     renderInputSnapshotStore,
   };
