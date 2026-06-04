@@ -122,4 +122,15 @@ export type BackendGenerationJobMutationResponse =
         "executionState" | "vendorCallsEnabled" | "routingPreferences" | "retryPolicy"
       >;
       attemptedProviderIds: BackendSupportedProviderId[];
+    }
+  | {
+      kind: "generation_job_metadata_ready";
+      status: "generated_metadata_ready";
+      message: string;
+      artifact: BackendGenerationMetadataOnlyArtifactResponse;
+      runtime: Pick<
+        BackendGenerationRuntimeSummary,
+        "executionState" | "vendorCallsEnabled" | "routingPreferences" | "retryPolicy"
+      >;
+      attemptedProviderIds: BackendSupportedProviderId[];
     };

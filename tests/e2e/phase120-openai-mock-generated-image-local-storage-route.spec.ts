@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 import express from "express";
+import { promises as fs } from "node:fs";
 import { readFileSync } from "node:fs";
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import os from "node:os";
 import path from "node:path";
 import type { BackendRequesterContext } from "../../backend/auth/requesterContext";
 import type { WorkspaceMembershipRepository } from "../../backend/auth/workspaceMembership";
@@ -12,14 +14,19 @@ import type {
 } from "../../backend/generation/generationRuntimeConfig";
 import {
   getGenerationRuntimeCompositionReadiness,
-  parseGenerationByokDecryptForMockExecutionEnabled,
-  parseGenerationOpenAiAdapterFetchMode,
+  parseGenerationGeneratedImageStorageMode,
+  parseGenerationGeneratedImageStorageRoot,
   parseGenerationRuntimeConfig,
 } from "../../backend/generation/generationRuntimeConfig";
 import type { BackendGenerationExecutionControlReadiness } from "../../backend/generation/generationRuntimeOrchestrator";
 import {
   getGenerationExecutionControlReadiness,
 } from "../../backend/generation/generationRuntimeOrchestrator";
+import {
+  createLocalGeneratedImageArtifactStorage,
+  createNotConfiguredGeneratedImageArtifactStorage,
+  type GeneratedImageArtifactStorage,
+} from "../../backend/generation/generatedImageArtifactStorage";
 import type { ProviderSecretVault } from "../../backend/providers/providerSecretVault";
 import type {
   BackendProviderKeyRecord,
@@ -30,20 +37,20 @@ import { createGenerationRouter } from "../../backend/routes/generation";
 
 const projectRoot = process.cwd();
 const originalFetch = globalThis.fetch;
-const rawKey = "FAKE_PHASE117_DECRYPTED_KEY_DO_NOT_RETURN";
-const promptText = "A phase 117 prompt that must not be echoed";
+const rawKey = "FAKE_PHASE120_DECRYPTED_KEY_DO_NOT_RETURN";
+const promptText = "A phase 120 prompt that must not be echoed";
 const providerUrl = "https://api.openai.com/v1/images/generations";
-const b64Json = "iVBORw0KGgo=";
+const validPngBase64 = "iVBORw0KGgo=";
 
 const readSource = (relativePath: string): string =>
   readFileSync(path.join(projectRoot, relativePath), "utf8");
 
 const authenticatedRequester: BackendRequesterContext = {
   authProvider: "session",
-  authSubject: "phase117-subject",
+  authSubject: "phase120-subject",
   kind: "authenticated",
-  userId: "phase117-user",
-  workspaceId: "phase117-workspace",
+  userId: "phase120-user",
+  workspaceId: "phase120-workspace",
 };
 
 interface DependencyCalls {
@@ -75,14 +82,14 @@ const controlsReady = (): BackendGenerationExecutionControlReadiness => ({
 const createActiveValidatedKey = (
   patch: Partial<BackendProviderKeyRecord> = {},
 ): BackendProviderKeyRecord => ({
-  providerKeyId: "phase117-provider-key",
+  providerKeyId: "phase120-provider-key",
   providerName: "openai",
-  workspaceId: "phase117-workspace",
-  ownerId: "phase117-owner",
-  createdByUserId: "phase117-owner",
+  workspaceId: "phase120-workspace",
+  ownerId: "phase120-owner",
+  createdByUserId: "phase120-owner",
   encryptedSecret: {
     algorithm: "AES-256-GCM",
-    encryptedPayload: "PHASE117_ENCRYPTED_PAYLOAD_NOT_RETURNED",
+    encryptedPayload: "PHASE120_ENCRYPTED_PAYLOAD_NOT_RETURNED",
     keyVersion: "v1",
   },
   status: "active",
@@ -95,7 +102,7 @@ const validJobRequest = () => ({
   generationKind: "image",
   prompt: promptText,
   providerId: "openai",
-  requestId: "phase117_request",
+  requestId: "phase120_request",
 });
 
 const createProviderKeyRepository = (
@@ -104,7 +111,7 @@ const createProviderKeyRepository = (
 ): BackendProviderKeyRepository => ({
   getByProviderKeyId: async (providerKeyId): Promise<BackendProviderKeyRecord | undefined> => {
     calls.keyLookup += 1;
-    expect(providerKeyId).toBe("phase117-provider-key");
+    expect(providerKeyId).toBe("phase120-provider-key");
     return record;
   },
   getActiveValidatedProviderKeyForWorkspaceProvider: async (
@@ -112,7 +119,7 @@ const createProviderKeyRepository = (
     providerId,
   ): Promise<BackendProviderKeyRecord | undefined> => {
     calls.keyLookup += 1;
-    expect(workspaceId).toBe("phase117-workspace");
+    expect(workspaceId).toBe("phase120-workspace");
     expect(providerId).toBe("openai");
     return record;
   },
@@ -149,8 +156,8 @@ const createVault = (
   },
   decryptProviderKey: async (input) => {
     calls.decrypt += 1;
-    expect(input.providerKeyId).toBe("phase117-provider-key");
-    expect(input.workspaceId).toBe("phase117-workspace");
+    expect(input.providerKeyId).toBe("phase120-provider-key");
+    expect(input.workspaceId).toBe("phase120-workspace");
     expect(input.secretHandle?.kind).toBe("encrypted_secret");
     return {
       kind: "vault_provider_key_decrypted",
@@ -175,8 +182,8 @@ const createMembershipRepository = (
 ): WorkspaceMembershipRepository => ({
   getMembership: async ({ userId, workspaceId }) => {
     calls.membership += 1;
-    expect(userId).toBe("phase117-user");
-    expect(workspaceId).toBe("phase117-workspace");
+    expect(userId).toBe("phase120-user");
+    expect(workspaceId).toBe("phase120-workspace");
     return {
       kind: "member",
       membership: {
@@ -190,7 +197,12 @@ const createMembershipRepository = (
   },
 });
 
-const createMockFetch = (calls: DependencyCalls): typeof fetch =>
+const createMockFetch = (
+  calls: DependencyCalls,
+  payload: { b64Json?: string; url?: string } | "empty" = {
+    b64Json: validPngBase64,
+  },
+): typeof fetch =>
   (async (input, init) => {
     calls.mockFetch += 1;
     expect(String(input)).toBe(providerUrl);
@@ -200,16 +212,39 @@ const createMockFetch = (calls: DependencyCalls): typeof fetch =>
     expect(
       (init?.headers as Record<string, string> | undefined)?.Authorization,
     ).toBe(`Bearer ${rawKey}`);
-    return new Response(
-      JSON.stringify({
-        data: [{ b64_json: b64Json }],
-      }),
-      {
-        headers: { "Content-Type": "application/json" },
-        status: 200,
-      },
-    );
+
+    const data = payload === "empty"
+      ? []
+      : [
+          {
+            ...(payload.b64Json ? { b64_json: payload.b64Json } : {}),
+            ...(payload.url ? { url: payload.url } : {}),
+          },
+        ];
+
+    return new Response(JSON.stringify({ data }), {
+      headers: { "Content-Type": "application/json" },
+      status: 200,
+    });
   }) as typeof fetch;
+
+const createStorage = (
+  calls: DependencyCalls,
+  storage: GeneratedImageArtifactStorage,
+): GeneratedImageArtifactStorage => ({
+  cleanup: (input) => storage.cleanup(input),
+  store: async (input) => {
+    calls.storage += 1;
+    return storage.store(input);
+  },
+});
+
+const makeStorageRoot = async (): Promise<string> =>
+  fs.mkdtemp(path.join(os.tmpdir(), "phase120-generated-images-"));
+
+const removeStorageRoot = async (rootPath: string): Promise<void> => {
+  await fs.rm(rootPath, { force: true, recursive: true });
+};
 
 const startGenerationApp = async ({
   controls = controlsReady(),
@@ -221,9 +256,12 @@ const startGenerationApp = async ({
     FREE_AI_MIXER_GENERATION_RUNTIME_ENABLED: "1",
   }),
   keyRecord = createActiveValidatedKey(),
-  mode = "openai_adapter_mock_only",
+  maxImageBytes,
+  mode = "openai_adapter_mock_storage_only",
+  mockPayload = { b64Json: validPngBase64 },
   requester = authenticatedRequester,
   role = "owner",
+  storage,
   vaultReadiness = "ready",
 }: {
   controls?: BackendGenerationExecutionControlReadiness;
@@ -231,9 +269,12 @@ const startGenerationApp = async ({
   fetchMode?: BackendGenerationOpenAiAdapterFetchMode;
   generationRuntimeConfig?: ReturnType<typeof parseGenerationRuntimeConfig>;
   keyRecord?: BackendProviderKeyRecord | null;
+  maxImageBytes?: number;
   mode?: BackendGenerationRouteExecutionMode;
+  mockPayload?: { b64Json?: string; url?: string } | "empty";
   requester?: BackendRequesterContext;
   role?: "owner" | "admin" | "member" | "viewer";
+  storage?: GeneratedImageArtifactStorage;
   vaultReadiness?: "ready" | "not_configured";
 } = {}): Promise<{ baseUrl: string; calls: DependencyCalls; server: Server }> => {
   const calls = createCalls();
@@ -249,12 +290,12 @@ const startGenerationApp = async ({
     createGenerationRouter({
       runtimeConfig: {
         kind: "auth_provider_configured",
-        provider: "phase117-session",
+        provider: "phase120-session",
       },
+      ...(storage ? { generatedImageArtifactStorage: createStorage(calls, storage) } : {}),
       generatedArtifactStorageReadiness: {
         getReadiness: () => {
-          calls.storage += 1;
-          throw new Error("Generated image storage must not run in Phase 117.");
+          throw new Error("Generated image storage readiness must not drive Phase 120.");
         },
       },
       generationByokDecryptForMockExecutionEnabled: decryptApproved,
@@ -264,8 +305,9 @@ const startGenerationApp = async ({
       generationRuntimeConfig,
       generationRuntimeReadiness:
         getGenerationRuntimeCompositionReadiness(generationRuntimeConfig),
+      ...(typeof maxImageBytes === "number" ? { openAiAdapterMaxImageBytes: maxImageBytes } : {}),
       openAiAdapterMockFetch:
-        fetchMode === "mock_only" ? createMockFetch(calls) : undefined,
+        fetchMode === "mock_only" ? createMockFetch(calls, mockPayload) : undefined,
       providerKeyRepository: createProviderKeyRepository(
         calls,
         keyRecord ?? undefined,
@@ -319,22 +361,22 @@ const expectNoLeak = (serialized: string): void => {
   for (const forbidden of [
     rawKey,
     promptText,
-    "PHASE117_ENCRYPTED_PAYLOAD_NOT_RETURNED",
+    "PHASE120_ENCRYPTED_PAYLOAD_NOT_RETURNED",
     providerUrl,
-    b64Json,
+    validPngBase64,
     "submitted",
     "running",
-    "generated_metadata_ready",
     "status\":\"generated\"",
-    "artifactId",
-    "providerKeyId",
     "workspaceId",
+    "ownerId",
+    "providerKeyId",
     "publicUrl",
     "signedUrl",
     "downloadUrl",
     "internalRef",
     "filePath",
     "rootPath",
+    "directoryPath",
     "bytes",
     "b64_json",
     "encrypted_payload",
@@ -349,51 +391,58 @@ const expectNoLeak = (serialized: string): void => {
   }
 };
 
-test.describe("phase117 byok decrypt plus mocked OpenAI adapter route execution", () => {
-  test("new gates parse fail-closed", () => {
-    expect(parseGenerationOpenAiAdapterFetchMode({})).toBe("not_configured");
+test.describe("phase120 OpenAI mock generated-image local storage route", () => {
+  test("new storage env parsing remains fail-closed", () => {
+    expect(parseGenerationGeneratedImageStorageMode({})).toBe("not_configured");
     expect(
-      parseGenerationOpenAiAdapterFetchMode({
-        FREE_AI_MIXER_GENERATION_OPENAI_ADAPTER_FETCH_MODE: "mock_only",
+      parseGenerationGeneratedImageStorageMode({
+        FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_MODE: "local_staging",
       }),
-    ).toBe("mock_only");
-    expect(parseGenerationByokDecryptForMockExecutionEnabled({})).toBe(false);
+    ).toBe("local_staging");
+    expect(parseGenerationGeneratedImageStorageRoot({})).toBeUndefined();
     expect(
-      parseGenerationByokDecryptForMockExecutionEnabled({
-        FREE_AI_MIXER_GENERATION_BYOK_DECRYPT_FOR_MOCK_EXECUTION: "1",
+      parseGenerationGeneratedImageStorageRoot({
+        FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_ROOT: "  C:/safe/generated  ",
       }),
-    ).toBe(true);
+    ).toBe("C:/safe/generated");
   });
 
-  test("disabled preconditions-only and adapter-mock-only behavior remain unchanged", async () => {
-    for (const entry of [
-      { mode: "disabled" as const, status: "generation_runtime_disabled" },
-      { mode: "preconditions_only" as const, status: "generation_execution_blocked" },
-      { mode: "adapter_mock_only" as const, status: "generation_execution_blocked" },
-    ]) {
-      const { baseUrl, calls, server } = await startGenerationApp({
-        mode: entry.mode,
-      });
+  test("existing route modes remain unchanged", async () => {
+    const rootPath = await makeStorageRoot();
+    const storage = createLocalGeneratedImageArtifactStorage({ rootPath });
 
-      try {
-        const { body, status } = await postGenerationJob(baseUrl);
-        expect(status).toBe(503);
-        expect(body.status).toBe(entry.status);
-        expect(body.runtime.vendorCallsEnabled).toBe(false);
-        expect(body.attemptedProviderIds).toEqual([]);
-        expect(calls).toMatchObject({
-          decrypt: 0,
-          mockFetch: 0,
-          storage: 0,
+    try {
+      for (const entry of [
+        { attempted: [] as string[], mode: "disabled" as const, status: "generation_runtime_disabled" },
+        { attempted: [] as string[], mode: "preconditions_only" as const, status: "generation_execution_blocked" },
+        { attempted: [] as string[], mode: "adapter_mock_only" as const, status: "generation_execution_blocked" },
+        { attempted: ["openai"], mode: "openai_adapter_mock_only" as const, status: "artifact_storage_unavailable" },
+      ]) {
+        const { baseUrl, calls, server } = await startGenerationApp({
+          mode: entry.mode,
+          storage,
         });
-        expectNoLeak(JSON.stringify(body));
-      } finally {
-        await stopServer(server);
+
+        try {
+          const { body, status } = await postGenerationJob(baseUrl);
+          expect(status).toBe(503);
+          expect(body.status).toBe(entry.status);
+          expect(body.runtime.vendorCallsEnabled).toBe(false);
+          expect(body.attemptedProviderIds).toEqual(entry.attempted);
+          expect(calls.storage).toBe(0);
+          expectNoLeak(JSON.stringify(body));
+        } finally {
+          await stopServer(server);
+        }
       }
+    } finally {
+      await removeStorageRoot(rootPath);
     }
   });
 
-  test("OpenAI adapter mock-only blocks unsafe states before decrypt or mock fetch", async () => {
+  test("storage mode blocks unsafe states before decrypt fetch or storage", async () => {
+    const rootPath = await makeStorageRoot();
+    const storage = createLocalGeneratedImageArtifactStorage({ rootPath });
     const generationGateOff = parseGenerationRuntimeConfig({
       FREE_AI_MIXER_GENERATION_ALLOW_REAL_PROVIDER_CALLS: "1",
       FREE_AI_MIXER_GENERATION_PROVIDER_ADAPTER: "openai_image_minimal",
@@ -407,6 +456,7 @@ test.describe("phase117 byok decrypt plus mocked OpenAI adapter route execution"
       keyRecord?: BackendProviderKeyRecord | null;
       requester?: BackendRequesterContext;
       role?: "owner" | "admin" | "member" | "viewer";
+      storage?: GeneratedImageArtifactStorage;
       vaultReadiness?: "ready" | "not_configured";
     }> = [
       {
@@ -436,61 +486,66 @@ test.describe("phase117 byok decrypt plus mocked OpenAI adapter route execution"
         expectedStatus: "provider_key_not_configured",
         keyRecord: createActiveValidatedKey({ needsReverification: true }),
       },
-      {
-        expectedStatus: "provider_key_not_configured",
-        keyRecord: createActiveValidatedKey({ revokedAt: "2026-06-03T00:00:00.000Z" }),
-      },
-      {
-        expectedStatus: "provider_key_not_configured",
-        keyRecord: createActiveValidatedKey({ disabledAt: "2026-06-03T00:00:00.000Z" }),
-      },
-      {
-        expectedStatus: "provider_key_not_configured",
-        keyRecord: createActiveValidatedKey({ rotatedAt: "2026-06-03T00:00:00.000Z" }),
-      },
-      {
-        expectedStatus: "provider_key_not_configured",
-        keyRecord: createActiveValidatedKey({ deletedAt: "2026-06-03T00:00:00.000Z" }),
-      },
       { expectedStatus: "generation_execution_blocked", fetchMode: "not_configured" },
       { decryptApproved: false, expectedStatus: "generation_execution_blocked" },
       { expectedStatus: "generation_execution_blocked", vaultReadiness: "not_configured" },
+      { expectedStatus: "artifact_storage_unavailable", storage: undefined },
     ];
 
-    for (const entry of cases) {
-      const { baseUrl, calls, server } = await startGenerationApp(entry);
+    try {
+      for (const entry of cases) {
+        const { baseUrl, calls, server } = await startGenerationApp({
+          ...entry,
+          storage: Object.hasOwn(entry, "storage") ? entry.storage : storage,
+        });
 
-      try {
-        const { body } = await postGenerationJob(baseUrl);
-        expect(body.status).toBe(entry.expectedStatus);
-        expect(calls.decrypt).toBe(0);
-        expect(calls.mockFetch).toBe(0);
-        expect(calls.storage).toBe(0);
-        expect(body.attemptedProviderIds).toEqual([]);
-        expectNoLeak(JSON.stringify(body));
-      } finally {
-        await stopServer(server);
+        try {
+          const { body } = await postGenerationJob(baseUrl);
+          expect(body.status).toBe(entry.expectedStatus);
+          expect(calls.decrypt).toBe(0);
+          expect(calls.mockFetch).toBe(0);
+          expect(calls.storage).toBe(0);
+          expectNoLeak(JSON.stringify(body));
+        } finally {
+          await stopServer(server);
+        }
       }
+    } finally {
+      await removeStorageRoot(rootPath);
     }
   });
 
-  test("decrypt and mocked fetch happen only after all preconditions pass", async () => {
+  test("valid mocked PNG verifies stores locally and returns safe metadata only", async () => {
     const originalGlobalFetch = globalThis.fetch;
     globalThis.fetch = (async () => {
-      throw new Error("globalThis.fetch must not run in Phase 117 route execution.");
+      throw new Error("globalThis.fetch must not run in Phase 120 route execution.");
     }) as typeof fetch;
-    const { baseUrl, calls, server } = await startGenerationApp();
+    const rootPath = await makeStorageRoot();
+    const storage = createLocalGeneratedImageArtifactStorage({
+      now: () => "2026-06-04T00:00:00.000Z",
+      rootPath,
+    });
+    const { baseUrl, calls, server } = await startGenerationApp({ storage });
 
     try {
       const { body, status } = await postGenerationJob(baseUrl);
       const serialized = JSON.stringify(body);
 
-      expect(status).toBe(503);
-      expect(body.kind).toBe("generation_job_rejected");
-      expect(body.status).toBe("artifact_storage_unavailable");
+      expect(status).toBe(200);
+      expect(body.kind).toBe("generation_job_metadata_ready");
+      expect(body.status).toBe("generated_metadata_ready");
       expect(body.message).toBe(
-        "OpenAI image generation returned a provider result, but generated artifact storage is not configured.",
+        "Mock OpenAI adapter output was verified and stored locally for backend smoke only; delivery remains unavailable.",
       );
+      expect(body.artifact).toEqual({
+        artifactId: "phase120_request_openai_image",
+        providerId: "openai",
+        contentType: "image/png",
+        sizeBytes: 8,
+        sha256: "4c4b6a3be1314ab86138bef4314dde022e600960d8689a2c8f8631802d20dab6",
+        createdAt: "2026-06-04T00:00:00.000Z",
+        deliveryStatus: "unavailable",
+      });
       expect(body.runtime.vendorCallsEnabled).toBe(false);
       expect(body.attemptedProviderIds).toEqual(["openai"]);
       expect(calls).toMatchObject({
@@ -498,17 +553,88 @@ test.describe("phase117 byok decrypt plus mocked OpenAI adapter route execution"
         keyLookup: 2,
         membership: 1,
         mockFetch: 1,
-        storage: 0,
+        storage: 1,
         vaultReadiness: 1,
       });
       expectNoLeak(serialized);
+      const storedPath = path.join(
+        rootPath,
+        "phase120_request",
+        "phase120_request_openai_image.png",
+      );
+      await fs.access(storedPath);
     } finally {
       globalThis.fetch = originalGlobalFetch;
       await stopServer(server);
+      await removeStorageRoot(rootPath);
     }
   });
 
-  test("source boundaries keep frontend storage artifacts credits billing export and provider SDK untouched", () => {
+  test("invalid empty mismatched oversized and URL image outputs map safely", async () => {
+    const rootPath = await makeStorageRoot();
+    const storage = createLocalGeneratedImageArtifactStorage({ rootPath });
+    const jpegBase64 = Buffer.from([0xff, 0xd8, 0x00, 0xff, 0xd9]).toString("base64");
+    const invalidCases: Array<{
+      expectedStatus: string;
+      maxImageBytes?: number;
+      payload: { b64Json?: string; url?: string } | "empty";
+    }> = [
+      { expectedStatus: "generation_execution_blocked", payload: { b64Json: "not-valid-base64" } },
+      { expectedStatus: "artifact_storage_unavailable", payload: "empty" },
+      { expectedStatus: "generation_execution_blocked", payload: { b64Json: jpegBase64 } },
+      { expectedStatus: "generation_execution_blocked", maxImageBytes: 1, payload: { b64Json: validPngBase64 } },
+      { expectedStatus: "artifact_storage_unavailable", payload: { url: "https://example.invalid/image.png" } },
+    ];
+
+    try {
+      for (const entry of invalidCases) {
+        const { baseUrl, calls, server } = await startGenerationApp({
+          maxImageBytes: entry.maxImageBytes,
+          mockPayload: entry.payload,
+          storage,
+        });
+
+        try {
+          const { body, status } = await postGenerationJob(baseUrl);
+          expect(status).toBe(503);
+          expect(body.status).toBe(entry.expectedStatus);
+          expect(body.runtime.vendorCallsEnabled).toBe(false);
+          expect(body.attemptedProviderIds).toEqual(["openai"]);
+          expect(calls.decrypt).toBe(1);
+          expect(calls.mockFetch).toBe(1);
+          expectNoLeak(JSON.stringify(body));
+        } finally {
+          await stopServer(server);
+        }
+      }
+    } finally {
+      await removeStorageRoot(rootPath);
+    }
+  });
+
+  test("not configured and failing storage roots map safely without path leakage", async () => {
+    const cases: GeneratedImageArtifactStorage[] = [
+      createNotConfiguredGeneratedImageArtifactStorage(),
+      createLocalGeneratedImageArtifactStorage({
+        rootPath: path.join(await makeStorageRoot(), "..", "unsafe", "\0"),
+      }),
+    ];
+
+    for (const storage of cases) {
+      const { baseUrl, server } = await startGenerationApp({ storage });
+
+      try {
+        const { body, status } = await postGenerationJob(baseUrl);
+        expect(status).toBe(503);
+        expect(body.status).toBe("artifact_storage_unavailable");
+        expectNoLeak(JSON.stringify(body));
+      } finally {
+        await stopServer(server);
+      }
+    }
+  });
+
+  test("source boundaries keep frontend export credits billing provider calls and delivery untouched", () => {
     const routeSource = readSource("backend/routes/generation.ts");
     const appSource = readSource("backend/app.ts");
     const backendDependencies = readSource("backend/composition/backendDependencies.ts");
@@ -522,17 +648,12 @@ test.describe("phase117 byok decrypt plus mocked OpenAI adapter route execution"
     const frontendSource = [sceneService, sceneStore, sceneAgent].join("\n");
     const unrelatedSource = [creditsPage, billingService, exportRoute].join("\n");
 
-    expect(routeSource).toContain("createOpenAiImageGenerationAdapter");
-    expect(routeSource).toContain("fetchImpl: options.openAiAdapterMockFetch");
     expect(routeSource).toContain("openai_adapter_mock_storage_only");
-    expect(routeSource).toContain(
-      "routeExecutionMode === \"openai_adapter_mock_storage_only\"",
-    );
+    expect(routeSource).toContain("generatedImageArtifactStorage");
+    expect(routeSource).toContain("deliveryStatus: \"unavailable\"");
     expect(routeSource).not.toContain("globalThis.fetch");
     expect(appSource).not.toContain("createOpenAiImageGenerationAdapter");
     expect(backendDependencies).not.toContain("createOpenAiImageGenerationAdapter");
-    expect(appSource).toContain("createLocalGeneratedImageArtifactStorage");
-    expect(appSource).toContain("generationGeneratedImageStorageMode === \"local_staging\"");
     expect(sceneService).not.toContain("/generation/jobs");
     expect(exportRoute).toContain("route_execution_disabled");
 

@@ -42,9 +42,12 @@ import {
 import {
   getGenerationRuntimeCompositionReadiness,
   parseGenerationByokDecryptForMockExecutionEnabled,
+  parseGenerationGeneratedImageStorageMode,
+  parseGenerationGeneratedImageStorageRoot,
   parseGenerationMockExecutionAdapterSelection,
   parseGenerationOpenAiAdapterFetchMode,
   parseGenerationRuntimeConfig,
+  type BackendGenerationGeneratedImageStorageMode,
   type BackendGenerationRuntimeCompositionReadiness,
   type BackendGenerationRuntimeConfig,
   type BackendGenerationMockExecutionAdapterSelection,
@@ -91,6 +94,10 @@ export interface BackendDependencies {
   generationOpenAiAdapterFetchMode: BackendGenerationOpenAiAdapterFetchMode;
   /** Explicit local/test-only BYOK decrypt approval for mocked adapter execution. */
   generationByokDecryptForMockExecutionEnabled: boolean;
+  /** Explicit local/staging-only generated image storage mode. */
+  generationGeneratedImageStorageMode: BackendGenerationGeneratedImageStorageMode;
+  /** Backend-controlled generated image storage root, when configured. */
+  generationGeneratedImageStorageRoot?: string;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -133,6 +140,10 @@ export const createBackendDependencies = (): BackendDependencies => {
     parseGenerationOpenAiAdapterFetchMode();
   const generationByokDecryptForMockExecutionEnabled =
     parseGenerationByokDecryptForMockExecutionEnabled();
+  const generationGeneratedImageStorageMode =
+    parseGenerationGeneratedImageStorageMode();
+  const generationGeneratedImageStorageRoot =
+    parseGenerationGeneratedImageStorageRoot();
   const providerValidationAdapter =
     byokProviderValidationRuntimeGate.enabled &&
     byokProviderValidationAdapterSelection.adapter === "mock_local"
@@ -204,6 +215,8 @@ export const createBackendDependencies = (): BackendDependencies => {
     renderInputSnapshotStore,
     generationExecutionControlReadiness,
     generationByokDecryptForMockExecutionEnabled,
+    generationGeneratedImageStorageMode,
+    generationGeneratedImageStorageRoot,
     generationMockExecutionAdapterSelection,
     generationOpenAiAdapterFetchMode,
     generationRuntimeConfig,

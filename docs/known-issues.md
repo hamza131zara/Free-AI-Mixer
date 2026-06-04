@@ -2945,3 +2945,10 @@ Still deferred:
   - The OpenAI image adapter is called only with injected mocked fetch; `globalThis.fetch` remains forbidden for this route mode.
   - Generated-image storage is not injected, so mocked provider output maps to `artifact_storage_unavailable` instead of generated success.
   - No real provider call, artifact creation, public/signed URL delivery, frontend generation path, credits/billing mutation, or export behavior is enabled.
+- Phase 120 adds OpenAI mock adapter local generated-image storage routing:
+  - `FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE=openai_adapter_mock_storage_only` is local/staging mock-only.
+  - Storage is injected only when local/staging storage mode and a backend-controlled storage root are explicitly configured.
+  - Mocked OpenAI output can be verified and stored locally, but response metadata remains non-deliverable with `deliveryStatus: unavailable`.
+  - Local storage roots and internal storage refs remain backend-only and must not be exposed in responses, logs, frontend state, screenshots, or browser-visible output.
+  - Manual smoke should clean up the configured local storage root.
+  - Real provider generation, frontend generation, public/signed/download URL delivery, export integration, fake user-facing generated success/progress/artifacts, and credits/billing mutation remain blocked.

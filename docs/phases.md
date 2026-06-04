@@ -13722,6 +13722,37 @@ Safety boundaries:
 - no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
 
+## Phase 120 - OpenAI Mock Adapter Generated-Image Local Storage Route Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only `openai_adapter_mock_storage_only` route mode handling for `/generation/jobs`
+- explicit local/staging generated-image storage parsing for `FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_MODE=local_staging`
+- backend-controlled storage root parsing for `FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_ROOT`
+- route execution path that runs all safe request/auth/workspace/owner-admin/gate/control/active validated key preconditions before vault readiness, BYOK decrypt, mocked adapter execution, image verification, or local storage write
+- OpenAI image adapter execution only with injected mocked `fetchImpl`
+- generated-image storage injection only in the new mock-storage route mode
+- safe metadata-only response with `deliveryStatus: unavailable` and `vendorCallsEnabled: false`
+
+Safety boundaries:
+
+- default `disabled`, `preconditions_only`, `adapter_mock_only`, and `openai_adapter_mock_only` behavior remain unchanged
+- BYOK decrypt is allowed only after all preconditions pass and only under explicit mock-execution gates
+- generated-image storage is local/staging-only and backend-controlled
+- local storage root and internal storage refs must not be exposed in responses, logs, frontend state, docs screenshots, or browser-visible output
+- delivery remains unavailable; no public URL, signed URL, download URL, stream route, or export route reuse was added
+- real provider generation remains blocked
+- frontend generation remains blocked
+- manual smoke should clean up the local storage root after verification
+- no real provider API call was added
+- no frontend files changed
+- no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake user-facing success, fake progress, fake downloadable artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+
 ## Phase 108 - Generation Route Preconditions-Only Gate Boundary Pack
 
 Status:

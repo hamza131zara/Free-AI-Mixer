@@ -1198,3 +1198,13 @@ Status:
 - After preconditions pass, the route may require vault readiness, decrypt the stored OpenAI BYOK key, and call `createOpenAiImageGenerationAdapter` only with an injected mocked `fetchImpl`.
 - No generated-image storage is injected, so mocked OpenAI 2xx output maps to `artifact_storage_unavailable` and remains a rejected/non-success response with `vendorCallsEnabled: false`.
 - Real OpenAI calls, `globalThis.fetch`, generated-image storage, artifact creation, frontend changes, public/signed URL delivery, fake generated success/progress/artifacts, credits/billing mutation, and export route behavior remain blocked.
+
+## Phase 120 status
+
+- Phase 120: OpenAI mock adapter generated-image local storage route boundary pack.
+- Scope: add `openai_adapter_mock_storage_only` handling for `/generation/jobs` behind explicit mock fetch, BYOK decrypt, preflight-control, and local/staging generated-image storage gates.
+- The route still runs all request/auth/workspace/owner-admin/gate/control/active-key preconditions before vault readiness, BYOK decrypt, mocked adapter execution, image verification, or local storage write.
+- Valid mocked OpenAI output can be verified and stored locally through a backend-controlled root, then returned as safe metadata only with `deliveryStatus: unavailable` and `vendorCallsEnabled: false`.
+- Delivery remains unavailable: no public URL, signed URL, download URL, stream route, frontend generation path, or export integration was added.
+- Real provider generation remains blocked; local storage roots and internal refs must remain backend-only and should be cleaned up after manual smoke.
+- No real provider call, frontend change, fake user-facing success/progress/downloadable artifact, credits/billing mutation, export route behavior, or public launch behavior is included.

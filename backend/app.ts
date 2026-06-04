@@ -20,6 +20,7 @@ import { createMonitoringRouter } from "./routes/monitoring";
 import { createExportRouter } from "./routes/exports";
 import { createBackendDependencies } from "./composition/backendDependencies";
 import type { BackendDatabaseRepositories } from "./composition/repositoryComposition";
+import { createLocalGeneratedImageArtifactStorage } from "./generation/generatedImageArtifactStorage";
 import { createRenderWorkerLifecycle } from "./workers/renderWorkerLifecycle";
 import { createLocalDevArtifactAccessProvider } from "./artifacts/localDevArtifactAccessProvider";
 import { readSupabaseConfigFromEnv } from "./config/supabaseConfig";
@@ -99,6 +100,13 @@ export const createApp = (): Express => {
     repositories
       ? createRepositoryBackedRequesterContextResolver({
           repositories,
+        })
+      : undefined;
+  const generatedImageArtifactStorage =
+    backendDeps.generationGeneratedImageStorageMode === "local_staging" &&
+    backendDeps.generationGeneratedImageStorageRoot
+      ? createLocalGeneratedImageArtifactStorage({
+          rootPath: backendDeps.generationGeneratedImageStorageRoot,
         })
       : undefined;
   const accountBootstrapDependencies =
@@ -234,6 +242,11 @@ export const createApp = (): Express => {
         ? {
             openAiAdapterMockFetch: createMockOpenAiImageGenerationFetch(),
             providerSecretVault: backendDeps.providerSecretVault,
+          }
+        : {}),
+      ...(generatedImageArtifactStorage
+        ? {
+            generatedImageArtifactStorage,
           }
         : {}),
       generationRuntimeConfig: backendDeps.generationRuntimeConfig,

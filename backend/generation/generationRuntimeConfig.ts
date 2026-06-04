@@ -9,6 +9,7 @@ export type BackendGenerationRouteExecutionMode =
   | "preconditions_only"
   | "adapter_mock_only"
   | "openai_adapter_mock_only"
+  | "openai_adapter_mock_storage_only"
   | "real_provider_local_only";
 
 export type BackendGenerationMockExecutionAdapterSelection =
@@ -18,6 +19,10 @@ export type BackendGenerationMockExecutionAdapterSelection =
 export type BackendGenerationOpenAiAdapterFetchMode =
   | "not_configured"
   | "mock_only";
+
+export type BackendGenerationGeneratedImageStorageMode =
+  | "not_configured"
+  | "local_staging";
 
 export interface BackendGenerationRuntimeConfig {
   kind: "generation_runtime_config";
@@ -49,6 +54,10 @@ export const generationOpenAiAdapterFetchModeEnvName =
   "FREE_AI_MIXER_GENERATION_OPENAI_ADAPTER_FETCH_MODE";
 export const generationByokDecryptForMockExecutionEnvName =
   "FREE_AI_MIXER_GENERATION_BYOK_DECRYPT_FOR_MOCK_EXECUTION";
+export const generationGeneratedImageStorageModeEnvName =
+  "FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_MODE";
+export const generationGeneratedImageStorageRootEnvName =
+  "FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_ROOT";
 
 export const parseGenerationRuntimeConfig = (
   env: BackendGenerationRuntimeEnv = process.env,
@@ -72,6 +81,7 @@ export const parseGenerationRouteExecutionMode = (
     value === "preconditions_only" ||
     value === "adapter_mock_only" ||
     value === "openai_adapter_mock_only" ||
+    value === "openai_adapter_mock_storage_only" ||
     value === "real_provider_local_only"
   ) {
     return value;
@@ -97,6 +107,21 @@ export const parseGenerationOpenAiAdapterFetchMode = (
 export const parseGenerationByokDecryptForMockExecutionEnabled = (
   env: BackendGenerationRuntimeEnv = process.env,
 ): boolean => env[generationByokDecryptForMockExecutionEnvName] === "1";
+
+export const parseGenerationGeneratedImageStorageMode = (
+  env: BackendGenerationRuntimeEnv = process.env,
+): BackendGenerationGeneratedImageStorageMode =>
+  env[generationGeneratedImageStorageModeEnvName] === "local_staging"
+    ? "local_staging"
+    : "not_configured";
+
+export const parseGenerationGeneratedImageStorageRoot = (
+  env: BackendGenerationRuntimeEnv = process.env,
+): string | undefined => {
+  const value = env[generationGeneratedImageStorageRootEnvName]?.trim();
+
+  return value ? value : undefined;
+};
 
 export const getGenerationRuntimeCompositionReadiness = (
   config: BackendGenerationRuntimeConfig,

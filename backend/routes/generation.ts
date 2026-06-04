@@ -38,6 +38,7 @@ import {
   parseGenerationJobRequest,
 } from "../generation/generationRuntimeOrchestrator";
 import type { BackendGenerationProviderAdapter } from "../generation/generationProviderAdapter";
+import type { GeneratedImageArtifactStorage } from "../generation/generatedImageArtifactStorage";
 import { createOpenAiImageGenerationAdapter } from "../generation/openAiImageGenerationAdapter";
 import {
   defaultGenerationRetryPolicy,
@@ -66,6 +67,8 @@ export interface CreateGenerationRouterOptions {
   generationOpenAiAdapterFetchMode?: BackendGenerationOpenAiAdapterFetchMode;
   generationByokDecryptForMockExecutionEnabled?: boolean;
   openAiAdapterMockFetch?: typeof fetch;
+  openAiAdapterMaxImageBytes?: number;
+  generatedImageArtifactStorage?: GeneratedImageArtifactStorage;
   generationRouteExecutionMode?: BackendGenerationRouteExecutionMode;
   generatedArtifactStorageReadiness?: {
     getReadiness?: () => "not_configured" | "ready";
@@ -210,6 +213,54 @@ const rejectOpenAiAdapterMockResult = (
   );
 };
 
+const sendOpenAiAdapterMockStorageResult = (
+  response: Response<BackendGenerationJobMutationResponse>,
+  runtimeSummary: ReturnType<typeof createRuntimeSummary>,
+  result: Awaited<
+    ReturnType<
+      NonNullable<BackendGenerationProviderAdapter["generateImageFromStoredProviderKey"]>
+    >
+  >,
+): void => {
+  if (result.kind === "generated") {
+    const { artifact } = result;
+
+    if (!artifact.contentType || !artifact.sizeBytes || !artifact.sha256) {
+      const failure = getGenerationFailureMapping("artifact_storage_unavailable");
+      rejectGenerationJob(
+        response,
+        runtimeSummary,
+        "artifact_storage_unavailable",
+        failure.message,
+        failure.httpStatus,
+        ["openai"],
+      );
+      return;
+    }
+
+    response.status(200).json({
+      kind: "generation_job_metadata_ready",
+      status: "generated_metadata_ready",
+      message:
+        "Mock OpenAI adapter output was verified and stored locally for backend smoke only; delivery remains unavailable.",
+      artifact: {
+        artifactId: artifact.artifactId,
+        providerId: artifact.providerId,
+        contentType: artifact.contentType,
+        sizeBytes: artifact.sizeBytes,
+        sha256: artifact.sha256,
+        createdAt: artifact.createdAt,
+        deliveryStatus: "unavailable",
+      },
+      runtime: toRuntimeSnapshot(runtimeSummary),
+      attemptedProviderIds: ["openai"],
+    });
+    return;
+  }
+
+  rejectOpenAiAdapterMockResult(response, runtimeSummary, result);
+};
+
 export const createGenerationRouter = (
   options: CreateGenerationRouterOptions,
 ): Router => {
@@ -288,7 +339,8 @@ export const createGenerationRouter = (
       if (
         routeExecutionMode !== "preconditions_only" &&
         routeExecutionMode !== "adapter_mock_only" &&
-        routeExecutionMode !== "openai_adapter_mock_only"
+        routeExecutionMode !== "openai_adapter_mock_only" &&
+        routeExecutionMode !== "openai_adapter_mock_storage_only"
       ) {
         const requesterContext = getRequesterContextFromRequest(request);
 
@@ -514,7 +566,10 @@ export const createGenerationRouter = (
         return;
       }
 
-      if (routeExecutionMode === "openai_adapter_mock_only") {
+      if (
+        routeExecutionMode === "openai_adapter_mock_only" ||
+        routeExecutionMode === "openai_adapter_mock_storage_only"
+      ) {
         if (
           options.generationOpenAiAdapterFetchMode !== "mock_only" ||
           !options.generationByokDecryptForMockExecutionEnabled ||
@@ -534,8 +589,35 @@ export const createGenerationRouter = (
           return;
         }
 
+        if (
+          routeExecutionMode === "openai_adapter_mock_storage_only" &&
+          !options.generatedImageArtifactStorage
+        ) {
+          const failure = getGenerationFailureMapping("artifact_storage_unavailable");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "artifact_storage_unavailable",
+            failure.message,
+            failure.httpStatus,
+            ["openai"],
+          );
+          return;
+        }
+
         const adapter = createOpenAiImageGenerationAdapter({
           fetchImpl: options.openAiAdapterMockFetch,
+          ...(routeExecutionMode === "openai_adapter_mock_storage_only"
+            ? {
+                generatedImageArtifactStorage:
+                  options.generatedImageArtifactStorage,
+              }
+            : {}),
+          ...(typeof options.openAiAdapterMaxImageBytes === "number"
+            ? {
+                maxImageBytes: options.openAiAdapterMaxImageBytes,
+              }
+            : {}),
           providerKeyRepository: options.providerKeyRepository,
           providerSecretVault: options.providerSecretVault,
         });
@@ -557,6 +639,11 @@ export const createGenerationRouter = (
             failure.message,
             failure.httpStatus,
           );
+          return;
+        }
+
+        if (routeExecutionMode === "openai_adapter_mock_storage_only") {
+          sendOpenAiAdapterMockStorageResult(response, runtimeSummary, adapterResult);
           return;
         }
 
