@@ -12,6 +12,8 @@ export type BackendGenerationFailureCode =
   | "fallback_disabled"
   | "vendor_calls_disabled"
   | "provider_key_not_configured"
+  | "generation_execution_blocked"
+  | "unsupported_generation_request"
   | "invalid_credentials"
   | "provider_unavailable"
   | "rate_limited"
@@ -131,6 +133,22 @@ const generationFailureMappings: Record<
     message:
       "A verified backend-owned provider key is required before runtime execution can begin.",
     httpStatus: 403,
+    retryable: false,
+    allowsFallback: false,
+  },
+  generation_execution_blocked: {
+    code: "generation_execution_blocked",
+    message:
+      "Generation preconditions passed, but provider execution remains disabled.",
+    httpStatus: 503,
+    retryable: false,
+    allowsFallback: false,
+  },
+  unsupported_generation_request: {
+    code: "unsupported_generation_request",
+    message:
+      "Generation request includes fields that are not supported by the current backend boundary.",
+    httpStatus: 400,
     retryable: false,
     allowsFallback: false,
   },

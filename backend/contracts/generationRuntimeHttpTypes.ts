@@ -100,7 +100,19 @@ export type BackendGenerationJobMutationResponse =
         | "auth_not_configured"
         | "auth_provider_unavailable"
         | "unauthenticated"
-        | "generation_runtime_disabled";
+        | "generation_runtime_disabled"
+        | "generation_execution_blocked"
+        | "invalid_prompt"
+        | "invalid_provider"
+        | "unsupported_generation_request"
+        | "vendor_calls_disabled"
+        | "workspace_permission_not_verified"
+        | "workspace_owner_or_admin_required"
+        | "provider_key_not_configured"
+        | "rate_limit_not_configured"
+        | "idempotency_not_configured"
+        | "single_flight_not_configured"
+        | "cost_controls_not_configured";
       message: string;
       runtime: Pick<
         BackendGenerationRuntimeSummary,

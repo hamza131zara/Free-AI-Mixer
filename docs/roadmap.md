@@ -1163,3 +1163,11 @@ Status:
 - Backend dependencies expose generation runtime config/readiness metadata, but `app.ts` keeps production generation route wiring hard-disabled.
 - `/generation/jobs` still returns `generation_runtime_disabled`, `vendorCallsEnabled` remains false, and no injected dependency is called.
 - No real provider call, frontend change, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, export route behavior, or public launch behavior is included.
+
+## Phase 108 status
+
+- Phase 108: generation route preconditions-only gate boundary pack.
+- Scope: add `FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE` with `disabled` default and a `preconditions_only` route mode for local/staging precondition evaluation.
+- In `preconditions_only`, `/generation/jobs` validates the safe image request shape, backend-authenticated workspace context, owner/admin membership, generation gates, fail-closed execution controls, and server-side active validated OpenAI BYOK key readiness.
+- Even when preconditions pass, the route returns `generation_execution_blocked`, keeps `vendorCallsEnabled: false`, and reports no attempted providers.
+- BYOK decrypt, adapter execution, generated-image storage, provider calls, artifact creation, frontend changes, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, and export route behavior remain blocked.

@@ -65,6 +65,7 @@ export type BackendGenerationExecutionPreconditionResult =
         | "workspace_owner_or_admin_required"
         | "provider_key_not_configured"
         | "invalid_prompt"
+        | "unsupported_generation_request"
         | "rate_limit_not_configured"
         | "idempotency_not_configured"
         | "single_flight_not_configured"
@@ -74,10 +75,10 @@ export type BackendGenerationExecutionPreconditionResult =
 
 export type BackendGenerationExecutionControlReadiness = {
   kind: "generation_execution_controls_readiness";
-  costControlsReady: false;
-  idempotencyReady: false;
-  rateLimitReady: false;
-  singleFlightReady: false;
+  costControlsReady: boolean;
+  idempotencyReady: boolean;
+  rateLimitReady: boolean;
+  singleFlightReady: boolean;
 };
 
 export interface BackendGenerationMetadataOnlyArtifactResponse {

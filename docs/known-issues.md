@@ -2920,3 +2920,8 @@ Still deferred:
   - `vendorCallsEnabled` remains false and `attemptedProviderIds` remains empty.
   - No real provider call, frontend change, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, or export route behavior is included.
 
+- Phase 108 adds a generation route preconditions-only mode:
+  - `FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE=preconditions_only` lets `/generation/jobs` evaluate request/auth/workspace/owner-admin/gate/control/active-key readiness.
+  - The default remains `disabled` and preserves the immediate `generation_runtime_disabled` stop.
+  - Preconditions-only mode stops at `generation_execution_blocked` even when all modeled preconditions pass.
+  - BYOK decrypt, adapter execution, generated-image storage, provider calls, artifact creation, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, and export route behavior remain blocked.

@@ -16,9 +16,23 @@ import { getGenerationFailureMapping } from "../generation/generationFailureMapp
 import type {
   BackendGenerationRuntimeCompositionReadiness,
   BackendGenerationRuntimeConfig,
+  BackendGenerationRouteExecutionMode,
+} from "../generation/generationRuntimeConfig";
+import {
+  parseGenerationRouteExecutionMode,
 } from "../generation/generationRuntimeConfig";
 import type {
   BackendGenerationExecutionControlReadiness,
+  BackendGenerationExecutionPreconditionResult,
+} from "../generation/generationRuntimeOrchestrator";
+import {
+  evaluateGenerationControlPreconditions,
+  evaluateGenerationGatePreconditions,
+  evaluateGenerationRequesterPreconditions,
+  evaluateGenerationRolePreconditions,
+  getGenerationExecutionControlReadiness,
+  isActiveValidatedProviderKeyForGeneration,
+  parseGenerationJobRequest,
 } from "../generation/generationRuntimeOrchestrator";
 import type { BackendGenerationProviderAdapter } from "../generation/generationProviderAdapter";
 import {
@@ -40,6 +54,7 @@ export interface CreateGenerationRouterOptions {
     BackendGenerationProviderAdapter,
     "getReadiness" | "providerId"
   >;
+  generationRouteExecutionMode?: BackendGenerationRouteExecutionMode;
   generatedArtifactStorageReadiness?: {
     getReadiness?: () => "not_configured" | "ready";
   };
@@ -72,6 +87,67 @@ const createRuntimeSummary = () => {
     retryPolicy: defaultGenerationRetryPolicy,
     supportedProviders,
   };
+};
+
+const toRuntimeSnapshot = (
+  runtimeSummary: ReturnType<typeof createRuntimeSummary>,
+) => ({
+  executionState: runtimeSummary.executionState,
+  vendorCallsEnabled: runtimeSummary.vendorCallsEnabled,
+  routingPreferences: runtimeSummary.routingPreferences,
+  retryPolicy: runtimeSummary.retryPolicy,
+});
+
+const rejectGenerationJob = (
+  response: Response<BackendGenerationJobMutationResponse>,
+  runtimeSummary: ReturnType<typeof createRuntimeSummary>,
+  status: Extract<
+    BackendGenerationJobMutationResponse,
+    { kind: "generation_job_rejected" }
+  >["status"],
+  message: string,
+  httpStatus: number,
+): void => {
+  response.status(httpStatus).json({
+    kind: "generation_job_rejected",
+    status,
+    message,
+    runtime: toRuntimeSnapshot(runtimeSummary),
+    attemptedProviderIds: [],
+  });
+};
+
+const mapParseErrorToFailureCode = (
+  code: Exclude<
+    ReturnType<typeof parseGenerationJobRequest>,
+    { kind: "valid" }
+  >["code"],
+) => {
+  if (code === "unsupported_field") {
+    return "unsupported_generation_request" as const;
+  }
+
+  if (code === "invalid_provider") {
+    return "provider_not_supported" as const;
+  }
+
+    return "invalid_prompt" as const;
+};
+
+const preconditionCodeToResponseStatus = (
+  code: Exclude<
+    BackendGenerationExecutionPreconditionResult,
+    { kind: "ready" }
+  >["code"],
+): Extract<
+  BackendGenerationJobMutationResponse,
+  { kind: "generation_job_rejected" }
+>["status"] => {
+  if (code === "sign_in_required") {
+    return "unauthenticated";
+  }
+
+  return code;
 };
 
 export const createGenerationRouter = (
@@ -140,65 +216,214 @@ export const createGenerationRouter = (
 
   router.post(
     "/generation/jobs",
-    (request, response: Response<BackendGenerationJobMutationResponse>) => {
-      const requesterContext = getRequesterContextFromRequest(request);
+    async (request, response: Response<BackendGenerationJobMutationResponse>) => {
       const runtimeSummary = createRuntimeSummary();
+      const routeExecutionMode =
+        options.generationRouteExecutionMode ??
+        parseGenerationRouteExecutionMode();
 
-      if (requesterContext.kind === "authenticated") {
-        const failure = getGenerationFailureMapping("generation_runtime_disabled");
-        response.status(failure.httpStatus).json({
-          kind: "generation_job_rejected",
-          status: "generation_runtime_disabled",
-          message: failure.message,
-          runtime: {
-            executionState: runtimeSummary.executionState,
-            vendorCallsEnabled: runtimeSummary.vendorCallsEnabled,
-            routingPreferences: runtimeSummary.routingPreferences,
-            retryPolicy: runtimeSummary.retryPolicy,
-          },
-          attemptedProviderIds: [],
-        });
+      if (routeExecutionMode !== "preconditions_only") {
+        const requesterContext = getRequesterContextFromRequest(request);
+
+        if (requesterContext.kind === "authenticated") {
+          const failure = getGenerationFailureMapping("generation_runtime_disabled");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "generation_runtime_disabled",
+            failure.message,
+            failure.httpStatus,
+          );
+          return;
+        }
+
+        const authUnavailableCode =
+          requesterContext.reason === "auth_not_configured"
+            ? "auth_not_configured"
+            : resolveAuthUnavailableCode(options.runtimeConfig);
+
+        if (
+          requesterContext.reason === "auth_not_configured" ||
+          options.runtimeConfig.kind === "auth_provider_not_configured"
+        ) {
+          const failure = getGenerationFailureMapping(authUnavailableCode);
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            authUnavailableCode,
+            failure.message,
+            failure.httpStatus,
+          );
+          return;
+        }
+
+        const failure = getGenerationFailureMapping("sign_in_required");
+        rejectGenerationJob(
+          response,
+          runtimeSummary,
+          "unauthenticated",
+          failure.message,
+          failure.httpStatus,
+        );
         return;
       }
 
-      const authUnavailableCode =
-        requesterContext.reason === "auth_not_configured"
-          ? "auth_not_configured"
-          : resolveAuthUnavailableCode(options.runtimeConfig);
+      const parsed = parseGenerationJobRequest(request.body);
+
+      if (parsed.kind === "invalid") {
+        const failureCode = mapParseErrorToFailureCode(parsed.code);
+        const failure = getGenerationFailureMapping(failureCode);
+        rejectGenerationJob(
+          response,
+          runtimeSummary,
+          failureCode === "provider_not_supported"
+            ? "invalid_provider"
+            : failureCode,
+          failure.message,
+          failure.httpStatus,
+        );
+        return;
+      }
+
+      const requesterContext = options.routeAccessResolver
+        ? await options.routeAccessResolver.resolve({ headers: request.headers })
+        : getRequesterContextFromRequest(request);
+
+      const authenticatedRequester =
+        requesterContext.kind === "authenticated" ? requesterContext : undefined;
+      const requesterPrecondition =
+        evaluateGenerationRequesterPreconditions(authenticatedRequester);
+
+      if (requesterPrecondition.kind === "blocked") {
+        const status =
+          requesterPrecondition.code === "sign_in_required"
+            ? "unauthenticated"
+            : requesterPrecondition.code;
+        const failure = getGenerationFailureMapping(requesterPrecondition.code);
+        rejectGenerationJob(
+          response,
+          runtimeSummary,
+          status,
+          failure.message,
+          failure.httpStatus,
+        );
+        return;
+      }
+
+      if (!options.workspaceMembershipRepository) {
+        const failure = getGenerationFailureMapping(
+          "workspace_permission_not_verified",
+        );
+        rejectGenerationJob(
+          response,
+          runtimeSummary,
+          "workspace_permission_not_verified",
+          failure.message,
+          failure.httpStatus,
+        );
+        return;
+      }
+
+      const membershipResult =
+        await options.workspaceMembershipRepository["getMembership"]({
+          userId: authenticatedRequester?.userId ?? "",
+          workspaceId: authenticatedRequester?.workspaceId ?? "",
+        });
+
+      const rolePrecondition = evaluateGenerationRolePreconditions(
+        membershipResult.kind === "member" &&
+          (membershipResult.membership.role === "owner" ||
+            membershipResult.membership.role === "admin" ||
+            membershipResult.membership.role === "viewer")
+          ? membershipResult.membership.role
+          : undefined,
+      );
 
       if (
-        requesterContext.reason === "auth_not_configured" ||
-        options.runtimeConfig.kind === "auth_provider_not_configured"
+        membershipResult.kind !== "member" ||
+        membershipResult.membership.status !== "active" ||
+        rolePrecondition.kind === "blocked"
       ) {
-        const failure = getGenerationFailureMapping(authUnavailableCode);
-        response.status(failure.httpStatus).json({
-          kind: "generation_job_rejected",
-          status: authUnavailableCode,
-          message: failure.message,
-          runtime: {
-            executionState: runtimeSummary.executionState,
-            vendorCallsEnabled: runtimeSummary.vendorCallsEnabled,
-            routingPreferences: runtimeSummary.routingPreferences,
-            retryPolicy: runtimeSummary.retryPolicy,
-          },
-          attemptedProviderIds: [],
-        });
+        const failure = getGenerationFailureMapping(
+          rolePrecondition.kind === "blocked"
+            ? rolePrecondition.code
+            : "workspace_permission_not_verified",
+        );
+        rejectGenerationJob(
+          response,
+          runtimeSummary,
+          rolePrecondition.kind === "blocked"
+            ? preconditionCodeToResponseStatus(rolePrecondition.code)
+            : "workspace_permission_not_verified",
+          failure.message,
+          failure.httpStatus,
+        );
         return;
       }
 
-      const failure = getGenerationFailureMapping("sign_in_required");
-      response.status(failure.httpStatus).json({
-        kind: "generation_job_rejected",
-        status: "unauthenticated",
-        message: failure.message,
-        runtime: {
-          executionState: runtimeSummary.executionState,
-          vendorCallsEnabled: runtimeSummary.vendorCallsEnabled,
-          routingPreferences: runtimeSummary.routingPreferences,
-          retryPolicy: runtimeSummary.retryPolicy,
+      const gatePrecondition = evaluateGenerationGatePreconditions(
+        options.generationRuntimeConfig ?? {
+          kind: "generation_runtime_config",
+          allowRealProviderCalls: false,
+          providerAdapter: "not_configured",
+          runtimeEnabled: false,
         },
-        attemptedProviderIds: [],
-      });
+      );
+
+      if (gatePrecondition.kind === "blocked") {
+        const failure = getGenerationFailureMapping(gatePrecondition.code);
+        rejectGenerationJob(
+          response,
+          runtimeSummary,
+          preconditionCodeToResponseStatus(gatePrecondition.code),
+          failure.message,
+          failure.httpStatus,
+        );
+        return;
+      }
+
+      const controlsPrecondition = evaluateGenerationControlPreconditions(
+        options.generationExecutionControlReadiness ??
+          getGenerationExecutionControlReadiness(),
+      );
+
+      if (controlsPrecondition.kind === "blocked") {
+        const failure = getGenerationFailureMapping(controlsPrecondition.code);
+        rejectGenerationJob(
+          response,
+          runtimeSummary,
+          preconditionCodeToResponseStatus(controlsPrecondition.code),
+          failure.message,
+          failure.httpStatus,
+        );
+        return;
+      }
+
+      const activeKey =
+        await options.providerKeyRepository?.[
+          "getActiveValidatedProviderKeyForWorkspaceProvider"
+        ]?.(authenticatedRequester?.workspaceId ?? "", parsed.request.providerId);
+
+      if (!isActiveValidatedProviderKeyForGeneration(activeKey)) {
+        const failure = getGenerationFailureMapping("provider_key_not_configured");
+        rejectGenerationJob(
+          response,
+          runtimeSummary,
+          "provider_key_not_configured",
+          failure.message,
+          failure.httpStatus,
+        );
+        return;
+      }
+
+      const failure = getGenerationFailureMapping("generation_execution_blocked");
+      rejectGenerationJob(
+        response,
+        runtimeSummary,
+        "generation_execution_blocked",
+        failure.message,
+        failure.httpStatus,
+      );
     },
   );
 

@@ -13643,6 +13643,30 @@ Safety boundaries:
 - no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
 
+## Phase 108 - Generation Route Preconditions-Only Gate Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only generation route execution mode gate for `FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE`
+- default `disabled` mode preserves the current immediate `generation_runtime_disabled` stop
+- `preconditions_only` mode validates the safe image request contract, authenticated backend workspace context, owner/admin membership, generation gates, prompt/control readiness, and server-side active validated OpenAI BYOK key readiness
+- future `adapter_mock_only` and `real_provider_local_only` modes are parsed as known values but do not execute provider calls in this phase
+
+Safety boundaries:
+
+- even when preconditions pass, `/generation/jobs` returns `generation_execution_blocked`
+- `vendorCallsEnabled` remains false and `attemptedProviderIds` remains empty
+- BYOK decrypt, adapter readiness/execution, generated image storage, provider calls, and artifact creation are not invoked
+- no real provider API call was added
+- no frontend files changed
+- no public URL, signed URL, generated image stream route, or export route reuse was added
+- no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+
 ## Phase 104 - Generation Route Execution Contract + Preconditions Boundary Pack
 
 Status:
