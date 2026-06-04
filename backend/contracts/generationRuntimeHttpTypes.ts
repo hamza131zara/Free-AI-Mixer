@@ -102,6 +102,7 @@ export type BackendGenerationJobMutationResponse =
         | "unauthenticated"
         | "generation_runtime_disabled"
         | "generation_execution_blocked"
+        | "generation_mock_execution_blocked"
         | "invalid_prompt"
         | "invalid_provider"
         | "unsupported_generation_request"

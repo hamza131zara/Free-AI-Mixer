@@ -13669,6 +13669,31 @@ Safety boundaries:
 - no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
 
+## Phase 114 - Generation Route Adapter Mock-Only Execution Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only `adapter_mock_only` route mode handling for `/generation/jobs`
+- explicit mock selector parsing for `FREE_AI_MIXER_GENERATION_MOCK_EXECUTION_ADAPTER=mock_local`
+- optional injected mock executor that can run only after safe request parsing, backend-authenticated workspace context, owner/admin membership, generation gates, preflight controls, and server-side active validated OpenAI BYOK key readiness
+- blocked mock-only response shape with `generation_mock_execution_blocked`, `vendorCallsEnabled: false`, and `attemptedProviderIds: ["openai"]`
+
+Safety boundaries:
+
+- default `disabled` and `preconditions_only` behavior remain unchanged
+- mock-only execution remains backend plumbing only and does not represent generated success, submitted/running progress, delivery readiness, or artifact readiness
+- BYOK decrypt, OpenAI image adapter execution, generated-image storage, provider calls, and artifact creation are not invoked
+- the app does not route-wire the real OpenAI image adapter, generated-image artifact storage, credits/billing mutation dependencies, or export/artifact delivery dependencies
+- no real provider API call was added
+- no frontend files changed
+- no public URL, signed URL, generated image stream route, or export route reuse was added
+- no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+
 ## Phase 108 - Generation Route Preconditions-Only Gate Boundary Pack
 
 Status:

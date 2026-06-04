@@ -199,6 +199,15 @@ export const createApp = (): Express => {
       runtimeConfig: authRuntimeConfig,
       generationExecutionControlReadiness:
         backendDeps.generationExecutionControlReadiness,
+      generationMockExecutionAdapterSelection:
+        backendDeps.generationMockExecutionAdapterSelection,
+      ...(backendDeps.generationMockExecutionAdapterSelection === "mock_local"
+        ? {
+            generationMockExecutor: async () => ({
+              kind: "mock_execution_blocked" as const,
+            }),
+          }
+        : {}),
       generationRuntimeConfig: backendDeps.generationRuntimeConfig,
       generationRuntimeReadiness: backendDeps.generationRuntimeReadiness,
       ...(routeAccessResolver ? { routeAccessResolver } : {}),

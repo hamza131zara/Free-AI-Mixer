@@ -2931,3 +2931,10 @@ Still deferred:
   - `FREE_AI_MIXER_GENERATION_PREFLIGHT_CONTROLS_READY=1` is a local/staging precondition-smoke readiness switch only.
   - The generation route still does not receive provider secret vault, OpenAI image adapter execution, generated-image storage execution, or artifact delivery dependencies.
   - BYOK decrypt, adapter execution, provider calls, generated artifacts, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, and export route behavior remain blocked.
+
+- Phase 114 adds adapter mock-only route execution as a backend plumbing boundary:
+  - `FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE=adapter_mock_only` is recognized only with `FREE_AI_MIXER_GENERATION_MOCK_EXECUTION_ADAPTER=mock_local`.
+  - The route still requires request/auth/workspace/owner-admin/gate/control/active-key preconditions before the mock executor can run.
+  - The mock executor receives only safe provider/request identity and does not decrypt BYOK keys, call OpenAI, call storage, or create artifacts.
+  - The response remains blocked with `generation_mock_execution_blocked`; this is not generated success, progress, delivery, or artifact readiness.
+  - The app still does not route-wire the real OpenAI image adapter, generated-image storage writer, or generated artifact delivery.

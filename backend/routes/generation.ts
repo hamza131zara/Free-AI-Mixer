@@ -16,9 +16,11 @@ import { getGenerationFailureMapping } from "../generation/generationFailureMapp
 import type {
   BackendGenerationRuntimeCompositionReadiness,
   BackendGenerationRuntimeConfig,
+  BackendGenerationMockExecutionAdapterSelection,
   BackendGenerationRouteExecutionMode,
 } from "../generation/generationRuntimeConfig";
 import {
+  parseGenerationMockExecutionAdapterSelection,
   parseGenerationRouteExecutionMode,
 } from "../generation/generationRuntimeConfig";
 import type {
@@ -54,6 +56,11 @@ export interface CreateGenerationRouterOptions {
     BackendGenerationProviderAdapter,
     "getReadiness" | "providerId"
   >;
+  generationMockExecutionAdapterSelection?: BackendGenerationMockExecutionAdapterSelection;
+  generationMockExecutor?: (input: {
+    providerId: "openai";
+    requestId: string;
+  }) => Promise<{ kind: "mock_execution_blocked" }>;
   generationRouteExecutionMode?: BackendGenerationRouteExecutionMode;
   generatedArtifactStorageReadiness?: {
     getReadiness?: () => "not_configured" | "ready";
@@ -107,13 +114,17 @@ const rejectGenerationJob = (
   >["status"],
   message: string,
   httpStatus: number,
+  attemptedProviderIds: Extract<
+    BackendGenerationJobMutationResponse,
+    { kind: "generation_job_rejected" }
+  >["attemptedProviderIds"] = [],
 ): void => {
   response.status(httpStatus).json({
     kind: "generation_job_rejected",
     status,
     message,
     runtime: toRuntimeSnapshot(runtimeSummary),
-    attemptedProviderIds: [],
+    attemptedProviderIds,
   });
 };
 
@@ -221,8 +232,14 @@ export const createGenerationRouter = (
       const routeExecutionMode =
         options.generationRouteExecutionMode ??
         parseGenerationRouteExecutionMode();
+      const mockExecutionAdapterSelection =
+        options.generationMockExecutionAdapterSelection ??
+        parseGenerationMockExecutionAdapterSelection();
 
-      if (routeExecutionMode !== "preconditions_only") {
+      if (
+        routeExecutionMode !== "preconditions_only" &&
+        routeExecutionMode !== "adapter_mock_only"
+      ) {
         const requesterContext = getRequesterContextFromRequest(request);
 
         if (requesterContext.kind === "authenticated") {
@@ -412,6 +429,37 @@ export const createGenerationRouter = (
           "provider_key_not_configured",
           failure.message,
           failure.httpStatus,
+        );
+        return;
+      }
+
+      if (routeExecutionMode === "adapter_mock_only") {
+        if (
+          mockExecutionAdapterSelection !== "mock_local" ||
+          !options.generationMockExecutor
+        ) {
+          const failure = getGenerationFailureMapping("generation_execution_blocked");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "generation_execution_blocked",
+            failure.message,
+            failure.httpStatus,
+          );
+          return;
+        }
+
+        await options.generationMockExecutor({
+          providerId: parsed.request.providerId,
+          requestId: parsed.request.requestId,
+        });
+        rejectGenerationJob(
+          response,
+          runtimeSummary,
+          "generation_mock_execution_blocked",
+          "Mock generation execution completed for backend plumbing only; real provider execution remains disabled.",
+          503,
+          ["openai"],
         );
         return;
       }

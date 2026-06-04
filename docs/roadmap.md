@@ -1180,3 +1180,12 @@ Status:
 - The app still does not pass provider secret vault, OpenAI image adapter, generated-image storage, or any executable provider path into generation routing.
 - `/generation/jobs` can now evaluate full preconditions in `preconditions_only`, but still returns `generation_execution_blocked` when all modeled checks pass.
 - BYOK decrypt, adapter execution, generated-image storage, provider calls, artifact creation, frontend changes, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, and export route behavior remain blocked.
+
+## Phase 114 status
+
+- Phase 114: generation route adapter mock-only execution boundary pack.
+- Scope: add `adapter_mock_only` handling for `/generation/jobs` behind the explicit `FREE_AI_MIXER_GENERATION_MOCK_EXECUTION_ADAPTER=mock_local` selector.
+- The route still runs the Phase 112 preconditions first: safe request shape, backend-authenticated workspace context, owner/admin membership, generation gates, preflight controls, and server-side active validated OpenAI BYOK key readiness.
+- Only an injected deterministic mock executor can run, and only after all preconditions pass. The response remains a rejection with `generation_mock_execution_blocked`, `vendorCallsEnabled: false`, and `attemptedProviderIds: ["openai"]`.
+- The app does not route-wire the real OpenAI image adapter, generated-image storage, or provider secret vault into generation execution.
+- BYOK decrypt, real adapter execution, generated-image storage, provider calls, artifact creation, frontend changes, public/signed URL delivery, fake generated success/progress/artifacts, credits/billing mutation, and export route behavior remain blocked.

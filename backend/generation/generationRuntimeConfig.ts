@@ -10,6 +10,10 @@ export type BackendGenerationRouteExecutionMode =
   | "adapter_mock_only"
   | "real_provider_local_only";
 
+export type BackendGenerationMockExecutionAdapterSelection =
+  | "not_configured"
+  | "mock_local";
+
 export interface BackendGenerationRuntimeConfig {
   kind: "generation_runtime_config";
   runtimeEnabled: boolean;
@@ -34,6 +38,8 @@ export type BackendGenerationRuntimeEnv = Record<string, string | undefined>;
 
 export const generationRouteExecutionModeEnvName =
   "FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE";
+export const generationMockExecutionAdapterEnvName =
+  "FREE_AI_MIXER_GENERATION_MOCK_EXECUTION_ADAPTER";
 
 export const parseGenerationRuntimeConfig = (
   env: BackendGenerationRuntimeEnv = process.env,
@@ -63,6 +69,13 @@ export const parseGenerationRouteExecutionMode = (
 
   return "disabled";
 };
+
+export const parseGenerationMockExecutionAdapterSelection = (
+  env: BackendGenerationRuntimeEnv = process.env,
+): BackendGenerationMockExecutionAdapterSelection =>
+  env[generationMockExecutionAdapterEnvName] === "mock_local"
+    ? "mock_local"
+    : "not_configured";
 
 export const getGenerationRuntimeCompositionReadiness = (
   config: BackendGenerationRuntimeConfig,

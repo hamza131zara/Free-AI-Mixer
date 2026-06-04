@@ -41,9 +41,11 @@ import {
 } from "../renderer/renderInputSnapshotStore";
 import {
   getGenerationRuntimeCompositionReadiness,
+  parseGenerationMockExecutionAdapterSelection,
   parseGenerationRuntimeConfig,
   type BackendGenerationRuntimeCompositionReadiness,
   type BackendGenerationRuntimeConfig,
+  type BackendGenerationMockExecutionAdapterSelection,
 } from "../generation/generationRuntimeConfig";
 import {
   parseGenerationExecutionControlReadiness,
@@ -80,6 +82,8 @@ export interface BackendDependencies {
   generationRuntimeReadiness: BackendGenerationRuntimeCompositionReadiness;
   /** Fail-closed generation preflight control readiness. */
   generationExecutionControlReadiness: BackendGenerationExecutionControlReadiness;
+  /** Explicit local/test-only generation mock execution adapter selection. */
+  generationMockExecutionAdapterSelection: BackendGenerationMockExecutionAdapterSelection;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -116,6 +120,8 @@ export const createBackendDependencies = (): BackendDependencies => {
     getGenerationRuntimeCompositionReadiness(generationRuntimeConfig);
   const generationExecutionControlReadiness =
     parseGenerationExecutionControlReadiness();
+  const generationMockExecutionAdapterSelection =
+    parseGenerationMockExecutionAdapterSelection();
   const providerValidationAdapter =
     byokProviderValidationRuntimeGate.enabled &&
     byokProviderValidationAdapterSelection.adapter === "mock_local"
@@ -186,6 +192,7 @@ export const createBackendDependencies = (): BackendDependencies => {
     byokProviderValidationRuntimeGate,
     renderInputSnapshotStore,
     generationExecutionControlReadiness,
+    generationMockExecutionAdapterSelection,
     generationRuntimeConfig,
     generationRuntimeReadiness,
   };
