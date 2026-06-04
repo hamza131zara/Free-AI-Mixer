@@ -2901,3 +2901,10 @@ Still deferred:
   - Generated image delivery remains unavailable.
   - No public URL, signed URL, stream route, frontend bytes/base64, fake progress, credits/billing mutation, export route behavior, or public launch behavior is included.
 
+- Phase 102 adds generation runtime composition readiness metadata only:
+  - Generation runtime env gates are parsed, but route execution remains disabled.
+  - Even when all future generation gates are present, `vendorCallsEnabled` remains false.
+  - The OpenAI image adapter and generated image storage are not route-callable.
+  - `/generation/jobs` remains blocked with `generation_runtime_disabled`.
+  - No real provider call, frontend change, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, or export route behavior is included.
+

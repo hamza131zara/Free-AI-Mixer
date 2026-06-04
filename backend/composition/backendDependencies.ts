@@ -39,6 +39,12 @@ import {
   createInMemoryRenderInputSnapshotStore,
   type RenderInputSnapshotStore,
 } from "../renderer/renderInputSnapshotStore";
+import {
+  getGenerationRuntimeCompositionReadiness,
+  parseGenerationRuntimeConfig,
+  type BackendGenerationRuntimeCompositionReadiness,
+  type BackendGenerationRuntimeConfig,
+} from "../generation/generationRuntimeConfig";
 
 export interface BackendDependencies {
   registry: ExportJobRegistry;
@@ -64,6 +70,10 @@ export interface BackendDependencies {
   byokProviderValidationRuntimeGate: ByokProviderValidationRuntimeGate;
   /** Internal render snapshot store (process-memory only) */
   renderInputSnapshotStore: RenderInputSnapshotStore;
+  /** Parsed generation runtime gates. Route execution remains disabled. */
+  generationRuntimeConfig: BackendGenerationRuntimeConfig;
+  /** Fail-closed generation composition readiness metadata only. */
+  generationRuntimeReadiness: BackendGenerationRuntimeCompositionReadiness;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -95,6 +105,9 @@ export const createBackendDependencies = (): BackendDependencies => {
     parseByokProviderValidationRuntimeGate();
   const byokProviderValidationAdapterSelection =
     parseByokProviderValidationAdapterSelection();
+  const generationRuntimeConfig = parseGenerationRuntimeConfig();
+  const generationRuntimeReadiness =
+    getGenerationRuntimeCompositionReadiness(generationRuntimeConfig);
   const providerValidationAdapter =
     byokProviderValidationRuntimeGate.enabled &&
     byokProviderValidationAdapterSelection.adapter === "mock_local"
@@ -164,6 +177,8 @@ export const createBackendDependencies = (): BackendDependencies => {
     byokProviderValidationAdapterSelection,
     byokProviderValidationRuntimeGate,
     renderInputSnapshotStore,
+    generationRuntimeConfig,
+    generationRuntimeReadiness,
   };
 };
 

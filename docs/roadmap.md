@@ -1139,3 +1139,11 @@ Status:
 - Provider URL output is rejected and not fetched.
 - `/generation/jobs` remains disabled, `vendorCallsEnabled` remains false, and the adapter is not composed into backend dependencies.
 - No real provider call, frontend change, public/signed URL delivery, generated-image stream route, fake progress, credits/billing mutation, export route behavior, or public launch behavior is included.
+
+## Phase 102 status
+
+- Phase 102: generation runtime composition readiness boundary pack.
+- Scope: parse future generation runtime gates and expose fail-closed backend dependency readiness metadata.
+- The readiness boundary can recognize `openai_image_minimal` only as metadata; it does not route-wire the adapter or storage.
+- `/generation/jobs` remains disabled and `vendorCallsEnabled` remains false in all gate combinations.
+- No real provider call, frontend change, generated delivery route, fake success/progress/artifact, credits/billing mutation, export route behavior, or public launch behavior is included.

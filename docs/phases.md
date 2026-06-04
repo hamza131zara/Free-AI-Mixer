@@ -13619,3 +13619,26 @@ Safety boundaries:
 - no public URL, signed URL, generated image stream route, or export route reuse was added
 - no local path, internal storage ref, provider URL, base64 image, provider body, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+
+## Phase 102 - Generation Runtime Composition Readiness Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only generation runtime config parser for `FREE_AI_MIXER_GENERATION_RUNTIME_ENABLED`, `FREE_AI_MIXER_GENERATION_PROVIDER_ADAPTER`, and `FREE_AI_MIXER_GENERATION_ALLOW_REAL_PROVIDER_CALLS`
+- fail-closed backend dependency readiness metadata for future generation composition
+- readiness-only recognition of `openai_image_minimal` when all future gates are present
+
+Safety boundaries:
+
+- `/generation/jobs` remains disabled and returns `generation_runtime_disabled`
+- `vendorCallsEnabled` remains false in default, partial-gate, and all-gate configurations
+- OpenAI image generation adapter and generated image artifact storage are not route-callable
+- no real provider API call was added
+- no frontend files changed
+- no public URL, signed URL, generated image stream route, or export route reuse was added
+- no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
