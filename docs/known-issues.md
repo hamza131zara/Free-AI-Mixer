@@ -2938,3 +2938,10 @@ Still deferred:
   - The mock executor receives only safe provider/request identity and does not decrypt BYOK keys, call OpenAI, call storage, or create artifacts.
   - The response remains blocked with `generation_mock_execution_blocked`; this is not generated success, progress, delivery, or artifact readiness.
   - The app still does not route-wire the real OpenAI image adapter, generated-image storage writer, or generated artifact delivery.
+
+- Phase 117 adds BYOK decrypt plus mocked OpenAI adapter route execution:
+  - `FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE=openai_adapter_mock_only` is recognized only with explicit mock fetch and decrypt approval gates.
+  - The route still requires all generation preconditions before vault readiness, BYOK decrypt, or adapter execution can occur.
+  - The OpenAI image adapter is called only with injected mocked fetch; `globalThis.fetch` remains forbidden for this route mode.
+  - Generated-image storage is not injected, so mocked provider output maps to `artifact_storage_unavailable` instead of generated success.
+  - No real provider call, artifact creation, public/signed URL delivery, frontend generation path, credits/billing mutation, or export behavior is enabled.

@@ -298,7 +298,7 @@ test.describe("phase111 generation preconditions app dependency wiring", () => {
     expect(generationRouterOptions).toContain("routeAccessResolver");
     expect(generationRouterOptions).toContain("providerKeyRepository");
     expect(generationRouterOptions).toContain("workspaceMembershipRepository");
-    expect(generationRouterOptions).not.toContain("providerSecretVault");
+    expect(generationRouterOptions).toContain("providerSecretVault");
     expect(generationRouterOptions).not.toContain("generationProviderAdapter");
     expect(generationRouterOptions).not.toContain("generatedArtifactStorage");
     expect(generationRouterOptions).not.toContain("generatedArtifactStorageReadiness");
@@ -466,11 +466,8 @@ test.describe("phase111 generation preconditions app dependency wiring", () => {
     const unrelatedSource = [creditsPage, billingService, exportRoute].join("\n");
     const generationRouterOptions = getGenerationRouterOptionsSource();
 
-    expect(routeSource).not.toContain(".decryptProviderKey(");
-    expect(routeSource).not.toContain("generateImageFromStoredProviderKey(");
     expect(routeSource).not.toContain(".store(");
-    expect(routeSource).not.toContain("createOpenAiImageGenerationAdapter");
-    expect(generationRouterOptions).not.toContain("providerSecretVault");
+    expect(generationRouterOptions).toContain("providerSecretVault");
     expect(generationRouterOptions).not.toContain("generationProviderAdapter");
     expect(generationRouterOptions).not.toContain("generatedArtifactStorage");
     expect(appSource).not.toContain("createOpenAiImageGenerationAdapter");

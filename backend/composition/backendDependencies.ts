@@ -41,11 +41,14 @@ import {
 } from "../renderer/renderInputSnapshotStore";
 import {
   getGenerationRuntimeCompositionReadiness,
+  parseGenerationByokDecryptForMockExecutionEnabled,
   parseGenerationMockExecutionAdapterSelection,
+  parseGenerationOpenAiAdapterFetchMode,
   parseGenerationRuntimeConfig,
   type BackendGenerationRuntimeCompositionReadiness,
   type BackendGenerationRuntimeConfig,
   type BackendGenerationMockExecutionAdapterSelection,
+  type BackendGenerationOpenAiAdapterFetchMode,
 } from "../generation/generationRuntimeConfig";
 import {
   parseGenerationExecutionControlReadiness,
@@ -84,6 +87,10 @@ export interface BackendDependencies {
   generationExecutionControlReadiness: BackendGenerationExecutionControlReadiness;
   /** Explicit local/test-only generation mock execution adapter selection. */
   generationMockExecutionAdapterSelection: BackendGenerationMockExecutionAdapterSelection;
+  /** Explicit local/test-only OpenAI adapter fetch mode. */
+  generationOpenAiAdapterFetchMode: BackendGenerationOpenAiAdapterFetchMode;
+  /** Explicit local/test-only BYOK decrypt approval for mocked adapter execution. */
+  generationByokDecryptForMockExecutionEnabled: boolean;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -122,6 +129,10 @@ export const createBackendDependencies = (): BackendDependencies => {
     parseGenerationExecutionControlReadiness();
   const generationMockExecutionAdapterSelection =
     parseGenerationMockExecutionAdapterSelection();
+  const generationOpenAiAdapterFetchMode =
+    parseGenerationOpenAiAdapterFetchMode();
+  const generationByokDecryptForMockExecutionEnabled =
+    parseGenerationByokDecryptForMockExecutionEnabled();
   const providerValidationAdapter =
     byokProviderValidationRuntimeGate.enabled &&
     byokProviderValidationAdapterSelection.adapter === "mock_local"
@@ -192,7 +203,9 @@ export const createBackendDependencies = (): BackendDependencies => {
     byokProviderValidationRuntimeGate,
     renderInputSnapshotStore,
     generationExecutionControlReadiness,
+    generationByokDecryptForMockExecutionEnabled,
     generationMockExecutionAdapterSelection,
+    generationOpenAiAdapterFetchMode,
     generationRuntimeConfig,
     generationRuntimeReadiness,
   };

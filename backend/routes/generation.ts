@@ -17,6 +17,7 @@ import type {
   BackendGenerationRuntimeCompositionReadiness,
   BackendGenerationRuntimeConfig,
   BackendGenerationMockExecutionAdapterSelection,
+  BackendGenerationOpenAiAdapterFetchMode,
   BackendGenerationRouteExecutionMode,
 } from "../generation/generationRuntimeConfig";
 import {
@@ -37,6 +38,7 @@ import {
   parseGenerationJobRequest,
 } from "../generation/generationRuntimeOrchestrator";
 import type { BackendGenerationProviderAdapter } from "../generation/generationProviderAdapter";
+import { createOpenAiImageGenerationAdapter } from "../generation/openAiImageGenerationAdapter";
 import {
   defaultGenerationRetryPolicy,
   defaultGenerationRoutingPreferences,
@@ -61,6 +63,9 @@ export interface CreateGenerationRouterOptions {
     providerId: "openai";
     requestId: string;
   }) => Promise<{ kind: "mock_execution_blocked" }>;
+  generationOpenAiAdapterFetchMode?: BackendGenerationOpenAiAdapterFetchMode;
+  generationByokDecryptForMockExecutionEnabled?: boolean;
+  openAiAdapterMockFetch?: typeof fetch;
   generationRouteExecutionMode?: BackendGenerationRouteExecutionMode;
   generatedArtifactStorageReadiness?: {
     getReadiness?: () => "not_configured" | "ready";
@@ -161,6 +166,50 @@ const preconditionCodeToResponseStatus = (
   return code;
 };
 
+const rejectOpenAiAdapterMockResult = (
+  response: Response<BackendGenerationJobMutationResponse>,
+  runtimeSummary: ReturnType<typeof createRuntimeSummary>,
+  result: Awaited<
+    ReturnType<
+      NonNullable<BackendGenerationProviderAdapter["generateImageFromStoredProviderKey"]>
+    >
+  >,
+): void => {
+  if (result.kind === "artifact_storage_unavailable") {
+    rejectGenerationJob(
+      response,
+      runtimeSummary,
+      "artifact_storage_unavailable",
+      result.message,
+      503,
+      ["openai"],
+    );
+    return;
+  }
+
+  if (result.kind === "vault_decrypt_failed") {
+    rejectGenerationJob(
+      response,
+      runtimeSummary,
+      "vault_decrypt_failed",
+      result.message,
+      503,
+      ["openai"],
+    );
+    return;
+  }
+
+  const failure = getGenerationFailureMapping("generation_execution_blocked");
+  rejectGenerationJob(
+    response,
+    runtimeSummary,
+    "generation_execution_blocked",
+    failure.message,
+    failure.httpStatus,
+    ["openai"],
+  );
+};
+
 export const createGenerationRouter = (
   options: CreateGenerationRouterOptions,
 ): Router => {
@@ -238,7 +287,8 @@ export const createGenerationRouter = (
 
       if (
         routeExecutionMode !== "preconditions_only" &&
-        routeExecutionMode !== "adapter_mock_only"
+        routeExecutionMode !== "adapter_mock_only" &&
+        routeExecutionMode !== "openai_adapter_mock_only"
       ) {
         const requesterContext = getRequesterContextFromRequest(request);
 
@@ -461,6 +511,56 @@ export const createGenerationRouter = (
           503,
           ["openai"],
         );
+        return;
+      }
+
+      if (routeExecutionMode === "openai_adapter_mock_only") {
+        if (
+          options.generationOpenAiAdapterFetchMode !== "mock_only" ||
+          !options.generationByokDecryptForMockExecutionEnabled ||
+          !options.openAiAdapterMockFetch ||
+          !options.providerKeyRepository ||
+          !options.providerSecretVault ||
+          options.providerSecretVault.getVaultReadiness().kind !== "vault_ready"
+        ) {
+          const failure = getGenerationFailureMapping("generation_execution_blocked");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "generation_execution_blocked",
+            failure.message,
+            failure.httpStatus,
+          );
+          return;
+        }
+
+        const adapter = createOpenAiImageGenerationAdapter({
+          fetchImpl: options.openAiAdapterMockFetch,
+          providerKeyRepository: options.providerKeyRepository,
+          providerSecretVault: options.providerSecretVault,
+        });
+        const adapterResult = await adapter.generateImageFromStoredProviderKey?.({
+          generationKind: "image",
+          prompt: parsed.request.prompt,
+          providerId: parsed.request.providerId,
+          providerKeyId: activeKey.providerKeyId,
+          requestId: parsed.request.requestId,
+          workspaceId: authenticatedRequester?.workspaceId ?? "",
+        });
+
+        if (!adapterResult) {
+          const failure = getGenerationFailureMapping("generation_execution_blocked");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "generation_execution_blocked",
+            failure.message,
+            failure.httpStatus,
+          );
+          return;
+        }
+
+        rejectOpenAiAdapterMockResult(response, runtimeSummary, adapterResult);
         return;
       }
 

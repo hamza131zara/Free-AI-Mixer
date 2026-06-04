@@ -29,6 +29,24 @@ import type { WorkspaceMembershipRepository } from "./auth/workspaceMembership";
 const isLocalDevArtifactStreamEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1";
 
+const createMockOpenAiImageGenerationFetch = (): typeof fetch =>
+  (async () =>
+    new Response(
+      JSON.stringify({
+        data: [
+          {
+            b64_json: "iVBORw0KGgo=",
+          },
+        ],
+      }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        status: 200,
+      },
+    )) as typeof fetch;
+
 const createProviderSettingsMembershipRepository = (
   repositories: BackendDatabaseRepositories,
 ): WorkspaceMembershipRepository => ({
@@ -201,11 +219,21 @@ export const createApp = (): Express => {
         backendDeps.generationExecutionControlReadiness,
       generationMockExecutionAdapterSelection:
         backendDeps.generationMockExecutionAdapterSelection,
+      generationByokDecryptForMockExecutionEnabled:
+        backendDeps.generationByokDecryptForMockExecutionEnabled,
       ...(backendDeps.generationMockExecutionAdapterSelection === "mock_local"
         ? {
             generationMockExecutor: async () => ({
               kind: "mock_execution_blocked" as const,
             }),
+          }
+        : {}),
+      generationOpenAiAdapterFetchMode:
+        backendDeps.generationOpenAiAdapterFetchMode,
+      ...(backendDeps.generationOpenAiAdapterFetchMode === "mock_only"
+        ? {
+            openAiAdapterMockFetch: createMockOpenAiImageGenerationFetch(),
+            providerSecretVault: backendDeps.providerSecretVault,
           }
         : {}),
       generationRuntimeConfig: backendDeps.generationRuntimeConfig,

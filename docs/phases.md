@@ -13694,6 +13694,34 @@ Safety boundaries:
 - no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
 
+## Phase 117 - BYOK Decrypt + Mocked OpenAI Adapter Route Execution Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only `openai_adapter_mock_only` route mode handling for `/generation/jobs`
+- explicit mock fetch gate parsing for `FREE_AI_MIXER_GENERATION_OPENAI_ADAPTER_FETCH_MODE=mock_only`
+- explicit BYOK decrypt approval parsing for `FREE_AI_MIXER_GENERATION_BYOK_DECRYPT_FOR_MOCK_EXECUTION=1`
+- route execution path that runs all safe request/auth/workspace/owner-admin/gate/control/active validated key preconditions before vault readiness, BYOK decrypt, or adapter execution
+- OpenAI image adapter execution only with injected mocked `fetchImpl`
+- mocked 2xx OpenAI image output with no generated-image storage maps to `artifact_storage_unavailable`
+
+Safety boundaries:
+
+- default `disabled`, `preconditions_only`, and `adapter_mock_only` behavior remain unchanged
+- BYOK decrypt is allowed only after all preconditions pass and only under the explicit mock-execution decrypt gate
+- `globalThis.fetch` is not used by the route; provider calls remain mocked only
+- generated-image storage is not injected and artifact creation cannot occur
+- the response remains rejected/non-success and does not expose generated metadata
+- no real provider API call was added
+- no frontend files changed
+- no public URL, signed URL, generated image stream route, or export route reuse was added
+- no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+
 ## Phase 108 - Generation Route Preconditions-Only Gate Boundary Pack
 
 Status:

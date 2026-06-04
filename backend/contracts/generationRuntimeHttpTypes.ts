@@ -103,6 +103,8 @@ export type BackendGenerationJobMutationResponse =
         | "generation_runtime_disabled"
         | "generation_execution_blocked"
         | "generation_mock_execution_blocked"
+        | "artifact_storage_unavailable"
+        | "vault_decrypt_failed"
         | "invalid_prompt"
         | "invalid_provider"
         | "unsupported_generation_request"

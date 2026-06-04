@@ -8,11 +8,16 @@ export type BackendGenerationRouteExecutionMode =
   | "disabled"
   | "preconditions_only"
   | "adapter_mock_only"
+  | "openai_adapter_mock_only"
   | "real_provider_local_only";
 
 export type BackendGenerationMockExecutionAdapterSelection =
   | "not_configured"
   | "mock_local";
+
+export type BackendGenerationOpenAiAdapterFetchMode =
+  | "not_configured"
+  | "mock_only";
 
 export interface BackendGenerationRuntimeConfig {
   kind: "generation_runtime_config";
@@ -40,6 +45,10 @@ export const generationRouteExecutionModeEnvName =
   "FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE";
 export const generationMockExecutionAdapterEnvName =
   "FREE_AI_MIXER_GENERATION_MOCK_EXECUTION_ADAPTER";
+export const generationOpenAiAdapterFetchModeEnvName =
+  "FREE_AI_MIXER_GENERATION_OPENAI_ADAPTER_FETCH_MODE";
+export const generationByokDecryptForMockExecutionEnvName =
+  "FREE_AI_MIXER_GENERATION_BYOK_DECRYPT_FOR_MOCK_EXECUTION";
 
 export const parseGenerationRuntimeConfig = (
   env: BackendGenerationRuntimeEnv = process.env,
@@ -62,6 +71,7 @@ export const parseGenerationRouteExecutionMode = (
   if (
     value === "preconditions_only" ||
     value === "adapter_mock_only" ||
+    value === "openai_adapter_mock_only" ||
     value === "real_provider_local_only"
   ) {
     return value;
@@ -76,6 +86,17 @@ export const parseGenerationMockExecutionAdapterSelection = (
   env[generationMockExecutionAdapterEnvName] === "mock_local"
     ? "mock_local"
     : "not_configured";
+
+export const parseGenerationOpenAiAdapterFetchMode = (
+  env: BackendGenerationRuntimeEnv = process.env,
+): BackendGenerationOpenAiAdapterFetchMode =>
+  env[generationOpenAiAdapterFetchModeEnvName] === "mock_only"
+    ? "mock_only"
+    : "not_configured";
+
+export const parseGenerationByokDecryptForMockExecutionEnabled = (
+  env: BackendGenerationRuntimeEnv = process.env,
+): boolean => env[generationByokDecryptForMockExecutionEnvName] === "1";
 
 export const getGenerationRuntimeCompositionReadiness = (
   config: BackendGenerationRuntimeConfig,

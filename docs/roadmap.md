@@ -1189,3 +1189,12 @@ Status:
 - Only an injected deterministic mock executor can run, and only after all preconditions pass. The response remains a rejection with `generation_mock_execution_blocked`, `vendorCallsEnabled: false`, and `attemptedProviderIds: ["openai"]`.
 - The app does not route-wire the real OpenAI image adapter, generated-image storage, or provider secret vault into generation execution.
 - BYOK decrypt, real adapter execution, generated-image storage, provider calls, artifact creation, frontend changes, public/signed URL delivery, fake generated success/progress/artifacts, credits/billing mutation, and export route behavior remain blocked.
+
+## Phase 117 status
+
+- Phase 117: BYOK decrypt plus mocked OpenAI adapter route execution boundary pack.
+- Scope: add `openai_adapter_mock_only` handling for `/generation/jobs` behind `FREE_AI_MIXER_GENERATION_OPENAI_ADAPTER_FETCH_MODE=mock_only` and `FREE_AI_MIXER_GENERATION_BYOK_DECRYPT_FOR_MOCK_EXECUTION=1`.
+- The route still runs all request/auth/workspace/owner-admin/gate/control/active-key preconditions first.
+- After preconditions pass, the route may require vault readiness, decrypt the stored OpenAI BYOK key, and call `createOpenAiImageGenerationAdapter` only with an injected mocked `fetchImpl`.
+- No generated-image storage is injected, so mocked OpenAI 2xx output maps to `artifact_storage_unavailable` and remains a rejected/non-success response with `vendorCallsEnabled: false`.
+- Real OpenAI calls, `globalThis.fetch`, generated-image storage, artifact creation, frontend changes, public/signed URL delivery, fake generated success/progress/artifacts, credits/billing mutation, and export route behavior remain blocked.
