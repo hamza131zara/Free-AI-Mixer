@@ -4,6 +4,32 @@ import type {
   BackendSupportedProviderId,
 } from "./providerSettingsHttpTypes";
 
+export type BackendGenerationJobLifecycleState =
+  | "rejected"
+  | "submitted"
+  | "running"
+  | "generated_metadata_ready"
+  | "artifact_storage_failed"
+  | "delivery_unavailable"
+  | "failed";
+
+export interface BackendGenerationImageJobRequest {
+  generationKind: "image";
+  prompt: string;
+  providerId: "openai";
+  requestId: string;
+}
+
+export interface BackendGenerationMetadataOnlyArtifactResponse {
+  artifactId: string;
+  providerId: BackendSupportedProviderId;
+  contentType: "image/png" | "image/jpeg" | "image/webp";
+  sizeBytes: number;
+  sha256: string;
+  createdAt: string;
+  deliveryStatus: "unavailable";
+}
+
 export interface BackendGenerationRuntimeFallbackPolicy {
   enabled: boolean;
   orderedProviderIds: BackendSupportedProviderId[];

@@ -2908,3 +2908,9 @@ Still deferred:
   - `/generation/jobs` remains blocked with `generation_runtime_disabled`.
   - No real provider call, frontend change, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, or export route behavior is included.
 
+- Phase 104 adds generation route execution precondition contracts only:
+  - Future `/generation/jobs` request shape is image-only and rejects raw keys, frontend workspace IDs, provider key IDs, model overrides, multi-image requests, uploads, masks, streaming, and delivery options.
+  - Future execution requires backend auth, backend-derived workspace, owner/admin authorization, active validated OpenAI BYOK key, prompt validation, and fail-closed rate/idempotency/single-flight/cost controls.
+  - `/generation/jobs` remains disabled and does not call adapters or artifact storage.
+  - No real provider call, frontend change, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, or export route behavior is included.
+

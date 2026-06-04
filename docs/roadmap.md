@@ -1147,3 +1147,11 @@ Status:
 - The readiness boundary can recognize `openai_image_minimal` only as metadata; it does not route-wire the adapter or storage.
 - `/generation/jobs` remains disabled and `vendorCallsEnabled` remains false in all gate combinations.
 - No real provider call, frontend change, generated delivery route, fake success/progress/artifact, credits/billing mutation, export route behavior, or public launch behavior is included.
+
+## Phase 104 status
+
+- Phase 104: generation route execution contract and preconditions boundary pack.
+- Scope: define future image-only `/generation/jobs` request/response contracts, prompt validation, server-side active validated BYOK key lookup, owner/admin preconditions, and fail-closed rate/idempotency/single-flight/cost readiness.
+- The route remains hard-disabled and does not call provider adapters or generated-image artifact storage.
+- Future success is metadata-only with delivery unavailable until a separate delivery phase is approved.
+- No real provider call, frontend change, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, export route behavior, or public launch behavior is included.

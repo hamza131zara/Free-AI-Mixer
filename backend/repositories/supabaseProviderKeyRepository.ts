@@ -496,6 +496,28 @@ export class SupabaseProviderKeyRepository
     return row ? toBackendProviderKeyRecord(row) : undefined;
   }
 
+  async getActiveValidatedProviderKeyForWorkspaceProvider(
+    workspaceId: string,
+    providerId: BackendSupportedProviderId,
+  ): Promise<BackendProviderKeyRecord | undefined> {
+    const row = await getSingleRow(
+      this.client
+        .from("provider_keys")
+        .select(providerKeySelectColumns)
+        .eq("workspace_id", workspaceId)
+        .eq("provider_name", providerId)
+        .eq("status", "active")
+        .eq("verification_status", "validated")
+        .eq("needs_reverification", false)
+        .is("revoked_at", null)
+        .is("disabled_at", null)
+        .is("rotated_at", null)
+        .is("deleted_at", null),
+    );
+
+    return row ? toBackendProviderKeyRecord(row) : undefined;
+  }
+
   async listForWorkspace(
     workspaceId: string,
   ): Promise<BackendProviderKeyRecord[]> {

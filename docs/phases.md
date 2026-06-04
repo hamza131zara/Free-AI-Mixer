@@ -13642,3 +13642,29 @@ Safety boundaries:
 - no public URL, signed URL, generated image stream route, or export route reuse was added
 - no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+
+## Phase 104 - Generation Route Execution Contract + Preconditions Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only future `/generation/jobs` request contract for OpenAI image generation
+- precondition helpers for generation gates, backend-authenticated requester context, backend-derived workspace, owner/admin authorization, active validated BYOK key selection, prompt validation, and execution-control readiness
+- repository contract/helper for server-side active validated provider key lookup by workspace/provider
+- safe lifecycle and metadata-only response contracts for future generated image results with delivery unavailable
+
+Safety boundaries:
+
+- `/generation/jobs` remains disabled and returns `generation_runtime_disabled`
+- route code does not call provider adapters or generated image artifact storage
+- browser request bodies cannot supply raw API keys, workspace IDs, provider key IDs, model overrides, multi-image requests, uploads, masks, edits, streaming, or delivery options
+- prompt and sensitive fields remain redacted by the safe event sanitizer
+- rate limit, idempotency, single-flight, and cost controls remain fail-closed contracts only
+- no real provider API call was added
+- no frontend files changed
+- no public URL, signed URL, generated image stream route, or export route reuse was added
+- no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added

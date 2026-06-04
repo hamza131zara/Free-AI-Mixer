@@ -3,6 +3,8 @@ export type BackendGenerationFailureCode =
   | "auth_provider_unavailable"
   | "sign_in_required"
   | "generation_runtime_disabled"
+  | "workspace_permission_not_verified"
+  | "workspace_owner_or_admin_required"
   | "artifact_storage_unavailable"
   | "generation_failed"
   | "provider_not_supported"
@@ -15,6 +17,10 @@ export type BackendGenerationFailureCode =
   | "rate_limited"
   | "timeout"
   | "invalid_prompt"
+  | "rate_limit_not_configured"
+  | "idempotency_not_configured"
+  | "single_flight_not_configured"
+  | "cost_controls_not_configured"
   | "vault_decrypt_failed";
 
 export interface BackendGenerationFailureMapping {
@@ -57,6 +63,20 @@ const generationFailureMappings: Record<
     message:
       "Backend generation runtime boundaries are present, but live provider execution is disabled by default in this product phase.",
     httpStatus: 503,
+    retryable: false,
+    allowsFallback: false,
+  },
+  workspace_permission_not_verified: {
+    code: "workspace_permission_not_verified",
+    message: "Workspace permission could not be verified for generation.",
+    httpStatus: 503,
+    retryable: false,
+    allowsFallback: false,
+  },
+  workspace_owner_or_admin_required: {
+    code: "workspace_owner_or_admin_required",
+    message: "Workspace owner or admin permission is required for generation.",
+    httpStatus: 403,
     retryable: false,
     allowsFallback: false,
   },
@@ -147,6 +167,34 @@ const generationFailureMappings: Record<
     code: "invalid_prompt",
     message: "Generation prompt is invalid or unsafe.",
     httpStatus: 400,
+    retryable: false,
+    allowsFallback: false,
+  },
+  rate_limit_not_configured: {
+    code: "rate_limit_not_configured",
+    message: "Generation rate limiting is not configured.",
+    httpStatus: 503,
+    retryable: false,
+    allowsFallback: false,
+  },
+  idempotency_not_configured: {
+    code: "idempotency_not_configured",
+    message: "Generation idempotency is not configured.",
+    httpStatus: 503,
+    retryable: false,
+    allowsFallback: false,
+  },
+  single_flight_not_configured: {
+    code: "single_flight_not_configured",
+    message: "Generation single-flight protection is not configured.",
+    httpStatus: 503,
+    retryable: false,
+    allowsFallback: false,
+  },
+  cost_controls_not_configured: {
+    code: "cost_controls_not_configured",
+    message: "Generation cost controls are not configured.",
+    httpStatus: 503,
     retryable: false,
     allowsFallback: false,
   },
