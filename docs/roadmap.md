@@ -1208,3 +1208,13 @@ Status:
 - Delivery remains unavailable: no public URL, signed URL, download URL, stream route, frontend generation path, or export integration was added.
 - Real provider generation remains blocked; local storage roots and internal refs must remain backend-only and should be cleaned up after manual smoke.
 - No real provider call, frontend change, fake user-facing success/progress/downloadable artifact, credits/billing mutation, export route behavior, or public launch behavior is included.
+
+## Phase 123 status
+
+- Phase 123: OpenAI real provider local-only route execution boundary pack.
+- Scope: add `real_provider_local_only` handling for `/generation/jobs` behind explicit runtime, provider-adapter, allow-real-calls, preflight-control, local/staging storage, and real-local smoke approval gates.
+- The route requires local/staging generated-image storage before provider fetch can occur.
+- The OpenAI adapter fetch path is injectable; focused tests mock all provider responses and no real OpenAI smoke is included.
+- Mocked real-local 2xx responses can verify/store image bytes and return safe metadata only with `deliveryStatus: unavailable`; provider failures map to sanitized backend responses.
+- A separate manual real-provider smoke audit is required before any real OpenAI call.
+- Delivery remains unavailable, frontend generation remains blocked, public/signed/download URLs remain blocked, export integration remains blocked, credits/billing remain blocked, and production launch remains blocked.

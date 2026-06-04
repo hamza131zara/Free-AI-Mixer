@@ -67,6 +67,13 @@ export interface BackendGenerationRuntimeSummary {
   >;
 }
 
+export interface BackendGenerationJobRuntimeSnapshot {
+  executionState: BackendGenerationRuntimeSummary["executionState"];
+  vendorCallsEnabled: boolean;
+  routingPreferences: BackendGenerationRuntimeSummary["routingPreferences"];
+  retryPolicy: BackendGenerationRuntimeSummary["retryPolicy"];
+}
+
 export type BackendGenerationRuntimeStatusResponse =
   | {
       kind: "generation_runtime_status";
@@ -105,8 +112,13 @@ export type BackendGenerationJobMutationResponse =
         | "generation_mock_execution_blocked"
         | "artifact_storage_unavailable"
         | "vault_decrypt_failed"
+        | "generation_failed"
+        | "invalid_credentials"
         | "invalid_prompt"
         | "invalid_provider"
+        | "provider_unavailable"
+        | "rate_limited"
+        | "timeout"
         | "unsupported_generation_request"
         | "vendor_calls_disabled"
         | "workspace_permission_not_verified"
@@ -117,10 +129,7 @@ export type BackendGenerationJobMutationResponse =
         | "single_flight_not_configured"
         | "cost_controls_not_configured";
       message: string;
-      runtime: Pick<
-        BackendGenerationRuntimeSummary,
-        "executionState" | "vendorCallsEnabled" | "routingPreferences" | "retryPolicy"
-      >;
+      runtime: BackendGenerationJobRuntimeSnapshot;
       attemptedProviderIds: BackendSupportedProviderId[];
     }
   | {
@@ -128,9 +137,6 @@ export type BackendGenerationJobMutationResponse =
       status: "generated_metadata_ready";
       message: string;
       artifact: BackendGenerationMetadataOnlyArtifactResponse;
-      runtime: Pick<
-        BackendGenerationRuntimeSummary,
-        "executionState" | "vendorCallsEnabled" | "routingPreferences" | "retryPolicy"
-      >;
+      runtime: BackendGenerationJobRuntimeSnapshot;
       attemptedProviderIds: BackendSupportedProviderId[];
     };

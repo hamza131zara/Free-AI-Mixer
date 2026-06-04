@@ -46,6 +46,7 @@ import {
   parseGenerationGeneratedImageStorageRoot,
   parseGenerationMockExecutionAdapterSelection,
   parseGenerationOpenAiAdapterFetchMode,
+  parseGenerationOpenAiImageRealLocalSmokeEnabled,
   parseGenerationRuntimeConfig,
   type BackendGenerationGeneratedImageStorageMode,
   type BackendGenerationRuntimeCompositionReadiness,
@@ -98,6 +99,8 @@ export interface BackendDependencies {
   generationGeneratedImageStorageMode: BackendGenerationGeneratedImageStorageMode;
   /** Backend-controlled generated image storage root, when configured. */
   generationGeneratedImageStorageRoot?: string;
+  /** Explicit local/staging-only approval for one real OpenAI image smoke path. */
+  generationOpenAiImageRealLocalSmokeEnabled: boolean;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -144,6 +147,8 @@ export const createBackendDependencies = (): BackendDependencies => {
     parseGenerationGeneratedImageStorageMode();
   const generationGeneratedImageStorageRoot =
     parseGenerationGeneratedImageStorageRoot();
+  const generationOpenAiImageRealLocalSmokeEnabled =
+    parseGenerationOpenAiImageRealLocalSmokeEnabled();
   const providerValidationAdapter =
     byokProviderValidationRuntimeGate.enabled &&
     byokProviderValidationAdapterSelection.adapter === "mock_local"
@@ -217,6 +222,7 @@ export const createBackendDependencies = (): BackendDependencies => {
     generationByokDecryptForMockExecutionEnabled,
     generationGeneratedImageStorageMode,
     generationGeneratedImageStorageRoot,
+    generationOpenAiImageRealLocalSmokeEnabled,
     generationMockExecutionAdapterSelection,
     generationOpenAiAdapterFetchMode,
     generationRuntimeConfig,

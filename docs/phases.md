@@ -13753,6 +13753,34 @@ Safety boundaries:
 - no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake user-facing success, fake progress, fake downloadable artifact, credits/billing mutation, export route behavior, or public launch behavior was added
 
+## Phase 123 - OpenAI Real Provider Local-Only Route Execution Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only `real_provider_local_only` route mode boundary for `/generation/jobs`
+- explicit real-local smoke approval parsing for `FREE_AI_MIXER_GENERATION_OPENAI_IMAGE_REAL_LOCAL_SMOKE_ENABLED=1`
+- route execution path that requires all safe request/auth/workspace/owner-admin/gate/control/active validated key preconditions before vault readiness, BYOK decrypt, storage verification, or provider fetch
+- local/staging generated-image storage must be configured before any provider fetch can occur
+- OpenAI image adapter fetch is injectable so automated tests can mock provider responses without real OpenAI calls
+- mocked 2xx provider responses can verify/store image bytes and return safe metadata only with `deliveryStatus: unavailable`
+- provider failure statuses map to sanitized backend responses for invalid prompt, invalid credentials, rate limit, timeout, provider unavailable, and storage unavailable outcomes
+
+Safety boundaries:
+
+- default `disabled`, `preconditions_only`, `adapter_mock_only`, `openai_adapter_mock_only`, and `openai_adapter_mock_storage_only` behavior remain unchanged
+- tests mock all provider calls; no real provider smoke is included in this phase
+- a separate manual real-provider smoke audit is required before any real OpenAI call
+- delivery remains unavailable; no public URL, signed URL, download URL, stream route, or export route reuse was added
+- frontend generation remains blocked
+- credits, billing, and export behavior remain blocked
+- production launch remains blocked
+- no provider response body, provider headers, provider request ID, provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, decrypted key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake user-facing success, fake progress, fake downloadable artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+
 ## Phase 108 - Generation Route Preconditions-Only Gate Boundary Pack
 
 Status:

@@ -249,6 +249,13 @@ export const createApp = (): Express => {
             generatedImageArtifactStorage,
           }
         : {}),
+      ...(backendDeps.generationOpenAiImageRealLocalSmokeEnabled
+        ? {
+            openAiRealProviderFetch: globalThis.fetch,
+          }
+        : {}),
+      generationOpenAiImageRealLocalSmokeEnabled:
+        backendDeps.generationOpenAiImageRealLocalSmokeEnabled,
       generationRuntimeConfig: backendDeps.generationRuntimeConfig,
       generationRuntimeReadiness: backendDeps.generationRuntimeReadiness,
       ...(routeAccessResolver ? { routeAccessResolver } : {}),

@@ -2952,3 +2952,10 @@ Still deferred:
   - Local storage roots and internal storage refs remain backend-only and must not be exposed in responses, logs, frontend state, screenshots, or browser-visible output.
   - Manual smoke should clean up the configured local storage root.
   - Real provider generation, frontend generation, public/signed/download URL delivery, export integration, fake user-facing generated success/progress/artifacts, and credits/billing mutation remain blocked.
+- Phase 123 adds OpenAI real-provider local-only route boundary coverage:
+  - `FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE=real_provider_local_only` is recognized only behind explicit real-local gates.
+  - Storage must be configured before provider fetch can occur.
+  - Automated tests mock provider fetches; no real OpenAI smoke is included.
+  - A separate manual real-provider smoke audit is required before any real OpenAI call.
+  - Delivery remains unavailable and response metadata must not include local paths, internal refs, provider response details, prompts, keys, public URLs, signed URLs, or download URLs.
+  - Frontend generation, export integration, credits/billing mutation, fake user-facing success/progress/downloadable artifacts, and production launch remain blocked.

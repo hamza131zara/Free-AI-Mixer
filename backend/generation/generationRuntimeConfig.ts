@@ -58,6 +58,8 @@ export const generationGeneratedImageStorageModeEnvName =
   "FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_MODE";
 export const generationGeneratedImageStorageRootEnvName =
   "FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_ROOT";
+export const generationOpenAiImageRealLocalSmokeEnabledEnvName =
+  "FREE_AI_MIXER_GENERATION_OPENAI_IMAGE_REAL_LOCAL_SMOKE_ENABLED";
 
 export const parseGenerationRuntimeConfig = (
   env: BackendGenerationRuntimeEnv = process.env,
@@ -122,6 +124,10 @@ export const parseGenerationGeneratedImageStorageRoot = (
 
   return value ? value : undefined;
 };
+
+export const parseGenerationOpenAiImageRealLocalSmokeEnabled = (
+  env: BackendGenerationRuntimeEnv = process.env,
+): boolean => env[generationOpenAiImageRealLocalSmokeEnabledEnvName] === "1";
 
 export const getGenerationRuntimeCompositionReadiness = (
   config: BackendGenerationRuntimeConfig,
