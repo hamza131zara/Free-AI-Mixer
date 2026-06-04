@@ -13643,6 +13643,32 @@ Safety boundaries:
 - no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
 
+## Phase 111 - Generation Preconditions App Dependency Wiring Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only app dependency wiring for generation route preconditions
+- `app.ts` passes generation runtime config/readiness, route access resolver, provider-key repository, workspace membership repository, and fail-closed execution-control readiness into `createGenerationRouter`
+- backend dependencies expose `generationExecutionControlReadiness`
+- `FREE_AI_MIXER_GENERATION_PREFLIGHT_CONTROLS_READY=1` can make preflight controls ready for local/staging precondition smoke only
+
+Safety boundaries:
+
+- default execution-control readiness remains fail-closed
+- `/generation/jobs` still stops before BYOK decrypt, adapter execution, storage execution, provider calls, and artifact creation
+- generation router app wiring does not pass provider secret vault, OpenAI image adapter, generated-image artifact storage, credits/billing mutation dependencies, or export/artifact delivery dependencies
+- even when preconditions pass, `/generation/jobs` returns `generation_execution_blocked`
+- `vendorCallsEnabled` remains false and `attemptedProviderIds` remains empty
+- no real provider API call was added
+- no frontend files changed
+- no public URL, signed URL, generated image stream route, or export route reuse was added
+- no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+
 ## Phase 108 - Generation Route Preconditions-Only Gate Boundary Pack
 
 Status:

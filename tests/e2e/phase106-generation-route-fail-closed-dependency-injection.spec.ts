@@ -296,8 +296,12 @@ test.describe("phase106 generation route fail-closed dependency injection", () =
     expect(routeSource).not.toContain(".decryptProviderKey(");
     expect(routeSource).not.toContain(".getActiveValidatedProviderKeyForWorkspaceProvider(");
     expect(routeSource).not.toContain(".getMembership(");
-    expect(appSource).toContain("createGenerationRouter({ runtimeConfig");
-    expect(appSource).not.toContain("generationRuntimeReadiness");
+    expect(appSource).toContain("createGenerationRouter({");
+    expect(appSource).toContain("generationRuntimeReadiness");
+    expect(appSource).toContain("generationExecutionControlReadiness");
+    expect(appSource).toContain("providerKeyRepository");
+    expect(appSource).not.toContain("generationProviderAdapter:");
+    expect(appSource).not.toContain("generatedArtifactStorageReadiness:");
     expect(backendDependencies).toContain("generationRuntimeConfig");
     expect(backendDependencies).toContain("generationRuntimeReadiness");
     expect(sceneService).not.toContain("/generation/jobs");

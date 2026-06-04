@@ -1171,3 +1171,12 @@ Status:
 - In `preconditions_only`, `/generation/jobs` validates the safe image request shape, backend-authenticated workspace context, owner/admin membership, generation gates, fail-closed execution controls, and server-side active validated OpenAI BYOK key readiness.
 - Even when preconditions pass, the route returns `generation_execution_blocked`, keeps `vendorCallsEnabled: false`, and reports no attempted providers.
 - BYOK decrypt, adapter execution, generated-image storage, provider calls, artifact creation, frontend changes, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, and export route behavior remain blocked.
+
+## Phase 111 status
+
+- Phase 111: generation preconditions app dependency wiring pack.
+- Scope: wire app-level generation precondition dependencies into `createGenerationRouter`: runtime config/readiness, route access resolver, provider-key repository, workspace membership repository, and fail-closed execution-control readiness.
+- `FREE_AI_MIXER_GENERATION_PREFLIGHT_CONTROLS_READY=1` can make preflight control readiness test-ready for local/staging precondition smoke only.
+- The app still does not pass provider secret vault, OpenAI image adapter, generated-image storage, or any executable provider path into generation routing.
+- `/generation/jobs` can now evaluate full preconditions in `preconditions_only`, but still returns `generation_execution_blocked` when all modeled checks pass.
+- BYOK decrypt, adapter execution, generated-image storage, provider calls, artifact creation, frontend changes, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, and export route behavior remain blocked.

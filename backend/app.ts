@@ -194,7 +194,23 @@ export const createApp = (): Express => {
         : {}),
     }),
   );
-  app.use(createGenerationRouter({ runtimeConfig: authRuntimeConfig }));
+  app.use(
+    createGenerationRouter({
+      runtimeConfig: authRuntimeConfig,
+      generationExecutionControlReadiness:
+        backendDeps.generationExecutionControlReadiness,
+      generationRuntimeConfig: backendDeps.generationRuntimeConfig,
+      generationRuntimeReadiness: backendDeps.generationRuntimeReadiness,
+      ...(routeAccessResolver ? { routeAccessResolver } : {}),
+      ...(repositories
+        ? {
+            providerKeyRepository: repositories.providerKeyRepository,
+            workspaceMembershipRepository:
+              createProviderSettingsMembershipRepository(repositories),
+          }
+        : {}),
+    }),
+  );
   app.use(
     createProviderSettingsRouter({
       runtimeConfig: authRuntimeConfig,

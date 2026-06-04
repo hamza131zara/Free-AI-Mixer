@@ -81,6 +81,14 @@ export type BackendGenerationExecutionControlReadiness = {
   singleFlightReady: boolean;
 };
 
+export type BackendGenerationExecutionControlReadinessEnv = Record<
+  string,
+  string | undefined
+>;
+
+export const generationExecutionControlReadinessEnvName =
+  "FREE_AI_MIXER_GENERATION_PREFLIGHT_CONTROLS_READY";
+
 export interface BackendGenerationMetadataOnlyArtifactResponse {
   artifactId: string;
   providerId: BackendSupportedProviderId;
@@ -237,6 +245,22 @@ export const getGenerationExecutionControlReadiness =
     rateLimitReady: false,
     singleFlightReady: false,
   });
+
+export const parseGenerationExecutionControlReadiness = (
+  env: BackendGenerationExecutionControlReadinessEnv = process.env,
+): BackendGenerationExecutionControlReadiness => {
+  if (env[generationExecutionControlReadinessEnvName] !== "1") {
+    return getGenerationExecutionControlReadiness();
+  }
+
+  return {
+    kind: "generation_execution_controls_readiness",
+    costControlsReady: true,
+    idempotencyReady: true,
+    rateLimitReady: true,
+    singleFlightReady: true,
+  };
+};
 
 export const evaluateGenerationGatePreconditions = (
   config: BackendGenerationRuntimeConfig,

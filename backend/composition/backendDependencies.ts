@@ -45,6 +45,10 @@ import {
   type BackendGenerationRuntimeCompositionReadiness,
   type BackendGenerationRuntimeConfig,
 } from "../generation/generationRuntimeConfig";
+import {
+  parseGenerationExecutionControlReadiness,
+  type BackendGenerationExecutionControlReadiness,
+} from "../generation/generationRuntimeOrchestrator";
 
 export interface BackendDependencies {
   registry: ExportJobRegistry;
@@ -74,6 +78,8 @@ export interface BackendDependencies {
   generationRuntimeConfig: BackendGenerationRuntimeConfig;
   /** Fail-closed generation composition readiness metadata only. */
   generationRuntimeReadiness: BackendGenerationRuntimeCompositionReadiness;
+  /** Fail-closed generation preflight control readiness. */
+  generationExecutionControlReadiness: BackendGenerationExecutionControlReadiness;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -108,6 +114,8 @@ export const createBackendDependencies = (): BackendDependencies => {
   const generationRuntimeConfig = parseGenerationRuntimeConfig();
   const generationRuntimeReadiness =
     getGenerationRuntimeCompositionReadiness(generationRuntimeConfig);
+  const generationExecutionControlReadiness =
+    parseGenerationExecutionControlReadiness();
   const providerValidationAdapter =
     byokProviderValidationRuntimeGate.enabled &&
     byokProviderValidationAdapterSelection.adapter === "mock_local"
@@ -177,6 +185,7 @@ export const createBackendDependencies = (): BackendDependencies => {
     byokProviderValidationAdapterSelection,
     byokProviderValidationRuntimeGate,
     renderInputSnapshotStore,
+    generationExecutionControlReadiness,
     generationRuntimeConfig,
     generationRuntimeReadiness,
   };

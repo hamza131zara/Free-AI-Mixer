@@ -2925,3 +2925,9 @@ Still deferred:
   - The default remains `disabled` and preserves the immediate `generation_runtime_disabled` stop.
   - Preconditions-only mode stops at `generation_execution_blocked` even when all modeled preconditions pass.
   - BYOK decrypt, adapter execution, generated-image storage, provider calls, artifact creation, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, and export route behavior remain blocked.
+
+- Phase 111 wires generation route precondition dependencies through app composition:
+  - `app.ts` passes safe read/authorization dependencies only: generation runtime config/readiness, route access, provider-key repository, workspace membership repository, and fail-closed execution-control readiness.
+  - `FREE_AI_MIXER_GENERATION_PREFLIGHT_CONTROLS_READY=1` is a local/staging precondition-smoke readiness switch only.
+  - The generation route still does not receive provider secret vault, OpenAI image adapter execution, generated-image storage execution, or artifact delivery dependencies.
+  - BYOK decrypt, adapter execution, provider calls, generated artifacts, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, and export route behavior remain blocked.
