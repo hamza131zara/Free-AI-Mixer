@@ -13668,3 +13668,27 @@ Safety boundaries:
 - no public URL, signed URL, generated image stream route, or export route reuse was added
 - no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+
+## Phase 106 - Generation Route Fail-Closed Dependency Injection Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only optional dependency shape for future generation route execution dependencies
+- `createGenerationRouter` accepts future generation config/readiness, repository, vault, membership, route access, execution-control readiness, adapter-readiness, and generated-image storage handles
+- `app.ts` passes generation runtime config/readiness metadata into the route
+- focused tripwire tests prove injected dependencies are not called while route execution is disabled
+
+Safety boundaries:
+
+- `/generation/jobs` remains disabled and returns `generation_runtime_disabled`
+- `vendorCallsEnabled` remains false and `attemptedProviderIds` remains empty
+- adapter readiness/execution, generated image storage, repository, vault, membership, BYOK decrypt, and active key lookup are not invoked by the route
+- no real provider API call was added
+- no frontend files changed
+- no public URL, signed URL, generated image stream route, or export route reuse was added
+- no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
+- no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added

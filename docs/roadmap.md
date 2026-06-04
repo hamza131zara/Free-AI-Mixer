@@ -1155,3 +1155,11 @@ Status:
 - The route remains hard-disabled and does not call provider adapters or generated-image artifact storage.
 - Future success is metadata-only with delivery unavailable until a separate delivery phase is approved.
 - No real provider call, frontend change, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, export route behavior, or public launch behavior is included.
+
+## Phase 106 status
+
+- Phase 106: generation route fail-closed dependency injection boundary pack.
+- Scope: let `createGenerationRouter` accept optional future generation dependencies while keeping route execution disabled.
+- Backend dependencies expose generation runtime config/readiness metadata, but `app.ts` keeps production generation route wiring hard-disabled.
+- `/generation/jobs` still returns `generation_runtime_disabled`, `vendorCallsEnabled` remains false, and no injected dependency is called.
+- No real provider call, frontend change, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, export route behavior, or public launch behavior is included.

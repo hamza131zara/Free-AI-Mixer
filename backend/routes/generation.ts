@@ -2,13 +2,25 @@ import { Router } from "express";
 import type { Response } from "express";
 import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
 import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProviderRuntimeConfig";
+import type { AsyncBackendRequesterContextResolver } from "../auth/requesterContextResolver";
+import type { WorkspaceMembershipRepository } from "../auth/workspaceMembership";
 import type {
   BackendGenerationCatalogResponse,
   BackendGenerationJobMutationResponse,
   BackendGenerationRuntimeStatusResponse,
 } from "../contracts/generationRuntimeHttpTypes";
+import type { ProviderSecretVault } from "../providers/providerSecretVault";
+import type { BackendProviderKeyRepository } from "../repositories/repositoryContracts";
 import { getProviderCatalog } from "../providers/providerCatalog";
 import { getGenerationFailureMapping } from "../generation/generationFailureMapping";
+import type {
+  BackendGenerationRuntimeCompositionReadiness,
+  BackendGenerationRuntimeConfig,
+} from "../generation/generationRuntimeConfig";
+import type {
+  BackendGenerationExecutionControlReadiness,
+} from "../generation/generationRuntimeOrchestrator";
+import type { BackendGenerationProviderAdapter } from "../generation/generationProviderAdapter";
 import {
   defaultGenerationRetryPolicy,
   defaultGenerationRoutingPreferences,
@@ -17,6 +29,20 @@ import { chooseGenerationProvider } from "../generation/generationRouting";
 
 export interface CreateGenerationRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
+  generationRuntimeConfig?: BackendGenerationRuntimeConfig;
+  generationRuntimeReadiness?: BackendGenerationRuntimeCompositionReadiness;
+  providerKeyRepository?: BackendProviderKeyRepository;
+  providerSecretVault?: ProviderSecretVault;
+  workspaceMembershipRepository?: WorkspaceMembershipRepository;
+  routeAccessResolver?: AsyncBackendRequesterContextResolver;
+  generationExecutionControlReadiness?: BackendGenerationExecutionControlReadiness;
+  generationProviderAdapter?: Pick<
+    BackendGenerationProviderAdapter,
+    "getReadiness" | "providerId"
+  >;
+  generatedArtifactStorageReadiness?: {
+    getReadiness?: () => "not_configured" | "ready";
+  };
 }
 
 const resolveAuthUnavailableCode = (

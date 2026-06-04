@@ -2914,3 +2914,9 @@ Still deferred:
   - `/generation/jobs` remains disabled and does not call adapters or artifact storage.
   - No real provider call, frontend change, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, or export route behavior is included.
 
+- Phase 106 adds generation route dependency injection as a fail-closed seam only:
+  - `createGenerationRouter` can accept future generation dependencies, but `/generation/jobs` still stops at `generation_runtime_disabled`.
+  - Injected adapter, generated image storage, repository, vault, and membership dependencies are not called.
+  - `vendorCallsEnabled` remains false and `attemptedProviderIds` remains empty.
+  - No real provider call, frontend change, public/signed URL delivery, fake success/progress/artifact, credits/billing mutation, or export route behavior is included.
+
