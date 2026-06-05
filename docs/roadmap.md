@@ -1218,3 +1218,12 @@ Status:
 - Mocked real-local 2xx responses can verify/store image bytes and return safe metadata only with `deliveryStatus: unavailable`; provider failures map to sanitized backend responses.
 - A separate manual real-provider smoke audit is required before any real OpenAI call.
 - Delivery remains unavailable, frontend generation remains blocked, public/signed/download URLs remain blocked, export integration remains blocked, credits/billing remain blocked, and production launch remains blocked.
+
+## Phase 126 status
+
+- Phase 126: OpenAI real smoke failure diagnostics boundary pack.
+- Scope: add sanitized diagnostic categories for `real_provider_local_only` and OpenAI image adapter failures after the Phase 124 failed real-provider smoke.
+- Rejected generation responses may include only safe enum fields such as `diagnosticCode` and `failureCategory`.
+- Diagnostics cover provider response shape issues, unsupported provider URL output, missing `b64_json`, malformed JSON, artifact verification failure, storage write failure, provider fetch failure, provider 5xx, unexpected provider status, missing real-local gate, storage not ready, vault not ready, and vault decrypt failure.
+- Automated tests mock all provider responses; no real OpenAI retry or real generation was performed.
+- Frontend generation, public/signed/download URLs, export integration, credits/billing mutation, fake user-facing generated success/progress/downloadable artifacts, and production launch remain blocked.

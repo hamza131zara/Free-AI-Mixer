@@ -72,13 +72,42 @@ export interface BackendGenerationSafeArtifactMetadata {
   storageState: BackendGenerationSafeArtifactStorageState;
 }
 
+export type BackendGenerationSafeDiagnosticCode =
+  | "artifact_storage_write_failed"
+  | "artifact_verification_failed"
+  | "provider_5xx"
+  | "provider_empty_data"
+  | "provider_fetch_failed"
+  | "provider_malformed_json"
+  | "provider_missing_b64_json"
+  | "provider_response_shape_unsupported"
+  | "provider_unexpected_status"
+  | "provider_url_output_unsupported"
+  | "real_provider_gate_missing"
+  | "real_provider_storage_not_ready"
+  | "vault_decrypt_failed"
+  | "vault_not_ready";
+
+export type BackendGenerationSafeFailureCategory =
+  | "artifact_storage"
+  | "provider_fetch"
+  | "provider_response"
+  | "provider_status"
+  | "runtime_gate"
+  | "vault";
+
+export interface BackendGenerationSafeDiagnostic {
+  diagnosticCode?: BackendGenerationSafeDiagnosticCode;
+  failureCategory?: BackendGenerationSafeFailureCategory;
+}
+
 export type BackendGenerationProviderExecutionResult =
   | {
       kind: "generation_unavailable";
       status: "not_configured";
       errorCode: "generation_unavailable";
       message: string;
-    }
+    } & BackendGenerationSafeDiagnostic
   | {
       kind: "generated";
       status: "generated";
@@ -90,56 +119,56 @@ export type BackendGenerationProviderExecutionResult =
       status: "generation_failed";
       errorCode: "generation_failed" | "invalid_credentials";
       message: string;
-    }
+    } & BackendGenerationSafeDiagnostic
   | {
       kind: "provider_unavailable";
       status: "provider_unavailable";
       errorCode: "provider_unavailable";
       message: string;
-    }
+    } & BackendGenerationSafeDiagnostic
   | {
       kind: "rate_limited";
       status: "rate_limited";
       errorCode: "rate_limited";
       retryAfterSeconds?: number;
       message: string;
-    }
+    } & BackendGenerationSafeDiagnostic
   | {
       kind: "timeout";
       status: "timeout";
       errorCode: "timeout";
       message: string;
-    }
+    } & BackendGenerationSafeDiagnostic
   | {
       kind: "invalid_provider";
       status: "invalid_provider";
       errorCode: "invalid_provider";
       message: string;
-    }
+    } & BackendGenerationSafeDiagnostic
   | {
       kind: "key_not_found";
       status: "key_not_found";
       errorCode: "key_not_found";
       message: string;
-    }
+    } & BackendGenerationSafeDiagnostic
   | {
       kind: "vault_decrypt_failed";
       status: "vault_decrypt_failed";
       errorCode: "vault_decrypt_failed";
       message: string;
-    }
+    } & BackendGenerationSafeDiagnostic
   | {
       kind: "invalid_prompt";
       status: "invalid_prompt";
       errorCode: "invalid_prompt";
       message: string;
-    }
+    } & BackendGenerationSafeDiagnostic
   | {
       kind: "artifact_storage_unavailable";
       status: "artifact_storage_unavailable";
       errorCode: "artifact_storage_unavailable";
       message: string;
-    };
+    } & BackendGenerationSafeDiagnostic;
 
 export const generationRuntimeEnvNames = {
   allowRealProviderCalls: "FREE_AI_MIXER_GENERATION_ALLOW_REAL_PROVIDER_CALLS",

@@ -9,6 +9,8 @@ import type {
   BackendGenerationProviderExecutionResult,
   BackendGenerationProviderPollResult,
   BackendGenerationProviderReadiness,
+  BackendGenerationSafeDiagnosticCode,
+  BackendGenerationSafeFailureCategory,
   BackendGenerationProviderSubmitResult,
   BackendGenerationPollRequest,
   BackendGenerationSubmitRequest,
@@ -74,13 +76,21 @@ const unavailableResult = (): BackendGenerationProviderExecutionResult => ({
   message: "OpenAI image generation is not configured.",
 });
 
-const artifactStorageUnavailableResult =
-  (): BackendGenerationProviderExecutionResult => ({
+const diagnostic = (
+  diagnosticCode: BackendGenerationSafeDiagnosticCode,
+  failureCategory: BackendGenerationSafeFailureCategory,
+) => ({ diagnosticCode, failureCategory });
+
+const artifactStorageUnavailableResult = (
+  diagnosticCode: BackendGenerationSafeDiagnosticCode = "real_provider_storage_not_ready",
+  failureCategory: BackendGenerationSafeFailureCategory = "artifact_storage",
+): BackendGenerationProviderExecutionResult => ({
     kind: "artifact_storage_unavailable",
     status: "artifact_storage_unavailable",
     errorCode: "artifact_storage_unavailable",
     message:
       "OpenAI image generation returned a provider result, but generated artifact storage is not configured.",
+    ...diagnostic(diagnosticCode, failureCategory),
   });
 
 const invalidCredentialsResult =
@@ -99,11 +109,14 @@ const invalidPromptResult = (): BackendGenerationProviderExecutionResult => ({
 });
 
 const providerUnavailableResult =
-  (): BackendGenerationProviderExecutionResult => ({
+  (
+    diagnosticCode: BackendGenerationSafeDiagnosticCode = "provider_fetch_failed",
+  ): BackendGenerationProviderExecutionResult => ({
     kind: "provider_unavailable",
     status: "provider_unavailable",
     errorCode: "provider_unavailable",
     message: "OpenAI image generation is unavailable.",
+    ...diagnostic(diagnosticCode, "provider_fetch"),
   });
 
 const timeoutResult = (): BackendGenerationProviderExecutionResult => ({
@@ -133,6 +146,7 @@ const vaultDecryptFailedResult =
     status: "vault_decrypt_failed",
     errorCode: "vault_decrypt_failed",
     message: "Stored OpenAI provider key could not be decrypted for generation.",
+    ...diagnostic("vault_decrypt_failed", "vault"),
   });
 
 const invalidProviderResult = (): BackendGenerationProviderExecutionResult => ({
@@ -142,11 +156,15 @@ const invalidProviderResult = (): BackendGenerationProviderExecutionResult => ({
   message: "OpenAI image generation supports only the OpenAI provider.",
 });
 
-const safeGenerationFailedResult = (): BackendGenerationProviderExecutionResult => ({
+const safeGenerationFailedResult = (
+  diagnosticCode: BackendGenerationSafeDiagnosticCode = "provider_unexpected_status",
+  failureCategory: BackendGenerationSafeFailureCategory = "provider_status",
+): BackendGenerationProviderExecutionResult => ({
   kind: "generation_failed",
   status: "generation_failed",
   errorCode: "generation_failed",
   message: "OpenAI image generation failed with a sanitized backend error.",
+  ...diagnostic(diagnosticCode, failureCategory),
 });
 
 const isAbortError = (error: unknown): boolean =>
@@ -157,11 +175,16 @@ const isValidPrompt = (prompt: string): boolean => {
   return trimmed.length > 0 && trimmed.length <= 4_000;
 };
 
-const parseJsonSafely = async (response: Response): Promise<unknown> => {
+const parseJsonSafely = async (
+  response: Response,
+): Promise<
+  | { kind: "parsed"; value: unknown }
+  | { kind: "malformed_json" }
+> => {
   try {
-    return await response.json();
+    return { kind: "parsed", value: await response.json() };
   } catch {
-    return undefined;
+    return { kind: "malformed_json" };
   }
 };
 
@@ -170,17 +193,37 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const readFirstOpenAiImagePayload = (
   value: unknown,
-): { b64Json?: string; url?: string } | undefined => {
-  if (!isRecord(value) || !Array.isArray(value.data) || value.data.length !== 1) {
-    return undefined;
+):
+  | { kind: "payload"; b64Json?: string; url?: string }
+  | { kind: "unsupported"; diagnosticCode: BackendGenerationSafeDiagnosticCode } => {
+  if (!isRecord(value) || !Array.isArray(value.data)) {
+    return {
+      diagnosticCode: "provider_response_shape_unsupported",
+      kind: "unsupported",
+    };
+  }
+
+  if (value.data.length === 0) {
+    return { diagnosticCode: "provider_empty_data", kind: "unsupported" };
+  }
+
+  if (value.data.length !== 1) {
+    return {
+      diagnosticCode: "provider_response_shape_unsupported",
+      kind: "unsupported",
+    };
   }
 
   const [first] = value.data;
   if (!isRecord(first)) {
-    return undefined;
+    return {
+      diagnosticCode: "provider_response_shape_unsupported",
+      kind: "unsupported",
+    };
   }
 
   return {
+    kind: "payload",
     b64Json: typeof first.b64_json === "string" ? first.b64_json : undefined,
     url: typeof first.url === "string" ? first.url : undefined,
   };
@@ -300,11 +343,36 @@ export const createOpenAiImageGenerationAdapter = ({
           return artifactStorageUnavailableResult();
         }
 
-        const body = await parseJsonSafely(response);
-        const imagePayload = readFirstOpenAiImagePayload(body);
+        const parsedBody = await parseJsonSafely(response);
 
-        if (typeof imagePayload?.b64Json !== "string" || imagePayload.url) {
-          return artifactStorageUnavailableResult();
+        if (parsedBody.kind === "malformed_json") {
+          return artifactStorageUnavailableResult(
+            "provider_malformed_json",
+            "provider_response",
+          );
+        }
+
+        const imagePayload = readFirstOpenAiImagePayload(parsedBody.value);
+
+        if (imagePayload.kind === "unsupported") {
+          return artifactStorageUnavailableResult(
+            imagePayload.diagnosticCode,
+            "provider_response",
+          );
+        }
+
+        if (imagePayload.url) {
+          return artifactStorageUnavailableResult(
+            "provider_url_output_unsupported",
+            "provider_response",
+          );
+        }
+
+        if (typeof imagePayload.b64Json !== "string") {
+          return artifactStorageUnavailableResult(
+            "provider_missing_b64_json",
+            "provider_response",
+          );
         }
 
         const contentType: GeneratedImageArtifactContentType = "image/png";
@@ -316,7 +384,10 @@ export const createOpenAiImageGenerationAdapter = ({
         });
 
         if (verification.kind !== "verified") {
-          return safeGenerationFailedResult();
+          return safeGenerationFailedResult(
+            "artifact_verification_failed",
+            "artifact_storage",
+          );
         }
 
         const stored = await generatedImageArtifactStorage.store({
@@ -331,7 +402,10 @@ export const createOpenAiImageGenerationAdapter = ({
         });
 
         if (stored.kind !== "stored") {
-          return artifactStorageUnavailableResult();
+          return artifactStorageUnavailableResult(
+            "artifact_storage_write_failed",
+            "artifact_storage",
+          );
         }
 
         return {
@@ -365,12 +439,14 @@ export const createOpenAiImageGenerationAdapter = ({
       }
 
       if (response.status >= 500) {
-        return providerUnavailableResult();
+        return providerUnavailableResult("provider_5xx");
       }
 
-      return safeGenerationFailedResult();
+      return safeGenerationFailedResult("provider_unexpected_status");
     } catch (error) {
-      return isAbortError(error) ? timeoutResult() : providerUnavailableResult();
+      return isAbortError(error)
+        ? timeoutResult()
+        : providerUnavailableResult("provider_fetch_failed");
     } finally {
       clearTimeout(timeout);
     }

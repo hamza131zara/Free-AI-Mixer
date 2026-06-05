@@ -13781,6 +13781,29 @@ Safety boundaries:
 - no provider response body, provider headers, provider request ID, provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, decrypted key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake user-facing success, fake progress, fake downloadable artifact, credits/billing mutation, export route behavior, or public launch behavior was added
 
+## Phase 126 - OpenAI Real Smoke Failure Diagnostics Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only sanitized diagnostics for `real_provider_local_only` and OpenAI image adapter failure mapping
+- safe `diagnosticCode` and `failureCategory` enum fields on rejected `/generation/jobs` responses
+- adapter diagnostics for provider response shape issues, unsupported provider URL output, missing `b64_json`, malformed JSON, artifact verification failure, storage write failure, provider fetch failure, provider 5xx, unexpected provider status, missing real-local gate, storage not ready, vault not ready, and vault decrypt failure
+- focused mocked-provider tests for the Phase 124 failed real smoke diagnostics path
+
+Safety boundaries:
+
+- no real OpenAI retry was performed
+- no real provider API call or real generation was added
+- no frontend files changed
+- no public URL, signed URL, download URL, generated image stream route, or export route behavior was added
+- diagnostic responses must not include provider bodies, provider headers, request IDs, prompts, raw/decrypted keys, encrypted payloads, secret refs, JWTs, service-role keys, BYOK encryption keys, `b64_json` payloads, base64 image data, bytes, local paths, internal refs, public URLs, signed URLs, or download URLs
+- another real OpenAI smoke remains blocked until diagnostics are signed off
+- frontend generation, public delivery, export integration, credits/billing mutation, fake user-facing generated success/progress/downloadable artifacts, and production launch remain blocked
+
 ## Phase 108 - Generation Route Preconditions-Only Gate Boundary Pack
 
 Status:

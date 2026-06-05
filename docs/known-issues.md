@@ -2959,3 +2959,11 @@ Still deferred:
   - A separate manual real-provider smoke audit is required before any real OpenAI call.
   - Delivery remains unavailable and response metadata must not include local paths, internal refs, provider response details, prompts, keys, public URLs, signed URLs, or download URLs.
   - Frontend generation, export integration, credits/billing mutation, fake user-facing success/progress/downloadable artifacts, and production launch remain blocked.
+- Phase 126 adds safe diagnostics after the failed Phase 124 real OpenAI smoke attempt:
+  - The Phase 124 attempt is not a successful generation sign-off.
+  - `/generation/jobs` rejected responses may include only sanitized enum diagnostics: `diagnosticCode` and `failureCategory`.
+  - Diagnostics identify safe categories such as provider response shape unsupported, provider URL output unsupported, missing `b64_json`, malformed JSON, artifact verification failure, storage write failure, provider fetch failure, provider 5xx, unexpected provider status, missing real-local gate, storage not ready, vault not ready, and vault decrypt failure.
+  - Automated tests mock all provider responses; no real OpenAI retry or real generation was performed.
+  - Diagnostic responses must not include provider bodies, headers, request IDs, prompts, keys, encrypted payloads, secret refs, JWTs, service-role keys, encryption keys, base64/image bytes, local paths, internal refs, public URLs, signed URLs, or download URLs.
+  - Another real OpenAI smoke remains blocked until diagnostics are signed off.
+  - Frontend generation, public delivery, export integration, credits/billing mutation, fake user-facing success/progress/downloadable artifacts, and production launch remain blocked.

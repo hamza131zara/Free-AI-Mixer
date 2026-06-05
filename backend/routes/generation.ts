@@ -37,7 +37,10 @@ import {
   isActiveValidatedProviderKeyForGeneration,
   parseGenerationJobRequest,
 } from "../generation/generationRuntimeOrchestrator";
-import type { BackendGenerationProviderAdapter } from "../generation/generationProviderAdapter";
+import type {
+  BackendGenerationProviderAdapter,
+  BackendGenerationSafeDiagnostic,
+} from "../generation/generationProviderAdapter";
 import type { GeneratedImageArtifactStorage } from "../generation/generatedImageArtifactStorage";
 import { createOpenAiImageGenerationAdapter } from "../generation/openAiImageGenerationAdapter";
 import {
@@ -129,6 +132,7 @@ const rejectGenerationJob = (
     BackendGenerationJobMutationResponse,
     { kind: "generation_job_rejected" }
   >["attemptedProviderIds"] = [],
+  diagnosticResult?: BackendGenerationSafeDiagnostic,
 ): void => {
   response.status(httpStatus).json({
     kind: "generation_job_rejected",
@@ -136,6 +140,12 @@ const rejectGenerationJob = (
     message,
     runtime: toRuntimeSnapshot(runtimeSummary),
     attemptedProviderIds,
+    ...(diagnosticResult?.diagnosticCode
+      ? { diagnosticCode: diagnosticResult.diagnosticCode }
+      : {}),
+    ...(diagnosticResult?.failureCategory
+      ? { failureCategory: diagnosticResult.failureCategory }
+      : {}),
   });
 };
 
@@ -153,6 +163,7 @@ const rejectGenerationJobWithVendorState = (
     BackendGenerationJobMutationResponse,
     { kind: "generation_job_rejected" }
   >["attemptedProviderIds"] = [],
+  diagnosticResult?: BackendGenerationSafeDiagnostic,
 ): void => {
   response.status(httpStatus).json({
     kind: "generation_job_rejected",
@@ -160,6 +171,12 @@ const rejectGenerationJobWithVendorState = (
     message,
     runtime: toRuntimeSnapshot(runtimeSummary, vendorCallsEnabled),
     attemptedProviderIds,
+    ...(diagnosticResult?.diagnosticCode
+      ? { diagnosticCode: diagnosticResult.diagnosticCode }
+      : {}),
+    ...(diagnosticResult?.failureCategory
+      ? { failureCategory: diagnosticResult.failureCategory }
+      : {}),
   });
 };
 
@@ -213,6 +230,7 @@ const rejectOpenAiAdapterMockResult = (
       result.message,
       503,
       ["openai"],
+      result,
     );
     return;
   }
@@ -225,6 +243,7 @@ const rejectOpenAiAdapterMockResult = (
       result.message,
       503,
       ["openai"],
+      result,
     );
     return;
   }
@@ -310,6 +329,10 @@ const sendOpenAiRealLocalProviderResult = (
         failure.httpStatus,
         true,
         ["openai"],
+        {
+          diagnosticCode: "artifact_storage_write_failed",
+          failureCategory: "artifact_storage",
+        },
       );
       return;
     }
@@ -367,6 +390,7 @@ const sendOpenAiRealLocalProviderResult = (
     failure.httpStatus,
     true,
     ["openai"],
+    result,
   );
 };
 
@@ -762,12 +786,27 @@ export const createGenerationRouter = (
       }
 
       if (routeExecutionMode === "real_provider_local_only") {
+        if (!options.generationOpenAiImageRealLocalSmokeEnabled) {
+          const failure = getGenerationFailureMapping("generation_execution_blocked");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "generation_execution_blocked",
+            failure.message,
+            failure.httpStatus,
+            [],
+            {
+              diagnosticCode: "real_provider_gate_missing",
+              failureCategory: "runtime_gate",
+            },
+          );
+          return;
+        }
+
         if (
-          !options.generationOpenAiImageRealLocalSmokeEnabled ||
           !options.openAiRealProviderFetch ||
           !options.providerKeyRepository ||
-          !options.providerSecretVault ||
-          options.providerSecretVault.getVaultReadiness().kind !== "vault_ready"
+          !options.providerSecretVault
         ) {
           const failure = getGenerationFailureMapping("generation_execution_blocked");
           rejectGenerationJob(
@@ -776,6 +815,28 @@ export const createGenerationRouter = (
             "generation_execution_blocked",
             failure.message,
             failure.httpStatus,
+            [],
+            {
+              diagnosticCode: "real_provider_gate_missing",
+              failureCategory: "runtime_gate",
+            },
+          );
+          return;
+        }
+
+        if (options.providerSecretVault.getVaultReadiness().kind !== "vault_ready") {
+          const failure = getGenerationFailureMapping("vault_decrypt_failed");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "vault_decrypt_failed",
+            failure.message,
+            failure.httpStatus,
+            [],
+            {
+              diagnosticCode: "vault_not_ready",
+              failureCategory: "vault",
+            },
           );
           return;
         }
@@ -788,6 +849,11 @@ export const createGenerationRouter = (
             "artifact_storage_unavailable",
             failure.message,
             failure.httpStatus,
+            ["openai"],
+            {
+              diagnosticCode: "real_provider_storage_not_ready",
+              failureCategory: "artifact_storage",
+            },
           );
           return;
         }

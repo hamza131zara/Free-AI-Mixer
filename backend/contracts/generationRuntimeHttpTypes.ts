@@ -1,4 +1,8 @@
 import type {
+  BackendGenerationSafeDiagnosticCode,
+  BackendGenerationSafeFailureCategory,
+} from "../generation/generationProviderAdapter";
+import type {
   BackendProviderCatalogEntry,
   BackendProviderRoutingPreference,
   BackendSupportedProviderId,
@@ -131,6 +135,8 @@ export type BackendGenerationJobMutationResponse =
       message: string;
       runtime: BackendGenerationJobRuntimeSnapshot;
       attemptedProviderIds: BackendSupportedProviderId[];
+      diagnosticCode?: BackendGenerationSafeDiagnosticCode;
+      failureCategory?: BackendGenerationSafeFailureCategory;
     }
   | {
       kind: "generation_job_metadata_ready";
