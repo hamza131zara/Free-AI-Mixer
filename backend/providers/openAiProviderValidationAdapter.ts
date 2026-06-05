@@ -52,28 +52,50 @@ const toSecretHandle = (
 const timeoutResult = (): ProviderValidationResult => ({
   kind: "timeout",
   status: "timeout",
+  diagnosticCode: "validation_timeout",
   errorCode: "timeout",
+  failureCategory: "provider_timeout",
   message: "OpenAI provider validation timed out.",
 });
 
-const providerUnavailableResult = (): ProviderValidationResult => ({
+const providerUnavailableResult = (
+  diagnosticCode:
+    | "validation_provider_5xx"
+    | "validation_provider_fetch_failed",
+): ProviderValidationResult => ({
   kind: "provider_unavailable",
   status: "provider_unavailable",
+  diagnosticCode,
   errorCode: "provider_unavailable",
+  failureCategory:
+    diagnosticCode === "validation_provider_fetch_failed"
+      ? "provider_network"
+      : "provider_response",
   message: "OpenAI provider validation is unavailable.",
 });
 
-const validationFailedResult = (): ProviderValidationResult => ({
+const validationFailedResult = (
+  diagnosticCode:
+    | "validation_invalid_credentials"
+    | "validation_provider_unexpected_status",
+): ProviderValidationResult => ({
   kind: "validation_failed",
   status: "validation_failed",
-  errorCode: "invalid_credentials",
+  diagnosticCode,
+  errorCode:
+    diagnosticCode === "validation_invalid_credentials"
+      ? "invalid_credentials"
+      : "validation_failed",
+  failureCategory: "provider_response",
   message: "OpenAI provider validation failed.",
 });
 
 const vaultDecryptFailedResult = (): ProviderValidationResult => ({
   kind: "vault_decrypt_failed",
   status: "vault_decrypt_failed",
+  diagnosticCode: "validation_vault_decrypt_failed",
   errorCode: "vault_decrypt_failed",
+  failureCategory: "vault",
   message: "Stored provider key could not be decrypted for validation.",
 });
 
@@ -116,7 +138,9 @@ export const createOpenAiProviderValidationAdapter = ({
       return {
         kind: "invalid_provider",
         status: "invalid_provider",
+        diagnosticCode: "validation_provider_unexpected_status",
         errorCode: "invalid_provider",
+        failureCategory: "provider_response",
         message: "OpenAI minimal validation supports only the OpenAI provider.",
       };
     }
@@ -135,7 +159,9 @@ export const createOpenAiProviderValidationAdapter = ({
       return {
         kind: "key_not_found",
         status: "key_not_found",
+        diagnosticCode: "validation_key_not_found",
         errorCode: "key_not_found",
+        failureCategory: "stored_key",
         message: "Active OpenAI provider key was not found for validation.",
       };
     }
@@ -178,33 +204,31 @@ export const createOpenAiProviderValidationAdapter = ({
       }
 
       if (response.status === 401 || response.status === 403) {
-        return validationFailedResult();
+        return validationFailedResult("validation_invalid_credentials");
       }
 
       if (response.status === 429) {
         return {
           kind: "rate_limited",
           status: "rate_limited",
+          diagnosticCode: "validation_provider_rate_limited",
           errorCode: "rate_limited",
+          failureCategory: "provider_response",
           message: "OpenAI provider validation is rate limited.",
         };
       }
 
       if (response.status >= 500) {
-        return providerUnavailableResult();
+        return providerUnavailableResult("validation_provider_5xx");
       }
 
-      return {
-        kind: "validation_failed",
-        status: "validation_failed",
-        errorCode: "validation_failed",
-        message: "OpenAI provider validation failed.",
-      };
+      return validationFailedResult("validation_provider_unexpected_status");
     } catch (error) {
-      return isAbortError(error) ? timeoutResult() : providerUnavailableResult();
+      return isAbortError(error)
+        ? timeoutResult()
+        : providerUnavailableResult("validation_provider_fetch_failed");
     } finally {
       clearTimeout(timeout);
     }
   },
 });
-

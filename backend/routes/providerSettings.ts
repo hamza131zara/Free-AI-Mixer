@@ -42,6 +42,7 @@ import {
   mapProviderValidationResultToStateInput as toProviderValidationStateInput,
   type ProviderValidationAdapter,
   type ProviderValidationResult,
+  type ProviderValidationSafeDiagnostic,
 } from "../providers/providerValidationAdapter";
 import type {
   BackendProviderKeyRecord,
@@ -653,15 +654,32 @@ const revokeProviderKey = async (
 
 const getValidationUnavailableResponse = (
   message = "Provider validation is not enabled yet.",
+  diagnostic: ProviderValidationSafeDiagnostic = {
+    diagnosticCode: "validation_adapter_not_ready",
+    failureCategory: "runtime_gate",
+  },
 ): ProviderMutationExecutionResult => ({
   kind: "response",
   statusCode: 503,
   body: {
     kind: "provider_settings_connection_validation_result",
     status: "validation_unavailable",
+    ...diagnostic,
     message,
   },
 });
+
+const getValidationDiagnostic = (
+  result: ProviderValidationResult,
+): ProviderValidationSafeDiagnostic | undefined =>
+  result.kind !== "validated" &&
+  result.diagnosticCode &&
+  result.failureCategory
+    ? {
+        diagnosticCode: result.diagnosticCode,
+        failureCategory: result.failureCategory,
+      }
+    : undefined;
 
 const mapValidationStateResultToResponse = (
   validationResult: ProviderValidationResult,
@@ -700,6 +718,7 @@ const mapValidationStateResultToResponse = (
           : validationResult.kind === "validation_failed"
             ? "validation_failed"
             : "validation_unavailable",
+      ...getValidationDiagnostic(validationResult),
       message: validationResult.message,
       connection: stateResult.connection,
     },
@@ -716,6 +735,7 @@ const mapValidationResultToResponse = (
       body: {
         kind: "provider_settings_invalid_provider",
         status: "invalid_provider",
+        ...getValidationDiagnostic(result),
         message: result.message,
       },
     };
@@ -728,6 +748,7 @@ const mapValidationResultToResponse = (
       body: {
         kind: "provider_settings_connection_not_found",
         status: "not_found",
+        ...getValidationDiagnostic(result),
         message: result.message,
       },
     };
@@ -740,6 +761,7 @@ const mapValidationResultToResponse = (
       body: {
         kind: "provider_settings_connection_validation_result",
         status: "vault_decrypt_failed",
+        ...getValidationDiagnostic(result),
         message: result.message,
       },
     };
@@ -752,6 +774,7 @@ const mapValidationResultToResponse = (
       body: {
         kind: "provider_settings_connection_validation_result",
         status: "timeout",
+        ...getValidationDiagnostic(result),
         message: result.message,
       },
     };
@@ -764,6 +787,7 @@ const mapValidationResultToResponse = (
       body: {
         kind: "provider_settings_connection_validation_result",
         status: "rate_limited",
+        ...getValidationDiagnostic(result),
         message: result.message,
       },
     };
@@ -776,12 +800,16 @@ const mapValidationResultToResponse = (
       body: {
         kind: "provider_settings_connection_validation_result",
         status: "provider_unavailable",
+        ...getValidationDiagnostic(result),
         message: result.message,
       },
     };
   }
 
-  return getValidationUnavailableResponse(result.message);
+  return getValidationUnavailableResponse(
+    result.message,
+    getValidationDiagnostic(result),
+  );
 };
 
 const validateProviderConnection = async (
@@ -814,7 +842,10 @@ const validateProviderConnection = async (
   const validationReadiness = options.providerValidationAdapter.getReadiness();
 
   if (validationReadiness.kind !== "validation_ready") {
-    return getValidationUnavailableResponse(validationReadiness.message);
+    return getValidationUnavailableResponse(validationReadiness.message, {
+      diagnosticCode: "validation_adapter_not_ready",
+      failureCategory: "runtime_gate",
+    });
   }
 
   if (!dependencies.providerKeyRepository.updateProviderKeyValidationState) {
@@ -837,6 +868,8 @@ const validateProviderConnection = async (
       body: {
         kind: "provider_settings_connection_not_found",
         status: "not_found",
+        diagnosticCode: "validation_key_not_found",
+        failureCategory: "stored_key",
         message: "Active provider key was not found for this workspace/provider.",
       },
     };

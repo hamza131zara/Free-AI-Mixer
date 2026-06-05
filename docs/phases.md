@@ -13804,6 +13804,27 @@ Safety boundaries:
 - another real OpenAI smoke remains blocked until diagnostics are signed off
 - frontend generation, public delivery, export integration, credits/billing mutation, fake user-facing generated success/progress/downloadable artifacts, and production launch remain blocked
 
+## Phase 129 - BYOK OpenAI Validation Safe Diagnostics Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only sanitized diagnostics for BYOK OpenAI provider validation failures after the Phase 127 safe failed validation attempt
+- provider validation responses may include only safe enum fields: `diagnosticCode` and `failureCategory`
+- diagnostics cover validation timeout, provider fetch failure, provider 5xx, provider rate limit, invalid credentials, unexpected provider status, missing stored key, adapter not ready, and vault decrypt failure
+- focused tests mock provider responses and network failures; no real OpenAI validation retry or real generation retry was performed
+
+Safety boundaries:
+
+- provider validation diagnostics must not include provider bodies, headers, request IDs, OpenAI account/org/model metadata, raw/decrypted keys, encrypted payloads, secret refs, JWTs, service-role keys, or encryption keys
+- no frontend files changed
+- no public URL, signed URL, download URL, generated-image stream route, export route behavior, credits/billing mutation, or browser smoke was added
+- another real OpenAI validation/generation attempt remains blocked until diagnostics are signed off
+- frontend generation, public delivery, export integration, credits/billing mutation, fake user-facing generated success/progress/downloadable artifacts, and production launch remain blocked
+
 ## Phase 108 - Generation Route Preconditions-Only Gate Boundary Pack
 
 Status:

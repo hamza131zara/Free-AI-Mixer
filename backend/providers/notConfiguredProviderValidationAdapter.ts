@@ -23,7 +23,9 @@ export const createNotConfiguredProviderValidationAdapter =
       return {
         kind: "validation_unavailable",
         status: "not_configured",
+        diagnosticCode: "validation_adapter_not_ready",
         errorCode: "validation_unavailable",
+        failureCategory: "runtime_gate",
         message: unavailableMessage,
       };
     },

@@ -2967,3 +2967,12 @@ Still deferred:
   - Diagnostic responses must not include provider bodies, headers, request IDs, prompts, keys, encrypted payloads, secret refs, JWTs, service-role keys, encryption keys, base64/image bytes, local paths, internal refs, public URLs, signed URLs, or download URLs.
   - Another real OpenAI smoke remains blocked until diagnostics are signed off.
   - Frontend generation, public delivery, export integration, credits/billing mutation, fake user-facing success/progress/downloadable artifacts, and production launch remain blocked.
+
+- Phase 129 adds safe BYOK OpenAI validation diagnostics after the failed Phase 127 real validation attempt:
+  - The Phase 127 attempt is not a successful validation or generation sign-off.
+  - Provider validation responses may include only sanitized enum diagnostics: `diagnosticCode` and `failureCategory`.
+  - Diagnostics identify safe categories such as validation timeout, provider fetch failure, provider 5xx, provider rate limit, invalid credentials, unexpected provider status, missing stored key, adapter not ready, and vault decrypt failure.
+  - Automated tests mock provider responses and network failures; no real OpenAI validation retry or real generation retry was performed.
+  - Diagnostic responses must not include provider bodies, headers, request IDs, OpenAI account/org/model metadata, raw/decrypted keys, encrypted payloads, secret refs, JWTs, service-role keys, or encryption keys.
+  - Another real OpenAI validation/generation attempt remains blocked until diagnostics are signed off.
+  - Frontend generation, public delivery, export integration, credits/billing mutation, fake user-facing generated success/progress/downloadable artifacts, and production launch remain blocked.

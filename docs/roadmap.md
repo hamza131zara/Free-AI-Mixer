@@ -1227,3 +1227,12 @@ Status:
 - Diagnostics cover provider response shape issues, unsupported provider URL output, missing `b64_json`, malformed JSON, artifact verification failure, storage write failure, provider fetch failure, provider 5xx, unexpected provider status, missing real-local gate, storage not ready, vault not ready, and vault decrypt failure.
 - Automated tests mock all provider responses; no real OpenAI retry or real generation was performed.
 - Frontend generation, public/signed/download URLs, export integration, credits/billing mutation, fake user-facing generated success/progress/downloadable artifacts, and production launch remain blocked.
+
+## Phase 129 status
+
+- Phase 129: BYOK OpenAI validation safe diagnostics boundary pack.
+- Scope: add sanitized diagnostic categories for provider validation failures after the Phase 127 safe failed real OpenAI validation attempt.
+- Provider validation responses may include only enum-only `diagnosticCode` and `failureCategory` fields.
+- Diagnostics cover validation timeout, provider fetch failure, provider 5xx, provider rate limit, invalid credentials, unexpected provider status, missing stored key, adapter not ready, and vault decrypt failure.
+- Automated tests mock provider responses and network failures; no real OpenAI validation retry or real generation retry was performed.
+- Frontend changes, public/signed/download URLs, export integration, credits/billing mutation, fake user-facing success/progress/artifacts, and production launch remain blocked.

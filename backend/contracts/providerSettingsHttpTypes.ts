@@ -55,6 +55,25 @@ export type BackendProviderConnectionMutationStatus =
   | "invalid_provider"
   | "vault_unavailable";
 
+export type BackendProviderValidationDiagnosticCode =
+  | "validation_adapter_not_ready"
+  | "validation_invalid_credentials"
+  | "validation_key_not_found"
+  | "validation_provider_5xx"
+  | "validation_provider_fetch_failed"
+  | "validation_provider_rate_limited"
+  | "validation_provider_unexpected_status"
+  | "validation_timeout"
+  | "validation_vault_decrypt_failed";
+
+export type BackendProviderValidationFailureCategory =
+  | "provider_network"
+  | "provider_response"
+  | "provider_timeout"
+  | "runtime_gate"
+  | "stored_key"
+  | "vault";
+
 export interface BackendProviderCatalogEntry {
   id: BackendSupportedProviderId;
   displayName: string;
@@ -167,6 +186,8 @@ export type BackendProviderConnectionMutationResponse =
         | "vault_unavailable";
       message: string;
       connection?: BackendRedactedProviderConnectionSummary;
+      diagnosticCode?: BackendProviderValidationDiagnosticCode;
+      failureCategory?: BackendProviderValidationFailureCategory;
     }
   | {
       kind: "provider_settings_mutation_unavailable";
@@ -194,11 +215,15 @@ export type BackendProviderConnectionMutationResponse =
       kind: "provider_settings_connection_not_found";
       status: "not_found";
       message: string;
+      diagnosticCode?: BackendProviderValidationDiagnosticCode;
+      failureCategory?: BackendProviderValidationFailureCategory;
     }
   | {
       kind: "provider_settings_invalid_provider";
       status: "invalid_provider";
       message: string;
+      diagnosticCode?: BackendProviderValidationDiagnosticCode;
+      failureCategory?: BackendProviderValidationFailureCategory;
     }
   | {
       kind: "provider_settings_sign_in_required";
