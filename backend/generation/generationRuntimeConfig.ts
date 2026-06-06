@@ -44,6 +44,53 @@ export interface BackendGenerationRuntimeCompositionReadiness {
   message: string;
 }
 
+export type BackendGenerationRealProviderLocalGateReadinessReason =
+  | "ready"
+  | "runtime_disabled"
+  | "provider_adapter_not_openai_image_minimal"
+  | "real_provider_calls_disabled"
+  | "route_mode_not_real_provider_local_only"
+  | "preflight_controls_not_ready"
+  | "generated_image_storage_mode_not_local_staging"
+  | "generated_image_storage_root_missing"
+  | "real_provider_smoke_gate_disabled"
+  | "openai_real_provider_fetch_missing"
+  | "provider_key_repository_missing"
+  | "provider_secret_vault_missing";
+
+export interface BackendGenerationRealProviderLocalGateReadinessInput {
+  runtimeConfig: BackendGenerationRuntimeConfig;
+  routeExecutionMode: BackendGenerationRouteExecutionMode;
+  preflightControlsReady: boolean;
+  generatedImageStorageMode: BackendGenerationGeneratedImageStorageMode;
+  generatedImageStorageRoot?: string;
+  openAiImageRealLocalSmokeEnabled: boolean;
+  dependencies: {
+    openAiRealProviderFetchAvailable: boolean;
+    providerKeyRepositoryAvailable: boolean;
+    providerSecretVaultAvailable: boolean;
+  };
+}
+
+export interface BackendGenerationRealProviderLocalGateReadiness {
+  kind: "generation_real_provider_local_gate_readiness";
+  ready: boolean;
+  reason: BackendGenerationRealProviderLocalGateReadinessReason;
+  checks: {
+    runtimeEnabled: boolean;
+    providerAdapterOpenAiImageMinimal: boolean;
+    allowRealProviderCalls: boolean;
+    routeModeRealProviderLocalOnly: boolean;
+    preflightControlsReady: boolean;
+    generatedImageStorageLocalStaging: boolean;
+    generatedImageStorageRootPresent: boolean;
+    openAiImageRealLocalSmokeEnabled: boolean;
+    openAiRealProviderFetchAvailable: boolean;
+    providerKeyRepositoryAvailable: boolean;
+    providerSecretVaultAvailable: boolean;
+  };
+}
+
 export type BackendGenerationRuntimeEnv = Record<string, string | undefined>;
 
 export const generationRouteExecutionModeEnvName =
@@ -128,6 +175,69 @@ export const parseGenerationGeneratedImageStorageRoot = (
 export const parseGenerationOpenAiImageRealLocalSmokeEnabled = (
   env: BackendGenerationRuntimeEnv = process.env,
 ): boolean => env[generationOpenAiImageRealLocalSmokeEnabledEnvName] === "1";
+
+export const evaluateGenerationRealProviderLocalGateReadiness = ({
+  dependencies,
+  generatedImageStorageMode,
+  generatedImageStorageRoot,
+  openAiImageRealLocalSmokeEnabled,
+  preflightControlsReady,
+  routeExecutionMode,
+  runtimeConfig,
+}: BackendGenerationRealProviderLocalGateReadinessInput): BackendGenerationRealProviderLocalGateReadiness => {
+  const checks = {
+    runtimeEnabled: runtimeConfig.runtimeEnabled,
+    providerAdapterOpenAiImageMinimal:
+      runtimeConfig.providerAdapter === "openai_image_minimal",
+    allowRealProviderCalls: runtimeConfig.allowRealProviderCalls,
+    routeModeRealProviderLocalOnly: routeExecutionMode === "real_provider_local_only",
+    preflightControlsReady,
+    generatedImageStorageLocalStaging:
+      generatedImageStorageMode === "local_staging",
+    generatedImageStorageRootPresent:
+      typeof generatedImageStorageRoot === "string" &&
+      generatedImageStorageRoot.trim().length > 0,
+    openAiImageRealLocalSmokeEnabled,
+    openAiRealProviderFetchAvailable:
+      dependencies.openAiRealProviderFetchAvailable,
+    providerKeyRepositoryAvailable:
+      dependencies.providerKeyRepositoryAvailable,
+    providerSecretVaultAvailable:
+      dependencies.providerSecretVaultAvailable,
+  };
+
+  const reason: BackendGenerationRealProviderLocalGateReadinessReason =
+    !checks.runtimeEnabled
+      ? "runtime_disabled"
+      : !checks.providerAdapterOpenAiImageMinimal
+        ? "provider_adapter_not_openai_image_minimal"
+        : !checks.allowRealProviderCalls
+          ? "real_provider_calls_disabled"
+          : !checks.routeModeRealProviderLocalOnly
+            ? "route_mode_not_real_provider_local_only"
+            : !checks.preflightControlsReady
+              ? "preflight_controls_not_ready"
+              : !checks.generatedImageStorageLocalStaging
+                ? "generated_image_storage_mode_not_local_staging"
+                : !checks.generatedImageStorageRootPresent
+                  ? "generated_image_storage_root_missing"
+                  : !checks.openAiImageRealLocalSmokeEnabled
+                    ? "real_provider_smoke_gate_disabled"
+                    : !checks.openAiRealProviderFetchAvailable
+                      ? "openai_real_provider_fetch_missing"
+                      : !checks.providerKeyRepositoryAvailable
+                        ? "provider_key_repository_missing"
+                        : !checks.providerSecretVaultAvailable
+                          ? "provider_secret_vault_missing"
+                          : "ready";
+
+  return {
+    kind: "generation_real_provider_local_gate_readiness",
+    ready: reason === "ready",
+    reason,
+    checks,
+  };
+};
 
 export const getGenerationRuntimeCompositionReadiness = (
   config: BackendGenerationRuntimeConfig,

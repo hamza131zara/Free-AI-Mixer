@@ -15,6 +15,31 @@ Phase 134 is signed off. It does not authorize a retry by itself.
 Use a PowerShell wrapper that captures JSON diagnostic fields from non-2xx
 responses without printing raw fallback bodies.
 
+## Required Same-Shell Gate Preflight
+
+Before starting the backend for any explicitly approved real-provider retry,
+run this preflight in the same PowerShell session that will start
+`npm.cmd run backend:dev`. It prints only safe set/missing state, never raw
+secret values or the generated-image storage root path.
+
+```powershell
+node -e "const names=['FREE_AI_MIXER_GENERATION_RUNTIME_ENABLED','FREE_AI_MIXER_GENERATION_PROVIDER_ADAPTER','FREE_AI_MIXER_GENERATION_ALLOW_REAL_PROVIDER_CALLS','FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE','FREE_AI_MIXER_GENERATION_PREFLIGHT_CONTROLS_READY','FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_MODE','FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_ROOT','FREE_AI_MIXER_GENERATION_OPENAI_IMAGE_REAL_LOCAL_SMOKE_ENABLED']; for (const name of names) console.log(name + '=' + (process.env[name] ? '<set>' : '<missing>'))"
+```
+
+Required safe state:
+
+- `FREE_AI_MIXER_GENERATION_RUNTIME_ENABLED=<set>`
+- `FREE_AI_MIXER_GENERATION_PROVIDER_ADAPTER=<set>`
+- `FREE_AI_MIXER_GENERATION_ALLOW_REAL_PROVIDER_CALLS=<set>`
+- `FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE=<set>`
+- `FREE_AI_MIXER_GENERATION_PREFLIGHT_CONTROLS_READY=<set>`
+- `FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_MODE=<set>`
+- `FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_ROOT=<set>`
+- `FREE_AI_MIXER_GENERATION_OPENAI_IMAGE_REAL_LOCAL_SMOKE_ENABLED=<set>`
+
+Do not proceed to validation or `/generation/jobs` if any required gate prints
+`<missing>`. Do not retry automatically.
+
 ```powershell
 $GenerationResponse = $null
 $GenerationError = $null
