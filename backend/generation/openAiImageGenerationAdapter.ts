@@ -164,8 +164,15 @@ const safeGenerationFailedResult = (
   status: "generation_failed",
   errorCode: "generation_failed",
   message: "OpenAI image generation failed with a sanitized backend error.",
-  ...diagnostic(diagnosticCode, failureCategory),
+    ...diagnostic(diagnosticCode, failureCategory),
 });
+
+const providerKeyLookupFailedResult =
+  (): BackendGenerationProviderExecutionResult =>
+    safeGenerationFailedResult(
+      "provider_key_lookup_failed",
+      "provider_key_repository",
+    );
 
 const isAbortError = (error: unknown): boolean =>
   error instanceof Error && error.name === "AbortError";
@@ -288,9 +295,15 @@ export const createOpenAiImageGenerationAdapter = ({
       return invalidPromptResult();
     }
 
-    const record = await providerKeyRepository.getByProviderKeyId(
-      input.providerKeyId,
-    );
+    let record: BackendProviderKeyRecord | undefined;
+
+    try {
+      record = await providerKeyRepository.getByProviderKeyId(
+        input.providerKeyId,
+      );
+    } catch {
+      return providerKeyLookupFailedResult();
+    }
 
     if (
       !record ||
@@ -308,13 +321,19 @@ export const createOpenAiImageGenerationAdapter = ({
       return vaultDecryptFailedResult();
     }
 
-    const decrypted = await providerSecretVault.decryptProviderKey({
-      providerKeyId: record.providerKeyId,
-      secretHandle,
-      workspaceId: input.workspaceId,
-    });
+    const decrypted = await (async () => {
+      try {
+        return await providerSecretVault.decryptProviderKey({
+          providerKeyId: record.providerKeyId,
+          secretHandle,
+          workspaceId: input.workspaceId,
+        });
+      } catch {
+        return undefined;
+      }
+    })();
 
-    if (decrypted.kind !== "vault_provider_key_decrypted") {
+    if (!decrypted || decrypted.kind !== "vault_provider_key_decrypted") {
       return vaultDecryptFailedResult();
     }
 
@@ -390,18 +409,24 @@ export const createOpenAiImageGenerationAdapter = ({
           );
         }
 
-        const stored = await generatedImageArtifactStorage.store({
-          artifactId: input.jobId
-            ? `${input.jobId}_openai_image`
-            : `${input.requestId}_openai_image`,
-          jobId: input.jobId ?? input.requestId,
-          ownerId: "backend_generated_image_owner_unavailable",
-          providerId: "openai",
-          verifiedImage: verification.image,
-          workspaceId: input.workspaceId,
-        });
+        const stored = await (async () => {
+          try {
+            return await generatedImageArtifactStorage.store({
+              artifactId: input.jobId
+                ? `${input.jobId}_openai_image`
+                : `${input.requestId}_openai_image`,
+              jobId: input.jobId ?? input.requestId,
+              ownerId: "backend_generated_image_owner_unavailable",
+              providerId: "openai",
+              verifiedImage: verification.image,
+              workspaceId: input.workspaceId,
+            });
+          } catch {
+            return undefined;
+          }
+        })();
 
-        if (stored.kind !== "stored") {
+        if (!stored || stored.kind !== "stored") {
           return artifactStorageUnavailableResult(
             "artifact_storage_write_failed",
             "artifact_storage",

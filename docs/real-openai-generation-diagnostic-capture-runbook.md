@@ -32,12 +32,17 @@ try {
 } catch {
   $GenerationError = $_
   $ErrorResponse = $_.Exception.Response
+  $ErrorContent = $null
 
-  if ($ErrorResponse -and $ErrorResponse.GetResponseStream()) {
+  if ($_.ErrorDetails -and $_.ErrorDetails.Message) {
+    $ErrorContent = $_.ErrorDetails.Message
+  } elseif ($ErrorResponse -and $ErrorResponse.GetResponseStream()) {
     $Reader = [System.IO.StreamReader]::new($ErrorResponse.GetResponseStream())
     $ErrorContent = $Reader.ReadToEnd()
     $Reader.Dispose()
+  }
 
+  if ($ErrorContent) {
     try {
       $GenerationJson = $ErrorContent | ConvertFrom-Json
     } catch {

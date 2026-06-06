@@ -75,9 +75,11 @@ export interface BackendGenerationSafeArtifactMetadata {
 export type BackendGenerationSafeDiagnosticCode =
   | "artifact_storage_write_failed"
   | "artifact_verification_failed"
+  | "generation_execution_unhandled_exception"
   | "provider_5xx"
   | "provider_empty_data"
   | "provider_fetch_failed"
+  | "provider_key_lookup_failed"
   | "provider_malformed_json"
   | "provider_missing_b64_json"
   | "provider_response_shape_unsupported"
@@ -90,7 +92,9 @@ export type BackendGenerationSafeDiagnosticCode =
 
 export type BackendGenerationSafeFailureCategory =
   | "artifact_storage"
+  | "generation_runtime"
   | "provider_fetch"
+  | "provider_key_repository"
   | "provider_response"
   | "provider_status"
   | "runtime_gate"

@@ -394,6 +394,26 @@ const sendOpenAiRealLocalProviderResult = (
   );
 };
 
+const sendOpenAiRealLocalProviderUnexpectedError = (
+  response: Response<BackendGenerationJobMutationResponse>,
+  runtimeSummary: ReturnType<typeof createRuntimeSummary>,
+): void => {
+  const failure = getGenerationFailureMapping("generation_failed");
+  rejectGenerationJobWithVendorState(
+    response,
+    runtimeSummary,
+    "generation_failed",
+    failure.message,
+    failure.httpStatus,
+    true,
+    ["openai"],
+    {
+      diagnosticCode: "generation_execution_unhandled_exception",
+      failureCategory: "generation_runtime",
+    },
+  );
+};
+
 export const createGenerationRouter = (
   options: CreateGenerationRouterOptions,
 ): Router => {
@@ -755,14 +775,27 @@ export const createGenerationRouter = (
           providerKeyRepository: options.providerKeyRepository,
           providerSecretVault: options.providerSecretVault,
         });
-        const adapterResult = await adapter.generateImageFromStoredProviderKey?.({
-          generationKind: "image",
-          prompt: parsed.request.prompt,
-          providerId: parsed.request.providerId,
-          providerKeyId: activeKey.providerKeyId,
-          requestId: parsed.request.requestId,
-          workspaceId: authenticatedRequester?.workspaceId ?? "",
-        });
+        let adapterResult: Awaited<
+          ReturnType<
+            NonNullable<
+              BackendGenerationProviderAdapter["generateImageFromStoredProviderKey"]
+            >
+          >
+        > | undefined;
+
+        try {
+          adapterResult = await adapter.generateImageFromStoredProviderKey?.({
+            generationKind: "image",
+            prompt: parsed.request.prompt,
+            providerId: parsed.request.providerId,
+            providerKeyId: activeKey.providerKeyId,
+            requestId: parsed.request.requestId,
+            workspaceId: authenticatedRequester?.workspaceId ?? "",
+          });
+        } catch {
+          sendOpenAiRealLocalProviderUnexpectedError(response, runtimeSummary);
+          return;
+        }
 
         if (!adapterResult) {
           const failure = getGenerationFailureMapping("generation_execution_blocked");
@@ -824,7 +857,15 @@ export const createGenerationRouter = (
           return;
         }
 
-        if (options.providerSecretVault.getVaultReadiness().kind !== "vault_ready") {
+        const vaultReadiness = (() => {
+          try {
+            return options.providerSecretVault?.getVaultReadiness();
+          } catch {
+            return undefined;
+          }
+        })();
+
+        if (vaultReadiness?.kind !== "vault_ready") {
           const failure = getGenerationFailureMapping("vault_decrypt_failed");
           rejectGenerationJob(
             response,
@@ -869,14 +910,27 @@ export const createGenerationRouter = (
           providerKeyRepository: options.providerKeyRepository,
           providerSecretVault: options.providerSecretVault,
         });
-        const adapterResult = await adapter.generateImageFromStoredProviderKey?.({
-          generationKind: "image",
-          prompt: parsed.request.prompt,
-          providerId: parsed.request.providerId,
-          providerKeyId: activeKey.providerKeyId,
-          requestId: parsed.request.requestId,
-          workspaceId: authenticatedRequester?.workspaceId ?? "",
-        });
+        let adapterResult: Awaited<
+          ReturnType<
+            NonNullable<
+              BackendGenerationProviderAdapter["generateImageFromStoredProviderKey"]
+            >
+          >
+        > | undefined;
+
+        try {
+          adapterResult = await adapter.generateImageFromStoredProviderKey?.({
+            generationKind: "image",
+            prompt: parsed.request.prompt,
+            providerId: parsed.request.providerId,
+            providerKeyId: activeKey.providerKeyId,
+            requestId: parsed.request.requestId,
+            workspaceId: authenticatedRequester?.workspaceId ?? "",
+          });
+        } catch {
+          sendOpenAiRealLocalProviderUnexpectedError(response, runtimeSummary);
+          return;
+        }
 
         if (!adapterResult) {
           const failure = getGenerationFailureMapping("generation_execution_blocked");
