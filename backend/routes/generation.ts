@@ -909,6 +909,7 @@ export const createGenerationRouter = (
             : {}),
           providerKeyRepository: options.providerKeyRepository,
           providerSecretVault: options.providerSecretVault,
+          requestShape: "minimal",
         });
         let adapterResult: Awaited<
           ReturnType<

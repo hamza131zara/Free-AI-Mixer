@@ -30,6 +30,7 @@ export interface OpenAiImageGenerationAdapterOptions {
   providerKeyRepository: BackendProviderKeyRepository;
   providerSecretVault: ProviderSecretVault;
   quality?: OpenAiImageGenerationQuality;
+  requestShape?: OpenAiImageGenerationRequestShape;
   size?: OpenAiImageGenerationSize;
   timeoutMs?: number;
 }
@@ -37,6 +38,7 @@ export interface OpenAiImageGenerationAdapterOptions {
 export type OpenAiImageGenerationModel = "gpt-image-2";
 export type OpenAiImageGenerationSize = "1024x1024";
 export type OpenAiImageGenerationQuality = "low" | "auto";
+export type OpenAiImageGenerationRequestShape = "minimal" | "single_image_low";
 
 const openAiImagesGenerationsEndpoint =
   "https://api.openai.com/v1/images/generations";
@@ -101,11 +103,16 @@ const invalidCredentialsResult =
     message: "Stored OpenAI provider credentials were rejected.",
   });
 
-const invalidPromptResult = (): BackendGenerationProviderExecutionResult => ({
+const invalidPromptResult = (
+  diagnosticCode?: BackendGenerationSafeDiagnosticCode,
+): BackendGenerationProviderExecutionResult => ({
   kind: "invalid_prompt",
   status: "invalid_prompt",
   errorCode: "invalid_prompt",
   message: "OpenAI image generation prompt is invalid or unsafe.",
+  ...(diagnosticCode
+    ? diagnostic(diagnosticCode, "provider_status")
+    : {}),
 });
 
 const providerUnavailableResult =
@@ -198,6 +205,116 @@ const parseJsonSafely = async (
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+const normalizeSafeOpenAiErrorToken = (value: unknown): string | undefined => {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9_.:-]/g, "_")
+    .slice(0, 128);
+
+  return normalized.length > 0 ? normalized : undefined;
+};
+
+const readOpenAiSafeErrorTokens = (value: unknown): string[] => {
+  if (!isRecord(value) || !isRecord(value.error)) {
+    return [];
+  }
+
+  return [
+    normalizeSafeOpenAiErrorToken(value.error.code),
+    normalizeSafeOpenAiErrorToken(value.error.type),
+  ].filter((token): token is string => Boolean(token));
+};
+
+const tokenIncludes = (tokens: string[], patterns: string[]): boolean =>
+  tokens.some((token) => patterns.some((pattern) => token.includes(pattern)));
+
+const mapOpenAiBadRequestResult = (
+  value: unknown,
+): BackendGenerationProviderExecutionResult => {
+  const tokens = readOpenAiSafeErrorTokens(value);
+
+  if (
+    tokenIncludes(tokens, [
+      "moderation",
+      "content_policy",
+      "policy_violation",
+      "safety",
+    ])
+  ) {
+    return invalidPromptResult("provider_moderation_blocked");
+  }
+
+  if (
+    tokenIncludes(tokens, [
+      "invalid_prompt",
+      "prompt_invalid",
+      "prompt_rejected",
+      "prompt",
+    ])
+  ) {
+    return invalidPromptResult("provider_invalid_prompt");
+  }
+
+  if (
+    tokenIncludes(tokens, [
+      "organization_verification",
+      "org_verification",
+      "project_verification",
+      "verification_required",
+      "verified_organization",
+    ])
+  ) {
+    return safeGenerationFailedResult(
+      "provider_org_verification_required",
+      "provider_status",
+    );
+  }
+
+  if (
+    tokenIncludes(tokens, [
+      "unsupported_model",
+      "model_not_found",
+      "model_not_supported",
+      "model",
+    ])
+  ) {
+    return safeGenerationFailedResult(
+      "provider_model_unsupported",
+      "provider_status",
+    );
+  }
+
+  if (tokenIncludes(tokens, ["response_format", "output_format"])) {
+    return safeGenerationFailedResult(
+      "provider_response_format_unsupported",
+      "provider_status",
+    );
+  }
+
+  if (
+    tokenIncludes(tokens, [
+      "invalid_request",
+      "bad_request",
+      "invalid_value",
+      "invalid_type",
+      "invalid_body",
+      "missing_required_parameter",
+      "unknown_parameter",
+    ])
+  ) {
+    return safeGenerationFailedResult(
+      "provider_request_shape_invalid",
+      "provider_status",
+    );
+  }
+
+  return safeGenerationFailedResult("provider_unexpected_400", "provider_status");
+};
+
 const readFirstOpenAiImagePayload = (
   value: unknown,
 ):
@@ -250,6 +367,36 @@ const resolveFormatFromContentType = (
   return "png";
 };
 
+const createOpenAiImageGenerationRequestBody = ({
+  model,
+  prompt,
+  quality,
+  requestShape,
+  size,
+}: {
+  model: OpenAiImageGenerationModel;
+  prompt: string;
+  quality: OpenAiImageGenerationQuality;
+  requestShape: OpenAiImageGenerationRequestShape;
+  size: OpenAiImageGenerationSize;
+}): Record<string, unknown> => {
+  const base = {
+    model,
+    prompt,
+  };
+
+  if (requestShape === "minimal") {
+    return base;
+  }
+
+  return {
+    ...base,
+    n: 1,
+    quality,
+    size,
+  };
+};
+
 export const createOpenAiImageGenerationAdapter = ({
   fetchImpl = globalThis.fetch,
   generatedImageArtifactStorage,
@@ -258,6 +405,7 @@ export const createOpenAiImageGenerationAdapter = ({
   providerKeyRepository,
   providerSecretVault,
   quality = defaultQuality,
+  requestShape = "single_image_low",
   size = defaultSize,
   timeoutMs = defaultTimeoutMs,
 }: OpenAiImageGenerationAdapterOptions): BackendGenerationProviderAdapter => ({
@@ -342,13 +490,15 @@ export const createOpenAiImageGenerationAdapter = ({
 
     try {
       const response = await fetchImpl(openAiImagesGenerationsEndpoint, {
-        body: JSON.stringify({
-          model,
-          n: 1,
-          prompt: input.prompt.trim(),
-          quality,
-          size,
-        }),
+        body: JSON.stringify(
+          createOpenAiImageGenerationRequestBody({
+            model,
+            prompt: input.prompt.trim(),
+            quality,
+            requestShape,
+            size,
+          }),
+        ),
         headers: {
           Authorization: `Bearer ${decrypted.plaintextKey}`,
           "Content-Type": "application/json",
@@ -452,7 +602,11 @@ export const createOpenAiImageGenerationAdapter = ({
       }
 
       if (response.status === 400) {
-        return invalidPromptResult();
+        const parsedBody = await parseJsonSafely(response);
+
+        return mapOpenAiBadRequestResult(
+          parsedBody.kind === "parsed" ? parsedBody.value : undefined,
+        );
       }
 
       if (response.status === 401 || response.status === 403) {

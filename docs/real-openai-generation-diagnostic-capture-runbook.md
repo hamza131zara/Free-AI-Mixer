@@ -110,6 +110,26 @@ The captured output, backend logs, and terminal transcript must not include:
 - local file paths or internal storage refs
 - public, signed, or download URLs
 
+## Provider 400 Diagnostics
+
+OpenAI image-generation HTTP 400 responses are intentionally reported through
+safe enum-only diagnostics. A 400 must not be treated as prompt text failure
+without checking the sanitized diagnostic fields first.
+
+Possible safe diagnostics include:
+
+- `provider_invalid_prompt`
+- `provider_request_shape_invalid`
+- `provider_model_unsupported`
+- `provider_org_verification_required`
+- `provider_response_format_unsupported`
+- `provider_moderation_blocked`
+- `provider_unexpected_400`
+
+Do not retry real generation until these fields are reviewed. Future real retry
+phases should use the minimal OpenAI image request shape only: `model` and
+`prompt`.
+
 ## Stop Rules
 
 - Stop after the first `/generation/jobs` response.
