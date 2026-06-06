@@ -124,11 +124,17 @@ Possible safe diagnostics include:
 - `provider_org_verification_required`
 - `provider_response_format_unsupported`
 - `provider_moderation_blocked`
+- `provider_400_body_unparseable`
+- `provider_400_error_shape_missing`
+- `provider_400_error_tokens_missing`
+- `provider_400_error_tokens_unclassified`
+- `provider_400_error_param_unclassified`
 - `provider_unexpected_400`
 
 Do not retry real generation until these fields are reviewed. Future real retry
 phases should use the minimal OpenAI image request shape only: `model` and
-`prompt`.
+`prompt`. Do not retry; never print raw provider body/message values while interpreting these
+diagnostics.
 
 Interpretation for future retry planning:
 
@@ -138,6 +144,8 @@ Interpretation for future retry planning:
   audit before changing models.
 - `provider_request_shape_invalid` means audit the OpenAI request body again
   before retrying.
+- `provider_400_error_tokens_unclassified` means stop and add mocked classifier
+  coverage before another retry.
 - `provider_moderation_blocked` or `provider_invalid_prompt` means choose a
   different benign prompt only after an audit.
 

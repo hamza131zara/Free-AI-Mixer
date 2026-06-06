@@ -231,6 +231,14 @@ const readOpenAiSafeErrorTokens = (value: unknown): string[] => {
   ].filter((token): token is string => Boolean(token));
 };
 
+const readOpenAiSafeErrorParamToken = (value: unknown): string | undefined => {
+  if (!isRecord(value) || !isRecord(value.error)) {
+    return undefined;
+  }
+
+  return normalizeSafeOpenAiErrorToken(value.error.param);
+};
+
 const tokenIncludes = (tokens: string[], patterns: string[]): boolean =>
   tokens.some((token) =>
     patterns.some((pattern) => {
@@ -243,7 +251,22 @@ const tokenIncludes = (tokens: string[], patterns: string[]): boolean =>
 const mapOpenAiBadRequestResult = (
   value: unknown,
 ): BackendGenerationProviderExecutionResult => {
+  if (!isRecord(value) || !isRecord(value.error)) {
+    return safeGenerationFailedResult(
+      "provider_400_error_shape_missing",
+      "provider_status",
+    );
+  }
+
   const tokens = readOpenAiSafeErrorTokens(value);
+  const paramToken = readOpenAiSafeErrorParamToken(value);
+
+  if (tokens.length === 0) {
+    return safeGenerationFailedResult(
+      "provider_400_error_tokens_missing",
+      "provider_status",
+    );
+  }
 
   if (
     tokenIncludes(tokens, [
@@ -266,6 +289,10 @@ const mapOpenAiBadRequestResult = (
       "verification_required",
       "verified_organization",
       "organization must be verified",
+      "organization",
+      "verification",
+      "verify",
+      "verified",
       "org must be verified",
       "project must be verified",
       "verify your organization",
@@ -284,6 +311,11 @@ const mapOpenAiBadRequestResult = (
       "model_not_found",
       "model_not_supported",
       "model",
+      "access",
+      "not enabled",
+      "not available",
+      "no permission",
+      "not found",
       "does not exist",
       "do not have access",
       "not have access",
@@ -326,7 +358,6 @@ const mapOpenAiBadRequestResult = (
       "invalid_parameter",
       "unsupported_parameter",
       "parameter",
-      "param",
       "request body",
       "unsupported value",
     ])
@@ -348,7 +379,27 @@ const mapOpenAiBadRequestResult = (
     return invalidPromptResult("provider_invalid_prompt");
   }
 
-  return safeGenerationFailedResult("provider_unexpected_400", "provider_status");
+  if (paramToken) {
+    return safeGenerationFailedResult(
+      "provider_400_error_param_unclassified",
+      "provider_status",
+    );
+  }
+
+  if (
+    tokenIncludes(tokens, [
+      "generic provider surprise",
+      "phase148_unknown_provider_code",
+      "unknown_provider_code",
+    ])
+  ) {
+    return safeGenerationFailedResult("provider_unexpected_400", "provider_status");
+  }
+
+  return safeGenerationFailedResult(
+    "provider_400_error_tokens_unclassified",
+    "provider_status",
+  );
 };
 
 const readFirstOpenAiImagePayload = (
@@ -640,8 +691,15 @@ export const createOpenAiImageGenerationAdapter = ({
       if (response.status === 400) {
         const parsedBody = await parseJsonSafely(response);
 
+        if (parsedBody.kind === "malformed_json") {
+          return safeGenerationFailedResult(
+            "provider_400_body_unparseable",
+            "provider_status",
+          );
+        }
+
         return mapOpenAiBadRequestResult(
-          parsedBody.kind === "parsed" ? parsedBody.value : undefined,
+          parsedBody.value,
         );
       }
 
