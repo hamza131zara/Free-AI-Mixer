@@ -130,6 +130,17 @@ Do not retry real generation until these fields are reviewed. Future real retry
 phases should use the minimal OpenAI image request shape only: `model` and
 `prompt`.
 
+Interpretation for future retry planning:
+
+- `provider_org_verification_required` means verify OpenAI API organization/project
+  access before any retry.
+- `provider_model_unsupported` means model access or selection needs a separate
+  audit before changing models.
+- `provider_request_shape_invalid` means audit the OpenAI request body again
+  before retrying.
+- `provider_moderation_blocked` or `provider_invalid_prompt` means choose a
+  different benign prompt only after an audit.
+
 ## Stop Rules
 
 - Stop after the first `/generation/jobs` response.

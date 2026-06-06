@@ -226,11 +226,19 @@ const readOpenAiSafeErrorTokens = (value: unknown): string[] => {
   return [
     normalizeSafeOpenAiErrorToken(value.error.code),
     normalizeSafeOpenAiErrorToken(value.error.type),
+    normalizeSafeOpenAiErrorToken(value.error.param),
+    normalizeSafeOpenAiErrorToken(value.error.message),
   ].filter((token): token is string => Boolean(token));
 };
 
 const tokenIncludes = (tokens: string[], patterns: string[]): boolean =>
-  tokens.some((token) => patterns.some((pattern) => token.includes(pattern)));
+  tokens.some((token) =>
+    patterns.some((pattern) => {
+      const normalizedPattern = normalizeSafeOpenAiErrorToken(pattern);
+
+      return normalizedPattern ? token.includes(normalizedPattern) : false;
+    }),
+  );
 
 const mapOpenAiBadRequestResult = (
   value: unknown,
@@ -243,20 +251,11 @@ const mapOpenAiBadRequestResult = (
       "content_policy",
       "policy_violation",
       "safety",
+      "blocked",
+      "disallowed",
     ])
   ) {
     return invalidPromptResult("provider_moderation_blocked");
-  }
-
-  if (
-    tokenIncludes(tokens, [
-      "invalid_prompt",
-      "prompt_invalid",
-      "prompt_rejected",
-      "prompt",
-    ])
-  ) {
-    return invalidPromptResult("provider_invalid_prompt");
   }
 
   if (
@@ -266,6 +265,11 @@ const mapOpenAiBadRequestResult = (
       "project_verification",
       "verification_required",
       "verified_organization",
+      "organization must be verified",
+      "org must be verified",
+      "project must be verified",
+      "verify your organization",
+      "organization_not_verified",
     ])
   ) {
     return safeGenerationFailedResult(
@@ -280,6 +284,12 @@ const mapOpenAiBadRequestResult = (
       "model_not_found",
       "model_not_supported",
       "model",
+      "does not exist",
+      "do not have access",
+      "not have access",
+      "unavailable model",
+      "model unavailable",
+      "model access",
     ])
   ) {
     return safeGenerationFailedResult(
@@ -288,7 +298,15 @@ const mapOpenAiBadRequestResult = (
     );
   }
 
-  if (tokenIncludes(tokens, ["response_format", "output_format"])) {
+  if (
+    tokenIncludes(tokens, [
+      "response_format",
+      "output_format",
+      "b64_json",
+      "url output",
+      "output",
+    ])
+  ) {
     return safeGenerationFailedResult(
       "provider_response_format_unsupported",
       "provider_status",
@@ -298,18 +316,36 @@ const mapOpenAiBadRequestResult = (
   if (
     tokenIncludes(tokens, [
       "invalid_request",
+      "invalid_request_error",
       "bad_request",
       "invalid_value",
       "invalid_type",
       "invalid_body",
       "missing_required_parameter",
       "unknown_parameter",
+      "invalid_parameter",
+      "unsupported_parameter",
+      "parameter",
+      "param",
+      "request body",
+      "unsupported value",
     ])
   ) {
     return safeGenerationFailedResult(
       "provider_request_shape_invalid",
       "provider_status",
     );
+  }
+
+  if (
+    tokenIncludes(tokens, [
+      "invalid_prompt",
+      "prompt_invalid",
+      "prompt_rejected",
+      "prompt",
+    ])
+  ) {
+    return invalidPromptResult("provider_invalid_prompt");
   }
 
   return safeGenerationFailedResult("provider_unexpected_400", "provider_status");
