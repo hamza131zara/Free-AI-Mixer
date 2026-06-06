@@ -241,6 +241,11 @@ export const createApp = (): Express => {
       ...(backendDeps.generationOpenAiAdapterFetchMode === "mock_only"
         ? {
             openAiAdapterMockFetch: createMockOpenAiImageGenerationFetch(),
+          }
+        : {}),
+      ...(backendDeps.generationOpenAiAdapterFetchMode === "mock_only" ||
+      backendDeps.generationOpenAiImageRealLocalSmokeEnabled
+        ? {
             providerSecretVault: backendDeps.providerSecretVault,
           }
         : {}),
