@@ -3,6 +3,7 @@ import { SceneQueue } from "../components/SceneQueue";
 import { SceneStatus } from "../components/SceneStatus";
 import { PromptImageGenerator } from "../components/PromptImageGenerator";
 import { PromptImageHistory } from "../components/PromptImageHistory";
+import { PromptVideoGenerator } from "../components/PromptVideoGenerator";
 import { TimelinePanel } from "../components/TimelinePanel";
 
 export function MixerPage() {
@@ -20,6 +21,7 @@ export function MixerPage() {
           <div className="workspace-stack">
             <SceneComposer />
             <PromptImageGenerator />
+            <PromptVideoGenerator />
             <PromptImageHistory />
           </div>
           <SceneQueue />

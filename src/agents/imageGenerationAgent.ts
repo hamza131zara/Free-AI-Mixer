@@ -5,6 +5,7 @@ import {
 import type {
   PromptImageGenerationRequest,
   PromptImageGenerationResponse,
+  PromptVideoGenerationRequest,
 } from "../types/imageGeneration";
 
 export class ImageGenerationAgentError extends Error {
@@ -25,6 +26,13 @@ export interface ImageGenerationAgent {
     request: PromptImageGenerationRequest;
     response: PromptImageGenerationResponse;
   }>;
+  generateVideoMetadata(
+    prompt: string,
+    signal?: AbortSignal,
+  ): Promise<{
+    request: PromptVideoGenerationRequest;
+    response: PromptImageGenerationResponse;
+  }>;
 }
 
 export const createImageGenerationAgent = (
@@ -36,6 +44,14 @@ export const createImageGenerationAgent = (
     return {
       request,
       response: await service.generateImageMetadata(request, signal),
+    };
+  },
+  async generateVideoMetadata(prompt, signal) {
+    const request = createPromptVideoRequest(prompt);
+
+    return {
+      request,
+      response: await service.generateVideoMetadata(request, signal),
     };
   },
 });
@@ -60,13 +76,31 @@ const createPromptImageRequest = (prompt: string): PromptImageGenerationRequest 
   };
 };
 
-const createSafeRequestId = (): string => {
+const createPromptVideoRequest = (prompt: string): PromptVideoGenerationRequest => {
+  const normalizedPrompt = prompt.trim();
+
+  if (!normalizedPrompt) {
+    throw new ImageGenerationAgentError(
+      "Enter a prompt before requesting mock video generation.",
+      "invalid_prompt",
+    );
+  }
+
+  return {
+    generationKind: "video",
+    prompt: normalizedPrompt,
+    providerId: "mock_local",
+    requestId: createSafeRequestId("vid"),
+  };
+};
+
+const createSafeRequestId = (prefix = "img"): string => {
   const randomId =
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : Math.random().toString(36).slice(2);
 
-  return `img_${Date.now().toString(36)}_${randomId.replace(/[^A-Za-z0-9_-]/g, "")}`.slice(
+  return `${prefix}_${Date.now().toString(36)}_${randomId.replace(/[^A-Za-z0-9_-]/g, "")}`.slice(
     0,
     80,
   );

@@ -690,6 +690,7 @@ h1 {
 .scene-queue,
 .scene-card,
 .prompt-image-generator,
+.prompt-video-generator,
 .prompt-image-history {
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -710,6 +711,7 @@ h1 {
 }
 
 .prompt-image-generator,
+.prompt-video-generator,
 .prompt-image-history {
   display: grid;
   gap: 16px;

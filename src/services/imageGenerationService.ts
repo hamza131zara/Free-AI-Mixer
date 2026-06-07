@@ -1,6 +1,8 @@
 import { fetchWithOptionalAccountBearer } from "./auth/authenticatedFetch";
 import type {
+  PromptGenerationRequest,
   PromptImageGenerationRequest,
+  PromptVideoGenerationRequest,
   PromptImageGenerationResponse,
 } from "../types/imageGeneration";
 
@@ -19,10 +21,25 @@ export interface ImageGenerationService {
     request: PromptImageGenerationRequest,
     signal?: AbortSignal,
   ): Promise<PromptImageGenerationResponse>;
+  generateVideoMetadata(
+    request: PromptVideoGenerationRequest,
+    signal?: AbortSignal,
+  ): Promise<PromptImageGenerationResponse>;
 }
 
 export const imageGenerationService: ImageGenerationService = {
   async generateImageMetadata(request, signal) {
+    return submitGenerationJob(request, signal);
+  },
+  async generateVideoMetadata(request, signal) {
+    return submitGenerationJob(request, signal);
+  },
+};
+
+const submitGenerationJob = async (
+  request: PromptGenerationRequest,
+  signal?: AbortSignal,
+): Promise<PromptImageGenerationResponse> => {
     const response = await fetchWithOptionalAccountBearer("/generation/jobs", {
       body: JSON.stringify({
         generationKind: request.generationKind,
@@ -57,7 +74,6 @@ export const imageGenerationService: ImageGenerationService = {
     }
 
     return body;
-  },
 };
 
 const readJson = async (response: Response): Promise<unknown> => {

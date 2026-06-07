@@ -4,8 +4,19 @@ export type PromptImageGenerationLifecycle =
   | "metadata_ready"
   | "failed";
 
+export type PromptVideoGenerationLifecycle =
+  | "idle"
+  | "submitting"
+  | "processing"
+  | "metadata_ready"
+  | "failed";
+
 export type PromptImageProviderId = "openai";
-export type PromptImageArtifactProviderId = PromptImageProviderId | "mock_local";
+export type PromptVideoProviderId = "mock_local";
+export type PromptGenerationArtifactProviderId =
+  | PromptImageProviderId
+  | PromptVideoProviderId;
+export type PromptImageArtifactProviderId = PromptGenerationArtifactProviderId;
 
 export interface PromptImageGenerationRequest {
   providerId: PromptImageProviderId;
@@ -13,6 +24,17 @@ export interface PromptImageGenerationRequest {
   prompt: string;
   requestId: string;
 }
+
+export interface PromptVideoGenerationRequest {
+  providerId: PromptVideoProviderId;
+  generationKind: "video";
+  prompt: string;
+  requestId: string;
+}
+
+export type PromptGenerationRequest =
+  | PromptImageGenerationRequest
+  | PromptVideoGenerationRequest;
 
 export interface PromptImageArtifactMetadata {
   artifactId: string;
@@ -42,7 +64,10 @@ export interface PromptImageGenerationRejectedResponse {
   runtime?: {
     vendorCallsEnabled?: boolean;
   };
-  attemptedProviderIds?: PromptImageArtifactProviderId[];
+  attemptedProviderIds?: PromptGenerationArtifactProviderId[];
+  generationKind?: "image" | "video";
+  lifecycle?: "submitted" | "processing" | "metadata_ready" | "failed";
+  lifecycleTrace?: Array<"submitted" | "processing" | "metadata_ready" | "failed">;
   diagnosticCode?: string;
   failureCategory?: string;
 }
