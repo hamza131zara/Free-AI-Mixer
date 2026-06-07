@@ -35,7 +35,11 @@ export interface OpenAiImageGenerationAdapterOptions {
   timeoutMs?: number;
 }
 
-export type OpenAiImageGenerationModel = "gpt-image-2";
+export type OpenAiImageGenerationModel =
+  | "gpt-image-2"
+  | "gpt-image-1"
+  | "gpt-image-1-mini"
+  | "dall-e-3";
 export type OpenAiImageGenerationSize = "1024x1024";
 export type OpenAiImageGenerationQuality = "low" | "auto";
 export type OpenAiImageGenerationRequestShape = "minimal" | "single_image_low";
@@ -473,6 +477,15 @@ const createOpenAiImageGenerationRequestBody = ({
   };
 
   if (requestShape === "minimal") {
+    if (model === "dall-e-3") {
+      return {
+        ...base,
+        n: 1,
+        response_format: "b64_json",
+        size,
+      };
+    }
+
     return base;
   }
 

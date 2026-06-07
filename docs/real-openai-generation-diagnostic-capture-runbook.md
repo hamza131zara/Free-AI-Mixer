@@ -40,6 +40,15 @@ Required safe state:
 Do not proceed to validation or `/generation/jobs` if any required gate prints
 `<missing>`. Do not retry automatically.
 
+For a future explicitly approved DALL-E-3 fallback smoke, set:
+
+- `FREE_AI_MIXER_GENERATION_OPENAI_IMAGE_MODEL=dall-e-3`
+
+Use this DALL-E-3 fallback only after GPT Image model access or organization
+verification diagnostics are reviewed. The fallback still permits exactly one
+backend-only real retry, with key revocation and local storage cleanup after
+every attempt.
+
 ```powershell
 $GenerationResponse = $null
 $GenerationError = $null

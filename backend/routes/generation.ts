@@ -18,6 +18,7 @@ import type {
   BackendGenerationRuntimeConfig,
   BackendGenerationMockExecutionAdapterSelection,
   BackendGenerationOpenAiAdapterFetchMode,
+  BackendGenerationOpenAiImageModelConfig,
   BackendGenerationRouteExecutionMode,
 } from "../generation/generationRuntimeConfig";
 import {
@@ -68,6 +69,7 @@ export interface CreateGenerationRouterOptions {
     requestId: string;
   }) => Promise<{ kind: "mock_execution_blocked" }>;
   generationOpenAiAdapterFetchMode?: BackendGenerationOpenAiAdapterFetchMode;
+  generationOpenAiImageModelConfig?: BackendGenerationOpenAiImageModelConfig;
   generationByokDecryptForMockExecutionEnabled?: boolean;
   openAiAdapterMockFetch?: typeof fetch;
   openAiRealProviderFetch?: typeof fetch;
@@ -857,6 +859,26 @@ export const createGenerationRouter = (
           return;
         }
 
+        if (
+          options.generationOpenAiImageModelConfig?.kind ===
+          "openai_image_model_invalid"
+        ) {
+          const failure = getGenerationFailureMapping("generation_execution_blocked");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "generation_execution_blocked",
+            failure.message,
+            failure.httpStatus,
+            [],
+            {
+              diagnosticCode: "real_provider_gate_missing",
+              failureCategory: "runtime_gate",
+            },
+          );
+          return;
+        }
+
         const vaultReadiness = (() => {
           try {
             return options.providerSecretVault?.getVaultReadiness();
@@ -909,6 +931,12 @@ export const createGenerationRouter = (
             : {}),
           providerKeyRepository: options.providerKeyRepository,
           providerSecretVault: options.providerSecretVault,
+          ...(options.generationOpenAiImageModelConfig?.kind ===
+          "openai_image_model_configured"
+            ? {
+                model: options.generationOpenAiImageModelConfig.model,
+              }
+            : {}),
           requestShape: "minimal",
         });
         let adapterResult: Awaited<

@@ -261,6 +261,8 @@ export const createApp = (): Express => {
         : {}),
       generationOpenAiImageRealLocalSmokeEnabled:
         backendDeps.generationOpenAiImageRealLocalSmokeEnabled,
+      generationOpenAiImageModelConfig:
+        backendDeps.generationOpenAiImageModelConfig,
       generationRuntimeConfig: backendDeps.generationRuntimeConfig,
       generationRuntimeReadiness: backendDeps.generationRuntimeReadiness,
       ...(routeAccessResolver ? { routeAccessResolver } : {}),

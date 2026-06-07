@@ -20,6 +20,22 @@ export type BackendGenerationOpenAiAdapterFetchMode =
   | "not_configured"
   | "mock_only";
 
+export type BackendGenerationOpenAiImageModel =
+  | "gpt-image-2"
+  | "gpt-image-1"
+  | "gpt-image-1-mini"
+  | "dall-e-3";
+
+export type BackendGenerationOpenAiImageModelConfig =
+  | {
+      kind: "openai_image_model_configured";
+      model: BackendGenerationOpenAiImageModel;
+    }
+  | {
+      kind: "openai_image_model_invalid";
+      value: string;
+    };
+
 export type BackendGenerationGeneratedImageStorageMode =
   | "not_configured"
   | "local_staging";
@@ -107,6 +123,18 @@ export const generationGeneratedImageStorageRootEnvName =
   "FREE_AI_MIXER_GENERATION_GENERATED_IMAGE_STORAGE_ROOT";
 export const generationOpenAiImageRealLocalSmokeEnabledEnvName =
   "FREE_AI_MIXER_GENERATION_OPENAI_IMAGE_REAL_LOCAL_SMOKE_ENABLED";
+export const generationOpenAiImageModelEnvName =
+  "FREE_AI_MIXER_GENERATION_OPENAI_IMAGE_MODEL";
+
+const defaultOpenAiImageModel: BackendGenerationOpenAiImageModel = "gpt-image-2";
+
+const isBackendGenerationOpenAiImageModel = (
+  value: string,
+): value is BackendGenerationOpenAiImageModel =>
+  value === "gpt-image-2" ||
+  value === "gpt-image-1" ||
+  value === "gpt-image-1-mini" ||
+  value === "dall-e-3";
 
 export const parseGenerationRuntimeConfig = (
   env: BackendGenerationRuntimeEnv = process.env,
@@ -175,6 +203,31 @@ export const parseGenerationGeneratedImageStorageRoot = (
 export const parseGenerationOpenAiImageRealLocalSmokeEnabled = (
   env: BackendGenerationRuntimeEnv = process.env,
 ): boolean => env[generationOpenAiImageRealLocalSmokeEnabledEnvName] === "1";
+
+export const parseGenerationOpenAiImageModelConfig = (
+  env: BackendGenerationRuntimeEnv = process.env,
+): BackendGenerationOpenAiImageModelConfig => {
+  const value = env[generationOpenAiImageModelEnvName]?.trim();
+
+  if (!value) {
+    return {
+      kind: "openai_image_model_configured",
+      model: defaultOpenAiImageModel,
+    };
+  }
+
+  if (isBackendGenerationOpenAiImageModel(value)) {
+    return {
+      kind: "openai_image_model_configured",
+      model: value,
+    };
+  }
+
+  return {
+    kind: "openai_image_model_invalid",
+    value,
+  };
+};
 
 export const evaluateGenerationRealProviderLocalGateReadiness = ({
   dependencies,
