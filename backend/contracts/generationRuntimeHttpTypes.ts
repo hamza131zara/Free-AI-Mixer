@@ -114,6 +114,17 @@ export interface BackendGenerationCatalogResponse {
   providers: BackendGenerationRuntimeSummary["supportedProviders"];
 }
 
+export type BackendGeneratedArtifactAccessResponse = {
+  kind: "generated_artifact_access_unavailable";
+  status:
+    | "access_not_configured"
+    | "generated_artifact_access_unavailable"
+    | "invalid_artifact_identity"
+    | "unauthenticated";
+  deliveryStatus: "unavailable";
+  message: string;
+};
+
 export type BackendGenerationJobMutationResponse =
   | {
       kind: "generation_job_rejected";

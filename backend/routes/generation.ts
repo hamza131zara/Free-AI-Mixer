@@ -6,6 +6,7 @@ import type { AsyncBackendRequesterContextResolver } from "../auth/requesterCont
 import type { WorkspaceMembershipRepository } from "../auth/workspaceMembership";
 import type {
   BackendGenerationCatalogResponse,
+  BackendGeneratedArtifactAccessResponse,
   BackendGenerationJobMutationResponse,
   BackendGenerationRuntimeStatusResponse,
 } from "../contracts/generationRuntimeHttpTypes";
@@ -43,6 +44,10 @@ import type {
   BackendGenerationSafeDiagnostic,
 } from "../generation/generationProviderAdapter";
 import type { GeneratedImageArtifactStorage } from "../generation/generatedImageArtifactStorage";
+import {
+  createNotConfiguredGeneratedImageArtifactAccessResolver,
+  type GeneratedImageArtifactAccessResolver,
+} from "../generation/generatedImageArtifactAccess";
 import { verifyGeneratedImageArtifactBytes } from "../generation/generatedImageArtifactVerification";
 import { createOpenAiImageGenerationAdapter } from "../generation/openAiImageGenerationAdapter";
 import {
@@ -81,6 +86,7 @@ export interface CreateGenerationRouterOptions {
   generatedArtifactStorageReadiness?: {
     getReadiness?: () => "not_configured" | "ready";
   };
+  generatedImageArtifactAccessResolver?: GeneratedImageArtifactAccessResolver;
 }
 
 const resolveAuthUnavailableCode = (
@@ -422,6 +428,24 @@ const mockLocalPngBytes = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
   "base64",
 );
+const safeGeneratedArtifactSegmentRegex = /^[A-Za-z0-9_-]{1,120}$/;
+
+const isSafeGeneratedArtifactSegment = (value: string): boolean =>
+  safeGeneratedArtifactSegmentRegex.test(value);
+
+const sendGeneratedArtifactAccessUnavailable = (
+  response: Response<BackendGeneratedArtifactAccessResponse>,
+  status: BackendGeneratedArtifactAccessResponse["status"],
+  message: string,
+  httpStatus: number,
+): void => {
+  response.status(httpStatus).json({
+    kind: "generated_artifact_access_unavailable",
+    status,
+    deliveryStatus: "unavailable",
+    message,
+  });
+};
 
 const sendMockLocalImageStorageResult = async (
   response: Response<BackendGenerationJobMutationResponse>,
@@ -602,6 +626,67 @@ export const createGenerationRouter = (
         message:
           getGenerationFailureMapping("sign_in_required").message,
       });
+    },
+  );
+
+  router.get(
+    "/generation/jobs/:jobId/artifacts/:artifactId/access",
+    async (
+      request,
+      response: Response<BackendGeneratedArtifactAccessResponse>,
+    ) => {
+      const { artifactId, jobId } = request.params;
+
+      if (
+        !isSafeGeneratedArtifactSegment(jobId) ||
+        !isSafeGeneratedArtifactSegment(artifactId)
+      ) {
+        sendGeneratedArtifactAccessUnavailable(
+          response,
+          "invalid_artifact_identity",
+          "Generated artifact access identity is invalid.",
+          400,
+        );
+        return;
+      }
+
+      const requesterContext = options.routeAccessResolver
+        ? await options.routeAccessResolver.resolve({ headers: request.headers })
+        : getRequesterContextFromRequest(request);
+
+      if (requesterContext.kind !== "authenticated") {
+        sendGeneratedArtifactAccessUnavailable(
+          response,
+          "unauthenticated",
+          "Authentication is required to access generated artifact previews.",
+          401,
+        );
+        return;
+      }
+
+      if (!requesterContext.workspaceId) {
+        sendGeneratedArtifactAccessUnavailable(
+          response,
+          "generated_artifact_access_unavailable",
+          "Generated artifact access workspace identity is unavailable.",
+          503,
+        );
+        return;
+      }
+
+      const resolver =
+        options.generatedImageArtifactAccessResolver ??
+        createNotConfiguredGeneratedImageArtifactAccessResolver();
+      const result = await resolver.resolveAccess({
+        artifactId,
+        jobId,
+        requester: {
+          userId: requesterContext.userId,
+          workspaceId: requesterContext.workspaceId,
+        },
+      });
+
+      response.status(503).json(result);
     },
   );
 
