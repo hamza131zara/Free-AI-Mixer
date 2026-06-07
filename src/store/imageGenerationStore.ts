@@ -4,6 +4,7 @@ import {
   imageGenerationAgent,
 } from "../agents/imageGenerationAgent";
 import { ImageGenerationServiceError } from "../services/imageGenerationService";
+import { useImageGenerationHistoryStore } from "./imageGenerationHistoryStore";
 import type {
   PromptImageArtifactMetadata,
   PromptImageGenerationError,
@@ -50,9 +51,17 @@ export const useImageGenerationStore = create<ImageGenerationStoreState>(
           controller.signal,
         );
 
-        if (result.kind === "generation_job_metadata_ready") {
+        if (result.response.kind === "generation_job_metadata_ready") {
+          useImageGenerationHistoryStore
+            .getState()
+            .addSuccessfulGeneration({
+              artifact: result.response.artifact,
+              prompt: result.request.prompt,
+              requestId: result.request.requestId,
+            });
+
           set({
-            artifact: result.artifact,
+            artifact: result.response.artifact,
             error: undefined,
             lifecycle: "metadata_ready",
             statusMessage:
@@ -64,8 +73,8 @@ export const useImageGenerationStore = create<ImageGenerationStoreState>(
         set({
           artifact: undefined,
           error: {
-            code: result.status,
-            message: result.message,
+            code: result.response.status,
+            message: result.response.message,
           },
           lifecycle: "failed",
           statusMessage: "Image generation request failed safely.",

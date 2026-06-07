@@ -55,3 +55,16 @@ export interface PromptImageGenerationError {
   message: string;
   code?: string;
 }
+
+export interface PromptImageGenerationHistoryEntry {
+  generationId: string;
+  requestId: string;
+  prompt: string;
+  providerId: PromptImageArtifactProviderId;
+  contentType: PromptImageArtifactMetadata["contentType"];
+  sizeBytes: number;
+  createdAt: string;
+  deliveryStatus: "unavailable";
+  sha256?: string;
+  status: "metadata_ready";
+}

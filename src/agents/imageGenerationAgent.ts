@@ -21,14 +21,22 @@ export interface ImageGenerationAgent {
   generateImageMetadata(
     prompt: string,
     signal?: AbortSignal,
-  ): Promise<PromptImageGenerationResponse>;
+  ): Promise<{
+    request: PromptImageGenerationRequest;
+    response: PromptImageGenerationResponse;
+  }>;
 }
 
 export const createImageGenerationAgent = (
   service: ImageGenerationService = imageGenerationService,
 ): ImageGenerationAgent => ({
   async generateImageMetadata(prompt, signal) {
-    return service.generateImageMetadata(createPromptImageRequest(prompt), signal);
+    const request = createPromptImageRequest(prompt);
+
+    return {
+      request,
+      response: await service.generateImageMetadata(request, signal),
+    };
   },
 });
 
