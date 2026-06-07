@@ -688,11 +688,17 @@ h1 {
 .scene-composer,
 .scene-status,
 .scene-queue,
-.scene-card {
+.scene-card,
+.prompt-image-generator {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 12px 30px rgba(31, 41, 55, 0.08);
+}
+
+.workspace-stack {
+  display: grid;
+  gap: 20px;
 }
 
 .scene-composer {
@@ -700,6 +706,52 @@ h1 {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   padding: 18px;
+}
+
+.prompt-image-generator {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.prompt-image-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.prompt-image-header h2 {
+  margin: 0;
+  color: #0f1f35;
+  font-size: 1.18rem;
+}
+
+.prompt-image-form {
+  display: grid;
+  gap: 14px;
+}
+
+.prompt-image-result {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #d7dee6;
+  border-radius: 14px;
+  padding: 12px;
+  background: #f8fafc;
+}
+
+.prompt-image-status {
+  margin: 0;
+  color: #334155;
+  font-weight: 700;
+}
+
+.prompt-image-metadata {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
 }
 
 .field {

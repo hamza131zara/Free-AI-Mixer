@@ -5,6 +5,7 @@ const allowedAuthenticatedPaths = new Set([
   "/project-library/history",
   "/provider-settings/status",
   "/provider-settings/connections",
+  "/generation/jobs",
   "/credits/status",
 ]);
 

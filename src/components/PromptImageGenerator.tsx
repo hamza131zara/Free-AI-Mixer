@@ -1,0 +1,100 @@
+import { Image } from "lucide-react";
+import { useImageGenerationStore } from "../store/imageGenerationStore";
+
+export function PromptImageGenerator() {
+  const artifact = useImageGenerationStore((state) => state.artifact);
+  const error = useImageGenerationStore((state) => state.error);
+  const lifecycle = useImageGenerationStore((state) => state.lifecycle);
+  const prompt = useImageGenerationStore((state) => state.prompt);
+  const statusMessage = useImageGenerationStore((state) => state.statusMessage);
+  const generateImageMetadata = useImageGenerationStore(
+    (state) => state.generateImageMetadata,
+  );
+  const updatePrompt = useImageGenerationStore((state) => state.updatePrompt);
+
+  const isSubmitting = lifecycle === "submitting";
+  const canSubmit = prompt.trim().length > 0 && !isSubmitting;
+
+  return (
+    <section className="prompt-image-generator" aria-labelledby="prompt-image-title">
+      <div className="prompt-image-header">
+        <div>
+          <p className="eyebrow">Mock Image Generation</p>
+          <h2 id="prompt-image-title">Prompt to image metadata</h2>
+        </div>
+        <span className="status-pill status-idle">Backend mock</span>
+      </div>
+
+      <form
+        className="prompt-image-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void generateImageMetadata();
+        }}
+      >
+        <label className="field field-wide">
+          <span>Image prompt</span>
+          <textarea
+            value={prompt}
+            onChange={(event) => updatePrompt(event.target.value)}
+            placeholder="A simple flat red square app icon on a plain white background"
+            rows={4}
+          />
+        </label>
+
+        <p className="form-helper field-wide">
+          This calls the backend generation route and displays safe artifact
+          metadata only. No image bytes, storage path, or download URL is exposed.
+        </p>
+
+        <div className="actions">
+          <button type="submit" disabled={!canSubmit}>
+            <Image aria-hidden="true" size={18} />
+            {isSubmitting ? "Generating metadata..." : "Generate Image"}
+          </button>
+        </div>
+      </form>
+
+      <div className="prompt-image-result" aria-live="polite">
+        <p className="prompt-image-status" data-testid="prompt-image-status">
+          {statusMessage ?? "Idle. Enter a prompt to request backend metadata."}
+        </p>
+
+        {error ? (
+          <p className="error-message" data-testid="prompt-image-error">
+            {error.message}
+          </p>
+        ) : null}
+
+        {artifact ? (
+          <dl className="prompt-image-metadata" data-testid="prompt-image-metadata">
+            <div>
+              <dt>Provider</dt>
+              <dd>{artifact.providerId}</dd>
+            </div>
+            <div>
+              <dt>Content type</dt>
+              <dd>{artifact.contentType}</dd>
+            </div>
+            <div>
+              <dt>Size</dt>
+              <dd>{artifact.sizeBytes} bytes</dd>
+            </div>
+            <div>
+              <dt>Created</dt>
+              <dd>{artifact.createdAt}</dd>
+            </div>
+            <div>
+              <dt>Delivery</dt>
+              <dd>{artifact.deliveryStatus}</dd>
+            </div>
+            <div>
+              <dt>SHA-256</dt>
+              <dd>{artifact.sha256 ? "present" : "not returned"}</dd>
+            </div>
+          </dl>
+        ) : null}
+      </div>
+    </section>
+  );
+}
