@@ -7,6 +7,7 @@ import type {
   BackendProviderRoutingPreference,
   BackendSupportedProviderId,
 } from "./providerSettingsHttpTypes";
+import type { BackendGenerationArtifactProviderId } from "../generation/generationProviderTypes";
 
 export type BackendGenerationJobLifecycleState =
   | "rejected"
@@ -26,7 +27,7 @@ export interface BackendGenerationImageJobRequest {
 
 export interface BackendGenerationMetadataOnlyArtifactResponse {
   artifactId: string;
-  providerId: BackendSupportedProviderId;
+  providerId: BackendGenerationArtifactProviderId;
   contentType: "image/png" | "image/jpeg" | "image/webp";
   sizeBytes: number;
   sha256: string;
@@ -134,7 +135,7 @@ export type BackendGenerationJobMutationResponse =
         | "cost_controls_not_configured";
       message: string;
       runtime: BackendGenerationJobRuntimeSnapshot;
-      attemptedProviderIds: BackendSupportedProviderId[];
+      attemptedProviderIds: BackendGenerationArtifactProviderId[];
       diagnosticCode?: BackendGenerationSafeDiagnosticCode;
       failureCategory?: BackendGenerationSafeFailureCategory;
     }
@@ -144,5 +145,5 @@ export type BackendGenerationJobMutationResponse =
       message: string;
       artifact: BackendGenerationMetadataOnlyArtifactResponse;
       runtime: BackendGenerationJobRuntimeSnapshot;
-      attemptedProviderIds: BackendSupportedProviderId[];
+      attemptedProviderIds: BackendGenerationArtifactProviderId[];
     };

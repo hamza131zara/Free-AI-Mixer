@@ -5,6 +5,9 @@ import type {
 } from "../contracts/providerSettingsHttpTypes";
 
 export type BackendGenerationProviderId = BackendSupportedProviderId;
+export type BackendGenerationArtifactProviderId =
+  | BackendGenerationProviderId
+  | "mock_local";
 export type BackendGenerationRoutingMode = BackendProviderRoutingPreference;
 
 export interface BackendGenerationFallbackPolicy {

@@ -43,6 +43,7 @@ import type {
   BackendGenerationSafeDiagnostic,
 } from "../generation/generationProviderAdapter";
 import type { GeneratedImageArtifactStorage } from "../generation/generatedImageArtifactStorage";
+import { verifyGeneratedImageArtifactBytes } from "../generation/generatedImageArtifactVerification";
 import { createOpenAiImageGenerationAdapter } from "../generation/openAiImageGenerationAdapter";
 import {
   defaultGenerationRetryPolicy,
@@ -416,6 +417,110 @@ const sendOpenAiRealLocalProviderUnexpectedError = (
   );
 };
 
+const mockLocalProviderId = "mock_local" as const;
+const mockLocalPngBytes = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+  "base64",
+);
+
+const sendMockLocalImageStorageResult = async (
+  response: Response<BackendGenerationJobMutationResponse>,
+  runtimeSummary: ReturnType<typeof createRuntimeSummary>,
+  input: {
+    artifactId: string;
+    jobId: string;
+    ownerId: string;
+    storage?: GeneratedImageArtifactStorage;
+    workspaceId: string;
+  },
+): Promise<void> => {
+  if (!input.storage) {
+    const failure = getGenerationFailureMapping("artifact_storage_unavailable");
+    rejectGenerationJob(
+      response,
+      runtimeSummary,
+      "artifact_storage_unavailable",
+      failure.message,
+      failure.httpStatus,
+      [mockLocalProviderId],
+    );
+    return;
+  }
+
+  const verified = verifyGeneratedImageArtifactBytes({
+    bytes: mockLocalPngBytes,
+    contentType: "image/png",
+    format: "png",
+    maxBytes: 1024,
+  });
+
+  if (verified.kind !== "verified") {
+    const failure = getGenerationFailureMapping("artifact_storage_unavailable");
+    rejectGenerationJob(
+      response,
+      runtimeSummary,
+      "artifact_storage_unavailable",
+      failure.message,
+      failure.httpStatus,
+      [mockLocalProviderId],
+      {
+        diagnosticCode: "artifact_verification_failed",
+        failureCategory: "artifact_storage",
+      },
+    );
+    return;
+  }
+
+  const stored = await input.storage.store({
+    artifactId: input.artifactId,
+    jobId: input.jobId,
+    ownerId: input.ownerId,
+    providerId: mockLocalProviderId,
+    verifiedImage: verified.image,
+    workspaceId: input.workspaceId,
+  });
+
+  if (stored.kind !== "stored") {
+    const failure = getGenerationFailureMapping("artifact_storage_unavailable");
+    rejectGenerationJob(
+      response,
+      runtimeSummary,
+      "artifact_storage_unavailable",
+      failure.message,
+      failure.httpStatus,
+      [mockLocalProviderId],
+      {
+        diagnosticCode:
+          stored.kind === "failed"
+            ? "artifact_storage_write_failed"
+            : "real_provider_storage_not_ready",
+        failureCategory: "artifact_storage",
+      },
+    );
+    return;
+  }
+
+  const { artifact } = stored;
+
+  response.status(200).json({
+    kind: "generation_job_metadata_ready",
+    status: "generated_metadata_ready",
+    message:
+      "Mock local image generation produced verified local metadata for backend smoke only; delivery remains unavailable.",
+    artifact: {
+      artifactId: artifact.artifactId,
+      providerId: artifact.providerId,
+      contentType: artifact.contentType,
+      sizeBytes: artifact.sizeBytes,
+      sha256: artifact.sha256,
+      createdAt: artifact.createdAt,
+      deliveryStatus: "unavailable",
+    },
+    runtime: toRuntimeSnapshot(runtimeSummary, false),
+    attemptedProviderIds: [mockLocalProviderId],
+  });
+};
+
 export const createGenerationRouter = (
   options: CreateGenerationRouterOptions,
 ): Router => {
@@ -494,6 +599,7 @@ export const createGenerationRouter = (
       if (
         routeExecutionMode !== "preconditions_only" &&
         routeExecutionMode !== "adapter_mock_only" &&
+        routeExecutionMode !== "mock_image_local_only" &&
         routeExecutionMode !== "openai_adapter_mock_only" &&
         routeExecutionMode !== "openai_adapter_mock_storage_only" &&
         routeExecutionMode !== "real_provider_local_only"
@@ -636,25 +742,40 @@ export const createGenerationRouter = (
         return;
       }
 
-      const gatePrecondition = evaluateGenerationGatePreconditions(
-        options.generationRuntimeConfig ?? {
-          kind: "generation_runtime_config",
-          allowRealProviderCalls: false,
-          providerAdapter: "not_configured",
-          runtimeEnabled: false,
-        },
-      );
+      const generationRuntimeConfig = options.generationRuntimeConfig ?? {
+        kind: "generation_runtime_config" as const,
+        allowRealProviderCalls: false,
+        providerAdapter: "not_configured" as const,
+        runtimeEnabled: false,
+      };
 
-      if (gatePrecondition.kind === "blocked") {
-        const failure = getGenerationFailureMapping(gatePrecondition.code);
-        rejectGenerationJob(
-          response,
-          runtimeSummary,
-          preconditionCodeToResponseStatus(gatePrecondition.code),
-          failure.message,
-          failure.httpStatus,
-        );
-        return;
+      if (routeExecutionMode === "mock_image_local_only") {
+        if (!generationRuntimeConfig.runtimeEnabled) {
+          const failure = getGenerationFailureMapping("generation_runtime_disabled");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "generation_runtime_disabled",
+            failure.message,
+            failure.httpStatus,
+          );
+          return;
+        }
+      } else {
+        const gatePrecondition =
+          evaluateGenerationGatePreconditions(generationRuntimeConfig);
+
+        if (gatePrecondition.kind === "blocked") {
+          const failure = getGenerationFailureMapping(gatePrecondition.code);
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            preconditionCodeToResponseStatus(gatePrecondition.code),
+            failure.message,
+            failure.httpStatus,
+          );
+          return;
+        }
       }
 
       const controlsPrecondition = evaluateGenerationControlPreconditions(
@@ -671,6 +792,17 @@ export const createGenerationRouter = (
           failure.message,
           failure.httpStatus,
         );
+        return;
+      }
+
+      if (routeExecutionMode === "mock_image_local_only") {
+        await sendMockLocalImageStorageResult(response, runtimeSummary, {
+          artifactId: `${parsed.request.requestId}_mock_image`,
+          jobId: parsed.request.requestId,
+          ownerId: authenticatedRequester?.userId ?? "",
+          storage: options.generatedImageArtifactStorage,
+          workspaceId: authenticatedRequester?.workspaceId ?? "",
+        });
         return;
       }
 

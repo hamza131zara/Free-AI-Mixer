@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { BackendGenerationProviderId } from "./generationProviderTypes";
+import type { BackendGenerationArtifactProviderId } from "./generationProviderTypes";
 import type { InternalArtifactStorageRef } from "../artifacts/internalArtifactStorageRef";
 import type {
   GeneratedImageArtifactContentType,
@@ -18,7 +18,7 @@ export interface GeneratedImageArtifactMetadata {
   jobId: string;
   workspaceId: string;
   ownerId: string;
-  providerId: BackendGenerationProviderId;
+  providerId: BackendGenerationArtifactProviderId;
   kind: "generated_image";
   format: GeneratedImageArtifactFormat;
   contentType: GeneratedImageArtifactContentType;
@@ -33,7 +33,7 @@ export interface GeneratedImageArtifactStoreInput {
   jobId: string;
   workspaceId: string;
   ownerId: string;
-  providerId: BackendGenerationProviderId;
+  providerId: BackendGenerationArtifactProviderId;
   verifiedImage: VerifiedGeneratedImageArtifactBytes;
   createdAt?: string;
 }
