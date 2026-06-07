@@ -1236,3 +1236,14 @@ Status:
 - Diagnostics cover validation timeout, provider fetch failure, provider 5xx, provider rate limit, invalid credentials, unexpected provider status, missing stored key, adapter not ready, and vault decrypt failure.
 - Automated tests mock provider responses and network failures; no real OpenAI validation retry or real generation retry was performed.
 - Frontend changes, public/signed/download URLs, export integration, credits/billing mutation, fake user-facing success/progress/artifacts, and production launch remain blocked.
+
+## Phase 166 status
+
+- Phase 166: mock generation workspace final QA and docs pack.
+- The current safe generation milestone is mock/local only:
+  - mock image generation returns backend-verified safe metadata only
+  - prompt-to-image UI stores successful metadata in browser-local history only
+  - mock video generation remains fail-closed with `video_artifact_storage_unavailable`
+- Real provider generation is paused until API billing/quota access is available and a separate audited retry phase is approved.
+- Generated artifact preview, delivery, download, public URLs, signed URLs, and streaming remain future audited phases.
+- Frontend direct storage/provider access, export integration, credits/billing mutation, and production rollout remain blocked.

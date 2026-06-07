@@ -1092,3 +1092,12 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - DB schema: jobs table with unique requestId, claimExpiresAt, status transitions.
 - DB must sanitize failure (message/code only) and artifact fields (no paths/URLs).
 - Recovery: SELECT jobs WHERE status IN (rendering, finalizing) AND claimExpiresAt < NOW().
+
+## Mock generation workspace boundary (Phase 166)
+
+- The Mixer generation workspace is currently a safe mock/local generation surface.
+- Prompt-to-image calls backend `/generation/jobs` only and displays safe metadata returned by the backend.
+- Successful mock image metadata can be saved in browser-local history; previews and artifact delivery are not implemented.
+- Prompt-to-video calls the backend video boundary, but video generation fails closed with `video_artifact_storage_unavailable` until verified video artifact storage exists.
+- The frontend must not access provider APIs, Supabase/storage, artifact roots, local paths, internal refs, base64, bytes, public URLs, signed URLs, or download URLs directly.
+- Real provider generation, artifact preview, artifact delivery, browser download, export integration, and credits/billing mutation remain separate audited phases.

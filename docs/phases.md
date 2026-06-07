@@ -13643,6 +13643,26 @@ Safety boundaries:
 - no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
 
+## Phase 166 - Mock Generation Workspace Final QA and Docs Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- docs/test-only finalization for the safe mock generation workspace milestone
+- mock image generation remains backend-mediated, local/mock, and metadata-only
+- prompt-to-image UI, browser-local image history, and prompt-to-video UI remain unified on the Mixer page
+- mock video generation remains truthful and fail-closed with `video_artifact_storage_unavailable`
+- final QA coverage verifies the generation workspace does not expose preview, playback, download, public URL, signed URL, direct provider, direct storage, or API-key behavior
+
+Safety boundaries:
+
+- real provider generation remains paused until API billing/quota access is available and a separate audited retry phase is approved
+- no real provider calls, real API keys, frontend storage access, public/signed/download URL delivery, preview rendering, playback, export integration, credits/billing mutation, or backend route behavior change is included
+- generated artifact preview, delivery, download, streaming, and public/signed URL behavior remain future audited phases
+
 ## Phase 111 - Generation Preconditions App Dependency Wiring Pack
 
 Status:

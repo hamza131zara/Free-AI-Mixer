@@ -2874,6 +2874,13 @@ Still deferred:
   - publicLaunchApproved remains false until manual approval.
   - This phase supports a go/no-go decision; it does not automatically launch the platform.
 
+- Phase 166 documents the current mock generation workspace limits:
+  - Real provider generation is paused until API billing/quota access is available and a separate audited retry phase is approved.
+  - Mock image generation is local/backend-mediated and returns safe metadata only; it does not expose image bytes, base64, local paths, internal refs, public URLs, signed URLs, or download URLs.
+  - Mock video generation remains fail-closed with `video_artifact_storage_unavailable`; verified video artifact storage and delivery are not implemented yet.
+  - The Mixer generation workspace intentionally has no generated previews, playback, browser downloads, public delivery, signed delivery, export integration, or credits/billing mutation.
+  - Generated artifact preview, delivery, streaming, download, and public/signed URL behavior remain future audited phases.
+
 - Phase 94 adds a backend-only real provider generation contract boundary:
   - Real generation remains blocked.
   - `/generation/jobs` remains disabled.
