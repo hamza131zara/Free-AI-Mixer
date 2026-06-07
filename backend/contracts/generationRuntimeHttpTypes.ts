@@ -118,6 +118,7 @@ export type BackendGeneratedArtifactAccessResponse = {
   kind: "generated_artifact_access_unavailable";
   status:
     | "access_not_configured"
+    | "descriptor_not_enabled"
     | "generated_artifact_access_unavailable"
     | "invalid_artifact_identity"
     | "unauthenticated";

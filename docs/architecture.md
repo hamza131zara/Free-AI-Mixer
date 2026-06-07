@@ -1101,3 +1101,11 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - Prompt-to-video calls the backend video boundary, but video generation fails closed with `video_artifact_storage_unavailable` until verified video artifact storage exists.
 - The frontend must not access provider APIs, Supabase/storage, artifact roots, local paths, internal refs, base64, bytes, public URLs, signed URLs, or download URLs directly.
 - Real provider generation, artifact preview, artifact delivery, browser download, export integration, and credits/billing mutation remain separate audited phases.
+
+## Generated image access registry boundary (Phase 170)
+
+- Generated image artifacts now have a backend-only registry boundary for process-memory lookup by `jobId` and `artifactId`.
+- The registry may retain safe artifact metadata plus backend-only internal storage refs after mock image storage succeeds.
+- The generation-specific access route can identify registered artifacts, but it still returns descriptor-disabled JSON with `deliveryStatus: unavailable`.
+- Internal refs, local paths, storage refs, image bytes, base64 payloads, public URLs, signed URLs, download URLs, and stream URLs must never be serialized to frontend responses.
+- Real preview delivery requires a later audited backend-mediated stream/descriptor phase with explicit auth, workspace ownership, path containment, content-type, cache, and abuse controls.

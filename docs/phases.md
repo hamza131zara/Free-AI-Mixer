@@ -13663,6 +13663,24 @@ Safety boundaries:
 - no real provider calls, real API keys, frontend storage access, public/signed/download URL delivery, preview rendering, playback, export integration, credits/billing mutation, or backend route behavior change is included
 - generated artifact preview, delivery, download, streaming, and public/signed URL behavior remain future audited phases
 
+## Phase 170 - Generated Image Access Registry and Descriptor Boundary Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- backend-only generated image artifact registry/resolver boundary
+- successful mock image generation can register safe artifact metadata plus backend-only internal storage refs in process memory
+- `GET /generation/jobs/:jobId/artifacts/:artifactId/access` can distinguish known registered artifacts from unknown or mismatched artifacts
+- public access responses remain descriptor-only and unavailable with `deliveryStatus: unavailable`
+
+Safety boundaries:
+
+- no image streaming route, frontend preview UI, browser image rendering, public URL, signed URL, download URL, base64, bytes, local path, internal ref, storage ref, direct frontend storage access, real provider call, API key behavior, credits/billing mutation, or export behavior is added
+- registered internal refs remain process-memory backend state only and are not serialized to clients
+
 ## Phase 111 - Generation Preconditions App Dependency Wiring Pack
 
 Status:

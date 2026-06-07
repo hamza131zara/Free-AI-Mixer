@@ -21,6 +21,8 @@ import { createExportRouter } from "./routes/exports";
 import { createBackendDependencies } from "./composition/backendDependencies";
 import type { BackendDatabaseRepositories } from "./composition/repositoryComposition";
 import { createLocalGeneratedImageArtifactStorage } from "./generation/generatedImageArtifactStorage";
+import { createRegistryBackedGeneratedImageArtifactAccessResolver } from "./generation/generatedImageArtifactAccess";
+import { createInMemoryGeneratedImageArtifactRegistry } from "./generation/generatedImageArtifactRegistry";
 import { createRenderWorkerLifecycle } from "./workers/renderWorkerLifecycle";
 import { createLocalDevArtifactAccessProvider } from "./artifacts/localDevArtifactAccessProvider";
 import { readSupabaseConfigFromEnv } from "./config/supabaseConfig";
@@ -109,6 +111,8 @@ export const createApp = (): Express => {
           rootPath: backendDeps.generationGeneratedImageStorageRoot,
         })
       : undefined;
+  const generatedImageArtifactRegistry =
+    createInMemoryGeneratedImageArtifactRegistry();
   const accountBootstrapDependencies =
     repositories && supabaseClientFactory.kind === "supabase_client_factory"
       ? (() => {
@@ -252,6 +256,11 @@ export const createApp = (): Express => {
       ...(generatedImageArtifactStorage
         ? {
             generatedImageArtifactStorage,
+            generatedImageArtifactAccessResolver:
+              createRegistryBackedGeneratedImageArtifactAccessResolver({
+                registry: generatedImageArtifactRegistry,
+              }),
+            generatedImageArtifactRegistry,
           }
         : {}),
       ...(backendDeps.generationOpenAiImageRealLocalSmokeEnabled

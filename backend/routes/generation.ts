@@ -48,6 +48,7 @@ import {
   createNotConfiguredGeneratedImageArtifactAccessResolver,
   type GeneratedImageArtifactAccessResolver,
 } from "../generation/generatedImageArtifactAccess";
+import type { GeneratedImageArtifactRegistry } from "../generation/generatedImageArtifactRegistry";
 import { verifyGeneratedImageArtifactBytes } from "../generation/generatedImageArtifactVerification";
 import { createOpenAiImageGenerationAdapter } from "../generation/openAiImageGenerationAdapter";
 import {
@@ -87,6 +88,7 @@ export interface CreateGenerationRouterOptions {
     getReadiness?: () => "not_configured" | "ready";
   };
   generatedImageArtifactAccessResolver?: GeneratedImageArtifactAccessResolver;
+  generatedImageArtifactRegistry?: GeneratedImageArtifactRegistry;
 }
 
 const resolveAuthUnavailableCode = (
@@ -454,6 +456,7 @@ const sendMockLocalImageStorageResult = async (
     artifactId: string;
     jobId: string;
     ownerId: string;
+    registry?: GeneratedImageArtifactRegistry;
     storage?: GeneratedImageArtifactStorage;
     workspaceId: string;
   },
@@ -525,6 +528,10 @@ const sendMockLocalImageStorageResult = async (
   }
 
   const { artifact } = stored;
+  input.registry?.register({
+    artifact,
+    internalRef: stored.internalRef,
+  });
 
   response.status(200).json({
     kind: "generation_job_metadata_ready",
@@ -927,6 +934,7 @@ export const createGenerationRouter = (
           artifactId: `${parsed.request.requestId}_mock_image`,
           jobId: parsed.request.requestId,
           ownerId: authenticatedRequester?.userId ?? "",
+          registry: options.generatedImageArtifactRegistry,
           storage: options.generatedImageArtifactStorage,
           workspaceId: authenticatedRequester?.workspaceId ?? "",
         });
