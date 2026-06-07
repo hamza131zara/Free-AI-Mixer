@@ -1097,10 +1097,10 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 
 - The Mixer generation workspace is currently a safe mock/local generation surface.
 - Prompt-to-image calls backend `/generation/jobs` only and displays safe metadata returned by the backend.
-- Successful mock image metadata can be saved in browser-local history; previews and artifact delivery are not implemented.
+- Successful mock image metadata can be saved in browser-local history; local image preview is backend-mediated only when explicitly enabled.
 - Prompt-to-video calls the backend video boundary, but video generation fails closed with `video_artifact_storage_unavailable` until verified video artifact storage exists.
 - The frontend must not access provider APIs, Supabase/storage, artifact roots, local paths, internal refs, base64, bytes, public URLs, signed URLs, or download URLs directly.
-- Real provider generation, artifact preview, artifact delivery, browser download, export integration, and credits/billing mutation remain separate audited phases.
+- Real provider generation, production artifact delivery, browser download, export integration, and credits/billing mutation remain separate audited phases.
 
 ## Generated image access registry boundary (Phase 170)
 
@@ -1109,3 +1109,13 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - The generation-specific access route can identify registered artifacts, but it still returns descriptor-disabled JSON with `deliveryStatus: unavailable`.
 - Internal refs, local paths, storage refs, image bytes, base64 payloads, public URLs, signed URLs, download URLs, and stream URLs must never be serialized to frontend responses.
 - Real preview delivery requires a later audited backend-mediated stream/descriptor phase with explicit auth, workspace ownership, path containment, content-type, cache, and abuse controls.
+
+## Backend-mediated generated image preview (Phase 172)
+
+- Local generated image preview is served only by the generation-specific backend preview route.
+- The preview route is gated by `FREE_AI_MIXER_GENERATION_ENABLE_LOCAL_IMAGE_PREVIEW=1`.
+- The preview route may return image bytes as the HTTP response body after registry lookup, auth/workspace checks, root containment validation, file checks, and safe image content-type enforcement.
+- The preview route is not a download route and must not emit `Content-Disposition: attachment`.
+- The frontend may render only the relative backend preview route in an image element; it must not display public URLs, signed URLs, download URLs, local paths, internal refs, storage refs, base64, or raw bytes in app state.
+- Video preview/playback remains unavailable until a separate verified video artifact storage and delivery phase.
+- Production artifact delivery still requires a future audited storage/RLS/signed-delivery design.

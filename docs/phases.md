@@ -13681,6 +13681,26 @@ Safety boundaries:
 - no image streaming route, frontend preview UI, browser image rendering, public URL, signed URL, download URL, base64, bytes, local path, internal ref, storage ref, direct frontend storage access, real provider call, API key behavior, credits/billing mutation, or export behavior is added
 - registered internal refs remain process-memory backend state only and are not serialized to clients
 
+## Phase 172 - Generated Image Preview QA and Docs Finalization Pack
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- docs/test-hardening finalization for backend-mediated generated image preview
+- generated image preview is local and backend-mediated only
+- local preview is gated by `FREE_AI_MIXER_GENERATION_ENABLE_LOCAL_IMAGE_PREVIEW=1`
+- preview uses the generation-specific backend route and does not expose storage details to the frontend
+- final QA coverage verifies image preview, video fail-closed behavior, history, metadata, and absence of unsafe delivery surfaces
+
+Safety boundaries:
+
+- preview route is not a download route
+- no public URL, signed URL, download URL, direct frontend storage access, local path, internal ref, storage ref, base64, API key behavior, real provider call, video preview/playback, credits/billing mutation, or export behavior is included
+- production artifact delivery still requires a future audited auth/storage/signed-delivery phase
+
 ## Phase 111 - Generation Preconditions App Dependency Wiring Pack
 
 Status:

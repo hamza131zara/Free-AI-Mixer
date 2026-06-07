@@ -1241,9 +1241,18 @@ Status:
 
 - Phase 166: mock generation workspace final QA and docs pack.
 - The current safe generation milestone is mock/local only:
-  - mock image generation returns backend-verified safe metadata only
+  - mock image generation returns backend-verified safe metadata
   - prompt-to-image UI stores successful metadata in browser-local history only
   - mock video generation remains fail-closed with `video_artifact_storage_unavailable`
 - Real provider generation is paused until API billing/quota access is available and a separate audited retry phase is approved.
-- Generated artifact preview, delivery, download, public URLs, signed URLs, and streaming remain future audited phases.
+- Generated image preview is backend-mediated/local-only after Phase 171 and remains gated by `FREE_AI_MIXER_GENERATION_ENABLE_LOCAL_IMAGE_PREVIEW=1`.
+- Production generated artifact delivery, download behavior, public URLs, signed URLs, and non-local streaming remain future audited phases.
 - Frontend direct storage/provider access, export integration, credits/billing mutation, and production rollout remain blocked.
+
+## Phase 172 status
+
+- Phase 172: generated image preview QA and docs finalization pack.
+- Backend-mediated image preview is local/gated and uses only the generation-specific relative backend route.
+- The preview route is not a download route and does not expose public URLs, signed URLs, download URLs, local paths, internal refs, storage refs, base64, or direct frontend storage access.
+- Video preview/playback remains unavailable.
+- Production artifact delivery still requires a future audited auth/storage/signed-delivery phase.
