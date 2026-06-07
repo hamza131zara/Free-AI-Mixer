@@ -52,16 +52,24 @@ export const useImageGenerationStore = create<ImageGenerationStoreState>(
         );
 
         if (result.response.kind === "generation_job_metadata_ready") {
+          const artifact = {
+            ...result.response.artifact,
+            previewPath: createGeneratedImagePreviewPath({
+              artifactId: result.response.artifact.artifactId,
+              requestId: result.request.requestId,
+            }),
+          };
+
           useImageGenerationHistoryStore
             .getState()
             .addSuccessfulGeneration({
-              artifact: result.response.artifact,
+              artifact,
               prompt: result.request.prompt,
               requestId: result.request.requestId,
             });
 
           set({
-            artifact: result.response.artifact,
+            artifact,
             error: undefined,
             lifecycle: "metadata_ready",
             statusMessage:
@@ -144,3 +152,12 @@ const toImageGenerationError = (error: unknown): PromptImageGenerationError => {
     message: "Image generation failed unexpectedly.",
   };
 };
+
+const createGeneratedImagePreviewPath = ({
+  artifactId,
+  requestId,
+}: {
+  artifactId: string;
+  requestId: string;
+}): string =>
+  `/generation/jobs/${encodeURIComponent(requestId)}/artifacts/${encodeURIComponent(artifactId)}/preview`;

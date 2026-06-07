@@ -32,6 +32,9 @@ import type { WorkspaceMembershipRepository } from "./auth/workspaceMembership";
 const isLocalDevArtifactStreamEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1";
 
+const isGeneratedImageLocalPreviewEnabled = (): boolean =>
+  process.env.FREE_AI_MIXER_GENERATION_ENABLE_LOCAL_IMAGE_PREVIEW === "1";
+
 const createMockOpenAiImageGenerationFetch = (): typeof fetch =>
   (async () =>
     new Response(
@@ -261,6 +264,8 @@ export const createApp = (): Express => {
                 registry: generatedImageArtifactRegistry,
               }),
             generatedImageArtifactRegistry,
+            generatedImageLocalPreviewEnabled:
+              isGeneratedImageLocalPreviewEnabled(),
           }
         : {}),
       ...(backendDeps.generationOpenAiImageRealLocalSmokeEnabled

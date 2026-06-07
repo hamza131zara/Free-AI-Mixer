@@ -1,5 +1,7 @@
 import { Router } from "express";
 import type { Response } from "express";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
 import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProviderRuntimeConfig";
 import type { AsyncBackendRequesterContextResolver } from "../auth/requesterContextResolver";
@@ -89,6 +91,7 @@ export interface CreateGenerationRouterOptions {
   };
   generatedImageArtifactAccessResolver?: GeneratedImageArtifactAccessResolver;
   generatedImageArtifactRegistry?: GeneratedImageArtifactRegistry;
+  generatedImageLocalPreviewEnabled?: boolean;
 }
 
 const resolveAuthUnavailableCode = (
@@ -449,6 +452,26 @@ const sendGeneratedArtifactAccessUnavailable = (
   });
 };
 
+const isGeneratedPreviewContentType = (
+  contentType: string,
+): contentType is "image/png" | "image/jpeg" | "image/webp" =>
+  contentType === "image/png" ||
+  contentType === "image/jpeg" ||
+  contentType === "image/webp";
+
+const isInsideGeneratedPreviewRoot = (
+  rootPath: string,
+  targetPath: string,
+): boolean => {
+  const relative = path.relative(rootPath, targetPath);
+
+  return (
+    relative.length > 0 &&
+    !relative.startsWith("..") &&
+    !path.isAbsolute(relative)
+  );
+};
+
 const sendMockLocalImageStorageResult = async (
   response: Response<BackendGenerationJobMutationResponse>,
   runtimeSummary: ReturnType<typeof createRuntimeSummary>,
@@ -694,6 +717,143 @@ export const createGenerationRouter = (
       });
 
       response.status(503).json(result);
+    },
+  );
+
+  router.get(
+    "/generation/jobs/:jobId/artifacts/:artifactId/preview",
+    async (request, response) => {
+      const { artifactId, jobId } = request.params;
+
+      if (
+        !isSafeGeneratedArtifactSegment(jobId) ||
+        !isSafeGeneratedArtifactSegment(artifactId)
+      ) {
+        sendGeneratedArtifactAccessUnavailable(
+          response,
+          "invalid_artifact_identity",
+          "Generated artifact preview identity is invalid.",
+          400,
+        );
+        return;
+      }
+
+      if (!options.generatedImageLocalPreviewEnabled) {
+        sendGeneratedArtifactAccessUnavailable(
+          response,
+          "generated_artifact_access_unavailable",
+          "Generated image local preview is not enabled.",
+          503,
+        );
+        return;
+      }
+
+      const requesterContext = options.routeAccessResolver
+        ? await options.routeAccessResolver.resolve({ headers: request.headers })
+        : getRequesterContextFromRequest(request);
+
+      if (requesterContext.kind !== "authenticated") {
+        sendGeneratedArtifactAccessUnavailable(
+          response,
+          "unauthenticated",
+          "Authentication is required to preview generated artifacts.",
+          401,
+        );
+        return;
+      }
+
+      if (!requesterContext.workspaceId) {
+        sendGeneratedArtifactAccessUnavailable(
+          response,
+          "generated_artifact_access_unavailable",
+          "Generated artifact preview workspace identity is unavailable.",
+          503,
+        );
+        return;
+      }
+
+      const record = options.generatedImageArtifactRegistry?.get({
+        artifactId,
+        jobId,
+      });
+
+      if (
+        !record ||
+        record.artifact.ownerId !== requesterContext.userId ||
+        record.artifact.workspaceId !== requesterContext.workspaceId ||
+        record.artifact.status !== "available" ||
+        !isGeneratedPreviewContentType(record.artifact.contentType)
+      ) {
+        sendGeneratedArtifactAccessUnavailable(
+          response,
+          "generated_artifact_access_unavailable",
+          "Generated image preview is unavailable.",
+          404,
+        );
+        return;
+      }
+
+      let realRootPath: string;
+      let realFilePath: string;
+
+      try {
+        realRootPath = await fs.realpath(record.internalRef.rootPath);
+        realFilePath = await fs.realpath(record.internalRef.filePath);
+      } catch {
+        sendGeneratedArtifactAccessUnavailable(
+          response,
+          "generated_artifact_access_unavailable",
+          "Generated image preview is unavailable.",
+          404,
+        );
+        return;
+      }
+
+      if (!isInsideGeneratedPreviewRoot(realRootPath, realFilePath)) {
+        sendGeneratedArtifactAccessUnavailable(
+          response,
+          "generated_artifact_access_unavailable",
+          "Generated image preview is unavailable.",
+          403,
+        );
+        return;
+      }
+
+      try {
+        const stat = await fs.stat(realFilePath);
+
+        if (!stat.isFile()) {
+          sendGeneratedArtifactAccessUnavailable(
+            response,
+            "generated_artifact_access_unavailable",
+            "Generated image preview is unavailable.",
+            404,
+          );
+          return;
+        }
+      } catch {
+        sendGeneratedArtifactAccessUnavailable(
+          response,
+          "generated_artifact_access_unavailable",
+          "Generated image preview is unavailable.",
+          404,
+        );
+        return;
+      }
+
+      response.setHeader("Content-Type", record.artifact.contentType);
+      response.setHeader("Cache-Control", "no-store");
+      response.setHeader("X-Content-Type-Options", "nosniff");
+      response.sendFile(realFilePath, (error) => {
+        if (error && !response.headersSent) {
+          sendGeneratedArtifactAccessUnavailable(
+            response,
+            "generated_artifact_access_unavailable",
+            "Generated image preview is unavailable.",
+            500,
+          );
+        }
+      });
     },
   );
 

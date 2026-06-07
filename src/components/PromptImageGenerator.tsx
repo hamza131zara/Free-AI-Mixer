@@ -44,7 +44,9 @@ export function PromptImageGenerator() {
 
         <p className="form-helper field-wide">
           This calls the backend mock image route and displays verified artifact
-          metadata only. No preview, storage path, image bytes, or download URL is exposed.
+          metadata. When available, preview is served only through the backend
+          generation route. Storage details, image bytes, and browser downloads are
+          not exposed.
         </p>
 
         <div className="actions">
@@ -67,32 +69,49 @@ export function PromptImageGenerator() {
         ) : null}
 
         {artifact ? (
-          <dl className="prompt-image-metadata" data-testid="prompt-image-metadata">
-            <div>
-              <dt>Provider</dt>
-              <dd>{artifact.providerId}</dd>
-            </div>
-            <div>
-              <dt>Content type</dt>
-              <dd>{artifact.contentType}</dd>
-            </div>
-            <div>
-              <dt>Size</dt>
-              <dd>{artifact.sizeBytes} bytes</dd>
-            </div>
-            <div>
-              <dt>Created</dt>
-              <dd>{artifact.createdAt}</dd>
-            </div>
-            <div>
-              <dt>Delivery</dt>
-              <dd>{artifact.deliveryStatus}</dd>
-            </div>
-            <div>
-              <dt>SHA-256</dt>
-              <dd>{artifact.sha256 ? "present" : "not returned"}</dd>
-            </div>
-          </dl>
+          <>
+            {artifact.previewPath ? (
+              <figure
+                className="prompt-image-preview"
+                data-testid="prompt-image-preview"
+              >
+                <img
+                  alt="Backend-mediated generated image preview"
+                  src={artifact.previewPath}
+                />
+                <figcaption>
+                  Preview is served through the backend generation route only.
+                </figcaption>
+              </figure>
+            ) : null}
+
+            <dl className="prompt-image-metadata" data-testid="prompt-image-metadata">
+              <div>
+                <dt>Provider</dt>
+                <dd>{artifact.providerId}</dd>
+              </div>
+              <div>
+                <dt>Content type</dt>
+                <dd>{artifact.contentType}</dd>
+              </div>
+              <div>
+                <dt>Size</dt>
+                <dd>{artifact.sizeBytes} bytes</dd>
+              </div>
+              <div>
+                <dt>Created</dt>
+                <dd>{artifact.createdAt}</dd>
+              </div>
+              <div>
+                <dt>Delivery</dt>
+                <dd>{artifact.deliveryStatus}</dd>
+              </div>
+              <div>
+                <dt>SHA-256</dt>
+                <dd>{artifact.sha256 ? "present" : "not returned"}</dd>
+              </div>
+            </dl>
+          </>
         ) : null}
       </div>
     </section>

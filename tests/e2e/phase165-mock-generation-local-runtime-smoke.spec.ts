@@ -37,6 +37,11 @@ const videoUnavailableResponse = {
   failureCategory: "artifact_storage",
 };
 
+const tinyPngBytes = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+  "base64",
+);
+
 const forbiddenTokens = [
   "api.openai.com",
   "generativelanguage.googleapis.com",
@@ -123,6 +128,17 @@ test.describe("Phase 165 mock generation local runtime smoke", () => {
         status: body.generationKind === "video" ? 503 : 200,
       });
     });
+    await page.route("**/generation/jobs/*/artifacts/*/preview", async (route) => {
+      await route.fulfill({
+        body: tinyPngBytes,
+        contentType: "image/png",
+        headers: {
+          "cache-control": "no-store",
+          "x-content-type-options": "nosniff",
+        },
+        status: 200,
+      });
+    });
 
     await page.goto("/mixer");
 
@@ -188,7 +204,19 @@ test.describe("Phase 165 mock generation local runtime smoke", () => {
     });
 
     await expect(page.locator("video")).toHaveCount(0);
-    await expect(page.getByRole("img", { name: /generated|preview/i })).toHaveCount(0);
+    await expect(
+      page.getByRole("img", {
+        name: "Backend-mediated generated image preview",
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("img", {
+        name: "Backend-mediated generated image preview",
+      }),
+    ).toHaveAttribute(
+      "src",
+      /\/generation\/jobs\/.+\/artifacts\/phase165-image-artifact\/preview/,
+    );
     await expect(page.getByRole("button", { name: /download/i })).toHaveCount(0);
     await expect(page.getByRole("link", { name: /download/i })).toHaveCount(0);
     await expectNoForbiddenTokens(page);

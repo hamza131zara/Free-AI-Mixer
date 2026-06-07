@@ -44,6 +44,7 @@ export interface PromptImageArtifactMetadata {
   sha256?: string;
   createdAt: string;
   deliveryStatus: "unavailable";
+  previewPath?: string;
 }
 
 export interface PromptImageGenerationMetadataReadyResponse {
