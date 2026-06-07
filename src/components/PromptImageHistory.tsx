@@ -7,16 +7,16 @@ export function PromptImageHistory() {
     <section className="prompt-image-history" aria-labelledby="prompt-image-history-title">
       <div className="prompt-image-header">
         <div>
-          <p className="eyebrow">Local Generation History</p>
-          <h2 id="prompt-image-history-title">Prior image metadata</h2>
+          <p className="eyebrow">Local history</p>
+          <h3 id="prompt-image-history-title">Saved image metadata</h3>
         </div>
         <span className="status-pill status-idle">Metadata only</span>
       </div>
 
       {entries.length === 0 ? (
         <p className="form-helper" data-testid="prompt-image-history-empty">
-          Successful mock image generations will appear here as safe local
-          metadata. No previews or download links are available.
+          Successful mock image generations will appear here as browser-local
+          metadata records. Failed requests are not saved as successful history.
         </p>
       ) : (
         <div className="prompt-image-history-list" data-testid="prompt-image-history">

@@ -20,9 +20,28 @@ export function MixerPage() {
         <div className="workspace-grid">
           <div className="workspace-stack">
             <SceneComposer />
-            <PromptImageGenerator />
-            <PromptVideoGenerator />
-            <PromptImageHistory />
+            <section
+              className="generation-workbench"
+              aria-labelledby="generation-workbench-title"
+            >
+              <div className="generation-workbench-header">
+                <div>
+                  <p className="eyebrow">Mock generation lab</p>
+                  <h2 id="generation-workbench-title">Prompt generation workspace</h2>
+                  <p>
+                    Generate backend-verified image metadata, review local history,
+                    and inspect the video boundary without previews, downloads, or
+                    provider calls.
+                  </p>
+                </div>
+                <span className="status-pill status-idle">Metadata only</span>
+              </div>
+              <div className="generation-workbench-grid">
+                <PromptImageGenerator />
+                <PromptVideoGenerator />
+              </div>
+              <PromptImageHistory />
+            </section>
           </div>
           <SceneQueue />
         </div>

@@ -24,8 +24,8 @@ export function PromptVideoGenerator() {
     <section className="prompt-video-generator" aria-labelledby="prompt-video-title">
       <div className="prompt-image-header">
         <div>
-          <p className="eyebrow">Mock Video Generation</p>
-          <h2 id="prompt-video-title">Prompt to video lifecycle</h2>
+          <p className="eyebrow">Video lane</p>
+          <h3 id="prompt-video-title">Prompt to video boundary check</h3>
         </div>
         <span className="status-pill status-error">Fail closed</span>
       </div>
@@ -49,7 +49,8 @@ export function PromptVideoGenerator() {
 
         <p className="form-helper field-wide">
           This calls the backend mock video boundary. Video artifact verification
-          and delivery are not available yet, so no preview or download is shown.
+          and storage are not ready yet, so the expected result is a safe
+          unavailable lifecycle with no preview or download.
         </p>
 
         <div className="actions">
@@ -62,7 +63,8 @@ export function PromptVideoGenerator() {
 
       <div className="prompt-image-result" aria-live="polite">
         <p className="prompt-image-status" data-testid="prompt-video-status">
-          {statusMessage ?? "Idle. Enter a prompt to request mock video lifecycle."}
+          {statusMessage ??
+            "Ready. Enter a prompt to check the mock video lifecycle boundary."}
         </p>
 
         {error ? (

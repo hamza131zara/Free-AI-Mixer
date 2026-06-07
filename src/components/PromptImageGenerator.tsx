@@ -19,10 +19,10 @@ export function PromptImageGenerator() {
     <section className="prompt-image-generator" aria-labelledby="prompt-image-title">
       <div className="prompt-image-header">
         <div>
-          <p className="eyebrow">Mock Image Generation</p>
-          <h2 id="prompt-image-title">Prompt to image metadata</h2>
+          <p className="eyebrow">Image lane</p>
+          <h3 id="prompt-image-title">Prompt to verified image metadata</h3>
         </div>
-        <span className="status-pill status-idle">Backend mock</span>
+        <span className="status-pill status-success">Mock storage</span>
       </div>
 
       <form
@@ -43,8 +43,8 @@ export function PromptImageGenerator() {
         </label>
 
         <p className="form-helper field-wide">
-          This calls the backend generation route and displays safe artifact
-          metadata only. No image bytes, storage path, or download URL is exposed.
+          This calls the backend mock image route and displays verified artifact
+          metadata only. No preview, storage path, image bytes, or download URL is exposed.
         </p>
 
         <div className="actions">
@@ -57,7 +57,7 @@ export function PromptImageGenerator() {
 
       <div className="prompt-image-result" aria-live="polite">
         <p className="prompt-image-status" data-testid="prompt-image-status">
-          {statusMessage ?? "Idle. Enter a prompt to request backend metadata."}
+          {statusMessage ?? "Ready. Enter a prompt to request safe backend metadata."}
         </p>
 
         {error ? (

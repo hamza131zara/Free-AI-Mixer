@@ -689,6 +689,7 @@ h1 {
 .scene-status,
 .scene-queue,
 .scene-card,
+.generation-workbench,
 .prompt-image-generator,
 .prompt-video-generator,
 .prompt-image-history {
@@ -701,6 +702,43 @@ h1 {
 .workspace-stack {
   display: grid;
   gap: 20px;
+}
+
+.generation-workbench {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(49, 105, 255, 0.08), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 255, 0.96) 100%);
+}
+
+.generation-workbench-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #dbe3ef;
+  padding-bottom: 16px;
+}
+
+.generation-workbench-header h2 {
+  margin: 0;
+  color: #0f1f35;
+  font-size: 1.35rem;
+}
+
+.generation-workbench-header p:last-child {
+  max-width: 58ch;
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+}
+
+.generation-workbench-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .scene-composer {
@@ -716,6 +754,7 @@ h1 {
   display: grid;
   gap: 16px;
   padding: 18px;
+  box-shadow: 0 10px 24px rgba(31, 41, 55, 0.05);
 }
 
 .prompt-image-header {
@@ -725,7 +764,7 @@ h1 {
   gap: 12px;
 }
 
-.prompt-image-header h2 {
+.prompt-image-header h3 {
   margin: 0;
   color: #0f1f35;
   font-size: 1.18rem;
@@ -742,7 +781,8 @@ h1 {
   border: 1px solid #d7dee6;
   border-radius: 14px;
   padding: 12px;
-  background: #f8fafc;
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(241, 245, 249, 0.94) 100%);
 }
 
 .prompt-image-status {
@@ -756,6 +796,18 @@ h1 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin: 0;
+}
+
+.prompt-image-metadata div {
+  min-width: 0;
+  border: 1px solid rgba(203, 213, 225, 0.78);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.prompt-image-metadata .field-wide {
+  grid-column: 1 / -1;
 }
 
 .prompt-image-history-list {
@@ -1330,6 +1382,10 @@ dd {
   }
 
   .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .generation-workbench-grid {
     grid-template-columns: 1fr;
   }
 
