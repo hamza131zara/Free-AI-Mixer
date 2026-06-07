@@ -49,6 +49,11 @@ verification diagnostics are reviewed. The fallback still permits exactly one
 backend-only real retry, with key revocation and local storage cleanup after
 every attempt.
 
+DALL-E-3 fallback uses provider URL output internally. The backend fetches the
+provider image URL server-side, verifies the image bytes, and stores local
+metadata only. Provider URLs must never be printed or returned in API responses,
+logs, artifacts, frontend-visible metadata, or examples.
+
 ```powershell
 $GenerationResponse = $null
 $GenerationError = $null

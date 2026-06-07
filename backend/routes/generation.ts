@@ -937,6 +937,7 @@ export const createGenerationRouter = (
                 model: options.generationOpenAiImageModelConfig.model,
               }
             : {}),
+          providerImageFetchImpl: options.openAiRealProviderFetch,
           requestShape: "minimal",
         });
         let adapterResult: Awaited<

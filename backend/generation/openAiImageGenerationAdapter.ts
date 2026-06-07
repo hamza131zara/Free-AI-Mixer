@@ -27,6 +27,7 @@ export interface OpenAiImageGenerationAdapterOptions {
   generatedImageArtifactStorage?: GeneratedImageArtifactStorage;
   maxImageBytes?: number;
   model?: OpenAiImageGenerationModel;
+  providerImageFetchImpl?: typeof fetch;
   providerKeyRepository: BackendProviderKeyRepository;
   providerSecretVault: ProviderSecretVault;
   quality?: OpenAiImageGenerationQuality;
@@ -129,6 +130,11 @@ const providerUnavailableResult =
     message: "OpenAI image generation is unavailable.",
     ...diagnostic(diagnosticCode, "provider_fetch"),
   });
+
+const providerUrlFetchFailedResult = (
+  diagnosticCode: BackendGenerationSafeDiagnosticCode,
+): BackendGenerationProviderExecutionResult =>
+  safeGenerationFailedResult(diagnosticCode, "provider_response");
 
 const timeoutResult = (): BackendGenerationProviderExecutionResult => ({
   kind: "timeout",
@@ -481,7 +487,6 @@ const createOpenAiImageGenerationRequestBody = ({
       return {
         ...base,
         n: 1,
-        response_format: "b64_json",
         size,
       };
     }
@@ -497,11 +502,91 @@ const createOpenAiImageGenerationRequestBody = ({
   };
 };
 
+const contentTypeToImageFormat = (
+  contentType: string | null,
+):
+  | {
+      contentType: GeneratedImageArtifactContentType;
+      format: GeneratedImageArtifactFormat;
+    }
+  | undefined => {
+  if (contentType?.toLowerCase().startsWith("image/png")) {
+    return { contentType: "image/png", format: "png" };
+  }
+
+  if (
+    contentType?.toLowerCase().startsWith("image/jpeg") ||
+    contentType?.toLowerCase().startsWith("image/jpg")
+  ) {
+    return { contentType: "image/jpeg", format: "jpeg" };
+  }
+
+  if (contentType?.toLowerCase().startsWith("image/webp")) {
+    return { contentType: "image/webp", format: "webp" };
+  }
+
+  return undefined;
+};
+
+const storeVerifiedImageArtifact = async ({
+  generatedImageArtifactStorage,
+  input,
+  verification,
+}: {
+  generatedImageArtifactStorage: GeneratedImageArtifactStorage;
+  input: BackendGenerateImageFromStoredProviderKeyInput;
+  verification: ReturnType<typeof verifyGeneratedImageArtifactBytes> & {
+    kind: "verified";
+  };
+}): Promise<BackendGenerationProviderExecutionResult> => {
+  const stored = await (async () => {
+    try {
+      return await generatedImageArtifactStorage.store({
+        artifactId: input.jobId
+          ? `${input.jobId}_openai_image`
+          : `${input.requestId}_openai_image`,
+        jobId: input.jobId ?? input.requestId,
+        ownerId: "backend_generated_image_owner_unavailable",
+        providerId: "openai",
+        verifiedImage: verification.image,
+        workspaceId: input.workspaceId,
+      });
+    } catch {
+      return undefined;
+    }
+  })();
+
+  if (!stored || stored.kind !== "stored") {
+    return artifactStorageUnavailableResult(
+      "artifact_storage_write_failed",
+      "artifact_storage",
+    );
+  }
+
+  return {
+    kind: "generated",
+    status: "generated",
+    artifact: {
+      artifactId: stored.artifact.artifactId,
+      contentType: stored.artifact.contentType,
+      createdAt: stored.artifact.createdAt,
+      generationKind: "image",
+      providerId: "openai",
+      sizeBytes: stored.artifact.sizeBytes,
+      sha256: stored.artifact.sha256,
+      status: "metadata_only",
+      storageState: "metadata_only",
+    },
+    message: "OpenAI image generation produced verified artifact metadata.",
+  };
+};
+
 export const createOpenAiImageGenerationAdapter = ({
   fetchImpl = globalThis.fetch,
   generatedImageArtifactStorage,
   maxImageBytes = defaultMaxImageBytes,
   model = defaultModel,
+  providerImageFetchImpl,
   providerKeyRepository,
   providerSecretVault,
   quality = defaultQuality,
@@ -631,10 +716,73 @@ export const createOpenAiImageGenerationAdapter = ({
         }
 
         if (imagePayload.url) {
-          return artifactStorageUnavailableResult(
-            "provider_url_output_unsupported",
-            "provider_response",
+          if (model !== "dall-e-3") {
+            return artifactStorageUnavailableResult(
+              "provider_url_output_unsupported",
+              "provider_response",
+            );
+          }
+
+          if (!providerImageFetchImpl) {
+            return providerUrlFetchFailedResult(
+              "provider_url_output_fetch_unavailable",
+            );
+          }
+
+          const imageResponse = await (async () => {
+            try {
+              return await providerImageFetchImpl(imagePayload.url as string, {
+                method: "GET",
+                signal: controller.signal,
+              });
+            } catch {
+              return undefined;
+            }
+          })();
+
+          if (!imageResponse || !imageResponse.ok) {
+            return providerUrlFetchFailedResult("provider_url_output_fetch_failed");
+          }
+
+          const imageKind = contentTypeToImageFormat(
+            imageResponse.headers.get("content-type"),
           );
+
+          if (!imageKind) {
+            return providerUrlFetchFailedResult("provider_url_output_invalid");
+          }
+
+          const imageBytes = await (async () => {
+            try {
+              return new Uint8Array(await imageResponse.arrayBuffer());
+            } catch {
+              return undefined;
+            }
+          })();
+
+          if (!imageBytes) {
+            return providerUrlFetchFailedResult("provider_url_output_fetch_failed");
+          }
+
+          const verification = verifyGeneratedImageArtifactBytes({
+            bytes: imageBytes,
+            contentType: imageKind.contentType,
+            format: imageKind.format,
+            maxBytes: maxImageBytes,
+          });
+
+          if (verification.kind !== "verified") {
+            return safeGenerationFailedResult(
+              "artifact_verification_failed",
+              "artifact_storage",
+            );
+          }
+
+          return storeVerifiedImageArtifact({
+            generatedImageArtifactStorage,
+            input,
+            verification,
+          });
         }
 
         if (typeof imagePayload.b64Json !== "string") {
@@ -659,46 +807,11 @@ export const createOpenAiImageGenerationAdapter = ({
           );
         }
 
-        const stored = await (async () => {
-          try {
-            return await generatedImageArtifactStorage.store({
-              artifactId: input.jobId
-                ? `${input.jobId}_openai_image`
-                : `${input.requestId}_openai_image`,
-              jobId: input.jobId ?? input.requestId,
-              ownerId: "backend_generated_image_owner_unavailable",
-              providerId: "openai",
-              verifiedImage: verification.image,
-              workspaceId: input.workspaceId,
-            });
-          } catch {
-            return undefined;
-          }
-        })();
-
-        if (!stored || stored.kind !== "stored") {
-          return artifactStorageUnavailableResult(
-            "artifact_storage_write_failed",
-            "artifact_storage",
-          );
-        }
-
-        return {
-          kind: "generated",
-          status: "generated",
-          artifact: {
-            artifactId: stored.artifact.artifactId,
-            contentType: stored.artifact.contentType,
-            createdAt: stored.artifact.createdAt,
-            generationKind: "image",
-            providerId: "openai",
-            sizeBytes: stored.artifact.sizeBytes,
-            sha256: stored.artifact.sha256,
-            status: "metadata_only",
-            storageState: "metadata_only",
-          },
-          message: "OpenAI image generation produced verified artifact metadata.",
-        };
+        return storeVerifiedImageArtifact({
+          generatedImageArtifactStorage,
+          input,
+          verification,
+        });
       }
 
       if (response.status === 400) {

@@ -373,7 +373,7 @@ test.describe("phase154 OpenAI image model strategy DALL-E-3 fallback", () => {
     expectNoLeak(JSON.stringify(result));
   });
 
-  test("DALL-E-3 strategy requests one b64_json image and never URL output", async () => {
+  test("DALL-E-3 strategy requests one image without explicit URL or b64 output", async () => {
     let observedRequestBody: Record<string, unknown> | undefined;
     const result = await generate({
       fetchImpl: createFetchForPayload({
@@ -388,10 +388,10 @@ test.describe("phase154 OpenAI image model strategy DALL-E-3 fallback", () => {
       model: "dall-e-3",
       n: 1,
       prompt: promptText,
-      response_format: "b64_json",
       size: "1024x1024",
     });
     expect(observedRequestBody).not.toHaveProperty("url");
+    expect(observedRequestBody).not.toHaveProperty("response_format");
     expect(observedRequestBody).not.toHaveProperty("output_format");
     expect(result).toMatchObject({
       kind: "artifact_storage_unavailable",
@@ -511,7 +511,7 @@ test.describe("phase154 OpenAI image model strategy DALL-E-3 fallback", () => {
     const exportRouteSource = readSource("backend/routes/exports.ts");
 
     expect(adapterSource).toContain("dall-e-3");
-    expect(adapterSource).toContain("response_format");
+    expect(adapterSource).toContain("n: 1");
     expect(configSource).toContain("FREE_AI_MIXER_GENERATION_OPENAI_IMAGE_MODEL");
     expect(appSource).toContain("generationOpenAiImageModelConfig");
     expect(runbookSource).toContain(
