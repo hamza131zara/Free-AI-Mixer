@@ -103,7 +103,8 @@ export type BackendGenerationSafeDiagnosticCode =
   | "real_provider_gate_missing"
   | "real_provider_storage_not_ready"
   | "vault_decrypt_failed"
-  | "vault_not_ready";
+  | "vault_not_ready"
+  | "video_artifact_verification_unavailable";
 
 export type BackendGenerationSafeFailureCategory =
   | "artifact_storage"

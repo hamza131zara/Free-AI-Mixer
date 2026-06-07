@@ -13,6 +13,8 @@ export type BackendGenerationJobLifecycleState =
   | "rejected"
   | "submitted"
   | "running"
+  | "processing"
+  | "metadata_ready"
   | "generated_metadata_ready"
   | "artifact_storage_failed"
   | "delivery_unavailable"
@@ -22,6 +24,13 @@ export interface BackendGenerationImageJobRequest {
   generationKind: "image";
   prompt: string;
   providerId: "openai";
+  requestId: string;
+}
+
+export interface BackendGenerationVideoJobRequest {
+  generationKind: "video";
+  prompt: string;
+  providerId: "mock_local";
   requestId: string;
 }
 
@@ -116,6 +125,7 @@ export type BackendGenerationJobMutationResponse =
         | "generation_execution_blocked"
         | "generation_mock_execution_blocked"
         | "artifact_storage_unavailable"
+        | "video_artifact_storage_unavailable"
         | "vault_decrypt_failed"
         | "generation_failed"
         | "invalid_credentials"
@@ -136,6 +146,17 @@ export type BackendGenerationJobMutationResponse =
       message: string;
       runtime: BackendGenerationJobRuntimeSnapshot;
       attemptedProviderIds: BackendGenerationArtifactProviderId[];
+      generationKind?: "image" | "video";
+      lifecycle?: Extract<
+        BackendGenerationJobLifecycleState,
+        "submitted" | "processing" | "metadata_ready" | "failed"
+      >;
+      lifecycleTrace?: Array<
+        Extract<
+          BackendGenerationJobLifecycleState,
+          "submitted" | "processing" | "metadata_ready" | "failed"
+        >
+      >;
       diagnosticCode?: BackendGenerationSafeDiagnosticCode;
       failureCategory?: BackendGenerationSafeFailureCategory;
     }

@@ -6,6 +6,7 @@ export type BackendGenerationFailureCode =
   | "workspace_permission_not_verified"
   | "workspace_owner_or_admin_required"
   | "artifact_storage_unavailable"
+  | "video_artifact_storage_unavailable"
   | "generation_failed"
   | "provider_not_supported"
   | "manual_provider_unavailable"
@@ -86,6 +87,14 @@ const generationFailureMappings: Record<
     code: "artifact_storage_unavailable",
     message:
       "Generated artifact storage is not configured, so provider generation cannot complete safely.",
+    httpStatus: 503,
+    retryable: false,
+    allowsFallback: false,
+  },
+  video_artifact_storage_unavailable: {
+    code: "video_artifact_storage_unavailable",
+    message:
+      "Mock video generation preconditions passed, but verified video artifact storage is not available yet.",
     httpStatus: 503,
     retryable: false,
     allowsFallback: false,

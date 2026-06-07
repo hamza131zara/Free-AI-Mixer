@@ -12,6 +12,8 @@ export type BackendGenerationJobLifecycleState =
   | "rejected"
   | "submitted"
   | "running"
+  | "processing"
+  | "metadata_ready"
   | "generated_metadata_ready"
   | "artifact_storage_failed"
   | "delivery_unavailable"
@@ -24,10 +26,17 @@ export interface BackendGenerationImageJobRequest {
   requestId: string;
 }
 
+export interface BackendGenerationVideoJobRequest {
+  generationKind: "video";
+  prompt: string;
+  providerId: "mock_local";
+  requestId: string;
+}
+
 export type BackendGenerationJobRequestParseResult =
   | {
       kind: "valid";
-      request: BackendGenerationImageJobRequest;
+      request: BackendGenerationImageJobRequest | BackendGenerationVideoJobRequest;
     }
   | {
       kind: "invalid";
@@ -189,7 +198,15 @@ export const parseGenerationJobRequest = (
     };
   }
 
-  if (body.providerId !== "openai") {
+  if (body.generationKind !== "image" && body.generationKind !== "video") {
+    return {
+      kind: "invalid",
+      code: "invalid_generation_kind",
+      message: "Only image and mock-local video generation are modeled in this boundary.",
+    };
+  }
+
+  if (body.generationKind === "image" && body.providerId !== "openai") {
     return {
       kind: "invalid",
       code: "invalid_provider",
@@ -197,11 +214,11 @@ export const parseGenerationJobRequest = (
     };
   }
 
-  if (body.generationKind !== "image") {
+  if (body.generationKind === "video" && body.providerId !== "mock_local") {
     return {
       kind: "invalid",
-      code: "invalid_generation_kind",
-      message: "Only image generation is modeled in this boundary.",
+      code: "invalid_provider",
+      message: "Only mock-local video generation is modeled in this boundary.",
     };
   }
 
@@ -228,12 +245,20 @@ export const parseGenerationJobRequest = (
 
   return {
     kind: "valid",
-    request: {
-      generationKind: "image",
-      prompt: prompt.prompt,
-      providerId: "openai",
-      requestId: body.requestId,
-    },
+    request:
+      body.generationKind === "video"
+        ? {
+            generationKind: "video",
+            prompt: prompt.prompt,
+            providerId: "mock_local",
+            requestId: body.requestId,
+          }
+        : {
+            generationKind: "image",
+            prompt: prompt.prompt,
+            providerId: "openai",
+            requestId: body.requestId,
+          },
   };
 };
 

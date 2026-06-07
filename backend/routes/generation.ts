@@ -521,6 +521,26 @@ const sendMockLocalImageStorageResult = async (
   });
 };
 
+const sendMockLocalVideoStorageUnavailableResult = (
+  response: Response<BackendGenerationJobMutationResponse>,
+  runtimeSummary: ReturnType<typeof createRuntimeSummary>,
+): void => {
+  const failure = getGenerationFailureMapping("video_artifact_storage_unavailable");
+
+  response.status(failure.httpStatus).json({
+    kind: "generation_job_rejected",
+    status: "video_artifact_storage_unavailable",
+    message: failure.message,
+    runtime: toRuntimeSnapshot(runtimeSummary, false),
+    attemptedProviderIds: [mockLocalProviderId],
+    generationKind: "video",
+    lifecycle: "failed",
+    lifecycleTrace: ["submitted", "processing", "failed"],
+    diagnosticCode: "video_artifact_verification_unavailable",
+    failureCategory: "artifact_storage",
+  });
+};
+
 export const createGenerationRouter = (
   options: CreateGenerationRouterOptions,
 ): Router => {
@@ -600,6 +620,7 @@ export const createGenerationRouter = (
         routeExecutionMode !== "preconditions_only" &&
         routeExecutionMode !== "adapter_mock_only" &&
         routeExecutionMode !== "mock_image_local_only" &&
+        routeExecutionMode !== "mock_video_local_only" &&
         routeExecutionMode !== "openai_adapter_mock_only" &&
         routeExecutionMode !== "openai_adapter_mock_storage_only" &&
         routeExecutionMode !== "real_provider_local_only"
@@ -749,7 +770,10 @@ export const createGenerationRouter = (
         runtimeEnabled: false,
       };
 
-      if (routeExecutionMode === "mock_image_local_only") {
+      if (
+        routeExecutionMode === "mock_image_local_only" ||
+        routeExecutionMode === "mock_video_local_only"
+      ) {
         if (!generationRuntimeConfig.runtimeEnabled) {
           const failure = getGenerationFailureMapping("generation_runtime_disabled");
           rejectGenerationJob(
@@ -792,6 +816,24 @@ export const createGenerationRouter = (
           failure.message,
           failure.httpStatus,
         );
+        return;
+      }
+
+      if (parsed.request.generationKind === "video") {
+        if (routeExecutionMode !== "mock_video_local_only") {
+          const failure = getGenerationFailureMapping("generation_execution_blocked");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "generation_execution_blocked",
+            failure.message,
+            failure.httpStatus,
+            [mockLocalProviderId],
+          );
+          return;
+        }
+
+        sendMockLocalVideoStorageUnavailableResult(response, runtimeSummary);
         return;
       }
 

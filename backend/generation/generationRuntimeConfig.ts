@@ -9,6 +9,7 @@ export type BackendGenerationRouteExecutionMode =
   | "preconditions_only"
   | "adapter_mock_only"
   | "mock_image_local_only"
+  | "mock_video_local_only"
   | "openai_adapter_mock_only"
   | "openai_adapter_mock_storage_only"
   | "real_provider_local_only";
@@ -159,6 +160,7 @@ export const parseGenerationRouteExecutionMode = (
     value === "preconditions_only" ||
     value === "adapter_mock_only" ||
     value === "mock_image_local_only" ||
+    value === "mock_video_local_only" ||
     value === "openai_adapter_mock_only" ||
     value === "openai_adapter_mock_storage_only" ||
     value === "real_provider_local_only"
