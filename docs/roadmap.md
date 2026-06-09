@@ -2,6 +2,27 @@
 
 This file is the concise delivery roadmap for Free AI Mixer. Detailed technical truth lives in [PROJECT_BIBLE.md](../PROJECT_BIBLE.md). Canonical phase numbering lives in [docs/phases.md](./phases.md).
 
+## Launch Block Roadmap
+
+Remaining go-live work is organized into eight launch blocks:
+
+1. Block 0 - Provider Capability + Free/Paid Policy
+2. Block 1 - Production Auth + Supabase Persistence
+3. Block 2 - Production Storage + Artifact Delivery
+4. Block 3 - Billing / Credits / Subscriptions
+5. Block 4 - Real Provider Generation
+6. Block 5 - Real Video Generation
+7. Block 6 - Production Deployment
+8. Block 7 - Final Launch QA / Private Beta / Public Launch
+
+Block 0 policy:
+
+- Free workspace and mock/demo generation are available.
+- BYOK means users bring their own provider API keys and use provider quota where available.
+- BYOK does not create free provider credits, and image/video provider APIs may require separate provider billing or eligible account access.
+- Paid Free AI Mixer credits/subscriptions are a future Block 3 boundary for users who do not want to manage provider keys.
+- Real provider generation, real video generation, production storage delivery, billing, deployment, and launch remain separate audited blocks.
+
 ## Phase 18 Recommendation
 
 Admin Analytics + Platform Metrics should stay in a future readiness-only audit

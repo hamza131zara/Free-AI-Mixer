@@ -1,4 +1,5 @@
 import { Image } from "lucide-react";
+import { platformGenerationPolicyCopy } from "../services/providerCapabilityPolicyService";
 import { useImageGenerationStore } from "../store/imageGenerationStore";
 
 export function PromptImageGenerator() {
@@ -47,6 +48,10 @@ export function PromptImageGenerator() {
           metadata. When available, preview is served only through the backend
           generation route. Storage details, image bytes, and browser downloads are
           not exposed.
+        </p>
+        <p className="form-helper field-wide">
+          {platformGenerationPolicyCopy.mockGenerationCopy} Real provider image
+          generation requires approved BYOK or future platform credits.
         </p>
 
         <div className="actions">

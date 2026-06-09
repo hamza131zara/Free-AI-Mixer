@@ -2,6 +2,22 @@
 
 This file tracks current architecture debt and unstable behaviors that future work must not ignore.
 
+## Launch Block 0 Provider Policy
+
+Current state:
+
+- Mock/demo/local generation is available in the Free AI Mixer workspace.
+- BYOK provider keys may be stored/validated only through audited backend boundaries when configured.
+- BYOK provider generation depends on the user's provider account quota, credits, model access, and billing eligibility.
+- OpenAI, Gemini, Imagen, Veo, Runway, Pika, Stability, Replicate, Luma, and similar providers must not be described as guaranteed-free generation sources.
+- Platform-paid credits/subscriptions are not configured and remain a future billing block.
+
+Why it matters:
+
+- Users must not mistake BYOK for free provider credits.
+- Free AI Mixer paid plans must not be implied until billing/credits/subscriptions are implemented.
+- Real provider generation must remain paused when provider billing/quota/model access is unavailable.
+
 ## Stability Issues
 
 ### Hydration Runtime Sign-Off

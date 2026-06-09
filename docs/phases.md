@@ -13956,3 +13956,24 @@ Safety boundaries:
 - no public URL, signed URL, generated image stream route, or export route reuse was added
 - no provider URL, base64 image, bytes, local path, internal storage ref, raw prompt, raw key, encrypted payload, secret reference, JWT, service-role, or encryption key is returned
 - no fake success, fake progress, fake artifact, credits/billing mutation, export route behavior, or public launch behavior was added
+## Launch Block 0 - Provider Capability + Free/Paid Policy
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- typed provider capability and Free/BYOK/Paid policy model
+- honest copy in Provider Settings, Mixer generation workspace, and Pricing
+- docs update for the eight launch blocks
+- focused QA coverage for provider policy copy and unsafe-claim absence
+
+Safety boundaries:
+
+- no real provider calls
+- no API key validation calls
+- no billing, Stripe, credits ledger, or subscription behavior
+- no backend real generation changes
+- no public URL, signed URL, download URL, direct storage, or export behavior changes
+- BYOK is described as user-owned provider quota/billing only, not guaranteed free provider credits

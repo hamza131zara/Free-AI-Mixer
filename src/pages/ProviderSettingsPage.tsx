@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { providerCapabilityLabels } from "../services/providerCapabilityLabels";
+import {
+  getProviderCapabilityPolicy,
+  platformGenerationPolicyCopy,
+  providerCapabilityPolicies,
+} from "../services/providerCapabilityPolicyService";
 import { useProviderSettingsStore } from "../store/providerSettingsStore";
 import { useNavigationStore } from "../store/navigationStore";
 import type { SupportedProviderId } from "../types/providerSettings";
@@ -63,6 +68,9 @@ export function ProviderSettingsPage() {
     : undefined;
   const selectedProvider = selectedProviderId
     ? providers.find((provider) => provider.id === selectedProviderId)
+    : undefined;
+  const selectedProviderPolicy = selectedProviderId
+    ? getProviderCapabilityPolicy(selectedProviderId)
     : undefined;
   const hasStoredSummary = Boolean(
     selectedConnection?.canManage &&
@@ -139,6 +147,15 @@ export function ProviderSettingsPage() {
             are configured. Provider validation and generation routing remain
             disabled.
           </p>
+          <p className="placeholder-description">
+            Free workspace and mock/demo generation are available. Bring your own
+            API key to use provider quota where available; some image/video
+            provider APIs require separate provider billing.
+          </p>
+          <p className="placeholder-description">
+            Platform credits/subscriptions are coming later for users who do not
+            want to manage API keys.
+          </p>
           <div className="hero-actions">
             <button
               type="button"
@@ -189,6 +206,64 @@ export function ProviderSettingsPage() {
           {accessStatus === "authenticated" ? (
             <p>Connection summaries stay metadata-only and not_connected until secure backend key storage exists.</p>
           ) : null}
+        </div>
+      </div>
+
+      <div className="page-section" data-testid="provider-capability-policy">
+        <div className="section-header">
+          <p className="eyebrow">Launch Block 0 policy</p>
+          <h2>Provider capability and free/paid generation policy</h2>
+        </div>
+        <div className="info-card-grid">
+          <article className="info-card">
+            <h3>Free workspace</h3>
+            <p>{platformGenerationPolicyCopy.freeWorkspaceCopy}</p>
+            <p>{platformGenerationPolicyCopy.mockGenerationCopy}</p>
+          </article>
+          <article className="info-card">
+            <h3>BYOK provider quota</h3>
+            <p>{platformGenerationPolicyCopy.byokQuotaCopy}</p>
+            <p>{platformGenerationPolicyCopy.providerBillingCopy}</p>
+          </article>
+          <article className="info-card">
+            <h3>Paid platform credits</h3>
+            <p>{platformGenerationPolicyCopy.paidPlatformCopy}</p>
+            <p>
+              Current status: <strong>platform_credits_not_configured</strong>.
+            </p>
+          </article>
+        </div>
+        <div className="provider-card-grid provider-policy-grid">
+          {providerCapabilityPolicies.map((policy) => (
+            <article key={policy.providerId} className="provider-card">
+              <p className="info-card-label">{policy.providerId}</p>
+              <h3>{policy.displayName}</h3>
+              <p>{policy.byokCopy}</p>
+              <p>{policy.unavailableCopy}</p>
+              <p>
+                <strong>Billing may be required:</strong>{" "}
+                {policy.billingMayBeRequired ? "yes" : "no"}
+              </p>
+              <p>
+                <strong>App-guaranteed free API quota:</strong>{" "}
+                {policy.freeApiQuotaKnown ? "known" : "not guaranteed"}
+              </p>
+              <div className="capability-chip-list">
+                {policy.supportsText ? <span className="capability-chip">Text</span> : null}
+                {policy.supportsImage ? <span className="capability-chip">Image</span> : null}
+                {policy.supportsVideo ? <span className="capability-chip">Video</span> : null}
+                {policy.byokSupported ? <span className="capability-chip">BYOK</span> : null}
+                {policy.platformPaidSupported ? (
+                  <span className="capability-chip">Future paid platform</span>
+                ) : null}
+              </div>
+              <ul className="provider-policy-status-list">
+                {policy.statuses.map((status) => (
+                  <li key={`${policy.providerId}-${status}`}>{status}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
       </div>
 
@@ -304,6 +379,14 @@ export function ProviderSettingsPage() {
               Validation uses the stored backend key reference only. No key is
               sent from the browser.
             </p>
+            {selectedProviderPolicy ? (
+              <p className="form-helper" data-testid="selected-provider-policy-copy">
+                {selectedProviderPolicy.byokCopy}{" "}
+                {selectedProviderPolicy.billingMayBeRequired
+                  ? "Separate provider billing or account eligibility may be required."
+                  : ""}
+              </p>
+            ) : null}
             <form
               ref={keyFormRef}
               className="provider-key-form"

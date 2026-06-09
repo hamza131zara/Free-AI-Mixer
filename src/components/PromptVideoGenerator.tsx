@@ -1,4 +1,5 @@
 import { Film } from "lucide-react";
+import { platformGenerationPolicyCopy } from "../services/providerCapabilityPolicyService";
 import { useVideoGenerationStore } from "../store/videoGenerationStore";
 
 export function PromptVideoGenerator() {
@@ -51,6 +52,10 @@ export function PromptVideoGenerator() {
           This calls the backend mock video boundary. Video artifact verification
           and storage are not ready yet, so the expected result is a safe
           unavailable lifecycle with no preview or download.
+        </p>
+        <p className="form-helper field-wide">
+          {platformGenerationPolicyCopy.providerBillingCopy} Real video providers
+          remain a future audited launch block.
         </p>
 
         <div className="actions">

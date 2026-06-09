@@ -2,6 +2,17 @@
 
 This file is the operational architecture reference for Free AI Mixer. It complements [PROJECT_BIBLE.md](../PROJECT_BIBLE.md) by turning the platform rules into implementation constraints for day-to-day work.
 
+## Provider Capability And Free/Paid Policy Boundary
+
+Launch Block 0 adds a frontend policy/model boundary for provider capabilities and Free/BYOK/Paid copy.
+
+- Free workspace and mock/demo generation are available without real provider calls.
+- BYOK means the user brings provider API keys and uses provider quota where available; BYOK does not create provider credits.
+- Some image/video provider APIs may require separate provider billing, quota, model access, organization verification, or eligible account setup.
+- Platform-paid generation is represented only as `platform_credits_not_configured` until billing/credits/subscriptions are implemented in a later audited block.
+- UI copy may explain capability policy, but React components must not own provider execution, billing decisions, API key handling, or storage access.
+- Real provider execution remains backend-gated and unchanged by this policy boundary.
+
 ## Core Rules
 
 - Architecture first, UI second.

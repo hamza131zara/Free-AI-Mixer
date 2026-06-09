@@ -5,6 +5,7 @@ import { PromptImageGenerator } from "../components/PromptImageGenerator";
 import { PromptImageHistory } from "../components/PromptImageHistory";
 import { PromptVideoGenerator } from "../components/PromptVideoGenerator";
 import { TimelinePanel } from "../components/TimelinePanel";
+import { platformGenerationPolicyCopy } from "../services/providerCapabilityPolicyService";
 
 export function MixerPage() {
   return (
@@ -35,6 +36,15 @@ export function MixerPage() {
                   </p>
                 </div>
                 <span className="status-pill status-idle">Metadata only</span>
+              </div>
+              <div
+                className="generation-policy-banner"
+                data-testid="generation-policy-banner"
+              >
+                <p>{platformGenerationPolicyCopy.freeWorkspaceCopy}</p>
+                <p>{platformGenerationPolicyCopy.byokQuotaCopy}</p>
+                <p>{platformGenerationPolicyCopy.providerBillingCopy}</p>
+                <p>{platformGenerationPolicyCopy.paidPlatformCopy}</p>
               </div>
               <div className="generation-workbench-grid">
                 <PromptImageGenerator />

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { platformGenerationPolicyCopy } from "../services/providerCapabilityPolicyService";
 import { useBillingStore } from "../store/billingStore";
 import { useNavigationStore } from "../store/navigationStore";
 
@@ -28,6 +29,10 @@ export function PricingPage() {
             This page only shows planned pricing and billing-policy boundaries. It
             does not offer checkout, subscriptions, purchases, or unlimited usage
             claims.
+          </p>
+          <p className="placeholder-description">
+            {platformGenerationPolicyCopy.freeWorkspaceCopy}{" "}
+            {platformGenerationPolicyCopy.byokQuotaCopy}
           </p>
           <div className="hero-actions">
             <button
@@ -61,6 +66,26 @@ export function PricingPage() {
         <div className="section-header">
           <p className="eyebrow">Draft plan direction</p>
           <h2>BYOK and platform billing stay separate</h2>
+        </div>
+        <div className="info-card-grid" data-testid="free-paid-policy-grid">
+          <article className="info-card">
+            <h3>Free plan boundary</h3>
+            <p>{platformGenerationPolicyCopy.freeWorkspaceCopy}</p>
+            <p>{platformGenerationPolicyCopy.mockGenerationCopy}</p>
+          </article>
+          <article className="info-card">
+            <h3>BYOK boundary</h3>
+            <p>{platformGenerationPolicyCopy.byokQuotaCopy}</p>
+            <p>{platformGenerationPolicyCopy.providerBillingCopy}</p>
+          </article>
+          <article className="info-card">
+            <h3>Paid plan boundary</h3>
+            <p>{platformGenerationPolicyCopy.paidPlatformCopy}</p>
+            <p>
+              Current status: <strong>platform_credits_not_configured</strong>.
+              Billing and subscriptions are not configured in this block.
+            </p>
+          </article>
         </div>
         <div className="info-card-grid">
           {plans.map((plan) => (
