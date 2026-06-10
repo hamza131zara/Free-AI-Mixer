@@ -26,6 +26,7 @@ Current state:
 - JWT verification is a configured/fail-closed boundary; it must not trust arbitrary `x-user-id` or `x-workspace-id` headers.
 - Owner/admin policy is required for provider keys, generation jobs, projects, and generated artifact access.
 - Runtime route seams now report `persistence_unavailable` where production Supabase persistence is not configured; this is not durable server persistence.
+- Repository-backed metadata persistence now exists, but it is usable only after backend Supabase env and manually reviewed/applied Block 1 tables are present.
 - Supabase persistence is documented through migration drafts only. No remote production migration auto-apply is allowed.
 - Browser-local history fallback remains honest if server persistence is unavailable.
 

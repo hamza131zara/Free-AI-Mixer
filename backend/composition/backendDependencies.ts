@@ -61,9 +61,9 @@ import {
   type BackendGenerationExecutionControlReadiness,
 } from "../generation/generationRuntimeOrchestrator";
 import {
-  createNotConfiguredProductionSupabasePersistenceWriter,
   type ProductionSupabasePersistenceWriter,
 } from "../persistence/productionSupabasePersistenceBoundary";
+import { createProductionSupabasePersistenceWriterFromClientFactory } from "../persistence/supabaseProductionPersistenceWriter";
 
 export interface BackendDependencies {
   registry: ExportJobRegistry;
@@ -124,9 +124,10 @@ const getDefaultRoots = (): { temp: string; output: string } => {
 export const createBackendDependencies = (): BackendDependencies => {
   const roots = getDefaultRoots();
   const supabaseConfig = readSupabaseConfigFromEnv();
+  const supabaseClientFactoryResult = createSupabaseClientFactory(supabaseConfig);
   const repositoryComposition = createRepositoryComposition(
     supabaseConfig,
-    createSupabaseClientFactory(supabaseConfig),
+    supabaseClientFactoryResult,
   );
   const databaseRepositories =
     repositoryComposition.kind === "repository_composition_available"
@@ -162,7 +163,9 @@ export const createBackendDependencies = (): BackendDependencies => {
   const generationOpenAiImageModelConfig =
     parseGenerationOpenAiImageModelConfig();
   const productionPersistenceWriter =
-    createNotConfiguredProductionSupabasePersistenceWriter();
+    createProductionSupabasePersistenceWriterFromClientFactory(
+      supabaseClientFactoryResult,
+    );
   const providerValidationAdapter =
     byokProviderValidationRuntimeGate.enabled &&
     byokProviderValidationAdapterSelection.adapter === "mock_local"

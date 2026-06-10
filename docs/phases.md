@@ -13989,6 +13989,7 @@ Scope:
 - production auth ownership policy boundary for trusted requester context and owner/admin role checks
 - Supabase persistence boundary summary for app users, workspaces, memberships, projects, generation jobs, generated artifact records, image generation history, provider key metadata, audit logs, and analytics events
 - generation, generated artifact access/preview, and project/history routes can receive production policy/persistence seams without enabling remote persistence
+- server-side Supabase repository-backed metadata persistence writer exists for project, generation job, generated artifact, and image history tables when backend env and reviewed schema are configured
 - migration draft for missing project/generation/generated artifact/history tables
 - focused QA coverage for unauthenticated rejection, arbitrary-header distrust, owner/admin policy, safe metadata persistence, Block 0 copy, and mock generation/preview regression
 

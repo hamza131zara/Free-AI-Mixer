@@ -126,7 +126,7 @@ export type ProductionPersistenceWriteResult =
     }
   | {
       kind: "unavailable";
-      status: "persistence_unavailable";
+      status: "persistence_unavailable" | "persistence_write_failed";
       message: string;
     };
 

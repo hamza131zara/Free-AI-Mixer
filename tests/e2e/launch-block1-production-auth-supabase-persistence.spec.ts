@@ -13,6 +13,8 @@ import { decideProductionAuthOwnership } from "../../backend/auth/productionAuth
 import { resolveSelectedRouteAccess } from "../../backend/auth/protectedRouteGuards";
 import { createTrustedAuthProviderStrategyFromRuntimeConfig } from "../../backend/auth/trustedAuthProviderComposition";
 import { decideProviderKeyAuthorization } from "../../backend/authorization/providerKeyAuthorization";
+import { parseSupabaseConfig } from "../../backend/config/supabaseConfig";
+import { createSupabaseClientFactory } from "../../backend/db/supabaseClientFactory";
 import { createInMemoryGeneratedImageArtifactRegistry } from "../../backend/generation/generatedImageArtifactRegistry";
 import { createLocalGeneratedImageArtifactStorage } from "../../backend/generation/generatedImageArtifactStorage";
 import { createRegistryBackedGeneratedImageArtifactAccessResolver } from "../../backend/generation/generatedImageArtifactAccess";
@@ -23,6 +25,10 @@ import {
   forbiddenProductionPersistencePublicFields,
   getProductionPersistenceBoundarySummary,
 } from "../../backend/persistence/productionSupabasePersistenceBoundary";
+import {
+  createProductionSupabasePersistenceWriterFromClientFactory,
+  createSupabaseProductionPersistenceWriter,
+} from "../../backend/persistence/supabaseProductionPersistenceWriter";
 
 const readProjectFile = (relativePath: string) =>
   readFileSync(join(process.cwd(), relativePath), "utf8");
@@ -138,6 +144,26 @@ const startExpressServer = async (app: express.Express) => {
     close: () => Promise<void>;
     server: Server;
     url: string;
+  };
+};
+
+const createRecordingSupabasePersistenceClient = () => {
+  const inserts: Array<{ row: Record<string, unknown>; table: string }> = [];
+
+  return {
+    client: {
+      from: (table: string) => ({
+        insert: (row: Record<string, unknown>) => {
+          inserts.push({ row, table });
+
+          return {
+            then: (resolve: (value: { error: null }) => unknown) =>
+              Promise.resolve(resolve({ error: null })),
+          };
+        },
+      }),
+    },
+    inserts,
   };
 };
 
@@ -479,6 +505,114 @@ test.describe("Launch Block 1 production auth and Supabase persistence", () => {
     serializedDoesNotLeak(summary);
   });
 
+  test("Supabase repository-backed persistence is not configured when env is missing", () => {
+    const config = parseSupabaseConfig({});
+    const clientFactory = createSupabaseClientFactory(config);
+    const writer =
+      createProductionSupabasePersistenceWriterFromClientFactory(clientFactory);
+
+    expect(writer.getReadiness()).toMatchObject({
+      kind: "unavailable",
+      status: "persistence_unavailable",
+    });
+  });
+
+  test("Supabase repository writer stores only safe metadata payloads", async () => {
+    const recording = createRecordingSupabasePersistenceClient();
+    const writer = createSupabaseProductionPersistenceWriter(
+      recording.client as Parameters<
+        typeof createSupabaseProductionPersistenceWriter
+      >[0],
+    );
+
+    await writer.persistGenerationJobMetadata({
+      generationKind: "image",
+      jobId: "block1-safe-job",
+      ownerId: "11111111-1111-4111-8111-111111111111",
+      providerId: "mock_local",
+      requestId: "block1-safe-request",
+      status: "generated_metadata_ready",
+      workspaceId: "22222222-2222-4222-8222-222222222222",
+    });
+    await writer.persistGeneratedArtifactRecord({
+      artifactId: "block1-safe-artifact",
+      contentType: "image/png",
+      createdAt: "2026-06-10T00:00:00.000Z",
+      jobId: "block1-safe-job",
+      ownerId: "11111111-1111-4111-8111-111111111111",
+      providerId: "mock_local",
+      sha256:
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      sizeBytes: 67,
+      status: "available",
+      workspaceId: "22222222-2222-4222-8222-222222222222",
+    });
+    await writer.persistImageGenerationHistory({
+      artifactId: "block1-safe-artifact",
+      contentType: "image/png",
+      createdAt: "2026-06-10T00:00:00.000Z",
+      jobId: "block1-safe-job",
+      ownerId: "11111111-1111-4111-8111-111111111111",
+      providerId: "mock_local",
+      requestId: "block1-safe-request",
+      sha256:
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      sizeBytes: 67,
+      status: "generated_metadata_ready",
+      workspaceId: "22222222-2222-4222-8222-222222222222",
+    });
+    await writer.persistProjectMetadata({
+      ownerId: "11111111-1111-4111-8111-111111111111",
+      projectId: "block1-project",
+      projectName: "Safe Block 1 Project",
+      status: "active",
+      updatedAt: "2026-06-10T00:00:00.000Z",
+      workspaceId: "22222222-2222-4222-8222-222222222222",
+    });
+
+    expect(recording.inserts.map((insert) => insert.table)).toEqual([
+      "generation_jobs",
+      "generated_artifact_records",
+      "image_generation_history",
+      "projects",
+    ]);
+    expect(recording.inserts[0].row).toMatchObject({
+      generation_kind: "image",
+      provider_id: "mock_local",
+      request_id: "block1-safe-request",
+      status: "generated_metadata_ready",
+    });
+    expect(recording.inserts[1].row).toMatchObject({
+      artifact_id: "block1-safe-artifact",
+      content_type: "image/png",
+      delivery_status: "unavailable",
+      storage_state: "available",
+    });
+
+    const persistencePayload = JSON.stringify(recording.inserts);
+
+    for (const forbidden of [
+      "encrypted_payload",
+      "secret_ref",
+      "service-role",
+      "service_role",
+      "api_key",
+      "jwt_secret",
+      "provider_response_body",
+      "provider_headers",
+      "local_path",
+      "internal_ref",
+      "base64",
+      "public_url",
+      "signed_url",
+      "download_url",
+      "storage_ref",
+      "sk-",
+    ]) {
+      expect(persistencePayload).not.toContain(forbidden);
+    }
+  });
+
   test("migration drafts and docs stay manual, backend-owned, and secret-safe", () => {
     const migration = readProjectFile(
       "backend/db/migrations/0004_launch_block1_project_generation_persistence_draft.sql",
@@ -495,6 +629,15 @@ test.describe("Launch Block 1 production auth and Supabase persistence", () => {
     );
     const persistenceBoundary = readProjectFile(
       "backend/persistence/productionSupabasePersistenceBoundary.ts",
+    );
+    const supabasePersistenceWriter = readProjectFile(
+      "backend/persistence/supabaseProductionPersistenceWriter.ts",
+    );
+    const frontendProjectLibraryService = readProjectFile(
+      "src/services/projectLibraryService.ts",
+    );
+    const frontendExportHistoryService = readProjectFile(
+      "src/services/exportHistoryService.ts",
     );
     const combined = [
       architecture,
@@ -520,9 +663,19 @@ test.describe("Launch Block 1 production auth and Supabase persistence", () => {
     expect(combined).toContain("Free workspace and mock/demo generation are available.");
     expect(combined).toContain("BYOK does not create free provider credits");
     expect(combined).toContain("no remote production migration auto-apply");
+    expect(combined).toContain("repository-backed Supabase persistence writer");
     expect(combined).toContain("browser-local history fallback");
 
-    const newBlock1Sources = [migration, authPolicy, persistenceBoundary].join("\n");
+    const newBlock1Sources = [
+      migration,
+      authPolicy,
+      persistenceBoundary,
+      supabasePersistenceWriter,
+    ].join("\n");
+    const frontendSources = [
+      frontendProjectLibraryService,
+      frontendExportHistoryService,
+    ].join("\n");
 
     for (const forbidden of [
       "createCheckoutSession",
@@ -533,6 +686,16 @@ test.describe("Launch Block 1 production auth and Supabase persistence", () => {
       "downloadUrl:",
     ]) {
       expect(newBlock1Sources).not.toContain(forbidden);
+    }
+
+    for (const forbidden of [
+      "createClient(",
+      "supabase.from(",
+      "storage.from(",
+      "FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY",
+      "VITE_FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY",
+    ]) {
+      expect(frontendSources).not.toContain(forbidden);
     }
   });
 });

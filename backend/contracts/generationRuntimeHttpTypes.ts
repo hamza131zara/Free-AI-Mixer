@@ -45,7 +45,7 @@ export interface BackendGenerationMetadataOnlyArtifactResponse {
 }
 
 export interface BackendGenerationPersistenceStatus {
-  status: "persisted" | "persistence_unavailable";
+  status: "persisted" | "persistence_unavailable" | "persistence_write_failed";
   message?: string;
 }
 
