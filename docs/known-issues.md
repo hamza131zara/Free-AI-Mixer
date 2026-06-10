@@ -18,6 +18,22 @@ Why it matters:
 - Free AI Mixer paid plans must not be implied until billing/credits/subscriptions are implemented.
 - Real provider generation must remain paused when provider billing/quota/model access is unavailable.
 
+## Launch Block 1 Production Auth And Persistence Gaps
+
+Current state:
+
+- Backend auth remains trusted-boundary based and must reject unauthenticated sessions safely.
+- JWT verification is a configured/fail-closed boundary; it must not trust arbitrary `x-user-id` or `x-workspace-id` headers.
+- Owner/admin policy is required for provider keys, generation jobs, projects, and generated artifact access.
+- Supabase persistence is documented through migration drafts only. No remote production migration auto-apply is allowed.
+- Browser-local history fallback remains honest if server persistence is unavailable.
+
+Why it matters:
+
+- Public users require backend-derived identity, workspace ownership, and durable persistence before production launch.
+- Direct frontend Supabase DB/storage access remains forbidden.
+- Secrets such as `encrypted_payload`, `secret_ref`, JWTs, service-role keys, provider API keys, and vault material must never be selected for UI responses, logs, tests, docs examples, or analytics/audit metadata.
+
 ## Stability Issues
 
 ### Hydration Runtime Sign-Off

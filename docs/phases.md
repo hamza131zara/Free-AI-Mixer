@@ -13977,3 +13977,26 @@ Safety boundaries:
 - no backend real generation changes
 - no public URL, signed URL, download URL, direct storage, or export behavior changes
 - BYOK is described as user-owned provider quota/billing only, not guaranteed free provider credits
+
+## Launch Block 1 - Production Auth + Supabase Persistence
+
+Status:
+
+- implementation pending verification
+
+Scope:
+
+- production auth ownership policy boundary for trusted requester context and owner/admin role checks
+- Supabase persistence boundary summary for app users, workspaces, memberships, projects, generation jobs, generated artifact records, image generation history, provider key metadata, audit logs, and analytics events
+- migration draft for missing project/generation/generated artifact/history tables
+- focused QA coverage for unauthenticated rejection, arbitrary-header distrust, owner/admin policy, safe metadata persistence, Block 0 copy, and mock generation/preview regression
+
+Safety boundaries:
+
+- no real provider calls
+- no provider validation calls
+- no billing or Stripe integration
+- no public URL, signed URL, or download URL behavior
+- no direct frontend Supabase DB/storage access
+- no remote production migration auto-apply
+- no fake auth user or fake production success

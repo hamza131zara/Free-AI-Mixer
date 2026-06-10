@@ -13,6 +13,19 @@ Launch Block 0 adds a frontend policy/model boundary for provider capabilities a
 - UI copy may explain capability policy, but React components must not own provider execution, billing decisions, API key handling, or storage access.
 - Real provider execution remains backend-gated and unchanged by this policy boundary.
 
+## Production Auth And Supabase Persistence Boundary
+
+Launch Block 1 establishes production auth and persistence readiness without enabling a production rollout.
+
+- Protected backend routes must derive requester context from trusted JWT/session verification only.
+- Frontend-supplied `x-user-id`, `x-workspace-id`, role, or workspace headers are not trusted authorization sources.
+- Workspace roles normalize to owner, admin, member, and viewer; owner/admin is required for provider keys, generation jobs, projects, and generated artifact access.
+- Supabase persistence boundaries exist for app users, workspaces, workspace memberships, projects, generation jobs, generated artifact records, image generation history, provider key metadata, audit logs, and analytics events.
+- Provider key persistence may include backend-only secret storage fields, but public summaries must remain redacted metadata only.
+- Browser-local history fallback remains allowed only as an honest fallback when server persistence is unavailable.
+- Migration drafts are manual local/staging artifacts. The app must not auto-apply remote production migrations.
+- Frontend code must not directly access Supabase DB/storage or store raw JWTs, provider secrets, service-role values, encrypted payloads, secret refs, local paths, internal refs, base64, public URLs, signed URLs, or download URLs.
+
 ## Core Rules
 
 - Architecture first, UI second.

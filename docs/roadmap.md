@@ -23,6 +23,18 @@ Block 0 policy:
 - Paid Free AI Mixer credits/subscriptions are a future Block 3 boundary for users who do not want to manage provider keys.
 - Real provider generation, real video generation, production storage delivery, billing, deployment, and launch remain separate audited blocks.
 
+## Launch Block 1 - Production Auth + Supabase Persistence
+
+Block 1 adds production-readiness foundations without remotely applying production migrations:
+
+- backend requester context must come from trusted JWT/session boundaries only
+- arbitrary frontend user/workspace headers must not authorize protected routes
+- owner/admin policy applies to provider keys, generation jobs, projects, and generated artifact access
+- Supabase persistence drafts cover app users, workspaces, memberships, projects, generation jobs, generated artifact records, image generation history, provider key metadata, audit logs, and analytics events
+- browser-local history fallback remains honest when server persistence is unavailable
+- migration drafts require manual local/staging review; no remote production migration auto-apply is allowed
+- no real provider calls, API key validation calls, billing, public URLs, signed URLs, download URLs, or direct frontend Supabase DB/storage access are introduced
+
 ## Phase 18 Recommendation
 
 Admin Analytics + Platform Metrics should stay in a future readiness-only audit
