@@ -279,10 +279,12 @@ export const createApp = (): Express => {
         backendDeps.generationOpenAiImageModelConfig,
       generationRuntimeConfig: backendDeps.generationRuntimeConfig,
       generationRuntimeReadiness: backendDeps.generationRuntimeReadiness,
+      productionPersistenceWriter: backendDeps.productionPersistenceWriter,
       ...(routeAccessResolver ? { routeAccessResolver } : {}),
       ...(repositories
         ? {
             providerKeyRepository: repositories.providerKeyRepository,
+            productionAuthOwnershipPolicyEnabled: true,
             workspaceMembershipRepository:
               createProviderSettingsMembershipRepository(repositories),
           }
@@ -310,6 +312,7 @@ export const createApp = (): Express => {
   app.use(
     createProjectHistoryRouter({
       runtimeConfig: authRuntimeConfig,
+      productionPersistenceWriter: backendDeps.productionPersistenceWriter,
       ...(routeAccessResolver ? { routeAccessResolver } : {}),
     }),
   );

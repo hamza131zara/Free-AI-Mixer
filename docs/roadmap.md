@@ -30,6 +30,7 @@ Block 1 adds production-readiness foundations without remotely applying producti
 - backend requester context must come from trusted JWT/session boundaries only
 - arbitrary frontend user/workspace headers must not authorize protected routes
 - owner/admin policy applies to provider keys, generation jobs, projects, and generated artifact access
+- generation, generated artifact access/preview, and project/history routes now accept fail-closed production auth and persistence seams where safely wired
 - Supabase persistence drafts cover app users, workspaces, memberships, projects, generation jobs, generated artifact records, image generation history, provider key metadata, audit logs, and analytics events
 - browser-local history fallback remains honest when server persistence is unavailable
 - migration drafts require manual local/staging review; no remote production migration auto-apply is allowed

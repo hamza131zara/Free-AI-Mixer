@@ -12,7 +12,7 @@ export interface ExportHistoryStoreState {
   accessMessage: string;
   accessReasonCode?: string;
   activeWorkspaceId?: string;
-  historyState: "not_enabled_yet";
+  historyState: "not_enabled_yet" | "persistence_unavailable";
   exports: ExportHistorySummary[];
   pendingAction: "refresh" | null;
   refreshExportHistory: () => Promise<void>;

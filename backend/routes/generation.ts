@@ -6,6 +6,9 @@ import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
 import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProviderRuntimeConfig";
 import type { AsyncBackendRequesterContextResolver } from "../auth/requesterContextResolver";
 import type { WorkspaceMembershipRepository } from "../auth/workspaceMembership";
+import type { BackendRequesterContext } from "../auth/requesterContext";
+import type { WorkspaceMembershipRole } from "../auth/workspaceMembership";
+import { decideProductionAuthOwnership } from "../auth/productionAuthOwnershipPolicy";
 import type {
   BackendGenerationCatalogResponse,
   BackendGeneratedArtifactAccessResponse,
@@ -58,6 +61,10 @@ import {
   defaultGenerationRoutingPreferences,
 } from "../generation/generationProviderTypes";
 import { chooseGenerationProvider } from "../generation/generationRouting";
+import type {
+  ProductionPersistenceWriteResult,
+  ProductionSupabasePersistenceWriter,
+} from "../persistence/productionSupabasePersistenceBoundary";
 
 export interface CreateGenerationRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
@@ -92,6 +99,8 @@ export interface CreateGenerationRouterOptions {
   generatedImageArtifactAccessResolver?: GeneratedImageArtifactAccessResolver;
   generatedImageArtifactRegistry?: GeneratedImageArtifactRegistry;
   generatedImageLocalPreviewEnabled?: boolean;
+  productionAuthOwnershipPolicyEnabled?: boolean;
+  productionPersistenceWriter?: ProductionSupabasePersistenceWriter;
 }
 
 const resolveAuthUnavailableCode = (
@@ -472,6 +481,56 @@ const isInsideGeneratedPreviewRoot = (
   );
 };
 
+const getActiveMembershipRole = (
+  membershipResult: Awaited<
+    ReturnType<WorkspaceMembershipRepository["getMembership"]>
+  >,
+): WorkspaceMembershipRole | undefined =>
+  membershipResult.kind === "member" &&
+  membershipResult.membership.status === "active"
+    ? membershipResult.membership.role
+    : undefined;
+
+const getProductionOwnershipFailure = (
+  requesterContext: BackendRequesterContext,
+  membershipResult: Awaited<
+    ReturnType<WorkspaceMembershipRepository["getMembership"]>
+  >,
+  surface: Parameters<typeof decideProductionAuthOwnership>[0]["surface"],
+) => {
+  const decision = decideProductionAuthOwnership({
+    membershipRole: getActiveMembershipRole(membershipResult),
+    requesterContext,
+    surface,
+  });
+
+  return decision.kind === "denied" ? decision : undefined;
+};
+
+const toPersistenceResponse = (
+  results: ProductionPersistenceWriteResult[],
+): Extract<
+  BackendGenerationJobMutationResponse,
+  { kind: "generation_job_metadata_ready" }
+>["persistence"] | undefined => {
+  if (results.length === 0) {
+    return undefined;
+  }
+
+  const unavailable = results.find((result) => result.kind === "unavailable");
+
+  if (unavailable?.kind === "unavailable") {
+    return {
+      status: "persistence_unavailable",
+      message: unavailable.message,
+    };
+  }
+
+  return {
+    status: "persisted",
+  };
+};
+
 const sendMockLocalImageStorageResult = async (
   response: Response<BackendGenerationJobMutationResponse>,
   runtimeSummary: ReturnType<typeof createRuntimeSummary>,
@@ -481,6 +540,7 @@ const sendMockLocalImageStorageResult = async (
     ownerId: string;
     registry?: GeneratedImageArtifactRegistry;
     storage?: GeneratedImageArtifactStorage;
+    persistenceWriter?: ProductionSupabasePersistenceWriter;
     workspaceId: string;
   },
 ): Promise<void> => {
@@ -555,6 +615,50 @@ const sendMockLocalImageStorageResult = async (
     artifact,
     internalRef: stored.internalRef,
   });
+  const persistenceResults: ProductionPersistenceWriteResult[] = [];
+
+  if (input.persistenceWriter) {
+    persistenceResults.push(
+      await input.persistenceWriter.persistGenerationJobMetadata({
+        generationKind: "image",
+        jobId: input.jobId,
+        ownerId: input.ownerId,
+        providerId: mockLocalProviderId,
+        requestId: input.jobId,
+        status: "generated_metadata_ready",
+        workspaceId: input.workspaceId,
+      }),
+    );
+    persistenceResults.push(
+      await input.persistenceWriter.persistGeneratedArtifactRecord({
+        artifactId: artifact.artifactId,
+        contentType: artifact.contentType,
+        createdAt: artifact.createdAt,
+        jobId: artifact.jobId,
+        ownerId: artifact.ownerId,
+        providerId: artifact.providerId,
+        sha256: artifact.sha256,
+        sizeBytes: artifact.sizeBytes,
+        status: artifact.status,
+        workspaceId: artifact.workspaceId,
+      }),
+    );
+    persistenceResults.push(
+      await input.persistenceWriter.persistImageGenerationHistory({
+        artifactId: artifact.artifactId,
+        contentType: artifact.contentType,
+        createdAt: artifact.createdAt,
+        jobId: artifact.jobId,
+        ownerId: artifact.ownerId,
+        providerId: artifact.providerId,
+        requestId: input.jobId,
+        sha256: artifact.sha256,
+        sizeBytes: artifact.sizeBytes,
+        status: "generated_metadata_ready",
+        workspaceId: artifact.workspaceId,
+      }),
+    );
+  }
 
   response.status(200).json({
     kind: "generation_job_metadata_ready",
@@ -570,6 +674,9 @@ const sendMockLocalImageStorageResult = async (
       createdAt: artifact.createdAt,
       deliveryStatus: "unavailable",
     },
+    ...(persistenceResults.length > 0
+      ? { persistence: toPersistenceResponse(persistenceResults) }
+      : {}),
     runtime: toRuntimeSnapshot(runtimeSummary, false),
     attemptedProviderIds: [mockLocalProviderId],
   });
@@ -704,6 +811,41 @@ export const createGenerationRouter = (
         return;
       }
 
+      if (options.productionAuthOwnershipPolicyEnabled) {
+        if (!options.workspaceMembershipRepository) {
+          sendGeneratedArtifactAccessUnavailable(
+            response,
+            "generated_artifact_access_unavailable",
+            "Generated artifact access ownership policy is unavailable.",
+            503,
+          );
+          return;
+        }
+
+        const membershipResult =
+          await options.workspaceMembershipRepository.getMembership({
+            userId: requesterContext.userId,
+            workspaceId: requesterContext.workspaceId,
+          });
+        const ownershipFailure = getProductionOwnershipFailure(
+          requesterContext,
+          membershipResult,
+          "generated_artifacts",
+        );
+
+        if (ownershipFailure) {
+          sendGeneratedArtifactAccessUnavailable(
+            response,
+            ownershipFailure.reason === "unauthenticated"
+              ? "unauthenticated"
+              : "generated_artifact_access_unavailable",
+            "Generated artifact access is not authorized for this workspace.",
+            ownershipFailure.statusCode,
+          );
+          return;
+        }
+      }
+
       const resolver =
         options.generatedImageArtifactAccessResolver ??
         createNotConfiguredGeneratedImageArtifactAccessResolver();
@@ -770,6 +912,41 @@ export const createGenerationRouter = (
           503,
         );
         return;
+      }
+
+      if (options.productionAuthOwnershipPolicyEnabled) {
+        if (!options.workspaceMembershipRepository) {
+          sendGeneratedArtifactAccessUnavailable(
+            response,
+            "generated_artifact_access_unavailable",
+            "Generated artifact preview ownership policy is unavailable.",
+            503,
+          );
+          return;
+        }
+
+        const membershipResult =
+          await options.workspaceMembershipRepository.getMembership({
+            userId: requesterContext.userId,
+            workspaceId: requesterContext.workspaceId,
+          });
+        const ownershipFailure = getProductionOwnershipFailure(
+          requesterContext,
+          membershipResult,
+          "generated_artifacts",
+        );
+
+        if (ownershipFailure) {
+          sendGeneratedArtifactAccessUnavailable(
+            response,
+            ownershipFailure.reason === "unauthenticated"
+              ? "unauthenticated"
+              : "generated_artifact_access_unavailable",
+            "Generated artifact preview is not authorized for this workspace.",
+            ownershipFailure.statusCode,
+          );
+          return;
+        }
       }
 
       const record = options.generatedImageArtifactRegistry?.get({
@@ -943,6 +1120,21 @@ export const createGenerationRouter = (
         ? await options.routeAccessResolver.resolve({ headers: request.headers })
         : getRequesterContextFromRequest(request);
 
+      if (
+        requesterContext.kind !== "authenticated" &&
+        requesterContext.reason === "auth_not_configured"
+      ) {
+        const failure = getGenerationFailureMapping("auth_not_configured");
+        rejectGenerationJob(
+          response,
+          runtimeSummary,
+          "auth_not_configured",
+          failure.message,
+          failure.httpStatus,
+        );
+        return;
+      }
+
       const authenticatedRequester =
         requesterContext.kind === "authenticated" ? requesterContext : undefined;
       const requesterPrecondition =
@@ -983,6 +1175,34 @@ export const createGenerationRouter = (
           userId: authenticatedRequester?.userId ?? "",
           workspaceId: authenticatedRequester?.workspaceId ?? "",
         });
+
+      if (options.productionAuthOwnershipPolicyEnabled && authenticatedRequester) {
+        const ownershipFailure = getProductionOwnershipFailure(
+          authenticatedRequester,
+          membershipResult,
+          "generation_jobs",
+        );
+
+        if (ownershipFailure) {
+          const failureCode =
+            ownershipFailure.reason === "unauthenticated"
+              ? "sign_in_required"
+              : ownershipFailure.reason === "workspace_owner_or_admin_required"
+                ? "workspace_owner_or_admin_required"
+                : "workspace_permission_not_verified";
+          const failure = getGenerationFailureMapping(failureCode);
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            failureCode === "sign_in_required"
+              ? "unauthenticated"
+              : failureCode,
+            failure.message,
+            failure.httpStatus,
+          );
+          return;
+        }
+      }
 
       const rolePrecondition = evaluateGenerationRolePreconditions(
         membershipResult.kind === "member" &&
@@ -1096,6 +1316,7 @@ export const createGenerationRouter = (
           ownerId: authenticatedRequester?.userId ?? "",
           registry: options.generatedImageArtifactRegistry,
           storage: options.generatedImageArtifactStorage,
+          persistenceWriter: options.productionPersistenceWriter,
           workspaceId: authenticatedRequester?.workspaceId ?? "",
         });
         return;

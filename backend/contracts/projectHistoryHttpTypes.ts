@@ -28,7 +28,7 @@ export type BackendProjectLibraryResponse =
       status: "authenticated";
       message: string;
       activeWorkspaceId?: string;
-      persistence: "not_enabled_yet";
+      persistence: "not_enabled_yet" | "persistence_unavailable";
       projects: BackendProjectSummary[];
     }
   | {
@@ -57,7 +57,7 @@ export type BackendExportHistoryResponse =
       status: "authenticated";
       message: string;
       activeWorkspaceId?: string;
-      historyState: "not_enabled_yet";
+      historyState: "not_enabled_yet" | "persistence_unavailable";
       exports: BackendExportHistorySummary[];
     }
   | {

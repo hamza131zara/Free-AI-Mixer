@@ -25,6 +25,7 @@ Current state:
 - Backend auth remains trusted-boundary based and must reject unauthenticated sessions safely.
 - JWT verification is a configured/fail-closed boundary; it must not trust arbitrary `x-user-id` or `x-workspace-id` headers.
 - Owner/admin policy is required for provider keys, generation jobs, projects, and generated artifact access.
+- Runtime route seams now report `persistence_unavailable` where production Supabase persistence is not configured; this is not durable server persistence.
 - Supabase persistence is documented through migration drafts only. No remote production migration auto-apply is allowed.
 - Browser-local history fallback remains honest if server persistence is unavailable.
 

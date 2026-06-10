@@ -20,6 +20,7 @@ Launch Block 1 establishes production auth and persistence readiness without ena
 - Protected backend routes must derive requester context from trusted JWT/session verification only.
 - Frontend-supplied `x-user-id`, `x-workspace-id`, role, or workspace headers are not trusted authorization sources.
 - Workspace roles normalize to owner, admin, member, and viewer; owner/admin is required for provider keys, generation jobs, projects, and generated artifact access.
+- Generation, generated artifact access/preview, and project/history route factories can receive these production policy/persistence seams, but they fail closed when trusted auth, membership, or persistence dependencies are unavailable.
 - Supabase persistence boundaries exist for app users, workspaces, workspace memberships, projects, generation jobs, generated artifact records, image generation history, provider key metadata, audit logs, and analytics events.
 - Provider key persistence may include backend-only secret storage fields, but public summaries must remain redacted metadata only.
 - Browser-local history fallback remains allowed only as an honest fallback when server persistence is unavailable.

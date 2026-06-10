@@ -60,6 +60,10 @@ import {
   parseGenerationExecutionControlReadiness,
   type BackendGenerationExecutionControlReadiness,
 } from "../generation/generationRuntimeOrchestrator";
+import {
+  createNotConfiguredProductionSupabasePersistenceWriter,
+  type ProductionSupabasePersistenceWriter,
+} from "../persistence/productionSupabasePersistenceBoundary";
 
 export interface BackendDependencies {
   registry: ExportJobRegistry;
@@ -105,6 +109,8 @@ export interface BackendDependencies {
   generationOpenAiImageRealLocalSmokeEnabled: boolean;
   /** Explicit local/staging-only OpenAI image model strategy. */
   generationOpenAiImageModelConfig: BackendGenerationOpenAiImageModelConfig;
+  /** Launch Block 1 production persistence seam. Defaults fail-closed. */
+  productionPersistenceWriter: ProductionSupabasePersistenceWriter;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -155,6 +161,8 @@ export const createBackendDependencies = (): BackendDependencies => {
     parseGenerationOpenAiImageRealLocalSmokeEnabled();
   const generationOpenAiImageModelConfig =
     parseGenerationOpenAiImageModelConfig();
+  const productionPersistenceWriter =
+    createNotConfiguredProductionSupabasePersistenceWriter();
   const providerValidationAdapter =
     byokProviderValidationRuntimeGate.enabled &&
     byokProviderValidationAdapterSelection.adapter === "mock_local"
@@ -234,6 +242,7 @@ export const createBackendDependencies = (): BackendDependencies => {
     generationOpenAiAdapterFetchMode,
     generationRuntimeConfig,
     generationRuntimeReadiness,
+    productionPersistenceWriter,
   };
 };
 

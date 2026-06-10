@@ -108,6 +108,111 @@ export const forbiddenProductionPersistencePublicFields = [
   "download_url",
 ] as const;
 
+export type ProductionPersistenceReadiness =
+  | {
+      kind: "ready";
+      status: "available";
+    }
+  | {
+      kind: "unavailable";
+      status: "persistence_unavailable";
+      message: string;
+    };
+
+export type ProductionPersistenceWriteResult =
+  | {
+      kind: "persisted";
+      status: "persisted";
+    }
+  | {
+      kind: "unavailable";
+      status: "persistence_unavailable";
+      message: string;
+    };
+
+export interface ProductionGenerationJobMetadataInput {
+  generationKind: "image" | "video";
+  jobId: string;
+  ownerId: string;
+  providerId: string;
+  requestId: string;
+  status: "generated_metadata_ready" | "failed" | "submitted";
+  workspaceId: string;
+}
+
+export interface ProductionGeneratedArtifactRecordInput {
+  artifactId: string;
+  contentType: "image/png" | "image/jpeg" | "image/webp";
+  createdAt: string;
+  jobId: string;
+  ownerId: string;
+  providerId: string;
+  sha256: string;
+  sizeBytes: number;
+  status: "available" | "failed" | "pending_verification";
+  workspaceId: string;
+}
+
+export interface ProductionImageGenerationHistoryInput {
+  artifactId: string;
+  contentType: "image/png" | "image/jpeg" | "image/webp";
+  createdAt: string;
+  jobId: string;
+  ownerId: string;
+  providerId: string;
+  requestId: string;
+  sha256: string;
+  sizeBytes: number;
+  status: "generated_metadata_ready";
+  workspaceId: string;
+}
+
+export interface ProductionProjectMetadataInput {
+  ownerId: string;
+  projectId: string;
+  projectName: string;
+  status: "active" | "archived";
+  updatedAt: string;
+  workspaceId: string;
+}
+
+export interface ProductionSupabasePersistenceWriter {
+  getReadiness(): ProductionPersistenceReadiness;
+  persistGenerationJobMetadata(
+    input: ProductionGenerationJobMetadataInput,
+  ): Promise<ProductionPersistenceWriteResult>;
+  persistGeneratedArtifactRecord(
+    input: ProductionGeneratedArtifactRecordInput,
+  ): Promise<ProductionPersistenceWriteResult>;
+  persistImageGenerationHistory(
+    input: ProductionImageGenerationHistoryInput,
+  ): Promise<ProductionPersistenceWriteResult>;
+  persistProjectMetadata(
+    input: ProductionProjectMetadataInput,
+  ): Promise<ProductionPersistenceWriteResult>;
+}
+
+const persistenceUnavailable = (): ProductionPersistenceWriteResult => ({
+  kind: "unavailable",
+  status: "persistence_unavailable",
+  message:
+    "Production Supabase persistence is not configured; browser-local history remains local/browser-only.",
+});
+
+export const createNotConfiguredProductionSupabasePersistenceWriter =
+  (): ProductionSupabasePersistenceWriter => ({
+    getReadiness: () => ({
+      kind: "unavailable",
+      status: "persistence_unavailable",
+      message:
+        "Production Supabase persistence is not configured; no durable rows are written.",
+    }),
+    persistGeneratedArtifactRecord: async () => persistenceUnavailable(),
+    persistGenerationJobMetadata: async () => persistenceUnavailable(),
+    persistImageGenerationHistory: async () => persistenceUnavailable(),
+    persistProjectMetadata: async () => persistenceUnavailable(),
+  });
+
 /**
  * Launch Block 1 persistence boundary.
  *

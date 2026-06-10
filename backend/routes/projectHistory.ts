@@ -7,10 +7,12 @@ import type {
   BackendExportHistoryResponse,
   BackendProjectLibraryResponse,
 } from "../contracts/projectHistoryHttpTypes";
+import type { ProductionSupabasePersistenceWriter } from "../persistence/productionSupabasePersistenceBoundary";
 
 export interface CreateProjectHistoryRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
   routeAccessResolver?: AsyncBackendRequesterContextResolver;
+  productionPersistenceWriter?: ProductionSupabasePersistenceWriter;
 }
 
 const unavailableStatus = (
@@ -50,14 +52,22 @@ export const createProjectHistoryRouter = (
 
         if (accessDecision.kind === "allowed") {
           const requesterContext = accessDecision.requester;
+          const persistenceReadiness =
+            options.productionPersistenceWriter?.getReadiness();
+          const persistenceUnavailable =
+            !persistenceReadiness ||
+            persistenceReadiness.kind === "unavailable";
 
           response.status(200).json({
             kind: "project_library",
             status: "authenticated",
-            message:
-              "Project library is available for this verified session, but durable saved projects are not enabled yet.",
+            message: persistenceUnavailable
+              ? "Project library is available for this verified session, but durable Supabase persistence is unavailable; browser-local project state remains local/browser-only."
+              : "Project library is available for this verified session.",
             activeWorkspaceId: requesterContext.workspaceId,
-            persistence: "not_enabled_yet",
+            persistence: persistenceUnavailable
+              ? "persistence_unavailable"
+              : "not_enabled_yet",
             projects: [],
           });
           return;
@@ -110,14 +120,22 @@ export const createProjectHistoryRouter = (
 
         if (accessDecision.kind === "allowed") {
           const requesterContext = accessDecision.requester;
+          const persistenceReadiness =
+            options.productionPersistenceWriter?.getReadiness();
+          const persistenceUnavailable =
+            !persistenceReadiness ||
+            persistenceReadiness.kind === "unavailable";
 
           response.status(200).json({
             kind: "export_history",
             status: "authenticated",
-            message:
-              "Export history is available for this verified session, but durable account-linked history is not enabled yet.",
+            message: persistenceUnavailable
+              ? "Export history is available for this verified session, but durable Supabase persistence is unavailable; browser-local history remains local/browser-only."
+              : "Export history is available for this verified session.",
             activeWorkspaceId: requesterContext.workspaceId,
-            historyState: "not_enabled_yet",
+            historyState: persistenceUnavailable
+              ? "persistence_unavailable"
+              : "not_enabled_yet",
             exports: [],
           });
           return;

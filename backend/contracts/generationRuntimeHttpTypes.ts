@@ -44,6 +44,11 @@ export interface BackendGenerationMetadataOnlyArtifactResponse {
   deliveryStatus: "unavailable";
 }
 
+export interface BackendGenerationPersistenceStatus {
+  status: "persisted" | "persistence_unavailable";
+  message?: string;
+}
+
 export interface BackendGenerationRuntimeFallbackPolicy {
   enabled: boolean;
   orderedProviderIds: BackendSupportedProviderId[];
@@ -177,6 +182,7 @@ export type BackendGenerationJobMutationResponse =
       status: "generated_metadata_ready";
       message: string;
       artifact: BackendGenerationMetadataOnlyArtifactResponse;
+      persistence?: BackendGenerationPersistenceStatus;
       runtime: BackendGenerationJobRuntimeSnapshot;
       attemptedProviderIds: BackendGenerationArtifactProviderId[];
     };

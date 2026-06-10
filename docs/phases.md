@@ -13982,12 +13982,13 @@ Safety boundaries:
 
 Status:
 
-- implementation pending verification
+- Prompt 2 wires fail-closed production auth/ownership and persistence seams into safe runtime route boundaries
 
 Scope:
 
 - production auth ownership policy boundary for trusted requester context and owner/admin role checks
 - Supabase persistence boundary summary for app users, workspaces, memberships, projects, generation jobs, generated artifact records, image generation history, provider key metadata, audit logs, and analytics events
+- generation, generated artifact access/preview, and project/history routes can receive production policy/persistence seams without enabling remote persistence
 - migration draft for missing project/generation/generated artifact/history tables
 - focused QA coverage for unauthenticated rejection, arbitrary-header distrust, owner/admin policy, safe metadata persistence, Block 0 copy, and mock generation/preview regression
 

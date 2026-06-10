@@ -12,7 +12,7 @@ export interface ProjectLibraryStoreState {
   accessMessage: string;
   accessReasonCode?: string;
   activeWorkspaceId?: string;
-  persistence: "not_enabled_yet";
+  persistence: "not_enabled_yet" | "persistence_unavailable";
   projects: ProjectSummary[];
   pendingAction: "refresh" | null;
   refreshProjectLibrary: () => Promise<void>;

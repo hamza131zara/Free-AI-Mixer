@@ -1,15 +1,25 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { createServer, type Server } from "node:http";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import express from "express";
 import { expect, test } from "@playwright/test";
 import {
   createAuthenticatedRequesterContext,
   createUnauthenticatedRequesterContext,
 } from "../../backend/auth/requesterContext";
+import type { WorkspaceMembershipRepository } from "../../backend/auth/workspaceMembership";
 import { decideProductionAuthOwnership } from "../../backend/auth/productionAuthOwnershipPolicy";
 import { resolveSelectedRouteAccess } from "../../backend/auth/protectedRouteGuards";
 import { createTrustedAuthProviderStrategyFromRuntimeConfig } from "../../backend/auth/trustedAuthProviderComposition";
 import { decideProviderKeyAuthorization } from "../../backend/authorization/providerKeyAuthorization";
+import { createInMemoryGeneratedImageArtifactRegistry } from "../../backend/generation/generatedImageArtifactRegistry";
+import { createLocalGeneratedImageArtifactStorage } from "../../backend/generation/generatedImageArtifactStorage";
+import { createRegistryBackedGeneratedImageArtifactAccessResolver } from "../../backend/generation/generatedImageArtifactAccess";
+import { createGenerationRouter } from "../../backend/routes/generation";
+import { createProjectHistoryRouter } from "../../backend/routes/projectHistory";
 import {
+  createNotConfiguredProductionSupabasePersistenceWriter,
   forbiddenProductionPersistencePublicFields,
   getProductionPersistenceBoundarySummary,
 } from "../../backend/persistence/productionSupabasePersistenceBoundary";
@@ -40,6 +50,95 @@ const serializedDoesNotLeak = (value: unknown) => {
   ]) {
     expect(serialized).not.toContain(forbidden);
   }
+};
+
+const runtimeConfig = {
+  kind: "auth_provider_configured" as const,
+  provider: "future_jwt_provider" as const,
+};
+
+const generationRuntimeConfig = {
+  kind: "generation_runtime_config" as const,
+  allowRealProviderCalls: false,
+  providerAdapter: "not_configured" as const,
+  runtimeEnabled: true,
+};
+
+const generationControlsReady = {
+  kind: "generation_execution_controls_readiness" as const,
+  costControlsReady: true,
+  idempotencyReady: true,
+  rateLimitReady: true,
+  singleFlightReady: true,
+};
+
+const ownerRequesterContext = createAuthenticatedRequesterContext({
+  appUserId: "block1-app-user",
+  authProvider: "jwt",
+  authSubject: "block1-subject",
+  userId: "block1-user",
+  workspaceAuthority: "verified",
+  workspaceId: "block1-workspace",
+});
+
+const ownerMembershipRepository: WorkspaceMembershipRepository = {
+  getMembership: async ({ userId, workspaceId }) => ({
+    kind: "member",
+    membership: {
+      role: "owner",
+      source: "workspace_memberships",
+      status: "active",
+      userId,
+      workspaceId,
+    },
+  }),
+};
+
+const viewerMembershipRepository: WorkspaceMembershipRepository = {
+  getMembership: async ({ userId, workspaceId }) => ({
+    kind: "member",
+    membership: {
+      role: "viewer",
+      source: "workspace_memberships",
+      status: "active",
+      userId,
+      workspaceId,
+    },
+  }),
+};
+
+const startExpressServer = async (app: express.Express) => {
+  const server = createServer(app);
+
+  await new Promise<void>((resolve) => {
+    server.listen(0, "127.0.0.1", resolve);
+  });
+
+  const address = server.address();
+
+  if (!address || typeof address === "string") {
+    throw new Error("Launch Block 1 test server did not expose a TCP port.");
+  }
+
+  return {
+    close: () =>
+      new Promise<void>((resolve, reject) => {
+        server.close((error?: Error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        });
+      }),
+    server,
+    url: `http://127.0.0.1:${address.port}`,
+  } satisfies {
+    close: () => Promise<void>;
+    server: Server;
+    url: string;
+  };
 };
 
 test.describe("Launch Block 1 production auth and Supabase persistence", () => {
@@ -82,6 +181,219 @@ test.describe("Launch Block 1 production auth and Supabase persistence", () => {
       reason: "missing_credentials",
     });
     serializedDoesNotLeak({ accessDecision, requesterContext });
+  });
+
+  test("production generation routes fail closed when trusted auth is not configured", async () => {
+    const app = express();
+
+    app.use(express.json());
+    app.use(
+      createGenerationRouter({
+        generationExecutionControlReadiness: generationControlsReady,
+        generationRouteExecutionMode: "mock_image_local_only",
+        generationRuntimeConfig,
+        routeAccessResolver: {
+          resolve: async () =>
+            createUnauthenticatedRequesterContext("auth_not_configured"),
+        },
+        runtimeConfig: {
+          kind: "auth_provider_not_configured",
+        },
+      }),
+    );
+    const server = await startExpressServer(app);
+
+    try {
+      const response = await fetch(`${server.url}/generation/jobs`, {
+        body: JSON.stringify({
+          generationKind: "image",
+          prompt: "Create a local mock image for Block 1 auth testing.",
+          providerId: "openai",
+          requestId: "block1auth001",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "spoofed-user",
+          "x-workspace-id": "spoofed-workspace",
+        },
+        method: "POST",
+      });
+      const body = await response.json();
+
+      expect(response.status).toBe(503);
+      expect(body).toMatchObject({
+        kind: "generation_job_rejected",
+        status: "auth_not_configured",
+      });
+      serializedDoesNotLeak(body);
+    } finally {
+      await server.close();
+    }
+  });
+
+  test("local mock generation remains explicit and reports unavailable persistence without fake success", async () => {
+    const storageRoot = mkdtempSync(join(tmpdir(), "free-ai-mixer-block1-"));
+    const app = express();
+    const registry = createInMemoryGeneratedImageArtifactRegistry();
+    const persistenceWriter =
+      createNotConfiguredProductionSupabasePersistenceWriter();
+
+    app.use(express.json());
+    app.use(
+      createGenerationRouter({
+        generatedImageArtifactAccessResolver:
+          createRegistryBackedGeneratedImageArtifactAccessResolver({
+            registry,
+          }),
+        generatedImageArtifactRegistry: registry,
+        generatedImageArtifactStorage: createLocalGeneratedImageArtifactStorage({
+          rootPath: storageRoot,
+        }),
+        generationExecutionControlReadiness: generationControlsReady,
+        generationRouteExecutionMode: "mock_image_local_only",
+        generationRuntimeConfig,
+        productionAuthOwnershipPolicyEnabled: true,
+        productionPersistenceWriter: persistenceWriter,
+        routeAccessResolver: {
+          resolve: async () => ownerRequesterContext,
+        },
+        runtimeConfig,
+        workspaceMembershipRepository: ownerMembershipRepository,
+      }),
+    );
+    const server = await startExpressServer(app);
+
+    try {
+      const response = await fetch(`${server.url}/generation/jobs`, {
+        body: JSON.stringify({
+          generationKind: "image",
+          prompt: "Create a deterministic local mock image for Block 1.",
+          providerId: "openai",
+          requestId: "block1mock001",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "spoofed-user",
+          "x-workspace-id": "spoofed-workspace",
+        },
+        method: "POST",
+      });
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body).toMatchObject({
+        attemptedProviderIds: ["mock_local"],
+        kind: "generation_job_metadata_ready",
+        persistence: {
+          status: "persistence_unavailable",
+        },
+        runtime: {
+          vendorCallsEnabled: false,
+        },
+        status: "generated_metadata_ready",
+      });
+      expect(body.persistence.message).toContain("browser-local history");
+      serializedDoesNotLeak(body);
+    } finally {
+      await server.close();
+      rmSync(storageRoot, { force: true, recursive: true });
+    }
+  });
+
+  test("generated artifact access does not bypass production ownership policy", async () => {
+    const app = express();
+
+    app.use(express.json());
+    app.use(
+      createGenerationRouter({
+        generationRouteExecutionMode: "mock_image_local_only",
+        generationRuntimeConfig,
+        productionAuthOwnershipPolicyEnabled: true,
+        routeAccessResolver: {
+          resolve: async () => ownerRequesterContext,
+        },
+        runtimeConfig,
+        workspaceMembershipRepository: viewerMembershipRepository,
+      }),
+    );
+    const server = await startExpressServer(app);
+
+    try {
+      const response = await fetch(
+        `${server.url}/generation/jobs/block1job/artifacts/block1artifact/access`,
+        {
+          headers: {
+            "x-user-id": "block1-user",
+            "x-workspace-id": "block1-workspace",
+          },
+        },
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(body).toMatchObject({
+        deliveryStatus: "unavailable",
+        kind: "generated_artifact_access_unavailable",
+        status: "generated_artifact_access_unavailable",
+      });
+      serializedDoesNotLeak(body);
+    } finally {
+      await server.close();
+    }
+  });
+
+  test("project and history routes expose persistence unavailable instead of fake durable success", async () => {
+    const app = express();
+
+    app.use(express.json());
+    app.use(
+      createProjectHistoryRouter({
+        productionPersistenceWriter:
+          createNotConfiguredProductionSupabasePersistenceWriter(),
+        routeAccessResolver: {
+          resolve: async () => ownerRequesterContext,
+        },
+        runtimeConfig,
+      }),
+    );
+    const server = await startExpressServer(app);
+
+    try {
+      const projectsResponse = await fetch(
+        `${server.url}/project-library/projects`,
+        {
+          headers: {
+            "x-user-id": "spoofed-user",
+            "x-workspace-id": "spoofed-workspace",
+          },
+        },
+      );
+      const historyResponse = await fetch(
+        `${server.url}/project-library/history`,
+      );
+      const projectsBody = await projectsResponse.json();
+      const historyBody = await historyResponse.json();
+
+      expect(projectsResponse.status).toBe(200);
+      expect(projectsBody).toMatchObject({
+        kind: "project_library",
+        persistence: "persistence_unavailable",
+        projects: [],
+        status: "authenticated",
+      });
+      expect(projectsBody.message).toContain("browser-local");
+      expect(historyResponse.status).toBe(200);
+      expect(historyBody).toMatchObject({
+        exports: [],
+        historyState: "persistence_unavailable",
+        kind: "export_history",
+        status: "authenticated",
+      });
+      expect(historyBody.message).toContain("browser-local");
+      serializedDoesNotLeak({ historyBody, projectsBody });
+    } finally {
+      await server.close();
+    }
   });
 
   test("workspace owner/admin policy allows protected mutations and blocks members", () => {

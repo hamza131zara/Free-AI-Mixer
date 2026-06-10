@@ -9,7 +9,7 @@ interface BackendAuthenticatedExportHistoryResponse {
   status: "authenticated";
   message?: string;
   activeWorkspaceId?: string;
-  historyState: "not_enabled_yet";
+  historyState: "not_enabled_yet" | "persistence_unavailable";
   exports: ExportHistorySummary[];
 }
 
