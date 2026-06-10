@@ -13982,7 +13982,8 @@ Safety boundaries:
 
 Status:
 
-- Prompt 2 wires fail-closed production auth/ownership and persistence seams into safe runtime route boundaries
+- Launch Block 1 is complete enough to close before Block 2
+- Production auth/ownership and persistence seams are wired fail-closed into safe runtime route boundaries
 
 Scope:
 

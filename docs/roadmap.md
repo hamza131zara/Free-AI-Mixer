@@ -25,7 +25,7 @@ Block 0 policy:
 
 ## Launch Block 1 - Production Auth + Supabase Persistence
 
-Block 1 adds production-readiness foundations without remotely applying production migrations:
+Block 1 is complete as a production-readiness foundation without remotely applying production migrations:
 
 - backend requester context must come from trusted JWT/session boundaries only
 - arbitrary frontend user/workspace headers must not authorize protected routes
