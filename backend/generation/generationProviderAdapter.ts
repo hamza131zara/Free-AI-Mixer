@@ -86,7 +86,12 @@ export type BackendGenerationSafeDiagnosticCode =
   | "provider_model_unsupported"
   | "provider_org_verification_required"
   | "provider_request_shape_invalid"
+  | "platform_credits_not_configured"
+  | "platform_paid_provider_not_configured"
   | "provider_5xx"
+  | "provider_billing_or_quota_required"
+  | "provider_capability_unavailable"
+  | "provider_execution_policy_blocked"
   | "provider_empty_data"
   | "provider_fetch_failed"
   | "provider_key_lookup_failed"
@@ -113,6 +118,7 @@ export type BackendGenerationSafeFailureCategory =
   | "provider_key_repository"
   | "provider_response"
   | "provider_status"
+  | "provider_policy"
   | "runtime_gate"
   | "vault";
 

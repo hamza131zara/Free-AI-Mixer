@@ -14047,3 +14047,13 @@ Safety boundaries:
 - Future Block 4 platform-paid provider generation must reserve credits before provider calls and settle, release, or refund after truthful outcomes.
 - BYOK remains separate from platform-paid credits; BYOK does not create free provider credits.
 - No real provider calls, provider API key validation, live Stripe/Paddle checkout, real webhook processing, real billing mutation, public/signed/download URL behavior, or fake paid success was added; there is no live payment processor.
+
+## Launch Block 4 - Real Provider Generation boundary
+
+- Added provider execution policy separation for BYOK real provider generation, platform-paid provider generation, mock-local generation, unsupported providers, and provider-policy blocked states.
+- OpenAI is the only executable real-provider adapter in this block.
+- BYOK uses user-owned provider key/quota/billing and still requires active validated backend-stored provider keys plus all route/runtime/vault/storage gates.
+- Platform-paid generation remains blocked with `platform_credits_not_configured` or `platform_paid_provider_not_configured` until platform-owned provider credentials and credit reservation readiness are separately configured.
+- Google/Gemini/Imagen/Veo remain unavailable until separate audited adapter work.
+- Codex/test automation must not use real keys or call providers; all automated provider execution coverage must mock provider fetches.
+- No real provider call, provider API key validation, platform-owned provider credential, Google/Gemini/Imagen adapter, video provider execution, fake provider success, public/signed/download URL behavior, provider raw body exposure, prompt exposure, key exposure, or storage ref exposure was added.

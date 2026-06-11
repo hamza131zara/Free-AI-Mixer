@@ -21,6 +21,7 @@ export type BackendGenerationJobLifecycleState =
   | "failed";
 
 export interface BackendGenerationImageJobRequest {
+  executionBillingMode?: "byok" | "platform_paid";
   generationKind: "image";
   prompt: string;
   providerId: "openai";
@@ -28,6 +29,7 @@ export interface BackendGenerationImageJobRequest {
 }
 
 export interface BackendGenerationVideoJobRequest {
+  executionBillingMode?: "byok";
   generationKind: "video";
   prompt: string;
   providerId: "mock_local";
@@ -168,6 +170,11 @@ export type BackendGenerationJobMutationResponse =
         | "workspace_permission_not_verified"
         | "workspace_owner_or_admin_required"
         | "provider_key_not_configured"
+        | "platform_credits_not_configured"
+        | "platform_paid_provider_not_configured"
+        | "provider_execution_policy_blocked"
+        | "provider_capability_unavailable"
+        | "provider_billing_or_quota_required"
         | "rate_limit_not_configured"
         | "idempotency_not_configured"
         | "single_flight_not_configured"

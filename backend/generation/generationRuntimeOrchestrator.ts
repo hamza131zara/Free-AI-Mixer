@@ -20,6 +20,7 @@ export type BackendGenerationJobLifecycleState =
   | "failed";
 
 export interface BackendGenerationImageJobRequest {
+  executionBillingMode?: "byok" | "platform_paid";
   generationKind: "image";
   prompt: string;
   providerId: "openai";
@@ -27,6 +28,7 @@ export interface BackendGenerationImageJobRequest {
 }
 
 export interface BackendGenerationVideoJobRequest {
+  executionBillingMode?: "byok";
   generationKind: "video";
   prompt: string;
   providerId: "mock_local";
@@ -41,6 +43,7 @@ export type BackendGenerationJobRequestParseResult =
   | {
       kind: "invalid";
       code:
+        | "invalid_billing_mode"
         | "invalid_provider"
         | "invalid_generation_kind"
         | "invalid_prompt"
@@ -114,6 +117,7 @@ const allowedRequestFields = new Set([
   "prompt",
   "providerId",
   "requestId",
+  "executionBillingMode",
 ]);
 
 const unsupportedRequestFields = new Set([
@@ -222,6 +226,26 @@ export const parseGenerationJobRequest = (
     };
   }
 
+  if (
+    "executionBillingMode" in body &&
+    body.executionBillingMode !== "byok" &&
+    body.executionBillingMode !== "platform_paid"
+  ) {
+    return {
+      kind: "invalid",
+      code: "invalid_billing_mode",
+      message: "Generation billing mode is not supported by this backend boundary.",
+    };
+  }
+
+  if (body.generationKind === "video" && body.executionBillingMode === "platform_paid") {
+    return {
+      kind: "invalid",
+      code: "invalid_billing_mode",
+      message: "Platform-paid video generation is not supported in this block.",
+    };
+  }
+
   const prompt = validateGenerationPrompt(body.prompt);
 
   if (prompt.kind !== "valid_prompt") {
@@ -248,12 +272,20 @@ export const parseGenerationJobRequest = (
     request:
       body.generationKind === "video"
         ? {
+            executionBillingMode:
+              body.executionBillingMode === "byok" ? "byok" : undefined,
             generationKind: "video",
             prompt: prompt.prompt,
             providerId: "mock_local",
             requestId: body.requestId,
           }
         : {
+            executionBillingMode:
+              body.executionBillingMode === "platform_paid"
+                ? "platform_paid"
+                : body.executionBillingMode === "byok"
+                  ? "byok"
+                  : undefined,
             generationKind: "image",
             prompt: prompt.prompt,
             providerId: "openai",

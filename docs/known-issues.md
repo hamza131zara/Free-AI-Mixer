@@ -64,6 +64,21 @@ Why it matters:
 - Real provider generation cannot safely become platform-paid until credits can be reserved before provider calls and settled, released, or refunded after truthful outcomes.
 - The app must not imply live subscriptions, fake wallet balances, fake purchase success, or automatic billing before payment processor integration is separately audited.
 
+## Launch Block 4 Real Provider Generation Gaps
+
+Current state:
+
+- OpenAI is the only executable real-provider adapter in this block.
+- BYOK uses user-owned provider key, quota, billing, and model access; failed provider billing/quota/model access must fail safely.
+- Platform-paid generation remains blocked with `platform_credits_not_configured` until platform-owned provider credentials and credit reservation are configured in a later audited step.
+- Google/Gemini/Imagen/Veo remain unavailable until separate audited adapter work exists.
+- Codex/test automation must not use real keys or call providers; all automated provider execution coverage must mock provider fetches.
+
+Why it matters:
+
+- Real provider generation is inherently cost-bearing and quota-dependent.
+- Public launch must not imply provider availability, free provider credits, fake provider success, or platform-paid generation before billing and provider access are truly ready.
+
 ## Stability Issues
 
 ### Hydration Runtime Sign-Off

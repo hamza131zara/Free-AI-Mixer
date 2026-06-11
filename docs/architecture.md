@@ -51,6 +51,18 @@ Launch Block 3 adds a backend-owned billing/credits foundation without enabling 
 - There is no live payment processor, no checkout, no webhook processing, no fake purchases, no fake balances, no fake subscriptions, and no automatic charges.
 - BYOK remains separate: users pay provider costs through their own provider account/quota/billing, while Free AI Mixer platform credits are for future platform-paid usage.
 
+## Real Provider Generation Boundary
+
+Launch Block 4 separates BYOK real-provider generation from future platform-paid generation without enabling automated provider calls.
+
+- OpenAI is the only executable real-provider adapter in this block.
+- BYOK uses user-owned provider key, quota, billing, and model access; BYOK does not create provider credits.
+- Platform-paid generation remains blocked with `platform_credits_not_configured` until platform-owned provider credentials, credit reservation, and billing readiness are separately configured.
+- Google/Gemini/Imagen/Veo remain unavailable until separate audited adapter work exists.
+- Real provider fetch must remain behind explicit runtime, route-mode, owner/admin, active validated key, vault, storage, provider-policy, and local/staging smoke gates.
+- Codex/test automation must not use real keys or call providers; all automated provider execution coverage must mock provider fetches.
+- Provider responses must remain sanitized metadata-only: no provider raw body, prompt, key, header, request ID, provider URL, base64, bytes, local path, internal ref, storage ref, public URL, signed URL, or download URL may be serialized.
+
 ## Core Rules
 
 - Architecture first, UI second.

@@ -296,6 +296,7 @@ export const createApp = (): Express => {
       generationRuntimeConfig: backendDeps.generationRuntimeConfig,
       generationRuntimeReadiness: backendDeps.generationRuntimeReadiness,
       productionPersistenceWriter: backendDeps.productionPersistenceWriter,
+      creditService: backendDeps.creditService,
       ...(routeAccessResolver ? { routeAccessResolver } : {}),
       ...(repositories
         ? {

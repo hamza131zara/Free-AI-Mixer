@@ -62,6 +62,18 @@ Block 3 adds the platform-paid billing foundation while keeping live payments un
 - BYOK remains separate from platform-paid credits: BYOK users use their own provider quota/billing and do not receive guaranteed provider credits
 - no real provider calls, API key validation, Stripe/Paddle live checkout, billing mutation, public/signed/download URLs, or fake paid success are introduced
 
+## Launch Block 4 - Real Provider Generation
+
+Block 4 adds the real-provider generation policy boundary while keeping provider calls out of automation:
+
+- OpenAI is the only executable real-provider adapter in this block
+- BYOK uses user-owned provider key/quota/billing and requires an active validated backend-stored provider key
+- platform-paid generation remains blocked with `platform_credits_not_configured` until platform-owned provider credentials and credit reservation are separately configured
+- Google/Gemini/Imagen/Veo remain unavailable until separate audited adapter work
+- automated tests must mock provider fetches; Codex/test automation must not use real keys or call providers
+- manual real-provider smoke remains backend-only, one controlled attempt, user-owned key only, and requires provider billing/quota/model access
+- no video provider execution, public/signed/download URLs, fake provider success, or provider raw data exposure is introduced
+
 ## Phase 18 Recommendation
 
 Admin Analytics + Platform Metrics should stay in a future readiness-only audit

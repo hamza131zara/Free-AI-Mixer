@@ -13,6 +13,11 @@ export type BackendGenerationFailureCode =
   | "fallback_disabled"
   | "vendor_calls_disabled"
   | "provider_key_not_configured"
+  | "platform_credits_not_configured"
+  | "platform_paid_provider_not_configured"
+  | "provider_execution_policy_blocked"
+  | "provider_capability_unavailable"
+  | "provider_billing_or_quota_required"
   | "generation_execution_blocked"
   | "unsupported_generation_request"
   | "invalid_credentials"
@@ -141,6 +146,46 @@ const generationFailureMappings: Record<
     code: "provider_key_not_configured",
     message:
       "A verified backend-owned provider key is required before runtime execution can begin.",
+    httpStatus: 403,
+    retryable: false,
+    allowsFallback: false,
+  },
+  platform_credits_not_configured: {
+    code: "platform_credits_not_configured",
+    message:
+      "Platform-paid generation is not configured because platform credits are unavailable.",
+    httpStatus: 503,
+    retryable: false,
+    allowsFallback: false,
+  },
+  platform_paid_provider_not_configured: {
+    code: "platform_paid_provider_not_configured",
+    message:
+      "Platform-paid provider credentials are not configured for real generation.",
+    httpStatus: 503,
+    retryable: false,
+    allowsFallback: false,
+  },
+  provider_execution_policy_blocked: {
+    code: "provider_execution_policy_blocked",
+    message:
+      "Provider execution is blocked by the current provider policy boundary.",
+    httpStatus: 503,
+    retryable: false,
+    allowsFallback: false,
+  },
+  provider_capability_unavailable: {
+    code: "provider_capability_unavailable",
+    message:
+      "The selected provider capability is unavailable in the current real-generation block.",
+    httpStatus: 403,
+    retryable: false,
+    allowsFallback: false,
+  },
+  provider_billing_or_quota_required: {
+    code: "provider_billing_or_quota_required",
+    message:
+      "The selected provider requires provider-side billing, quota, credits, or model access.",
     httpStatus: 403,
     retryable: false,
     allowsFallback: false,

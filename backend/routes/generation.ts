@@ -54,10 +54,15 @@ import {
   createNotConfiguredGeneratedImageArtifactAccessResolver,
   type GeneratedImageArtifactAccessResolver,
 } from "../generation/generatedImageArtifactAccess";
+import type { CreditService } from "../credits/creditService";
 import type { GeneratedImageProductionStorage } from "../generation/supabaseGeneratedImageProductionStorage";
 import type { GeneratedImageArtifactRegistry } from "../generation/generatedImageArtifactRegistry";
 import { verifyGeneratedImageArtifactBytes } from "../generation/generatedImageArtifactVerification";
 import { createOpenAiImageGenerationAdapter } from "../generation/openAiImageGenerationAdapter";
+import {
+  evaluateProviderExecutionPolicy,
+  type ProviderExecutionPolicyDecision,
+} from "../generation/providerExecutionPolicy";
 import {
   defaultGenerationRetryPolicy,
   defaultGenerationRoutingPreferences,
@@ -105,6 +110,7 @@ export interface CreateGenerationRouterOptions {
   generatedImageProductionDeliveryEnabled?: boolean;
   productionAuthOwnershipPolicyEnabled?: boolean;
   productionPersistenceWriter?: ProductionSupabasePersistenceWriter;
+  creditService?: CreditService;
 }
 
 const resolveAuthUnavailableCode = (
@@ -221,7 +227,11 @@ const mapParseErrorToFailureCode = (
     return "provider_not_supported" as const;
   }
 
-    return "invalid_prompt" as const;
+  if (code === "invalid_billing_mode") {
+    return "unsupported_generation_request" as const;
+  }
+
+  return "invalid_prompt" as const;
 };
 
 const preconditionCodeToResponseStatus = (
@@ -238,6 +248,39 @@ const preconditionCodeToResponseStatus = (
   }
 
   return code;
+};
+
+const providerPolicyStatusToFailureCode = (
+  status: Exclude<
+    ProviderExecutionPolicyDecision,
+    { status: "provider_execution_allowed" }
+  >["status"],
+) => status;
+
+const rejectProviderExecutionPolicyDecision = (
+  response: Response<BackendGenerationJobMutationResponse>,
+  runtimeSummary: ReturnType<typeof createRuntimeSummary>,
+  decision: Exclude<
+    ProviderExecutionPolicyDecision,
+    { status: "provider_execution_allowed" }
+  >,
+): void => {
+  const failureCode = providerPolicyStatusToFailureCode(decision.status);
+  const failure = getGenerationFailureMapping(failureCode);
+
+  rejectGenerationJobWithVendorState(
+    response,
+    runtimeSummary,
+    failureCode,
+    decision.message || failure.message,
+    failure.httpStatus,
+    false,
+    decision.providerId === "mock_local" ? ["mock_local"] : [decision.providerId],
+    {
+      diagnosticCode: decision.diagnosticCode,
+      failureCategory: "provider_policy",
+    },
+  );
 };
 
 const rejectOpenAiAdapterMockResult = (
@@ -1484,6 +1527,63 @@ export const createGenerationRouter = (
           persistenceWriter: options.productionPersistenceWriter,
           workspaceId: authenticatedRequester?.workspaceId ?? "",
         });
+        return;
+      }
+
+      const platformPaidReadiness =
+        parsed.request.executionBillingMode === "platform_paid"
+          ? (() => {
+              const readiness = options.creditService?.getReadiness();
+
+              return readiness?.kind === "ready"
+                ? ({
+                    kind: "ready" as const,
+                    status: "credit_readiness_available" as const,
+                  })
+                : ({
+                    kind: "blocked" as const,
+                    status: "platform_credits_not_configured" as const,
+                    message:
+                      readiness?.message ??
+                      "Platform credits are not configured for platform-paid generation.",
+                  });
+            })()
+          : undefined;
+      const providerExecutionPolicyDecision = evaluateProviderExecutionPolicy({
+        billingMode: parsed.request.executionBillingMode ?? "byok",
+        generationKind: parsed.request.generationKind,
+        platformPaidReadiness,
+        providerId: parsed.request.providerId,
+      });
+
+      if (
+        providerExecutionPolicyDecision.status !== "provider_execution_allowed"
+      ) {
+        rejectProviderExecutionPolicyDecision(
+          response,
+          runtimeSummary,
+          providerExecutionPolicyDecision,
+        );
+        return;
+      }
+
+      if (providerExecutionPolicyDecision.kind === "platform_paid_provider") {
+        const failure = getGenerationFailureMapping(
+          "platform_paid_provider_not_configured",
+        );
+        rejectGenerationJobWithVendorState(
+          response,
+          runtimeSummary,
+          "platform_paid_provider_not_configured",
+          failure.message,
+          failure.httpStatus,
+          false,
+          ["openai"],
+          {
+            diagnosticCode: "platform_paid_provider_not_configured",
+            failureCategory: "provider_policy",
+          },
+        );
         return;
       }
 
