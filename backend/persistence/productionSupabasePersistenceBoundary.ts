@@ -150,6 +150,15 @@ export interface ProductionGeneratedArtifactRecordInput {
   sha256: string;
   sizeBytes: number;
   status: "available" | "failed" | "pending_verification";
+  storageRef?: {
+    provider: "supabase_storage";
+    bucket: string;
+    objectKey: string;
+    contentType: "image/png" | "image/jpeg" | "image/webp";
+    sizeBytes: number;
+    sha256: string;
+    createdAt: string;
+  };
   workspaceId: string;
 }
 

@@ -1,4 +1,5 @@
 import type { GeneratedImageArtifactRegistry } from "./generatedImageArtifactRegistry";
+import type { GeneratedImageProductionStorage } from "./supabaseGeneratedImageProductionStorage";
 
 export type GeneratedImageArtifactAccessStatus =
   | "access_not_configured"
@@ -24,7 +25,14 @@ export interface GeneratedImageArtifactAccessUnavailableResult {
 }
 
 export type GeneratedImageArtifactAccessResult =
-  GeneratedImageArtifactAccessUnavailableResult;
+  | GeneratedImageArtifactAccessUnavailableResult
+  | {
+      kind: "generated_artifact_access_descriptor";
+      status: "descriptor_ready";
+      deliveryStatus: "backend_mediated_preview_available";
+      previewPath: string;
+      message: string;
+    };
 
 export interface GeneratedImageArtifactAccessResolver {
   resolveAccess(
@@ -72,6 +80,39 @@ export const createRegistryBackedGeneratedImageArtifactAccessResolver = ({
       deliveryStatus: "unavailable",
       message:
         "Generated image artifact metadata is registered, but preview delivery is not enabled.",
+    };
+  },
+});
+
+export const createProductionGeneratedImageArtifactAccessResolver = ({
+  productionStorage,
+}: {
+  productionStorage: GeneratedImageProductionStorage;
+}): GeneratedImageArtifactAccessResolver => ({
+  async resolveAccess({ artifactId, jobId, requester }) {
+    const record = await productionStorage.resolveRecord({
+      artifactId,
+      jobId,
+      ownerId: requester.userId,
+      workspaceId: requester.workspaceId,
+    });
+
+    if (record.kind !== "resolved") {
+      return {
+        kind: "generated_artifact_access_unavailable",
+        status: "generated_artifact_access_unavailable",
+        deliveryStatus: "unavailable",
+        message: "Generated image artifact access is unavailable.",
+      };
+    }
+
+    return {
+      kind: "generated_artifact_access_descriptor",
+      status: "descriptor_ready",
+      deliveryStatus: "backend_mediated_preview_available",
+      previewPath: `/generation/jobs/${encodeURIComponent(jobId)}/artifacts/${encodeURIComponent(artifactId)}/preview`,
+      message:
+        "Generated image artifact preview is available through backend-mediated delivery.",
     };
   },
 });

@@ -36,6 +36,19 @@ Why it matters:
 - Direct frontend Supabase DB/storage access remains forbidden.
 - Secrets such as `encrypted_payload`, `secret_ref`, JWTs, service-role keys, provider API keys, and vault material must never be selected for UI responses, logs, tests, docs examples, or analytics/audit metadata.
 
+## Launch Block 2 Production Storage Gaps
+
+Current state:
+
+- Backend-mediated generated image production storage/delivery boundaries exist, but require backend Supabase env, a private artifact bucket, and manual migration review/apply.
+- Public URLs, signed URLs, download URLs, export route reuse, direct frontend Supabase storage, and video artifact delivery remain unavailable.
+- Production preview delivery must remain fail-closed unless trusted auth, ownership, storage metadata, and object reads all succeed.
+
+Why it matters:
+
+- Artifact storage refs, bucket names, object keys, local paths, internal refs, base64, and bytes must not appear in public JSON.
+- Signed URL delivery needs a separate audit before users can receive time-limited external URLs.
+
 ## Stability Issues
 
 ### Hydration Runtime Sign-Off

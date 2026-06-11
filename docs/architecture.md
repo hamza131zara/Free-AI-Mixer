@@ -28,6 +28,18 @@ Launch Block 1 establishes production auth and persistence readiness without ena
 - Migration drafts are manual local/staging artifacts. The app must not auto-apply remote production migrations.
 - Frontend code must not directly access Supabase DB/storage or store raw JWTs, provider secrets, service-role values, encrypted payloads, secret refs, local paths, internal refs, base64, public URLs, signed URLs, or download URLs.
 
+## Production Storage And Artifact Delivery Boundary
+
+Launch Block 2 adds backend-mediated generated image storage/delivery foundations without enabling public, signed, or download URLs.
+
+- Generated image production storage refs are backend-only metadata and must not be serialized to frontend responses, logs, docs examples, or browser state.
+- Supabase production storage uses a private generated-artifacts bucket configured only through backend Supabase env.
+- `FREE_AI_MIXER_PRODUCTION_ARTIFACT_DELIVERY_MODE=backend_mediated_stream` is required before generated artifact access can return a relative backend `previewPath`.
+- The preview route may stream image bytes as an HTTP body only after trusted auth, workspace ownership, record resolution, storage-ref validation, object read, and image content-type checks.
+- Frontend code may use only backend-relative preview paths; it must not call Supabase storage, show public/signed/download URLs, or add download behavior.
+- Signed URL delivery files remain future/audited boundaries and are not enabled by Block 2.
+- Video delivery/playback remains unavailable.
+
 ## Core Rules
 
 - Architecture first, UI second.

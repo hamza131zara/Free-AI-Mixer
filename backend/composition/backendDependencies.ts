@@ -64,6 +64,14 @@ import {
   type ProductionSupabasePersistenceWriter,
 } from "../persistence/productionSupabasePersistenceBoundary";
 import { createProductionSupabasePersistenceWriterFromClientFactory } from "../persistence/supabaseProductionPersistenceWriter";
+import {
+  createSupabaseGeneratedImageProductionStorageFromClientFactory,
+  type GeneratedImageProductionStorage,
+} from "../generation/supabaseGeneratedImageProductionStorage";
+
+export type ProductionArtifactDeliveryMode =
+  | "not_configured"
+  | "backend_mediated_stream";
 
 export interface BackendDependencies {
   registry: ExportJobRegistry;
@@ -111,6 +119,10 @@ export interface BackendDependencies {
   generationOpenAiImageModelConfig: BackendGenerationOpenAiImageModelConfig;
   /** Launch Block 1 production persistence seam. Defaults fail-closed. */
   productionPersistenceWriter: ProductionSupabasePersistenceWriter;
+  /** Launch Block 2 backend-mediated artifact delivery gate. */
+  productionArtifactDeliveryMode: ProductionArtifactDeliveryMode;
+  /** Launch Block 2 generated-image production storage seam. */
+  generatedImageProductionStorage: GeneratedImageProductionStorage;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -166,6 +178,16 @@ export const createBackendDependencies = (): BackendDependencies => {
     createProductionSupabasePersistenceWriterFromClientFactory(
       supabaseClientFactoryResult,
     );
+  const productionArtifactDeliveryMode: ProductionArtifactDeliveryMode =
+    process.env.FREE_AI_MIXER_PRODUCTION_ARTIFACT_DELIVERY_MODE ===
+    "backend_mediated_stream"
+      ? "backend_mediated_stream"
+      : "not_configured";
+  const generatedImageProductionStorage =
+    createSupabaseGeneratedImageProductionStorageFromClientFactory({
+      bucket: supabaseConfig.storageBucketArtifacts,
+      clientFactoryResult: supabaseClientFactoryResult,
+    });
   const providerValidationAdapter =
     byokProviderValidationRuntimeGate.enabled &&
     byokProviderValidationAdapterSelection.adapter === "mock_local"
@@ -246,6 +268,8 @@ export const createBackendDependencies = (): BackendDependencies => {
     generationRuntimeConfig,
     generationRuntimeReadiness,
     productionPersistenceWriter,
+    productionArtifactDeliveryMode,
+    generatedImageProductionStorage,
   };
 };
 

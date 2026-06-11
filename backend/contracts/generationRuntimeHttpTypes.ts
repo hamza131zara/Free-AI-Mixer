@@ -119,17 +119,29 @@ export interface BackendGenerationCatalogResponse {
   providers: BackendGenerationRuntimeSummary["supportedProviders"];
 }
 
-export type BackendGeneratedArtifactAccessResponse = {
-  kind: "generated_artifact_access_unavailable";
-  status:
-    | "access_not_configured"
-    | "descriptor_not_enabled"
-    | "generated_artifact_access_unavailable"
-    | "invalid_artifact_identity"
-    | "unauthenticated";
-  deliveryStatus: "unavailable";
-  message: string;
-};
+export type BackendGeneratedArtifactAccessUnavailableStatus =
+  | "access_not_configured"
+  | "descriptor_not_enabled"
+  | "generated_artifact_access_unavailable"
+  | "invalid_artifact_identity"
+  | "unauthenticated";
+
+export type BackendGeneratedArtifactAccessDescriptorStatus = "descriptor_ready";
+
+export type BackendGeneratedArtifactAccessResponse =
+  | {
+      kind: "generated_artifact_access_unavailable";
+      status: BackendGeneratedArtifactAccessUnavailableStatus;
+      deliveryStatus: "unavailable";
+      message: string;
+    }
+  | {
+      kind: "generated_artifact_access_descriptor";
+      status: BackendGeneratedArtifactAccessDescriptorStatus;
+      deliveryStatus: "backend_mediated_preview_available";
+      previewPath: string;
+      message: string;
+    };
 
 export type BackendGenerationJobMutationResponse =
   | {

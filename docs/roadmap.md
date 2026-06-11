@@ -38,6 +38,18 @@ Block 1 is complete as a production-readiness foundation without remotely applyi
 - migration drafts require manual local/staging review; no remote production migration auto-apply is allowed
 - no real provider calls, API key validation calls, billing, public URLs, signed URLs, download URLs, or direct frontend Supabase DB/storage access are introduced
 
+## Launch Block 2 - Production Storage + Artifact Delivery
+
+Block 2 adds the backend-mediated production storage and artifact delivery foundation:
+
+- generated image production storage refs are backend-only and must never appear in public JSON
+- Supabase private-bucket generated image upload/read boundaries exist behind backend service configuration
+- generated artifact access may return only a relative backend `previewPath` descriptor when `FREE_AI_MIXER_PRODUCTION_ARTIFACT_DELIVERY_MODE=backend_mediated_stream`
+- preview bytes are served only by the generation-specific backend route after auth, ownership, persistence, storage-ref, content-type, and object-read checks
+- signed URLs, public URLs, download URLs, direct frontend Supabase storage, and export-route reuse remain unavailable
+- Block 2 storage migration and private bucket setup require manual review/apply; no remote production migration auto-apply is allowed
+- video artifact delivery remains unavailable until a separate audited block
+
 ## Phase 18 Recommendation
 
 Admin Analytics + Platform Metrics should stay in a future readiness-only audit

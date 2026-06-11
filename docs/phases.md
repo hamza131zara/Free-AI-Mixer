@@ -14003,3 +14003,37 @@ Safety boundaries:
 - no direct frontend Supabase DB/storage access
 - no remote production migration auto-apply
 - no fake auth user or fake production success
+
+## Launch Block 2 - Production Storage + Artifact Delivery
+
+Status:
+
+- backend-mediated generated image production storage and descriptor/preview delivery foundation added
+- signed URL, public URL, download URL, export-route reuse, and video delivery remain unavailable
+
+Scope:
+
+- backend-only generated image production storage-ref metadata boundary
+- manual draft migration for generated artifact storage metadata columns
+- Supabase private-bucket generated image storage writer/reader boundary
+- generation-specific access descriptor may return only a relative backend `previewPath`
+- generation-specific preview route may stream image bytes only after auth, ownership, storage-ref validation, and object read checks
+- focused QA spec added for production storage/artifact delivery boundaries but not run in Prompt 2
+
+Manual setup still required:
+
+- backend Supabase env
+- private artifact bucket
+- reviewed/applied Block 2 migration
+- production delivery gate: `FREE_AI_MIXER_PRODUCTION_ARTIFACT_DELIVERY_MODE=backend_mediated_stream`
+
+Safety boundaries:
+
+- no real provider calls
+- no provider validation calls
+- no billing or Stripe integration
+- no public URL, signed URL, or download URL behavior
+- no direct frontend Supabase DB/storage access
+- no remote production migration auto-apply
+- no storage ref, bucket, object key, local path, internal ref, base64, or bytes in public JSON
+- no video artifact delivery

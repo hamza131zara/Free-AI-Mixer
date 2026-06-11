@@ -12,6 +12,7 @@ import { decideProductionAuthOwnership } from "../auth/productionAuthOwnershipPo
 import type {
   BackendGenerationCatalogResponse,
   BackendGeneratedArtifactAccessResponse,
+  BackendGeneratedArtifactAccessUnavailableStatus,
   BackendGenerationJobMutationResponse,
   BackendGenerationRuntimeStatusResponse,
 } from "../contracts/generationRuntimeHttpTypes";
@@ -53,6 +54,7 @@ import {
   createNotConfiguredGeneratedImageArtifactAccessResolver,
   type GeneratedImageArtifactAccessResolver,
 } from "../generation/generatedImageArtifactAccess";
+import type { GeneratedImageProductionStorage } from "../generation/supabaseGeneratedImageProductionStorage";
 import type { GeneratedImageArtifactRegistry } from "../generation/generatedImageArtifactRegistry";
 import { verifyGeneratedImageArtifactBytes } from "../generation/generatedImageArtifactVerification";
 import { createOpenAiImageGenerationAdapter } from "../generation/openAiImageGenerationAdapter";
@@ -99,6 +101,8 @@ export interface CreateGenerationRouterOptions {
   generatedImageArtifactAccessResolver?: GeneratedImageArtifactAccessResolver;
   generatedImageArtifactRegistry?: GeneratedImageArtifactRegistry;
   generatedImageLocalPreviewEnabled?: boolean;
+  generatedImageProductionStorage?: GeneratedImageProductionStorage;
+  generatedImageProductionDeliveryEnabled?: boolean;
   productionAuthOwnershipPolicyEnabled?: boolean;
   productionPersistenceWriter?: ProductionSupabasePersistenceWriter;
 }
@@ -449,7 +453,7 @@ const isSafeGeneratedArtifactSegment = (value: string): boolean =>
 
 const sendGeneratedArtifactAccessUnavailable = (
   response: Response<BackendGeneratedArtifactAccessResponse>,
-  status: BackendGeneratedArtifactAccessResponse["status"],
+  status: BackendGeneratedArtifactAccessUnavailableStatus,
   message: string,
   httpStatus: number,
 ): void => {
@@ -538,13 +542,14 @@ const sendMockLocalImageStorageResult = async (
     artifactId: string;
     jobId: string;
     ownerId: string;
+    productionStorage?: GeneratedImageProductionStorage;
     registry?: GeneratedImageArtifactRegistry;
     storage?: GeneratedImageArtifactStorage;
     persistenceWriter?: ProductionSupabasePersistenceWriter;
     workspaceId: string;
   },
 ): Promise<void> => {
-  if (!input.storage) {
+  if (!input.storage && !input.productionStorage) {
     const failure = getGenerationFailureMapping("artifact_storage_unavailable");
     rejectGenerationJob(
       response,
@@ -581,7 +586,121 @@ const sendMockLocalImageStorageResult = async (
     return;
   }
 
-  const stored = await input.storage.store({
+  const productionStored = input.productionStorage
+    ? await input.productionStorage.store({
+        artifactId: input.artifactId,
+        jobId: input.jobId,
+        ownerId: input.ownerId,
+        providerId: mockLocalProviderId,
+        verifiedImage: verified.image,
+        workspaceId: input.workspaceId,
+      })
+    : undefined;
+
+  if (productionStored?.kind === "stored") {
+    const { artifact, storageRef } = productionStored;
+    const persistenceResults: ProductionPersistenceWriteResult[] = [];
+
+    if (input.persistenceWriter) {
+      persistenceResults.push(
+        await input.persistenceWriter.persistGenerationJobMetadata({
+          generationKind: "image",
+          jobId: input.jobId,
+          ownerId: input.ownerId,
+          providerId: mockLocalProviderId,
+          requestId: input.jobId,
+          status: "generated_metadata_ready",
+          workspaceId: input.workspaceId,
+        }),
+      );
+      persistenceResults.push(
+        await input.persistenceWriter.persistGeneratedArtifactRecord({
+          artifactId: artifact.artifactId,
+          contentType: artifact.contentType,
+          createdAt: artifact.createdAt,
+          jobId: artifact.jobId,
+          ownerId: artifact.ownerId,
+          providerId: artifact.providerId,
+          sha256: artifact.sha256,
+          sizeBytes: artifact.sizeBytes,
+          status: artifact.status,
+          storageRef,
+          workspaceId: artifact.workspaceId,
+        }),
+      );
+      persistenceResults.push(
+        await input.persistenceWriter.persistImageGenerationHistory({
+          artifactId: artifact.artifactId,
+          contentType: artifact.contentType,
+          createdAt: artifact.createdAt,
+          jobId: artifact.jobId,
+          ownerId: artifact.ownerId,
+          providerId: artifact.providerId,
+          requestId: input.jobId,
+          sha256: artifact.sha256,
+          sizeBytes: artifact.sizeBytes,
+          status: "generated_metadata_ready",
+          workspaceId: artifact.workspaceId,
+        }),
+      );
+    }
+
+    response.status(200).json({
+      kind: "generation_job_metadata_ready",
+      status: "generated_metadata_ready",
+      message:
+        "Mock local image generation produced verified production storage metadata; delivery remains backend-mediated only.",
+      artifact: {
+        artifactId: artifact.artifactId,
+        providerId: artifact.providerId,
+        contentType: artifact.contentType,
+        sizeBytes: artifact.sizeBytes,
+        sha256: artifact.sha256,
+        createdAt: artifact.createdAt,
+        deliveryStatus: "unavailable",
+      },
+      ...(persistenceResults.length > 0
+        ? { persistence: toPersistenceResponse(persistenceResults) }
+        : {}),
+      runtime: toRuntimeSnapshot(runtimeSummary, false),
+      attemptedProviderIds: [mockLocalProviderId],
+    });
+    return;
+  }
+
+  if (input.productionStorage && !input.storage) {
+    const failure = getGenerationFailureMapping("artifact_storage_unavailable");
+    rejectGenerationJob(
+      response,
+      runtimeSummary,
+      "artifact_storage_unavailable",
+      failure.message,
+      failure.httpStatus,
+      [mockLocalProviderId],
+      {
+        diagnosticCode: "artifact_storage_write_failed",
+        failureCategory: "artifact_storage",
+      },
+    );
+    return;
+  }
+
+  const localStorage = input.storage;
+
+  if (!localStorage) {
+    const failure = getGenerationFailureMapping("artifact_storage_unavailable");
+    rejectGenerationJob(
+      response,
+      runtimeSummary,
+      "artifact_storage_unavailable",
+      failure.message,
+      failure.httpStatus,
+      [mockLocalProviderId],
+    );
+    return;
+  }
+
+  const stored = await localStorage.store({
     artifactId: input.artifactId,
     jobId: input.jobId,
     ownerId: input.ownerId,
@@ -858,7 +977,7 @@ export const createGenerationRouter = (
         },
       });
 
-      response.status(503).json(result);
+      response.status(result.kind === "generated_artifact_access_descriptor" ? 200 : 503).json(result);
     },
   );
 
@@ -880,7 +999,10 @@ export const createGenerationRouter = (
         return;
       }
 
-      if (!options.generatedImageLocalPreviewEnabled) {
+      if (
+        !options.generatedImageLocalPreviewEnabled &&
+        !options.generatedImageProductionDeliveryEnabled
+      ) {
         sendGeneratedArtifactAccessUnavailable(
           response,
           "generated_artifact_access_unavailable",
@@ -947,6 +1069,48 @@ export const createGenerationRouter = (
           );
           return;
         }
+      }
+
+      if (
+        options.generatedImageProductionDeliveryEnabled &&
+        options.generatedImageProductionStorage
+      ) {
+        const record = await options.generatedImageProductionStorage.resolveRecord({
+          artifactId,
+          jobId,
+          ownerId: requesterContext.userId,
+          workspaceId: requesterContext.workspaceId,
+        });
+
+        if (record.kind !== "resolved") {
+          sendGeneratedArtifactAccessUnavailable(
+            response,
+            "generated_artifact_access_unavailable",
+            "Generated image preview is unavailable.",
+            404,
+          );
+          return;
+        }
+
+        const read = await options.generatedImageProductionStorage.readObject(
+          record.record.storageRef,
+        );
+
+        if (read.kind !== "read" || !isGeneratedPreviewContentType(read.contentType)) {
+          sendGeneratedArtifactAccessUnavailable(
+            response,
+            "generated_artifact_access_unavailable",
+            "Generated image preview is unavailable.",
+            404,
+          );
+          return;
+        }
+
+        response.setHeader("Content-Type", read.contentType);
+        response.setHeader("Cache-Control", "no-store");
+        response.setHeader("X-Content-Type-Options", "nosniff");
+        response.end(Buffer.from(read.bytes));
+        return;
       }
 
       const record = options.generatedImageArtifactRegistry?.get({
@@ -1314,6 +1478,7 @@ export const createGenerationRouter = (
           artifactId: `${parsed.request.requestId}_mock_image`,
           jobId: parsed.request.requestId,
           ownerId: authenticatedRequester?.userId ?? "",
+          productionStorage: options.generatedImageProductionStorage,
           registry: options.generatedImageArtifactRegistry,
           storage: options.generatedImageArtifactStorage,
           persistenceWriter: options.productionPersistenceWriter,

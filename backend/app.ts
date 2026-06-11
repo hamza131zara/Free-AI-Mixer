@@ -21,7 +21,10 @@ import { createExportRouter } from "./routes/exports";
 import { createBackendDependencies } from "./composition/backendDependencies";
 import type { BackendDatabaseRepositories } from "./composition/repositoryComposition";
 import { createLocalGeneratedImageArtifactStorage } from "./generation/generatedImageArtifactStorage";
-import { createRegistryBackedGeneratedImageArtifactAccessResolver } from "./generation/generatedImageArtifactAccess";
+import {
+  createProductionGeneratedImageArtifactAccessResolver,
+  createRegistryBackedGeneratedImageArtifactAccessResolver,
+} from "./generation/generatedImageArtifactAccess";
 import { createInMemoryGeneratedImageArtifactRegistry } from "./generation/generatedImageArtifactRegistry";
 import { createRenderWorkerLifecycle } from "./workers/renderWorkerLifecycle";
 import { createLocalDevArtifactAccessProvider } from "./artifacts/localDevArtifactAccessProvider";
@@ -266,6 +269,19 @@ export const createApp = (): Express => {
             generatedImageArtifactRegistry,
             generatedImageLocalPreviewEnabled:
               isGeneratedImageLocalPreviewEnabled(),
+          }
+        : {}),
+      ...(backendDeps.productionArtifactDeliveryMode ===
+      "backend_mediated_stream"
+        ? {
+            generatedImageArtifactAccessResolver:
+              createProductionGeneratedImageArtifactAccessResolver({
+                productionStorage:
+                  backendDeps.generatedImageProductionStorage,
+              }),
+            generatedImageProductionDeliveryEnabled: true,
+            generatedImageProductionStorage:
+              backendDeps.generatedImageProductionStorage,
           }
         : {}),
       ...(backendDeps.generationOpenAiImageRealLocalSmokeEnabled

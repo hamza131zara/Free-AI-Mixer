@@ -124,6 +124,17 @@ export const createSupabaseProductionPersistenceWriter = (
       sha256: input.sha256,
       size_bytes: input.sizeBytes,
       storage_state: input.status,
+      ...(input.storageRef
+        ? {
+            storage_bucket: input.storageRef.bucket,
+            storage_content_type: input.storageRef.contentType,
+            storage_created_at: input.storageRef.createdAt,
+            storage_object_key: input.storageRef.objectKey,
+            storage_provider: input.storageRef.provider,
+            storage_sha256: input.storageRef.sha256,
+            storage_size_bytes: input.storageRef.sizeBytes,
+          }
+        : {}),
       workspace_id: input.workspaceId,
     }),
 
