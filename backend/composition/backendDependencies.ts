@@ -68,6 +68,11 @@ import {
   createSupabaseGeneratedImageProductionStorageFromClientFactory,
   type GeneratedImageProductionStorage,
 } from "../generation/supabaseGeneratedImageProductionStorage";
+import {
+  createCreditWalletRepositoryFromClientFactory,
+  type CreditWalletRepository,
+} from "../credits/creditWalletRepository";
+import { createCreditService, type CreditService } from "../credits/creditService";
 
 export type ProductionArtifactDeliveryMode =
   | "not_configured"
@@ -123,6 +128,10 @@ export interface BackendDependencies {
   productionArtifactDeliveryMode: ProductionArtifactDeliveryMode;
   /** Launch Block 2 generated-image production storage seam. */
   generatedImageProductionStorage: GeneratedImageProductionStorage;
+  /** Launch Block 3 platform credit wallet/ledger repository seam. */
+  creditWalletRepository: CreditWalletRepository;
+  /** Launch Block 3 credit service and paid-generation readiness seam. */
+  creditService: CreditService;
 }
 
 const getDefaultRoots = (): { temp: string; output: string } => {
@@ -188,6 +197,9 @@ export const createBackendDependencies = (): BackendDependencies => {
       bucket: supabaseConfig.storageBucketArtifacts,
       clientFactoryResult: supabaseClientFactoryResult,
     });
+  const creditWalletRepository =
+    createCreditWalletRepositoryFromClientFactory(supabaseClientFactoryResult);
+  const creditService = createCreditService(creditWalletRepository);
   const providerValidationAdapter =
     byokProviderValidationRuntimeGate.enabled &&
     byokProviderValidationAdapterSelection.adapter === "mock_local"
@@ -270,6 +282,8 @@ export const createBackendDependencies = (): BackendDependencies => {
     productionPersistenceWriter,
     productionArtifactDeliveryMode,
     generatedImageProductionStorage,
+    creditWalletRepository,
+    creditService,
   };
 };
 

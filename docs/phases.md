@@ -14037,3 +14037,13 @@ Safety boundaries:
 - no remote production migration auto-apply
 - no storage ref, bucket, object key, local path, internal ref, base64, or bytes in public JSON
 - no video artifact delivery
+## Launch Block 3 - Billing / Credits / Subscriptions foundation
+
+- Added draft/manual migration `0006_launch_block3_billing_credits_subscriptions_draft.sql`.
+- Added backend credit wallet, ledger, reservation, settlement, release, refund, usage-limit, subscription, billing-event, and provider-cost estimate boundaries.
+- Added fail-closed not-configured behavior for platform credits, checkout, webhooks, subscriptions, and paid-generation readiness.
+- `/credits/status` can surface backend-derived wallet readiness but must not fake live balances, purchases, subscriptions, or paid entitlement success.
+- `/billing/plans` remains draft/planning only and does not return checkout URLs or live subscription state.
+- Future Block 4 platform-paid provider generation must reserve credits before provider calls and settle, release, or refund after truthful outcomes.
+- BYOK remains separate from platform-paid credits; BYOK does not create free provider credits.
+- No real provider calls, provider API key validation, live Stripe/Paddle checkout, real webhook processing, real billing mutation, public/signed/download URL behavior, or fake paid success was added; there is no live payment processor.

@@ -8,9 +8,11 @@ import type {
   BackendCreditsStatusResponse,
 } from "../contracts/creditsHttpTypes";
 import { defaultCreditPolicy } from "../credits/creditPolicy";
+import { createCreditService, type CreditService } from "../credits/creditService";
 
 export interface CreateCreditsRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
+  creditService?: CreditService;
   routeAccessResolver?: AsyncBackendRequesterContextResolver;
 }
 
@@ -32,6 +34,7 @@ export const createCreditsRouter = (
   options: CreateCreditsRouterOptions,
 ): Router => {
   const router = Router();
+  const creditService = options.creditService ?? createCreditService();
 
   router.get(
     "/credits/policy",
@@ -56,19 +59,17 @@ export const createCreditsRouter = (
         });
 
         if (accessDecision.kind === "allowed") {
+          const wallet = await creditService.getWalletStatus(
+            accessDecision.requester.workspaceId,
+          );
           response.status(200).json({
             kind: "credits_status",
             status: "authenticated",
             message:
-              "Credits policy is visible for this verified session, but wallet mutation is not enabled yet.",
-            wallet: {
-              state: "not_enabled_yet",
-              scope: "workspace",
-              liveBalanceAvailable: false,
-              message:
-                "A backend-derived wallet summary will appear here only after real credits and billing are implemented.",
-              activeWorkspaceId: accessDecision.requester.workspaceId,
-            },
+              wallet.liveBalanceAvailable
+                ? "Credits policy and wallet metadata are visible for this verified session."
+                : "Credits policy is visible for this verified session, but platform credits are not configured for paid generation yet.",
+            wallet,
           });
           return;
         }

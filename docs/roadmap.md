@@ -50,6 +50,18 @@ Block 2 adds the backend-mediated production storage and artifact delivery found
 - Block 2 storage migration and private bucket setup require manual review/apply; no remote production migration auto-apply is allowed
 - video artifact delivery remains unavailable until a separate audited block
 
+## Launch Block 3 - Billing / Credits / Subscriptions
+
+Block 3 adds the platform-paid billing foundation while keeping live payments unavailable:
+
+- credit wallet, ledger, reservation, settlement, release, refund, usage-limit, subscription, billing-event, and provider-cost estimate boundaries exist
+- `0006_launch_block3_billing_credits_subscriptions_draft.sql` is draft/manual only and must be reviewed before any local/staging/production apply
+- `/credits/status` can report backend-derived wallet readiness, but missing config/tables/wallets remain truthful unavailable states
+- `/billing/plans` still exposes draft plans only; there is no live payment processor, no checkout, no webhook processing, no fake purchases, no fake balances, no fake subscriptions, and no automatic charges
+- future Block 4 platform-paid provider generation must reserve credits before provider calls and settle/release/refund after the final outcome
+- BYOK remains separate from platform-paid credits: BYOK users use their own provider quota/billing and do not receive guaranteed provider credits
+- no real provider calls, API key validation, Stripe/Paddle live checkout, billing mutation, public/signed/download URLs, or fake paid success are introduced
+
 ## Phase 18 Recommendation
 
 Admin Analytics + Platform Metrics should stay in a future readiness-only audit

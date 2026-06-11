@@ -10,6 +10,9 @@ export interface BillingStoreState {
   providerBoundary?: BillingPlansResult["providerBoundary"];
   checkoutBoundary?: BillingPlansResult["checkoutBoundary"];
   webhookBoundary?: BillingPlansResult["webhookBoundary"];
+  subscriptionBoundary?: BillingPlansResult["subscriptionBoundary"];
+  platformCreditsBoundary?: BillingPlansResult["platformCreditsBoundary"];
+  providerCostEstimates: BillingPlansResult["providerCostEstimates"];
   pendingAction: "refresh" | null;
   refreshBilling: () => Promise<void>;
 }
@@ -22,6 +25,9 @@ export const useBillingStore = create<BillingStoreState>((set) => ({
   providerBoundary: undefined,
   checkoutBoundary: undefined,
   webhookBoundary: undefined,
+  subscriptionBoundary: undefined,
+  platformCreditsBoundary: undefined,
+  providerCostEstimates: [],
   pendingAction: null,
   refreshBilling: async () => {
     set({ pendingAction: "refresh" });
@@ -35,6 +41,9 @@ export const useBillingStore = create<BillingStoreState>((set) => ({
       providerBoundary: result.providerBoundary,
       checkoutBoundary: result.checkoutBoundary,
       webhookBoundary: result.webhookBoundary,
+      subscriptionBoundary: result.subscriptionBoundary,
+      platformCreditsBoundary: result.platformCreditsBoundary,
+      providerCostEstimates: result.providerCostEstimates,
       pendingAction: null,
     });
   },

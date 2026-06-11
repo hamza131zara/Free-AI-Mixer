@@ -11,6 +11,9 @@ export function PricingPage() {
   const providerBoundary = useBillingStore((state) => state.providerBoundary);
   const checkoutBoundary = useBillingStore((state) => state.checkoutBoundary);
   const webhookBoundary = useBillingStore((state) => state.webhookBoundary);
+  const subscriptionBoundary = useBillingStore((state) => state.subscriptionBoundary);
+  const platformCreditsBoundary = useBillingStore((state) => state.platformCreditsBoundary);
+  const providerCostEstimates = useBillingStore((state) => state.providerCostEstimates);
   const pendingAction = useBillingStore((state) => state.pendingAction);
   const refreshBilling = useBillingStore((state) => state.refreshBilling);
   const navigateTo = useNavigationStore((state) => state.navigateTo);
@@ -29,6 +32,11 @@ export function PricingPage() {
             This page only shows planned pricing and billing-policy boundaries. It
             does not offer checkout, subscriptions, purchases, or unlimited usage
             claims.
+          </p>
+          <p className="placeholder-description">
+            Block 3 adds the credit ledger, reservation, and subscription
+            foundation, but live payment processors and paid provider generation
+            remain unavailable.
           </p>
           <p className="placeholder-description">
             {platformGenerationPolicyCopy.freeWorkspaceCopy}{" "}
@@ -58,7 +66,7 @@ export function PricingPage() {
           <span className="status-kicker">Pricing status</span>
           <strong>{status}</strong>
           <p>{message}</p>
-          <p>Credits and billing are not enabled yet.</p>
+          <p>{platformCreditsBoundary?.message ?? "Platform credits are not configured for paid generation yet."}</p>
         </div>
       </div>
 
@@ -123,6 +131,14 @@ export function PricingPage() {
             <h3>Webhook boundary</h3>
             <p>{webhookBoundary?.message ?? "Webhook processing is not live."}</p>
           </article>
+          <article className="info-card">
+            <h3>Subscription boundary</h3>
+            <p>{subscriptionBoundary?.message ?? "Subscriptions are not configured."}</p>
+          </article>
+          <article className="info-card">
+            <h3>Platform credits boundary</h3>
+            <p>{platformCreditsBoundary?.message ?? "Platform credits are not configured for paid generation yet."}</p>
+          </article>
         </div>
       </div>
 
@@ -139,6 +155,19 @@ export function PricingPage() {
             <article key={estimate.id} className="info-card">
               <h3>{estimate.label}</h3>
               <p>{estimate.creditRangeLabel}</p>
+            </article>
+          ))}
+        </div>
+        <div className="section-header">
+          <p className="eyebrow">Provider cost boundary</p>
+          <h2>Provider billing remains separate from Free AI Mixer credits</h2>
+        </div>
+        <div className="placeholder-grid">
+          {providerCostEstimates.map((estimate) => (
+            <article key={`${estimate.providerId}-${estimate.surface}`} className="info-card">
+              <h3>{estimate.providerId}</h3>
+              <p>{estimate.message}</p>
+              <p>Status: {estimate.estimateState}</p>
             </article>
           ))}
         </div>

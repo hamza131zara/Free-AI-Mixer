@@ -40,6 +40,17 @@ Launch Block 2 adds backend-mediated generated image storage/delivery foundation
 - Signed URL delivery files remain future/audited boundaries and are not enabled by Block 2.
 - Video delivery/playback remains unavailable.
 
+## Billing, Credits, And Subscriptions Boundary
+
+Launch Block 3 adds a backend-owned billing/credits foundation without enabling live payments or platform-paid provider calls.
+
+- Credit wallet, ledger, reservation, settlement, release, refund, usage-limit, subscription, billing-event, and provider-cost estimate boundaries now exist as backend/server-side contracts.
+- `0006_launch_block3_billing_credits_subscriptions_draft.sql` is a manual review/apply migration draft only; the app must not auto-apply remote production migrations.
+- Missing Supabase config, missing tables, missing wallet rows, or missing usage-limit rows must fail closed with `platform_credits_not_configured`, `wallet_unavailable`, or related unavailable states.
+- Future platform-paid generation must reserve credits before a provider call and settle only after truthful success; failures must release or refund reservations.
+- There is no live payment processor, no checkout, no webhook processing, no fake purchases, no fake balances, no fake subscriptions, and no automatic charges.
+- BYOK remains separate: users pay provider costs through their own provider account/quota/billing, while Free AI Mixer platform credits are for future platform-paid usage.
+
 ## Core Rules
 
 - Architecture first, UI second.

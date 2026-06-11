@@ -44,11 +44,13 @@ export interface CreditPolicySummary {
 }
 
 export interface WalletSummary {
-  state: "not_enabled_yet";
+  state: "not_enabled_yet" | "platform_credits_not_configured" | "wallet_unavailable" | "available";
   scope: "workspace";
-  liveBalanceAvailable: false;
+  liveBalanceAvailable: boolean;
   message: string;
   activeWorkspaceId?: string;
+  balance?: number;
+  currencyCode?: "platform_credits";
 }
 
 export interface CreditLedgerEntrySummary {
@@ -110,6 +112,8 @@ export type CreditsStatusResult =
         | "auth_not_configured"
         | "auth_provider_unavailable"
         | "workspace_runtime_not_configured"
+        | "platform_credits_not_configured"
+        | "credit_tables_unavailable"
         | "credits_service_unreachable";
       message: string;
     };

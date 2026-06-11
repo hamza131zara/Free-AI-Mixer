@@ -49,6 +49,21 @@ Why it matters:
 - Artifact storage refs, bucket names, object keys, local paths, internal refs, base64, and bytes must not appear in public JSON.
 - Signed URL delivery needs a separate audit before users can receive time-limited external URLs.
 
+## Launch Block 3 Billing And Credits Gaps
+
+Current state:
+
+- Backend credit wallet, ledger, reservation, settlement, release, refund, usage-limit, subscription, billing-event, and provider-cost estimate boundaries exist.
+- The Block 3 SQL migration is draft/manual only and has not been auto-applied to any remote database.
+- Missing Supabase config, missing tables, missing wallets, and missing usage-limit rows must keep paid generation blocked with truthful unavailable states.
+- Stripe/Paddle checkout, real webhooks, live subscriptions, paid entitlement activation, fake purchases, and fake credit refills remain unavailable.
+- BYOK remains separate from platform-paid credits; users still rely on their own provider quota/billing when using their own provider keys.
+
+Why it matters:
+
+- Real provider generation cannot safely become platform-paid until credits can be reserved before provider calls and settled, released, or refunded after truthful outcomes.
+- The app must not imply live subscriptions, fake wallet balances, fake purchase success, or automatic billing before payment processor integration is separately audited.
+
 ## Stability Issues
 
 ### Hydration Runtime Sign-Off

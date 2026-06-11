@@ -5,11 +5,15 @@ import { draftCreditCostEstimates } from "../credits/creditPolicy";
 import {
   defaultBillingCheckoutBoundary,
   defaultBillingProviderBoundary,
+  defaultBillingSubscriptionBoundary,
   defaultBillingWebhookBoundary,
+  defaultPlatformCreditsBoundary,
 } from "../billing/billingProviderBoundary";
+import { createProviderCostTrackingBoundary } from "../billing/providerCostTracking";
 
 export const createBillingRouter = (): Router => {
   const router = Router();
+  const providerCostTracking = createProviderCostTrackingBoundary();
 
   router.get(
     "/billing/plans",
@@ -21,6 +25,8 @@ export const createBillingRouter = (): Router => {
         providerBoundary: defaultBillingProviderBoundary,
         checkoutBoundary: defaultBillingCheckoutBoundary,
         webhookBoundary: defaultBillingWebhookBoundary,
+        subscriptionBoundary: defaultBillingSubscriptionBoundary,
+        platformCreditsBoundary: defaultPlatformCreditsBoundary,
         plans: [
           {
             planId: "free_byok_policy",
@@ -38,6 +44,7 @@ export const createBillingRouter = (): Router => {
           },
         ],
         draftEstimates: draftCreditCostEstimates,
+        providerCostEstimates: providerCostTracking.listEstimates(),
       });
     },
   );

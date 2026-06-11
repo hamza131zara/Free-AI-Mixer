@@ -37,6 +37,11 @@ export function CreditsPage() {
             Credits are planning-only in this beta. No live balance, refill,
             billing, checkout, subscription, or ledger mutation exists yet.
           </p>
+          <p className="placeholder-description">
+            Block 3 prepares backend-owned wallet, ledger, reservation, settlement,
+            release, and refund boundaries for future platform-paid generation.
+            It still does not charge users or fake credit purchases.
+          </p>
           <div className="hero-actions">
             <button
               type="button"
@@ -62,7 +67,16 @@ export function CreditsPage() {
           <strong>{accessStatus}</strong>
           <p>{accessMessage}</p>
           {wallet ? (
-            <p>{wallet.message}</p>
+            <>
+              <p>{wallet.message}</p>
+              {wallet.liveBalanceAvailable && typeof wallet.balance === "number" ? (
+                <p>
+                  Live platform credit balance: <strong>{wallet.balance}</strong>
+                </p>
+              ) : (
+                <p>No live platform credit balance is available yet.</p>
+              )}
+            </>
           ) : (
             <p>No live credit balance, ledger, or remaining-credit value is shown in this phase.</p>
           )}
@@ -112,6 +126,13 @@ export function CreditsPage() {
           ))}
           <article className="info-card">
             <p>Credits and billing are not enabled yet.</p>
+          </article>
+          <article className="info-card">
+            <p>
+              Platform-paid generation must block with{" "}
+              <strong>platform_credits_not_configured</strong> until wallet,
+              ledger, usage-limit, and reservation readiness are real.
+            </p>
           </article>
         </div>
       </div>

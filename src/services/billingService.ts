@@ -6,8 +6,11 @@ interface BackendBillingPlansResponse {
   providerBoundary: BillingPlansResult["providerBoundary"];
   checkoutBoundary: BillingPlansResult["checkoutBoundary"];
   webhookBoundary: BillingPlansResult["webhookBoundary"];
+  subscriptionBoundary: BillingPlansResult["subscriptionBoundary"];
+  platformCreditsBoundary: BillingPlansResult["platformCreditsBoundary"];
   plans: BillingPlansResult["plans"];
   draftEstimates: BillingPlansResult["draftEstimates"];
+  providerCostEstimates: BillingPlansResult["providerCostEstimates"];
 }
 
 const billingPlansEndpoint = "/billing/plans";
@@ -53,8 +56,17 @@ export const getBillingPlans = async (): Promise<BillingPlansResult> => {
           acceptedProviders: ["stripe", "paddle"],
           message: "Webhook processing is not live.",
         },
+        subscriptionBoundary: {
+          state: "subscriptions_not_configured",
+          message: "Subscriptions are not configured.",
+        },
+        platformCreditsBoundary: {
+          state: "platform_credits_not_configured",
+          message: "Platform credits are not configured for paid generation yet.",
+        },
         plans: [],
         draftEstimates: [],
+        providerCostEstimates: [],
       };
     }
 
@@ -66,8 +78,11 @@ export const getBillingPlans = async (): Promise<BillingPlansResult> => {
       providerBoundary: payload.providerBoundary,
       checkoutBoundary: payload.checkoutBoundary,
       webhookBoundary: payload.webhookBoundary,
+      subscriptionBoundary: payload.subscriptionBoundary,
+      platformCreditsBoundary: payload.platformCreditsBoundary,
       plans: payload.plans,
       draftEstimates: payload.draftEstimates,
+      providerCostEstimates: payload.providerCostEstimates,
     };
   } catch {
     return {
@@ -88,8 +103,17 @@ export const getBillingPlans = async (): Promise<BillingPlansResult> => {
         acceptedProviders: ["stripe", "paddle"],
         message: "Webhook processing is not live.",
       },
+      subscriptionBoundary: {
+        state: "subscriptions_not_configured",
+        message: "Subscriptions are not configured.",
+      },
+      platformCreditsBoundary: {
+        state: "platform_credits_not_configured",
+        message: "Platform credits are not configured for paid generation yet.",
+      },
       plans: [],
       draftEstimates: [],
+      providerCostEstimates: [],
     };
   }
 };

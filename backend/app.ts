@@ -335,6 +335,7 @@ export const createApp = (): Express => {
   app.use(
     createCreditsRouter({
       runtimeConfig: authRuntimeConfig,
+      creditService: backendDeps.creditService,
       ...(routeAccessResolver ? { routeAccessResolver } : {}),
     }),
   );

@@ -31,12 +31,14 @@ interface BackendAuthenticatedCreditsStatusResponse {
   kind: "credits_status";
   status: "authenticated";
   message?: string;
-  wallet: {
-    state: "not_enabled_yet";
+    wallet: {
+    state: "not_enabled_yet" | "platform_credits_not_configured" | "wallet_unavailable" | "available";
     scope: "workspace";
-    liveBalanceAvailable: false;
+    liveBalanceAvailable: boolean;
     message: string;
     activeWorkspaceId?: string;
+    balance?: number;
+    currencyCode?: "platform_credits";
   };
 }
 
@@ -52,7 +54,9 @@ interface BackendUnavailableCreditsStatusResponse {
   status:
     | "auth_not_configured"
     | "auth_provider_unavailable"
-    | "workspace_runtime_not_configured";
+    | "workspace_runtime_not_configured"
+    | "platform_credits_not_configured"
+    | "credit_tables_unavailable";
   message?: string;
 }
 
