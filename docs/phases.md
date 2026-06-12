@@ -14057,3 +14057,10 @@ Safety boundaries:
 - Google/Gemini/Imagen/Veo remain unavailable until separate audited adapter work.
 - Codex/test automation must not use real keys or call providers; all automated provider execution coverage must mock provider fetches.
 - No real provider call, provider API key validation, platform-owned provider credential, Google/Gemini/Imagen adapter, video provider execution, fake provider success, public/signed/download URL behavior, provider raw body exposure, prompt exposure, key exposure, or storage ref exposure was added.
+## Launch Block 5 status
+
+- Launch Block 5 adds a backend-only real video generation foundation without enabling real video provider execution.
+- Future video providers (`veo`, `runway`, `pika`, and `gemini_video`) are represented only as fail-closed/not-configured adapter contracts.
+- Video lifecycle states are modeled, but `metadata_ready` requires verified artifact metadata and must not be faked.
+- Generated video artifact verification and storage remain unavailable/fail-closed; no playback route, public URL, signed URL, download URL, local path, internal ref, storage ref, base64, or video bytes are exposed.
+- Manual real-video smoke remains blocked until paid provider access/quota, audited BYOK handling, video polling, verification, storage, and safe playback/delivery boundaries are implemented.

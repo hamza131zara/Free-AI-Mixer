@@ -1328,3 +1328,10 @@ Status:
 - The preview route is not a download route and does not expose public URLs, signed URLs, download URLs, local paths, internal refs, storage refs, base64, or direct frontend storage access.
 - Video preview/playback remains unavailable.
 - Production artifact delivery still requires a future audited auth/storage/signed-delivery phase.
+## Launch Block 5 - Real Video Generation Foundation
+
+- Status: foundation only; real video provider execution remains unavailable.
+- The backend now has fail-closed video provider adapter contracts for future `veo`, `runway`, `pika`, and `gemini_video` integrations.
+- Video lifecycle, verification, and storage boundaries are modeled, but generated video verification/storage/playback remain fail-closed until separately audited.
+- Manual real-video smoke requires paid provider access/quota and a user-owned key; Codex and automated tests must not use keys or call video providers.
+- Public URLs, signed URLs, download URLs, direct frontend storage, fake video success, fake progress, and playable video previews remain blocked.

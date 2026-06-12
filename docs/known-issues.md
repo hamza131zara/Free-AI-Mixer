@@ -3061,3 +3061,9 @@ Still deferred:
   - Diagnostic responses must not include provider bodies, headers, request IDs, OpenAI account/org/model metadata, raw/decrypted keys, encrypted payloads, secret refs, JWTs, service-role keys, or encryption keys.
   - Another real OpenAI validation/generation attempt remains blocked until diagnostics are signed off.
   - Frontend generation, public delivery, export integration, credits/billing mutation, fake user-facing generated success/progress/downloadable artifacts, and production launch remain blocked.
+## Launch Block 5 video generation limitations
+
+- Real video providers are not configured or executable yet; Veo, Runway, Pika, and Gemini video remain future audited integrations.
+- Generated video artifact verification and storage intentionally fail closed, so video metadata-ready responses, playback, previews, and downloads are unavailable.
+- Provider billing/quota/access must be confirmed by the user before any future manual real-video smoke.
+- Automated tests and Codex must not use provider keys, validate video keys, call video providers, or fake video success/progress/artifacts.

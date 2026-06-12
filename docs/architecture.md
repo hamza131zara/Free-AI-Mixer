@@ -1180,3 +1180,10 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - The frontend may render only the relative backend preview route in an image element; it must not display public URLs, signed URLs, download URLs, local paths, internal refs, storage refs, base64, or raw bytes in app state.
 - Video preview/playback remains unavailable until a separate verified video artifact storage and delivery phase.
 - Production artifact delivery still requires a future audited storage/RLS/signed-delivery design.
+## Launch Block 5 video generation boundary
+
+- Real video generation is modeled as a backend-only fail-closed foundation.
+- Future video providers use not-configured adapter contracts for submit, poll, cancel, and readiness checks; no provider endpoints or fetch URLs are wired.
+- Video lifecycle transitions are explicit, and `metadata_ready` is allowed only after verified artifact metadata exists.
+- Generated video verification currently returns `video_artifact_verification_unavailable`, and generated video storage returns `video_artifact_storage_unavailable`.
+- No public/signed/download URLs, local paths, internal refs, storage refs, base64, video bytes, playback route, or direct frontend storage access are part of this boundary.
