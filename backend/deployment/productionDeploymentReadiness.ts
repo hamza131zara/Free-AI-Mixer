@@ -6,7 +6,8 @@
   | "auth_jwks_uri"
   | "supabase_url"
   | "supabase_anon_key"
-  | "supabase_storage_bucket"
+  | "supabase_artifacts_storage_bucket"
+  | "supabase_uploads_storage_bucket"
   | "frontend_build_command"
   | "backend_start_command"
   | "deployment_docs"
@@ -48,7 +49,8 @@ const requiredEnv: Array<{
   { key: "FREE_AI_MIXER_AUTH_JWKS_URI", missingItem: "auth_jwks_uri" },
   { key: "FREE_AI_MIXER_SUPABASE_URL", missingItem: "supabase_url" },
   { key: "FREE_AI_MIXER_SUPABASE_ANON_KEY", missingItem: "supabase_anon_key" },
-  { key: "FREE_AI_MIXER_SUPABASE_STORAGE_BUCKET", missingItem: "supabase_storage_bucket" },
+  { key: "FREE_AI_MIXER_STORAGE_BUCKET_ARTIFACTS", missingItem: "supabase_artifacts_storage_bucket" },
+  { key: "FREE_AI_MIXER_STORAGE_BUCKET_UPLOADS", missingItem: "supabase_uploads_storage_bucket" },
 ];
 
 const hasValue = (value: string | undefined): boolean =>

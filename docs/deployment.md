@@ -33,7 +33,8 @@ FREE_AI_MIXER_AUTH_AUDIENCE=<managed-by-host>
 FREE_AI_MIXER_AUTH_JWKS_URI=<managed-by-host>
 FREE_AI_MIXER_SUPABASE_URL=<managed-by-host>
 FREE_AI_MIXER_SUPABASE_ANON_KEY=<managed-by-host>
-FREE_AI_MIXER_SUPABASE_STORAGE_BUCKET=<managed-by-host>
+FREE_AI_MIXER_STORAGE_BUCKET_ARTIFACTS=<managed-by-host>
+FREE_AI_MIXER_STORAGE_BUCKET_UPLOADS=<managed-by-host>
 
 Do not commit real values.
 
