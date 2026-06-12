@@ -1,5 +1,7 @@
 # Private Beta Launch Decision Record
 
+Launch Block 7 note: record decisions only after reviewing [Launch Block 7 Final QA, Private Beta, And Public Launch Matrix](./launch-block7-final-qa-public-launch-matrix.md). Valid decisions remain `go`, `no-go`, or `hold`; none of them are public launch approval.
+
 ## Purpose
 
 This document records a manual private beta launch decision for Free AI Mixer.

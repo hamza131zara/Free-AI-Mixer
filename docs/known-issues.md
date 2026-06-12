@@ -3074,3 +3074,8 @@ Still deferred:
 - Production env validation is readiness-only and does not prove hosted Supabase migrations, DNS, SMTP, storage policy, or hosting rollback have been completed.
 - Real providers, platform-paid generation, video providers, public URLs, signed URLs, downloads, and live billing remain unavailable until separate audited rollout blocks.
 - Manual migration review/apply, host-level rollback, and staging smoke remain required before launch.
+## Launch Block 7 launch readiness limitations
+
+- Private beta can proceed only after a manual go decision; it is not public launch.
+- Public launch remains blocked until real provider billing/quota/access, platform-paid generation, live billing, video providers, artifact delivery, production auth/RLS/storage, SMTP/support/legal/privacy/admin review, and explicit public approval are complete where applicable.
+- Use [Launch Block 7 Final QA, Private Beta, And Public Launch Matrix](./launch-block7-final-qa-public-launch-matrix.md) as the current blocker matrix and stop-condition list.

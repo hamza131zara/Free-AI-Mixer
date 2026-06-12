@@ -1343,3 +1343,9 @@ Status:
 - `/monitoring/deployment-readiness` reports safe deployment status without exposing secrets or raw env values.
 - Rollback is manual through hosting provider revisions and reviewed Supabase plans.
 - Real providers, platform-paid generation, video providers, public URLs, signed URLs, downloads, and live billing remain disabled unless separately audited.
+## Launch Block 7 - Final Launch QA / Private Beta / Public Launch
+
+- Status: decision boundary only; no deployment, launch, provider call, billing enablement, or public launch approval is automatic.
+- Use [Launch Block 7 Final QA, Private Beta, And Public Launch Matrix](./launch-block7-final-qa-public-launch-matrix.md) for the final QA checklist, private beta go/no-go boundary, public launch blockers, production smoke, rollback, and product honesty copy.
+- Private beta is controlled testing, not public launch.
+- Real providers, platform-paid generation, real video providers, live billing, and downloads/public delivery remain unavailable unless separately audited and manually approved.

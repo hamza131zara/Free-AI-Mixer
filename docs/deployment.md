@@ -72,3 +72,4 @@ Smoke checklist:
 - Confirm protected routes reject unauthenticated users.
 - Confirm artifact delivery is backend-mediated only.
 - Confirm real providers, platform-paid generation, video providers, public URLs, signed URLs, and downloads remain disabled unless separately audited.
+Launch Block 7 note: before any private beta invitation or public launch decision, review [Launch Block 7 Final QA, Private Beta, And Public Launch Matrix](./launch-block7-final-qa-public-launch-matrix.md). Deployment readiness is necessary but not sufficient for public launch.

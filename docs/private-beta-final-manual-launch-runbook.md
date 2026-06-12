@@ -1,5 +1,7 @@
 # Private Beta Final Manual Launch Runbook
 
+Launch Block 7 note: this runbook must be used together with [Launch Block 7 Final QA, Private Beta, And Public Launch Matrix](./launch-block7-final-qa-public-launch-matrix.md). A private beta go decision does not approve public launch.
+
 ## Purpose
 
 This runbook defines the final manual launch procedure for inviting approved Free AI Mixer private beta testers.

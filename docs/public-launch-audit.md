@@ -66,3 +66,4 @@ Public launch go/no-go decision:
 - no blocker may remain in known issues
 - production env must use managed secrets only
 - final manual approval is required before public launch
+Launch Block 7 note: [Launch Block 7 Final QA, Private Beta, And Public Launch Matrix](./launch-block7-final-qa-public-launch-matrix.md) is the current consolidated blocker matrix. Public launch remains manual and unapproved until every blocker is cleared and an explicit public go decision is recorded.

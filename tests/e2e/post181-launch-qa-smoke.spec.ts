@@ -203,7 +203,9 @@ test.describe("post181 launch qa smoke", () => {
     await seedSceneStore(page, [createSuccessfulScene("launch-qa-success-scene")]);
     await gotoMixerAndAssertShell(page);
 
-    await page.getByLabel("Prompt").fill("Post-181 launch QA scene");
+    await page
+      .getByRole("textbox", { name: "Prompt", exact: true })
+      .fill("Post-181 launch QA scene");
     await page.getByLabel("Style").selectOption("cinematic");
     await page.getByLabel("Duration").fill("8");
     await page.getByRole("button", { name: "Add Scene" }).click();

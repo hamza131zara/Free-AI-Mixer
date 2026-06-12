@@ -14072,3 +14072,9 @@ Safety boundaries:
 - Production CORS requires explicit `FREE_AI_MIXER_ALLOWED_ORIGINS`; local/dev behavior remains friendly.
 - Deployment docs cover frontend static hosting, backend Node service hosting, hosted Supabase setup, manual migration review/apply, rollback, and smoke checks.
 - Real provider calls, platform-paid generation, video providers, public/signed/download URLs, live billing, and remote migration auto-apply remain blocked.
+## Launch Block 7 status
+
+- Launch Block 7 adds final launch QA/private beta/public launch decision boundaries only.
+- The consolidated blocker matrix lives in `docs/launch-block7-final-qa-public-launch-matrix.md`.
+- Private beta is controlled testing, not public launch.
+- Public launch remains blocked until every blocker is manually cleared and a public go decision is explicitly recorded.

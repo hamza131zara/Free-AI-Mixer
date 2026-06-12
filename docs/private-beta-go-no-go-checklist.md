@@ -1,5 +1,7 @@
 # Controlled Private Beta Staging And Go/No-Go Checklist
 
+Launch Block 7 note: use [Launch Block 7 Final QA, Private Beta, And Public Launch Matrix](./launch-block7-final-qa-public-launch-matrix.md) as the consolidated final QA, public launch blocker, smoke, rollback, and product honesty boundary. Private beta remains controlled testing, not public launch.
+
 ## Purpose
 
 This checklist decides whether Free AI Mixer can invite controlled private beta testers. It is docs-only and does not configure deployment, SMTP, auth runtime, backend routes, provider storage, credits, billing, generation, export, or public launch behavior.
