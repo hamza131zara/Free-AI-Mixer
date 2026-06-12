@@ -1187,3 +1187,11 @@ Remotion bundler dependency + runtime type boundary prep (Phase 8.1-B, after Pha
 - Video lifecycle transitions are explicit, and `metadata_ready` is allowed only after verified artifact metadata exists.
 - Generated video verification currently returns `video_artifact_verification_unavailable`, and generated video storage returns `video_artifact_storage_unavailable`.
 - No public/signed/download URLs, local paths, internal refs, storage refs, base64, video bytes, playback route, or direct frontend storage access are part of this boundary.
+
+## Launch Block 6 production deployment boundary
+
+- Production deployment readiness is reported through safe enum/status checks only.
+- The backend exposes `/monitoring/deployment-readiness` without secrets, raw env values, provider calls, DB writes, or migration execution.
+- Production CORS is explicit and uses `FREE_AI_MIXER_ALLOWED_ORIGINS`; wildcard production origins are not approved.
+- Frontend env remains allowlisted for public client values only. Service-role keys, provider keys, billing secrets, webhook secrets, and SMTP secrets are backend-only.
+- Real providers, platform-paid generation, video providers, public URLs, signed URLs, and downloads remain disabled unless a later audited block enables them.

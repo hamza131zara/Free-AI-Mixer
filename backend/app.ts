@@ -31,6 +31,7 @@ import { createLocalDevArtifactAccessProvider } from "./artifacts/localDevArtifa
 import { readSupabaseConfigFromEnv } from "./config/supabaseConfig";
 import { createSupabaseClientFactory } from "./db/supabaseClientFactory";
 import type { WorkspaceMembershipRepository } from "./auth/workspaceMembership";
+import { createProductionCorsMiddleware } from "./config/productionCorsPolicy";
 
 const isLocalDevArtifactStreamEnabled = (): boolean =>
   process.env.FREE_AI_MIXER_ENABLE_LOCAL_DEV_ARTIFACT_STREAM === "1";
@@ -208,6 +209,7 @@ export const createApp = (): Express => {
   };
 
   app.use(express.json());
+  app.use(createProductionCorsMiddleware());
 
   app.use(createTrustedAuthMiddleware({ runtimeConfig: authRuntimeConfig }));
   app.use(

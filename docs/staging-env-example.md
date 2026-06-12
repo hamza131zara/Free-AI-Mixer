@@ -70,3 +70,18 @@ Do not use personal, admin, customer, or production owner accounts for smoke tes
 
 The staging publish dry run is manual and gated. It proves readiness posture only; it does not deploy, enable public launch, enable live BYOK, enable credits/billing, enable provider SDK calls, or enable public artifact delivery.
 
+## Launch Block 6 Deployment Readiness Variables
+
+```text
+NODE_ENV=production
+FREE_AI_MIXER_ALLOWED_ORIGINS=https://your-staging-frontend.example.invalid
+FREE_AI_MIXER_PRODUCTION_ARTIFACT_DELIVERY_MODE=not_configured
+FREE_AI_MIXER_CREDITS_RUNTIME_ENABLED=0
+FREE_AI_MIXER_BILLING_RUNTIME_ENABLED=0
+FREE_AI_MIXER_GENERATION_RUNTIME_ENABLED=0
+FREE_AI_MIXER_GENERATION_ALLOW_REAL_PROVIDER_CALLS=0
+FREE_AI_MIXER_GENERATION_ROUTE_EXECUTION_MODE=disabled
+FREE_AI_MIXER_GENERATION_OPENAI_IMAGE_REAL_LOCAL_SMOKE_ENABLED=0
+```
+
+Keep mock/local-only generation modes, real providers, platform-paid generation, video providers, public URLs, signed URLs, and downloads disabled unless a later audited block explicitly enables them.

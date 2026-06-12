@@ -3067,3 +3067,10 @@ Still deferred:
 - Generated video artifact verification and storage intentionally fail closed, so video metadata-ready responses, playback, previews, and downloads are unavailable.
 - Provider billing/quota/access must be confirmed by the user before any future manual real-video smoke.
 - Automated tests and Codex must not use provider keys, validate video keys, call video providers, or fake video success/progress/artifacts.
+
+## Launch Block 6 production deployment limitations
+
+- No automated production deployment pipeline is enabled yet.
+- Production env validation is readiness-only and does not prove hosted Supabase migrations, DNS, SMTP, storage policy, or hosting rollback have been completed.
+- Real providers, platform-paid generation, video providers, public URLs, signed URLs, downloads, and live billing remain unavailable until separate audited rollout blocks.
+- Manual migration review/apply, host-level rollback, and staging smoke remain required before launch.

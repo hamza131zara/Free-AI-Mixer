@@ -14064,3 +14064,11 @@ Safety boundaries:
 - Video lifecycle states are modeled, but `metadata_ready` requires verified artifact metadata and must not be faked.
 - Generated video artifact verification and storage remain unavailable/fail-closed; no playback route, public URL, signed URL, download URL, local path, internal ref, storage ref, base64, or video bytes are exposed.
 - Manual real-video smoke remains blocked until paid provider access/quota, audited BYOK handling, video polling, verification, storage, and safe playback/delivery boundaries are implemented.
+
+## Launch Block 6 status
+
+- Launch Block 6 adds production deployment readiness boundaries without deploying or enabling live providers.
+- `/monitoring/deployment-readiness` reports safe enum/status checks for auth, Supabase, storage, artifact delivery, credits/billing, generation gates, CORS, frontend env safety, and monitoring expectations.
+- Production CORS requires explicit `FREE_AI_MIXER_ALLOWED_ORIGINS`; local/dev behavior remains friendly.
+- Deployment docs cover frontend static hosting, backend Node service hosting, hosted Supabase setup, manual migration review/apply, rollback, and smoke checks.
+- Real provider calls, platform-paid generation, video providers, public/signed/download URLs, live billing, and remote migration auto-apply remain blocked.

@@ -1,9 +1,11 @@
 import { Router } from "express";
 import type { Response } from "express";
 import type {
+  BackendMonitoringDeploymentReadinessResponse,
   BackendMonitoringHealthResponse,
   BackendMonitoringReadinessResponse,
 } from "../contracts/monitoringHttpTypes";
+import { getProductionDeploymentReadinessSummary } from "../config/productionDeploymentReadiness";
 import {
   getMonitoringHealthSummary,
   getMonitoringReadinessSummary,
@@ -23,6 +25,16 @@ export const createMonitoringRouter = (): Router => {
     "/monitoring/readiness",
     (_request, response: Response<BackendMonitoringReadinessResponse>) => {
       response.status(200).json(getMonitoringReadinessSummary());
+    },
+  );
+
+  router.get(
+    "/monitoring/deployment-readiness",
+    (
+      _request,
+      response: Response<BackendMonitoringDeploymentReadinessResponse>,
+    ) => {
+      response.status(200).json(getProductionDeploymentReadinessSummary());
     },
   );
 

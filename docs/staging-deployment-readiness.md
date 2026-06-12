@@ -119,3 +119,10 @@ Stop staging/private-beta preparation and return to internal smoke only if:
 - Export/artifact surfaces show fake downloads, fake signed URLs, fake artifacts, or fake success.
 - Admin analytics appear publicly unlocked.
 - Public/open beta or production launch is implied without manual go/no-go approval.
+
+## Launch Block 6 Addendum
+
+- Run `/monitoring/deployment-readiness` during staging smoke and treat it as safe-status JSON only.
+- Staging and production CORS must use explicit `FREE_AI_MIXER_ALLOWED_ORIGINS`; wildcard production origins are not approved.
+- Manual migration review/apply remains required before any hosted Supabase rollout.
+- Rollback must use host-level frontend/backend revision rollback plus a reviewed Supabase plan; the app must not auto-apply or auto-revert remote migrations.

@@ -1335,3 +1335,11 @@ Status:
 - Video lifecycle, verification, and storage boundaries are modeled, but generated video verification/storage/playback remain fail-closed until separately audited.
 - Manual real-video smoke requires paid provider access/quota and a user-owned key; Codex and automated tests must not use keys or call video providers.
 - Public URLs, signed URLs, download URLs, direct frontend storage, fake video success, fake progress, and playable video previews remain blocked.
+
+## Launch Block 6 - Production Deployment Readiness
+
+- Status: readiness boundary only; no deployment is performed by the app or test automation.
+- Production deployment uses frontend static hosting, backend Node service hosting, and hosted Supabase setup with manual migration review/apply.
+- `/monitoring/deployment-readiness` reports safe deployment status without exposing secrets or raw env values.
+- Rollback is manual through hosting provider revisions and reviewed Supabase plans.
+- Real providers, platform-paid generation, video providers, public URLs, signed URLs, downloads, and live billing remain disabled unless separately audited.
