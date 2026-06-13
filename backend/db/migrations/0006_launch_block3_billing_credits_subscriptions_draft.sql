@@ -5,8 +5,8 @@
 
 create table if not exists billing_customers (
   billing_customer_id uuid primary key default gen_random_uuid(),
-  workspace_id uuid not null references workspaces(workspace_id) on delete cascade,
-  owner_id uuid not null references app_users(user_id) on delete cascade,
+  workspace_id uuid not null references workspaces(id) on delete cascade,
+  owner_id uuid not null references app_users(id) on delete cascade,
   provider text not null check (provider in ('stripe', 'paddle')),
   provider_customer_ref text,
   status text not null default 'not_configured'
@@ -19,7 +19,7 @@ create table if not exists billing_customers (
 create table if not exists billing_subscriptions (
   billing_subscription_id uuid primary key default gen_random_uuid(),
   billing_customer_id uuid references billing_customers(billing_customer_id) on delete set null,
-  workspace_id uuid not null references workspaces(workspace_id) on delete cascade,
+  workspace_id uuid not null references workspaces(id) on delete cascade,
   provider text not null check (provider in ('stripe', 'paddle')),
   provider_subscription_ref text,
   plan_id text not null,
@@ -33,7 +33,7 @@ create table if not exists billing_subscriptions (
 
 create table if not exists credit_wallets (
   wallet_id uuid primary key default gen_random_uuid(),
-  workspace_id uuid not null references workspaces(workspace_id) on delete cascade unique,
+  workspace_id uuid not null references workspaces(id) on delete cascade unique,
   balance integer not null default 0 check (balance >= 0),
   status text not null default 'not_configured'
     check (status in ('not_configured', 'active', 'disabled')),
@@ -44,8 +44,8 @@ create table if not exists credit_wallets (
 
 create table if not exists credit_ledger_entries (
   ledger_entry_id uuid primary key,
-  workspace_id uuid not null references workspaces(workspace_id) on delete cascade,
-  user_id uuid references app_users(user_id) on delete set null,
+  workspace_id uuid not null references workspaces(id) on delete cascade,
+  user_id uuid references app_users(id) on delete set null,
   job_id text,
   reservation_id text,
   kind text not null
@@ -61,8 +61,8 @@ create table if not exists credit_ledger_entries (
 
 create table if not exists credit_reservations (
   reservation_id text primary key,
-  workspace_id uuid not null references workspaces(workspace_id) on delete cascade,
-  user_id uuid references app_users(user_id) on delete set null,
+  workspace_id uuid not null references workspaces(id) on delete cascade,
+  user_id uuid references app_users(id) on delete set null,
   job_id text,
   requested_amount integer not null check (requested_amount > 0),
   state text not null
@@ -77,7 +77,7 @@ create table if not exists credit_reservations (
 
 create table if not exists usage_limits (
   usage_limit_id uuid primary key default gen_random_uuid(),
-  workspace_id uuid not null references workspaces(workspace_id) on delete cascade,
+  workspace_id uuid not null references workspaces(id) on delete cascade,
   surface text not null
     check (surface in ('image_generation', 'video_generation', 'artifact_storage', 'artifact_delivery')),
   limit_window text not null check (limit_window in ('daily', 'monthly')),
@@ -103,7 +103,7 @@ create table if not exists provider_cost_estimates (
 
 create table if not exists billing_events (
   billing_event_id uuid primary key default gen_random_uuid(),
-  workspace_id uuid references workspaces(workspace_id) on delete set null,
+  workspace_id uuid references workspaces(id) on delete set null,
   provider text not null check (provider in ('stripe', 'paddle')),
   event_type text not null,
   event_state text not null default 'received'
