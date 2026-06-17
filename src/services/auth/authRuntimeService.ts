@@ -84,6 +84,14 @@ const mapBootstrapResponseToAuthResult = (
 const neutralPasswordResetMessage =
   "If an account exists, reset instructions have been sent.";
 
+export const getSignupEmailRedirectTo = (): string | undefined => {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  return `${window.location.origin}/login`;
+};
+
 interface AuthRuntimeDependencies {
   bootstrapAccount: typeof bootstrapAccount;
   getAuthSession: typeof getAuthSession;
@@ -176,7 +184,10 @@ export const createAuthRuntimeService = (
         return client.result;
       }
 
-      const signUpResult = await client.auth.signUp(credentials);
+      const signUpResult = await client.auth.signUp({
+        ...credentials,
+        emailRedirectTo: credentials.emailRedirectTo ?? getSignupEmailRedirectTo(),
+      });
 
       if (!signUpResult.ok) {
         return {

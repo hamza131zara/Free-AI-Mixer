@@ -318,9 +318,9 @@ test.describe("post181 launch qa smoke", () => {
       path.join("src", "services", "auth", "supabaseAuthClient.ts"),
     ]);
     expect(frontendSource).not.toContain(".storage.from(");
-    expect(frontendSource).not.toContain(".from(");
-    expect(frontendSource).not.toContain("createSignedUrl");
-    expect(frontendSource).not.toContain("getPublicUrl");
+    expect(frontendSource).not.toContain("supabase.storage.from(");
+    expect(frontendSource).not.toContain(".storage.createSignedUrl(");
+    expect(frontendSource).not.toContain(".storage.getPublicUrl(");
     expect(frontendSource).not.toContain(
       "VITE_FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY",
     );

@@ -128,6 +128,9 @@ export const initializeAuthStore = (): void => {
   authStoreInitialized = true;
 
   void initializeSupabaseAuthSessionBridge({
+    bootstrapBackendAccount: async () => {
+      await useAuthStore.getState().retryAccountBootstrap();
+    },
     refreshBackendSession: async (accessToken?: string) => {
       await useAuthStore.getState().refreshSession(accessToken);
     },
