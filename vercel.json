@@ -2,6 +2,38 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/auth/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/auth/:path*"
+    },
+    {
+      "source": "/account/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/account/:path*"
+    },
+    {
+      "source": "/provider-settings/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/provider-settings/:path*"
+    },
+    {
+      "source": "/generation/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/generation/:path*"
+    },
+    {
+      "source": "/credits/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/credits/:path*"
+    },
+    {
+      "source": "/billing/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/billing/:path*"
+    },
+    {
+      "source": "/project-library/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/project-library/:path*"
+    },
+    {
+      "source": "/exports/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/exports/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

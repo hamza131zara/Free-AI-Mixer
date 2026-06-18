@@ -16,17 +16,102 @@ const readSource = (relativePath: string): string =>
   readFileSync(path.join(projectRoot, relativePath), "utf8");
 
 test.describe("hosted auth Vercel SPA and Supabase confirmation session", () => {
-  test("Vercel serves React Router routes through the Vite SPA entrypoint", () => {
+  test("Vercel proxies backend API prefixes before the Vite SPA fallback", () => {
     const vercelConfig = JSON.parse(readSource("vercel.json")) as {
       rewrites?: Array<{ destination?: string; source?: string }>;
     };
+    const renderOrigin = "https://free-ai-mixer.onrender.com";
 
     expect(vercelConfig.rewrites).toEqual([
+      {
+        source: "/auth/:path*",
+        destination: `${renderOrigin}/auth/:path*`,
+      },
+      {
+        source: "/account/:path*",
+        destination: `${renderOrigin}/account/:path*`,
+      },
+      {
+        source: "/provider-settings/:path*",
+        destination: `${renderOrigin}/provider-settings/:path*`,
+      },
+      {
+        source: "/generation/:path*",
+        destination: `${renderOrigin}/generation/:path*`,
+      },
+      {
+        source: "/credits/:path*",
+        destination: `${renderOrigin}/credits/:path*`,
+      },
+      {
+        source: "/billing/:path*",
+        destination: `${renderOrigin}/billing/:path*`,
+      },
+      {
+        source: "/project-library/:path*",
+        destination: `${renderOrigin}/project-library/:path*`,
+      },
+      {
+        source: "/exports/:path*",
+        destination: `${renderOrigin}/exports/:path*`,
+      },
       {
         source: "/(.*)",
         destination: "/index.html",
       },
     ]);
+
+    const rewrites = vercelConfig.rewrites ?? [];
+    const spaFallbackIndex = rewrites.findIndex(
+      (rewrite) =>
+        rewrite.source === "/(.*)" && rewrite.destination === "/index.html",
+    );
+    const authProxyIndex = rewrites.findIndex(
+      (rewrite) =>
+        rewrite.source === "/auth/:path*" &&
+        rewrite.destination === `${renderOrigin}/auth/:path*`,
+    );
+    const accountProxyIndex = rewrites.findIndex(
+      (rewrite) =>
+        rewrite.source === "/account/:path*" &&
+        rewrite.destination === `${renderOrigin}/account/:path*`,
+    );
+
+    expect(authProxyIndex).toBeGreaterThanOrEqual(0);
+    expect(accountProxyIndex).toBeGreaterThanOrEqual(0);
+    expect(spaFallbackIndex).toBeGreaterThan(authProxyIndex);
+    expect(spaFallbackIndex).toBeGreaterThan(accountProxyIndex);
+    expect(rewrites).not.toContainEqual({
+      source: "/:path*",
+      destination: `${renderOrigin}/:path*`,
+    });
+    expect(rewrites).not.toContainEqual({
+      source: "/(.*)",
+      destination: `${renderOrigin}/$1`,
+    });
+
+    const vercelSource = readSource("vercel.json");
+    expect(vercelSource).not.toContain("Bearer ");
+    expect(vercelSource).not.toContain("access_token");
+    expect(vercelSource).not.toContain("refresh_token");
+    expect(vercelSource).not.toContain("service_role");
+    expect(vercelSource).not.toContain("SUPABASE_SERVICE_ROLE");
+    expect(vercelSource).not.toContain("sk-");
+  });
+
+  test("React Router auth pages remain handled by the SPA fallback", () => {
+    const navigationSource = readSource("src/services/navigationService.ts");
+    const vercelConfig = JSON.parse(readSource("vercel.json")) as {
+      rewrites?: Array<{ destination?: string; source?: string }>;
+    };
+
+    expect(navigationSource).toContain('path: "/login"');
+    expect(navigationSource).toContain('path: "/signup"');
+    expect(navigationSource).toContain('path: "/reset-password"');
+    expect(vercelConfig.rewrites?.at(-1)).toEqual({
+      source: "/(.*)",
+      destination: "/index.html",
+    });
   });
 
   test("signup confirmation uses the existing same-origin login route", () => {
