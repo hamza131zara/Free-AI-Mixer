@@ -22,6 +22,7 @@ import type {
 
 export interface BackendRequesterContextResolverInput {
   headers?: IncomingHttpHeaders | Record<string, string | string[] | undefined>;
+  trustedRequesterContext?: BackendRequesterContext;
 }
 
 export interface BackendRequesterContextResolver {
@@ -127,11 +128,62 @@ const resolveActiveWorkspaceAuthority = async (
   };
 };
 
+const resolveVerifiedAuthSubject = async (
+  input: BackendRequesterContextResolverInput | undefined,
+  options: BackendRequesterContextRuntimeResolverOptions,
+): Promise<
+  | {
+      kind: "verified";
+      authSubject: string;
+    }
+  | {
+      kind: "not_verified";
+      reason:
+        | "auth_not_configured"
+        | "auth_provider_unavailable"
+        | "missing_credentials"
+        | "invalid_credentials";
+    }
+> => {
+  if (
+    input?.trustedRequesterContext?.kind === "authenticated" &&
+    input.trustedRequesterContext.authProvider === "jwt" &&
+    input.trustedRequesterContext.authSubject
+  ) {
+    return {
+      kind: "verified",
+      authSubject: input.trustedRequesterContext.authSubject,
+    };
+  }
+
+  const verificationConfig = readJwtVerificationConfiguration(options.env);
+  const execution = resolveJwtVerificationRuntimeExecution(options.env);
+  const jwtVerification = await executeJwtVerificationWithJose(
+    { headers: input?.headers },
+    verificationConfig,
+    {
+      executeRealVerification: execution.realVerificationEnabled,
+      ...(options.jwtVerificationExecutionOptions?.jwks
+        ? { jwks: options.jwtVerificationExecutionOptions.jwks }
+        : {}),
+    },
+  );
+
+  if (jwtVerification.kind !== "verified") {
+    return {
+      kind: "not_verified",
+      reason: jwtVerification.reason,
+    };
+  }
+
+  return {
+    kind: "verified",
+    authSubject: jwtVerification.authSubject,
+  };
+};
+
 /**
- * Phase 81 boundary resolver.
- *
- * This intentionally does not authenticate users yet.
- * It provides a safe, explicit requester-context seam for future auth integration.
+ * Safe requester-context resolver boundary.
  *
  * Safety rules:
  * - Must not fabricate a user identity.
@@ -166,26 +218,15 @@ export const createRepositoryBackedRequesterContextResolver = (
       return createUnauthenticatedRequesterContext("auth_not_configured");
     }
 
-    const verificationConfig = readJwtVerificationConfiguration(options.env);
-    const execution = resolveJwtVerificationRuntimeExecution(options.env);
-    const jwtVerification = await executeJwtVerificationWithJose(
-      { headers: input?.headers },
-      verificationConfig,
-      {
-        executeRealVerification: execution.realVerificationEnabled,
-        ...(options.jwtVerificationExecutionOptions?.jwks
-          ? { jwks: options.jwtVerificationExecutionOptions.jwks }
-          : {}),
-      },
-    );
+    const verifiedAuthSubject = await resolveVerifiedAuthSubject(input, options);
 
-    if (jwtVerification.kind !== "verified") {
-      return createUnauthenticatedRequesterContext(jwtVerification.reason);
+    if (verifiedAuthSubject.kind !== "verified") {
+      return createUnauthenticatedRequesterContext(verifiedAuthSubject.reason);
     }
 
     const appUser = await options.repositories.userAccountRepository.getByAuthSubject(
       "supabase",
-      jwtVerification.authSubject,
+      verifiedAuthSubject.authSubject,
     );
 
     if (!appUser) {
@@ -195,9 +236,9 @@ export const createRepositoryBackedRequesterContextResolver = (
     const requester = createAuthenticatedRequesterContext({
       userId: appUser.userId,
       appUserId: appUser.userId,
-      supabaseUserId: jwtVerification.authSubject,
+      supabaseUserId: verifiedAuthSubject.authSubject,
       authProvider: "supabase",
-      authSubject: jwtVerification.authSubject,
+      authSubject: verifiedAuthSubject.authSubject,
       ...(appUser.email ? { email: appUser.email } : {}),
     });
 

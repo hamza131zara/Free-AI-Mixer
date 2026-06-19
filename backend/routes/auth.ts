@@ -69,11 +69,13 @@ const sendCurrentSession = async (
   runtimeConfig: TrustedAuthProviderRuntimeConfig,
   requesterContextResolver?: AsyncBackendRequesterContextResolver,
 ): Promise<void> => {
+  const middlewareRequesterContext = getRequesterContextFromRequest(request);
   const requesterContext = requesterContextResolver
     ? await requesterContextResolver.resolve({
         headers: request.headers,
+        trustedRequesterContext: middlewareRequesterContext,
       })
-    : getRequesterContextFromRequest(request);
+    : middlewareRequesterContext;
 
   if (requesterContext.kind === "authenticated") {
     response.status(200).json({
@@ -119,6 +121,15 @@ const sendCurrentSession = async (
       response,
       "auth_not_configured",
       "Authentication is not configured on this backend yet.",
+    );
+    return;
+  }
+
+  if (requesterContext.reason === "auth_provider_unavailable") {
+    authUnavailableResponse(
+      response,
+      "auth_provider_unavailable",
+      "Authentication is configured but not available in this product phase.",
     );
     return;
   }

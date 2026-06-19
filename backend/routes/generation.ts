@@ -908,6 +908,16 @@ export const createGenerationRouter = (
         return;
       }
 
+      if (requesterContext.reason === "auth_provider_unavailable") {
+        const failure = getGenerationFailureMapping("auth_provider_unavailable");
+        response.status(failure.httpStatus).json({
+          kind: "generation_runtime_unavailable",
+          status: "auth_provider_unavailable",
+          message: failure.message,
+        });
+        return;
+      }
+
       if (options.runtimeConfig.kind === "auth_provider_not_configured") {
         const failure = getGenerationFailureMapping("auth_not_configured");
         response.status(failure.httpStatus).json({

@@ -18,6 +18,7 @@ import { readJwtVerificationConfiguration } from "../auth/jwtVerificationConfigu
 import { resolveJwtVerificationRuntimeExecution } from "../auth/jwtProviderVerificationStrategy";
 import { normalizeWorkspaceRole } from "../auth/workspaceRoleNormalization";
 import { readWorkspaceMembershipRuntimeGate } from "../auth/workspaceMembershipLookup";
+import type { BackendRequesterContextRequest } from "../auth/trustedAuthMiddleware";
 
 const personalWorkspaceName = "Personal Workspace";
 
@@ -119,6 +120,60 @@ const verifyBootstrapBearer = async (
   request: Request,
   options: CreateAccountRouterOptions,
 ) => {
+  const middlewareRequesterContext = (request as BackendRequesterContextRequest)
+    .backendRequesterContext;
+
+  if (
+    middlewareRequesterContext?.kind === "authenticated" &&
+    middlewareRequesterContext.authProvider === "jwt" &&
+    middlewareRequesterContext.authSubject
+  ) {
+    if (!isUuidLike(middlewareRequesterContext.authSubject)) {
+      return {
+        kind: "invalid" as const,
+        reason: "invalid_credentials" as const,
+        message: "The supplied authentication credentials could not be verified safely.",
+      };
+    }
+
+    return {
+      kind: "verified" as const,
+      subject: middlewareRequesterContext.authSubject,
+    };
+  }
+
+  if (middlewareRequesterContext?.kind === "unauthenticated") {
+    if (middlewareRequesterContext.reason === "auth_not_configured") {
+      return {
+        kind: "unavailable" as const,
+        status: "auth_not_configured" as const,
+        message: "Authentication is not configured on this backend yet.",
+      };
+    }
+
+    if (middlewareRequesterContext.reason === "auth_provider_unavailable") {
+      return {
+        kind: "unavailable" as const,
+        status: "auth_provider_unavailable" as const,
+        message: "Authentication is configured but not available in this product phase.",
+      };
+    }
+
+    if (middlewareRequesterContext.reason === "missing_credentials") {
+      return {
+        kind: "invalid" as const,
+        reason: "missing_credentials" as const,
+        message: "A verified bearer token is required before account setup can continue.",
+      };
+    }
+
+    return {
+      kind: "invalid" as const,
+      reason: "invalid_credentials" as const,
+      message: "The supplied authentication credentials could not be verified safely.",
+    };
+  }
+
   const runtimeConfig = options.runtimeConfig;
 
   if (

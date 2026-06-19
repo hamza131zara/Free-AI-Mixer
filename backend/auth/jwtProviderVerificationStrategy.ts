@@ -40,6 +40,7 @@ export interface JwtBoundaryIdentity {
 
 export type JwtBoundaryVerificationFailureReason =
   | "auth_not_configured"
+  | "auth_provider_unavailable"
   | "verification_not_enabled"
   | "missing_bearer_token"
   | "malformed_token"
@@ -77,7 +78,11 @@ export type TrustedJwtVerificationResult =
     }
   | {
       kind: "not_verified";
-      reason: "missing_credentials" | "invalid_credentials" | "auth_not_configured";
+      reason:
+        | "missing_credentials"
+        | "invalid_credentials"
+        | "auth_not_configured"
+        | "auth_provider_unavailable";
     };
 
 export interface TrustedJwtVerificationStrategy {
@@ -236,7 +241,7 @@ export const mapVerifiedJwtPayloadToVerificationResult = (
 ): TrustedJwtVerificationResult => {
   const subject = payload.sub;
 
-  if (!subject) {
+  if (!subject || subject.trim().length === 0) {
     return {
       kind: "not_verified",
       reason: "invalid_credentials",
@@ -279,6 +284,15 @@ const toJwtBoundaryFailureReason = (
     return "invalid_signature";
   }
 
+  if (
+    errorLike?.code === "ERR_JWKS_TIMEOUT" ||
+    errorLike?.code === "ERR_JWKS_FETCH_FAILED" ||
+    errorLike?.message?.toLowerCase().includes("jwks fetch failed") ||
+    errorLike?.message?.toLowerCase().includes("failed to fetch")
+  ) {
+    return "auth_provider_unavailable";
+  }
+
   if (errorLike?.code === "ERR_JWT_CLAIM_VALIDATION_FAILED") {
     if (
       errorLike.claim === "iss" ||
@@ -303,7 +317,7 @@ const mapPayloadToJwtBoundaryIdentity = (
 ): JwtBoundaryVerificationResult => {
   const subject = payload.sub;
 
-  if (!subject) {
+  if (!subject || subject.trim().length === 0) {
     return {
       kind: "not_verified",
       reason: "invalid_credentials",
@@ -311,8 +325,8 @@ const mapPayloadToJwtBoundaryIdentity = (
   }
 
   const email =
-    typeof payload.email === "string" && payload.email.length > 0
-      ? payload.email
+    typeof payload.email === "string" && payload.email.trim().length > 0
+      ? payload.email.trim()
       : undefined;
 
   return {
@@ -375,7 +389,10 @@ export const verifyJwtBoundaryWithJose = async (
   if (jwksResult.kind !== "constructed") {
     return {
       kind: "not_verified",
-      reason: "auth_not_configured",
+      reason:
+        jwksResult.reason === "invalid_jwks_uri"
+          ? "auth_not_configured"
+          : "auth_provider_unavailable",
     };
   }
 
@@ -436,11 +453,14 @@ export const executeJwtVerificationWithJose = async (
       reason:
         boundaryResult.reason === "missing_bearer_token"
           ? "missing_credentials"
-          : boundaryResult.reason === "auth_not_configured" ||
-              boundaryResult.reason === "verification_not_enabled"
+          : boundaryResult.reason === "auth_not_configured"
+            ? "auth_not_configured"
+          : boundaryResult.reason === "verification_not_enabled"
             ? hasBearerToken
-              ? "invalid_credentials"
+              ? "auth_provider_unavailable"
               : "missing_credentials"
+            : boundaryResult.reason === "auth_provider_unavailable"
+              ? "auth_provider_unavailable"
             : "invalid_credentials",
     };
   }

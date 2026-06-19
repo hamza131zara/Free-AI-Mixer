@@ -1,5 +1,6 @@
 export type BackendRequesterUnauthenticatedReason =
   | "auth_not_configured"
+  | "auth_provider_unavailable"
   | "missing_credentials"
   | "invalid_credentials";
 
