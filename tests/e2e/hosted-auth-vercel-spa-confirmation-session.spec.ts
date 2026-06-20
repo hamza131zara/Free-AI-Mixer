@@ -3,7 +3,14 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createAuthenticatedFetch } from "../../src/services/auth/authenticatedFetch";
 import { createAuthRuntimeService } from "../../src/services/auth/authRuntimeService";
-import { hasSupabaseAuthUrlPayload } from "../../src/services/auth/supabaseAuthSessionBridge";
+import {
+  hasSupabaseAuthUrlPayload,
+  initializeSupabaseAuthSessionBridge,
+} from "../../src/services/auth/supabaseAuthSessionBridge";
+import type {
+  SupabaseAuthClientHandle,
+  SupabaseAuthClientResult,
+} from "../../src/services/auth/supabaseAuthClient";
 import type {
   AuthMutationResult,
   AuthSessionResult,
@@ -14,6 +21,82 @@ const projectRoot = process.cwd();
 
 const readSource = (relativePath: string): string =>
   readFileSync(path.join(projectRoot, relativePath), "utf8");
+
+const incompleteWorkspaceIdentity: VerifiedAccountIdentity = {
+  authProvider: "supabase",
+  authSubject: "backend-user-id",
+  email: "hosted-auth@example.test",
+  userId: "backend-user-id",
+  workspaceAuthority: "not_available",
+  workspaceAuthorityReason: "no_active_workspace_membership",
+};
+
+const verifiedWorkspaceIdentity: VerifiedAccountIdentity = {
+  authProvider: "supabase",
+  authSubject: "backend-user-id",
+  email: "hosted-auth@example.test",
+  userId: "backend-user-id",
+  workspaceAuthority: "verified",
+  workspaceId: "backend-workspace-id",
+  workspaceRole: "workspace_owner",
+};
+
+const createReadyAuthClient = (
+  input: {
+    accessToken?: string | null;
+    onAuthStateChange?: SupabaseAuthClientHandle["onAuthStateChange"];
+  } = {},
+): SupabaseAuthClientResult => ({
+  auth: {
+    getAccessToken: async () => ({
+      data:
+        input.accessToken === null
+          ? undefined
+          : input.accessToken ?? "restored-token",
+      ok: true,
+    }),
+    getSession: async () => ({
+      data: {
+        ...(input.accessToken === null
+          ? {}
+          : { accessToken: input.accessToken ?? "restored-token" }),
+        hasSession: input.accessToken !== null,
+      },
+      ok: true,
+    }),
+    onAuthStateChange:
+      input.onAuthStateChange ??
+      (() => ({
+        unsubscribe() {},
+      })),
+    requestPasswordReset: async () => ({
+      data: undefined,
+      ok: true,
+    }),
+    signInWithPassword: async () => ({
+      data: {
+        accessToken: input.accessToken ?? "restored-token",
+        hasSession: true,
+      },
+      ok: true,
+    }),
+    signOut: async () => ({
+      data: undefined,
+      ok: true,
+    }),
+    signUp: async () => ({
+      data: {
+        hasSession: false,
+      },
+      ok: true,
+    }),
+    updatePassword: async () => ({
+      data: undefined,
+      ok: true,
+    }),
+  },
+  kind: "supabase_auth_client_ready",
+});
 
 test.describe("hosted auth Vercel SPA and Supabase confirmation session", () => {
   test("Vercel proxies backend API prefixes before the Vite SPA fallback", () => {
@@ -345,5 +428,307 @@ test.describe("hosted auth Vercel SPA and Supabase confirmation session", () => 
       message: "Backend session verified.",
       status: "authenticated",
     });
+  });
+
+  test("normal password login repairs authenticated sessions with incomplete workspace authority", async () => {
+    let bootstrapCalls = 0;
+    let sessionCalls = 0;
+    const runtime = createAuthRuntimeService({
+      bootstrapAccount: async (accessToken) => {
+        bootstrapCalls += 1;
+        expect(accessToken).toBe("login-token");
+
+        return {
+          bootstrap: {
+            appUserCreated: false,
+            membershipCreated: true,
+            workspaceCreated: true,
+          },
+          identity: verifiedWorkspaceIdentity,
+          kind: "account_bootstrap_complete",
+          status: "authenticated",
+        };
+      },
+      getAuthSession: async (accessToken) => {
+        sessionCalls += 1;
+        expect(accessToken).toBe("login-token");
+
+        return sessionCalls === 1
+          ? {
+              identity: incompleteWorkspaceIdentity,
+              kind: "authenticated",
+              message: "Backend identity verified. Workspace authority is not available yet.",
+              status: "authenticated",
+            }
+          : {
+              identity: verifiedWorkspaceIdentity,
+              kind: "authenticated",
+              message: "Backend session verified.",
+              status: "authenticated",
+            };
+      },
+      getSupabaseAuthClient: () =>
+        createReadyAuthClient({ accessToken: "login-token" }),
+      logoutFromBackendAuth: async () => ({
+        kind: "logged_out",
+        message: "Logged out.",
+        status: "unauthenticated",
+      }),
+    });
+
+    await expect(
+      runtime.loginWithSupabaseRuntime({
+        email: "hosted-auth@example.test",
+        password: "password",
+      }),
+    ).resolves.toEqual({
+      identity: verifiedWorkspaceIdentity,
+      kind: "authenticated",
+      message: "Backend session verified.",
+      status: "authenticated",
+    });
+    expect(bootstrapCalls).toBe(1);
+    expect(sessionCalls).toBe(2);
+  });
+
+  test("normal password login skips bootstrap when backend workspace authority is already verified", async () => {
+    let bootstrapCalls = 0;
+    let sessionCalls = 0;
+    const runtime = createAuthRuntimeService({
+      bootstrapAccount: async () => {
+        bootstrapCalls += 1;
+        return undefined;
+      },
+      getAuthSession: async () => {
+        sessionCalls += 1;
+        return {
+          identity: verifiedWorkspaceIdentity,
+          kind: "authenticated",
+          message: "Backend session verified.",
+          status: "authenticated",
+        };
+      },
+      getSupabaseAuthClient: () =>
+        createReadyAuthClient({ accessToken: "login-token" }),
+      logoutFromBackendAuth: async () => ({
+        kind: "logged_out",
+        message: "Logged out.",
+        status: "unauthenticated",
+      }),
+    });
+
+    await expect(
+      runtime.loginWithSupabaseRuntime({
+        email: "hosted-auth@example.test",
+        password: "password",
+      }),
+    ).resolves.toEqual({
+      identity: verifiedWorkspaceIdentity,
+      kind: "authenticated",
+      message: "Backend session verified.",
+      status: "authenticated",
+    });
+    expect(bootstrapCalls).toBe(0);
+    expect(sessionCalls).toBe(1);
+  });
+
+  test("workspace repair bootstrap failure preserves the truthful incomplete session", async () => {
+    let bootstrapCalls = 0;
+    let sessionCalls = 0;
+    const runtime = createAuthRuntimeService({
+      bootstrapAccount: async () => {
+        bootstrapCalls += 1;
+        return {
+          kind: "bootstrap_unavailable",
+          message: "Account bootstrap is unavailable.",
+          status: "bootstrap_unavailable",
+        };
+      },
+      getAuthSession: async () => {
+        sessionCalls += 1;
+        return {
+          identity: incompleteWorkspaceIdentity,
+          kind: "authenticated",
+          message: "Backend identity verified. Workspace authority is not available yet.",
+          status: "authenticated",
+        };
+      },
+      getSupabaseAuthClient: () =>
+        createReadyAuthClient({ accessToken: "login-token" }),
+      logoutFromBackendAuth: async () => ({
+        kind: "logged_out",
+        message: "Logged out.",
+        status: "unauthenticated",
+      }),
+    });
+
+    await expect(
+      runtime.loginWithSupabaseRuntime({
+        email: "hosted-auth@example.test",
+        password: "password",
+      }),
+    ).resolves.toEqual({
+      identity: incompleteWorkspaceIdentity,
+      kind: "authenticated",
+      message: "Backend identity verified. Workspace authority is not available yet.",
+      status: "authenticated",
+    });
+    expect(bootstrapCalls).toBe(1);
+    expect(sessionCalls).toBe(1);
+  });
+
+  test("restored browser session repairs incomplete workspace authority without callback URL parameters", async () => {
+    let bootstrapCalls = 0;
+    const refreshedIdentities: VerifiedAccountIdentity[] = [
+      incompleteWorkspaceIdentity,
+      verifiedWorkspaceIdentity,
+    ];
+    const refreshResults: AuthSessionResult[] = [];
+    const bridge = await initializeSupabaseAuthSessionBridge({
+      bootstrapBackendAccount: async (accessToken) => {
+        bootstrapCalls += 1;
+        expect(accessToken).toBe("restored-token");
+      },
+      getAuthClient: () => createReadyAuthClient({ accessToken: "restored-token" }),
+      refreshBackendSession: async (accessToken) => {
+        expect(accessToken).toBe("restored-token");
+        const result: AuthSessionResult = {
+          identity: refreshedIdentities.shift() ?? verifiedWorkspaceIdentity,
+          kind: "authenticated",
+          message: "Backend session checked.",
+          status: "authenticated",
+        };
+        refreshResults.push(result);
+        return result;
+      },
+    });
+
+    bridge.unsubscribe();
+    expect(bootstrapCalls).toBe(1);
+    expect(refreshResults).toHaveLength(2);
+    expect(refreshResults[0].identity.workspaceAuthority).toBe("not_available");
+    expect(refreshResults[1].identity.workspaceAuthority).toBe("verified");
+  });
+
+  test("auth callback bootstrap behavior remains supported", async () => {
+    const originalWindow = globalThis.window;
+    const replaceStateCalls: string[] = [];
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        history: {
+          replaceState: (_state: unknown, _title: string, url: string) => {
+            replaceStateCalls.push(url);
+          },
+        },
+        location: {
+          hash: "#access_token=callback-token&refresh_token=refresh&type=signup",
+          pathname: "/login",
+          search: "",
+        },
+      },
+    });
+
+    let bootstrapCalls = 0;
+    const refreshResults: AuthSessionResult[] = [];
+    const bridge = await initializeSupabaseAuthSessionBridge({
+      bootstrapBackendAccount: async (accessToken) => {
+        bootstrapCalls += 1;
+        expect(accessToken).toBe("callback-token");
+      },
+      getAuthClient: () => createReadyAuthClient({ accessToken: "callback-token" }),
+      refreshBackendSession: async () => {
+        const result: AuthSessionResult = {
+          identity: verifiedWorkspaceIdentity,
+          kind: "authenticated",
+          message: "Backend session verified.",
+          status: "authenticated",
+        };
+        refreshResults.push(result);
+        return result;
+      },
+    });
+
+    bridge.unsubscribe();
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: originalWindow,
+    });
+
+    expect(bootstrapCalls).toBe(1);
+    expect(refreshResults).toHaveLength(2);
+    expect(replaceStateCalls).toEqual(["/login"]);
+  });
+
+  test("auth-state events share one concurrent workspace repair bootstrap", async () => {
+    let authStateCallback:
+      | Parameters<SupabaseAuthClientHandle["onAuthStateChange"]>[0]
+      | undefined;
+    let releaseBootstrap: (() => void) | undefined;
+    let bootstrapCalls = 0;
+    let refreshCalls = 0;
+    let markBootstrapStarted: (() => void) | undefined;
+    let markRefreshComplete: (() => void) | undefined;
+    const bootstrapStarted = new Promise<void>((resolve) => {
+      markBootstrapStarted = resolve;
+    });
+    const allRefreshes = new Promise<void>((resolve) => {
+      markRefreshComplete = () => {
+        if (refreshCalls >= 4) {
+          resolve();
+        }
+      };
+    });
+    const bridge = await initializeSupabaseAuthSessionBridge({
+      bootstrapBackendAccount: async () => {
+        bootstrapCalls += 1;
+        markBootstrapStarted?.();
+        await new Promise<void>((resolve) => {
+          releaseBootstrap = resolve;
+        });
+      },
+      getAuthClient: () =>
+        createReadyAuthClient({
+          accessToken: null,
+          onAuthStateChange: (callback) => {
+            authStateCallback = callback;
+            return {
+              unsubscribe() {},
+            };
+          },
+        }),
+      refreshBackendSession: async () => {
+        refreshCalls += 1;
+        const result: AuthSessionResult = {
+          identity:
+            refreshCalls <= 2
+              ? incompleteWorkspaceIdentity
+              : verifiedWorkspaceIdentity,
+          kind: "authenticated",
+          message: "Backend session checked.",
+          status: "authenticated",
+        };
+        markRefreshComplete?.();
+        return result;
+      },
+    });
+
+    authStateCallback?.("SIGNED_IN", {
+      accessToken: "event-token",
+      hasSession: true,
+    });
+    authStateCallback?.("TOKEN_REFRESHED", {
+      accessToken: "event-token",
+      hasSession: true,
+    });
+
+    await bootstrapStarted;
+    expect(bootstrapCalls).toBe(1);
+    releaseBootstrap?.();
+    await allRefreshes;
+    bridge.unsubscribe();
+
+    expect(bootstrapCalls).toBe(1);
+    expect(refreshCalls).toBe(4);
   });
 });

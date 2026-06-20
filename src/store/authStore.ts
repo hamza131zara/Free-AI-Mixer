@@ -133,6 +133,48 @@ export const initializeAuthStore = (): void => {
     },
     refreshBackendSession: async (accessToken?: string) => {
       await useAuthStore.getState().refreshSession(accessToken);
+      const state = useAuthStore.getState();
+
+      if (state.status === "authenticated" && state.identity) {
+        return {
+          kind: "authenticated" as const,
+          status: "authenticated" as const,
+          identity: state.identity,
+          message: state.message,
+        };
+      }
+
+      if (state.status === "unauthenticated") {
+        return {
+          kind: "unauthenticated" as const,
+          status: "unauthenticated" as const,
+          reason:
+            state.reasonCode === "invalid_credentials" ||
+            state.reasonCode === "email_verification_required"
+              ? state.reasonCode
+              : "missing_credentials",
+          message: state.message,
+        };
+      }
+
+      if (state.status === "unavailable") {
+        return {
+          kind: "unavailable" as const,
+          status: "unavailable" as const,
+          code:
+            state.reasonCode === "auth_not_configured" ||
+            state.reasonCode === "auth_provider_unavailable" ||
+            state.reasonCode === "supabase_auth_not_configured" ||
+            state.reasonCode === "email_verification_required" ||
+            state.reasonCode === "workspace_bootstrap_blocked" ||
+            state.reasonCode === "account_bootstrap_unavailable"
+              ? state.reasonCode
+              : "auth_service_unreachable",
+          message: state.message,
+        };
+      }
+
+      return undefined;
     },
   });
 };

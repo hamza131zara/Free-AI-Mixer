@@ -2,6 +2,7 @@ import {
   getSupabaseAuthClient,
   type SupabaseAuthSessionSnapshot,
 } from "./supabaseAuthClient";
+import type { AuthSessionResult } from "../../types/auth";
 
 export type SupabaseAuthSessionBridgeStatus =
   | {
@@ -16,15 +17,42 @@ export type SupabaseAuthSessionBridgeStatus =
 
 export interface SupabaseAuthSessionBridgeOptions {
   bootstrapBackendAccount?: (accessToken: string) => Promise<void>;
-  refreshBackendSession: (accessToken?: string) => Promise<void>;
+  getAuthClient?: typeof getSupabaseAuthClient;
+  refreshBackendSession: (accessToken?: string) => Promise<AuthSessionResult | void>;
 }
 
 let activeBridge: SupabaseAuthSessionBridgeStatus | null = null;
+let activeWorkspaceRepair: Promise<void> | null = null;
 
 const noopUnsubscribe = (): void => {};
 
+const shouldRepairWorkspaceAuthority = (
+  sessionResult: AuthSessionResult | void,
+): boolean =>
+  sessionResult?.kind === "authenticated" &&
+  sessionResult.identity.workspaceAuthority !== "verified";
+
+const runSingleWorkspaceRepair = async (
+  accessToken: string,
+  bootstrapBackendAccount:
+    | ((accessToken: string) => Promise<void>)
+    | undefined,
+): Promise<void> => {
+  if (!bootstrapBackendAccount) {
+    return;
+  }
+
+  if (!activeWorkspaceRepair) {
+    activeWorkspaceRepair = bootstrapBackendAccount(accessToken).finally(() => {
+      activeWorkspaceRepair = null;
+    });
+  }
+
+  await activeWorkspaceRepair;
+};
+
 const refreshFromSessionSnapshot = async (
-  refreshBackendSession: (accessToken?: string) => Promise<void>,
+  refreshBackendSession: (accessToken?: string) => Promise<AuthSessionResult | void>,
   bootstrapBackendAccount:
     | ((accessToken: string) => Promise<void>)
     | undefined,
@@ -32,9 +60,16 @@ const refreshFromSessionSnapshot = async (
 ): Promise<void> => {
   if (sessionSnapshot?.accessToken) {
     const shouldCompleteConfirmationBootstrap = hasCurrentSupabaseAuthUrlPayload();
-    await refreshBackendSession(sessionSnapshot.accessToken);
-    if (shouldCompleteConfirmationBootstrap) {
-      await bootstrapBackendAccount?.(sessionSnapshot.accessToken);
+    const sessionResult = await refreshBackendSession(sessionSnapshot.accessToken);
+    if (
+      shouldCompleteConfirmationBootstrap ||
+      shouldRepairWorkspaceAuthority(sessionResult)
+    ) {
+      await runSingleWorkspaceRepair(
+        sessionSnapshot.accessToken,
+        bootstrapBackendAccount,
+      );
+      await refreshBackendSession(sessionSnapshot.accessToken);
     }
     cleanupSupabaseAuthUrl();
   }
@@ -86,7 +121,7 @@ export const cleanupSupabaseAuthUrl = (): void => {
   const search = query.toString();
   const sanitizedPath = `${window.location.pathname}${search ? `?${search}` : ""}`;
 
-  window.history.replaceState(window.history.state, document.title, sanitizedPath);
+  window.history.replaceState(window.history.state, "", sanitizedPath);
 };
 
 const hasCurrentSupabaseAuthUrlPayload = (): boolean =>
@@ -94,13 +129,14 @@ const hasCurrentSupabaseAuthUrlPayload = (): boolean =>
 
 export const initializeSupabaseAuthSessionBridge = async ({
   bootstrapBackendAccount,
+  getAuthClient = getSupabaseAuthClient,
   refreshBackendSession,
 }: SupabaseAuthSessionBridgeOptions): Promise<SupabaseAuthSessionBridgeStatus> => {
   if (activeBridge) {
     return activeBridge;
   }
 
-  const authClient = getSupabaseAuthClient();
+  const authClient = getAuthClient();
 
   if (authClient.kind === "supabase_auth_client_disabled") {
     activeBridge = {
@@ -124,9 +160,16 @@ export const initializeSupabaseAuthSessionBridge = async ({
 
   if (initialAccessToken.ok && initialAccessToken.data) {
     const shouldCompleteConfirmationBootstrap = hasCurrentSupabaseAuthUrlPayload();
-    await refreshBackendSession(initialAccessToken.data);
-    if (shouldCompleteConfirmationBootstrap) {
-      await bootstrapBackendAccount?.(initialAccessToken.data);
+    const sessionResult = await refreshBackendSession(initialAccessToken.data);
+    if (
+      shouldCompleteConfirmationBootstrap ||
+      shouldRepairWorkspaceAuthority(sessionResult)
+    ) {
+      await runSingleWorkspaceRepair(
+        initialAccessToken.data,
+        bootstrapBackendAccount,
+      );
+      await refreshBackendSession(initialAccessToken.data);
     }
     cleanupSupabaseAuthUrl();
   }

@@ -81,6 +81,16 @@ const mapBootstrapResponseToAuthResult = (
   };
 };
 
+const hasVerifiedWorkspaceAuthority = (result: AuthSessionResult): boolean =>
+  result.kind === "authenticated" &&
+  result.identity.workspaceAuthority === "verified";
+
+const shouldRepairAuthenticatedWorkspace = (
+  result: AuthSessionResult,
+): boolean =>
+  result.kind === "authenticated" &&
+  result.identity.workspaceAuthority !== "verified";
+
 const neutralPasswordResetMessage =
   "If an account exists, reset instructions have been sent.";
 
@@ -134,6 +144,31 @@ export const createAuthRuntimeService = (
     accessToken?: string,
   ): Promise<AuthSessionResult> => dependencies.getAuthSession(accessToken);
 
+  const repairAuthenticatedWorkspaceIfNeeded = async (
+    accessToken: string | undefined,
+    sessionResult: AuthSessionResult,
+  ): Promise<AuthSessionResult> => {
+    if (hasVerifiedWorkspaceAuthority(sessionResult)) {
+      return sessionResult;
+    }
+
+    if (!accessToken || !shouldRepairAuthenticatedWorkspace(sessionResult)) {
+      return sessionResult;
+    }
+
+    const bootstrapResult = await dependencies.bootstrapAccount(accessToken);
+    const mappedBootstrapResult = mapBootstrapResponseToAuthResult(bootstrapResult);
+
+    if (
+      mappedBootstrapResult.kind === "authenticated" ||
+      bootstrapResult?.kind === "workspace_bootstrap_blocked"
+    ) {
+      return refreshSessionAfterProviderAuth(accessToken);
+    }
+
+    return sessionResult;
+  };
+
   return {
     async loginWithSupabaseRuntime(
       credentials: SupabaseAuthPasswordCredentials,
@@ -159,7 +194,7 @@ export const createAuthRuntimeService = (
       const sessionResult = await refreshSessionAfterProviderAuth(accessToken);
 
       if (sessionResult.kind === "authenticated") {
-        return sessionResult;
+        return repairAuthenticatedWorkspaceIfNeeded(accessToken, sessionResult);
       }
 
       const bootstrapResult = await dependencies.bootstrapAccount(accessToken ?? "");
