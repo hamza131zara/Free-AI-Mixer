@@ -32,7 +32,7 @@ FREE_AI_MIXER_AUTH_ISSUER=https://your-staging-project.supabase.co/auth/v1
 FREE_AI_MIXER_AUTH_AUDIENCE=authenticated
 FREE_AI_MIXER_AUTH_JWKS_URI=https://your-staging-project.supabase.co/auth/v1/.well-known/jwks.json
 FREE_AI_MIXER_AUTH_JWT_KEY_MODE=remote_jwks
-FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS=RS256
+FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS=ES256
 FREE_AI_MIXER_WORKSPACE_RUNTIME_ENABLED=1
 
 FREE_AI_MIXER_ENABLE_SUPABASE_DB=1
@@ -42,6 +42,8 @@ FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY=replace-with-server-only-service-role-se
 ```
 
 The service-role value is server-only. Never expose it through `VITE_*`, browser code, screenshots, issue reports, docs, tests, or logs.
+
+`FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS` must match the hosted Supabase project's active JWT signing key. Current hosted staging uses ECC P-256 / ES256. If Supabase signing configuration changes later, update the allow-list intentionally after confirming the token header and JWKS support.
 
 ## Opt-In Real Auth Smoke Variables
 

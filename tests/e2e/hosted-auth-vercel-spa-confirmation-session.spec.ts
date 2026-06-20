@@ -139,6 +139,26 @@ test.describe("hosted auth Vercel SPA and Supabase confirmation session", () => 
         destination: `${renderOrigin}/exports/:path*`,
       },
       {
+        source: "/admin/:path*",
+        destination: `${renderOrigin}/admin/:path*`,
+      },
+      {
+        source: "/ai-tools/:path*",
+        destination: `${renderOrigin}/ai-tools/:path*`,
+      },
+      {
+        source: "/ai-news/:path*",
+        destination: `${renderOrigin}/ai-news/:path*`,
+      },
+      {
+        source: "/cards/:path*",
+        destination: `${renderOrigin}/cards/:path*`,
+      },
+      {
+        source: "/templates/:path*",
+        destination: `${renderOrigin}/templates/:path*`,
+      },
+      {
         source: "/(.*)",
         destination: "/index.html",
       },

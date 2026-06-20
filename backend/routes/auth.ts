@@ -7,6 +7,10 @@ import type {
 import type { AsyncBackendRequesterContextResolver } from "../auth/requesterContextResolver";
 import { getRequesterContextFromRequest } from "../auth/trustedAuthMiddleware";
 import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProviderRuntimeConfig";
+import {
+  applySensitiveAuthResponseHeaders,
+  createSensitiveAuthErrorHandler,
+} from "./sensitiveAuthResponse";
 
 export interface CreateAuthRouterOptions {
   runtimeConfig: TrustedAuthProviderRuntimeConfig;
@@ -161,6 +165,8 @@ export const createAuthRouter = (
 ): Router => {
   const router = Router();
 
+  router.use("/auth", applySensitiveAuthResponseHeaders);
+
   router.get(
     "/auth/session",
     (request, response: Response<BackendAuthSessionResponse>, next) => {
@@ -202,6 +208,8 @@ export const createAuthRouter = (
       sendFailClosedMutationResponse(response, options.runtimeConfig);
     },
   );
+
+  router.use("/auth", createSensitiveAuthErrorHandler({ kind: "auth" }));
 
   return router;
 };

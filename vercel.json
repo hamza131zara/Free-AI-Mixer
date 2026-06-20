@@ -34,6 +34,26 @@
       "destination": "https://free-ai-mixer.onrender.com/exports/:path*"
     },
     {
+      "source": "/admin/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/admin/:path*"
+    },
+    {
+      "source": "/ai-tools/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/ai-tools/:path*"
+    },
+    {
+      "source": "/ai-news/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/ai-news/:path*"
+    },
+    {
+      "source": "/cards/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/cards/:path*"
+    },
+    {
+      "source": "/templates/:path*",
+      "destination": "https://free-ai-mixer.onrender.com/templates/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

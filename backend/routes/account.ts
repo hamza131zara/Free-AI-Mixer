@@ -19,6 +19,10 @@ import { resolveJwtVerificationRuntimeExecution } from "../auth/jwtProviderVerif
 import { normalizeWorkspaceRole } from "../auth/workspaceRoleNormalization";
 import { readWorkspaceMembershipRuntimeGate } from "../auth/workspaceMembershipLookup";
 import type { BackendRequesterContextRequest } from "../auth/trustedAuthMiddleware";
+import {
+  applySensitiveAuthResponseHeaders,
+  createSensitiveAuthErrorHandler,
+} from "./sensitiveAuthResponse";
 
 const personalWorkspaceName = "Personal Workspace";
 
@@ -252,6 +256,8 @@ export const createAccountRouter = (
 ): Router => {
   const router = Router();
 
+  router.use("/account", applySensitiveAuthResponseHeaders);
+
   router.post(
     "/account/bootstrap",
     (request, response: Response<BackendAccountBootstrapResponse>, next) => {
@@ -396,6 +402,8 @@ export const createAccountRouter = (
       })().catch(next);
     },
   );
+
+  router.use("/account", createSensitiveAuthErrorHandler({ kind: "account" }));
 
   return router;
 };
