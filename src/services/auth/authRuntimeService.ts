@@ -93,6 +93,17 @@ const shouldRepairAuthenticatedWorkspace = (
 
 const neutralPasswordResetMessage =
   "If an account exists, reset instructions have been sent.";
+const genericAuthServiceUnavailableMessage =
+  "Authentication service is temporarily unavailable. Please try again later.";
+const passwordUpdateFailedMessage =
+  "Password update could not be completed safely. Request a fresh reset link if this continues.";
+const passwordUpdateCleanupFailedMessage =
+  "Password updated, but session cleanup could not be confirmed. Close this browser session and sign in again.";
+
+const isAccountEnumerationStyleResetError = (message: string): boolean =>
+  /not\s*found|does\s*not\s*exist|unknown\s+user|user\s+not\s+found/i.test(
+    message,
+  );
 
 export const getSignupEmailRedirectTo = (): string | undefined => {
   if (typeof window === "undefined") {
@@ -254,11 +265,19 @@ export const createAuthRuntimeService = (
       const resetResult = await client.auth.requestPasswordReset(input);
 
       if (!resetResult.ok) {
+        if (isAccountEnumerationStyleResetError(resetResult.errorMessage)) {
+          return {
+            kind: "logged_out",
+            status: "unauthenticated",
+            message: neutralPasswordResetMessage,
+          };
+        }
+
         return {
           kind: "unavailable",
           status: "unavailable",
           code: "auth_service_unreachable",
-          message: resetResult.errorMessage,
+          message: genericAuthServiceUnavailableMessage,
         };
       }
 
@@ -285,7 +304,7 @@ export const createAuthRuntimeService = (
           kind: "unavailable",
           status: "unavailable",
           code: "auth_service_unreachable",
-          message: updateResult.errorMessage,
+          message: passwordUpdateFailedMessage,
         };
       }
 
@@ -296,7 +315,7 @@ export const createAuthRuntimeService = (
           kind: "unavailable",
           status: "unavailable",
           code: "auth_service_unreachable",
-          message: signOutResult.errorMessage,
+          message: passwordUpdateCleanupFailedMessage,
         };
       }
 
@@ -306,6 +325,7 @@ export const createAuthRuntimeService = (
         kind: "logged_out",
         status: "unauthenticated",
         message: "Password updated. Sign in again to continue.",
+        recoveryStatus: "recovery_complete",
       };
     },
 
@@ -353,7 +373,8 @@ export const createAuthRuntimeService = (
             kind: "unavailable",
             status: "unavailable",
             code: "auth_service_unreachable",
-            message: signOutResult.errorMessage,
+            message:
+              "Logout could not be completed because the auth provider session may still be active.",
           };
         }
       }

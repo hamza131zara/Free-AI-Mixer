@@ -67,6 +67,7 @@ test.describe("phase27 reset password page", () => {
       kind: "logged_out",
       status: "unauthenticated",
       message: "Password updated. Sign in again to continue.",
+      recoveryStatus: "recovery_complete",
     });
     expect(updatePasswordCalls).toBe(1);
     expect(signOutCalls).toBe(1);

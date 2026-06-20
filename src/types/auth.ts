@@ -4,6 +4,13 @@ export type AuthStatus =
   | "authenticated"
   | "unavailable";
 
+export type AuthRecoveryStatus =
+  | "recovery_unknown"
+  | "recovery_processing"
+  | "recovery_ready"
+  | "recovery_invalid"
+  | "recovery_complete";
+
 export interface VerifiedAccountIdentity {
   userId: string;
   appUserId?: string;
@@ -60,6 +67,7 @@ export type AuthMutationResult =
       kind: "logged_out";
       status: "unauthenticated";
       message: string;
+      recoveryStatus?: AuthRecoveryStatus;
     };
 
 export interface AuthCredentialsInput {

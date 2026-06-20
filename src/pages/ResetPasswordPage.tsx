@@ -1,29 +1,42 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { updatePasswordWithSupabaseRuntime } from "../services/auth/authRuntimeService";
 import { useAuthStore } from "../store/authStore";
 import { useNavigationStore } from "../store/navigationStore";
 
 export function ResetPasswordPage() {
   const navigateTo = useNavigationStore((state) => state.navigateTo);
-  const refreshSession = useAuthStore((state) => state.refreshSession);
-  const [message, setMessage] = useState(
-    "Enter a new password from the recovery link. After the update, sign in again.",
+  const recoveryStatus = useAuthStore((state) => state.recoveryStatus);
+  const recoveryMessage = useAuthStore((state) => state.recoveryMessage);
+  const pendingAction = useAuthStore((state) => state.pendingAction);
+  const updateRecoveryPassword = useAuthStore(
+    (state) => state.updateRecoveryPassword,
   );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [passwordUpdated, setPasswordUpdated] = useState(false);
+  const [localMessage, setLocalMessage] = useState<string | undefined>();
+  const isSubmitting = pendingAction === "password_reset";
+  const recoveryReady = recoveryStatus === "recovery_ready";
+  const passwordUpdated = recoveryStatus === "recovery_complete";
+  const formDisabled = !recoveryReady || isSubmitting || passwordUpdated;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const password = String(formData.get("password") ?? "");
+    const form = event.currentTarget;
+    if (!recoveryReady || passwordUpdated) {
+      setLocalMessage("Request a fresh password reset link before updating your password.");
+      return;
+    }
 
-    setIsSubmitting(true);
-    void updatePasswordWithSupabaseRuntime(password).then((result) => {
-      setMessage(result.message);
-      setPasswordUpdated(result.kind === "logged_out");
-      setIsSubmitting(false);
-      void refreshSession();
+    const formData = new FormData(form);
+    const password = String(formData.get("password") ?? "");
+    const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+    if (password !== confirmPassword) {
+      setLocalMessage("Passwords do not match.");
+      return;
+    }
+
+    setLocalMessage(undefined);
+    void updateRecoveryPassword(password).then(() => {
+      form.reset();
     });
   };
 
@@ -56,11 +69,30 @@ export function ResetPasswordPage() {
                 autoComplete="new-password"
                 minLength={8}
                 required
+                disabled={formDisabled}
+              />
+            </label>
+            <label className="field">
+              <span>Confirm new password</span>
+              <input
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                required
+                disabled={formDisabled}
               />
             </label>
             <div className="hero-actions">
-              <button type="submit" disabled={isSubmitting || passwordUpdated}>
+              <button type="submit" disabled={formDisabled}>
                 {isSubmitting ? "Updating..." : "Update password"}
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => navigateTo("/forgot-password")}
+              >
+                Request a fresh link
               </button>
               <button
                 type="button"
@@ -75,8 +107,8 @@ export function ResetPasswordPage() {
 
         <div className="status-callout" data-testid="reset-password-status">
           <span className="status-kicker">Recovery state</span>
-          <strong>{passwordUpdated ? "Password updated" : "Awaiting update"}</strong>
-          <p>{message}</p>
+          <strong>{passwordUpdated ? "Password updated" : recoveryReady ? "Recovery ready" : "Recovery unavailable"}</strong>
+          <p>{localMessage ?? recoveryMessage}</p>
           <p>After recovery, sign in again so backend /auth/session remains canonical.</p>
         </div>
       </div>

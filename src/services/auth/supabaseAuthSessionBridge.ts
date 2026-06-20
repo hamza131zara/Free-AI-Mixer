@@ -2,7 +2,7 @@ import {
   getSupabaseAuthClient,
   type SupabaseAuthSessionSnapshot,
 } from "./supabaseAuthClient";
-import type { AuthSessionResult } from "../../types/auth";
+import type { AuthRecoveryStatus, AuthSessionResult } from "../../types/auth";
 
 export type SupabaseAuthSessionBridgeStatus =
   | {
@@ -18,6 +18,7 @@ export type SupabaseAuthSessionBridgeStatus =
 export interface SupabaseAuthSessionBridgeOptions {
   bootstrapBackendAccount?: (accessToken: string) => Promise<void>;
   getAuthClient?: typeof getSupabaseAuthClient;
+  setRecoveryState?: (status: AuthRecoveryStatus, message?: string) => void;
   refreshBackendSession: (accessToken?: string) => Promise<AuthSessionResult | void>;
 }
 
@@ -56,9 +57,43 @@ const refreshFromSessionSnapshot = async (
   bootstrapBackendAccount:
     | ((accessToken: string) => Promise<void>)
     | undefined,
+  setRecoveryState:
+    | ((status: AuthRecoveryStatus, message?: string) => void)
+    | undefined,
+  isRecoverySessionActive: () => boolean,
+  setRecoverySessionActive: (active: boolean) => void,
+  event: string,
   sessionSnapshot?: SupabaseAuthSessionSnapshot,
 ): Promise<void> => {
+  if (isRecoverySessionActive() && !sessionSnapshot?.accessToken) {
+    setRecoverySessionActive(false);
+    return;
+  }
+
+  if (event === "PASSWORD_RECOVERY" && !sessionSnapshot?.accessToken) {
+    setRecoveryState?.(
+      "recovery_invalid",
+      "This password recovery link is invalid or expired. Request a fresh reset link.",
+    );
+    cleanupSupabaseAuthUrl();
+    return;
+  }
+
   if (sessionSnapshot?.accessToken) {
+    if (
+      isRecoverySessionActive() ||
+      event === "PASSWORD_RECOVERY" ||
+      hasCurrentSupabaseRecoveryUrlPayload()
+    ) {
+      setRecoverySessionActive(true);
+      setRecoveryState?.(
+        "recovery_ready",
+        "Password recovery is ready. Choose a new password to continue.",
+      );
+      cleanupSupabaseAuthUrl();
+      return;
+    }
+
     const shouldCompleteConfirmationBootstrap = hasCurrentSupabaseAuthUrlPayload();
     const sessionResult = await refreshBackendSession(sessionSnapshot.accessToken);
     if (
@@ -107,6 +142,26 @@ export const hasSupabaseAuthUrlPayload = (
   );
 };
 
+const readSupabaseAuthUrlParam = (
+  location: Pick<Location, "hash" | "search">,
+  key: string,
+): string | undefined => {
+  const hashPayload = location.hash.startsWith("#")
+    ? location.hash.slice(1)
+    : location.hash;
+  const hashValue = new URLSearchParams(hashPayload).get(key);
+
+  if (hashValue) {
+    return hashValue;
+  }
+
+  return new URLSearchParams(location.search).get(key) ?? undefined;
+};
+
+export const isSupabaseRecoveryUrlPayload = (
+  location: Pick<Location, "hash" | "search">,
+): boolean => readSupabaseAuthUrlParam(location, "type") === "recovery";
+
 export const cleanupSupabaseAuthUrl = (): void => {
   if (typeof window === "undefined" || !window.history?.replaceState) {
     return;
@@ -127,9 +182,13 @@ export const cleanupSupabaseAuthUrl = (): void => {
 const hasCurrentSupabaseAuthUrlPayload = (): boolean =>
   typeof window !== "undefined" && hasSupabaseAuthUrlPayload(window.location);
 
+const hasCurrentSupabaseRecoveryUrlPayload = (): boolean =>
+  typeof window !== "undefined" && isSupabaseRecoveryUrlPayload(window.location);
+
 export const initializeSupabaseAuthSessionBridge = async ({
   bootstrapBackendAccount,
   getAuthClient = getSupabaseAuthClient,
+  setRecoveryState,
   refreshBackendSession,
 }: SupabaseAuthSessionBridgeOptions): Promise<SupabaseAuthSessionBridgeStatus> => {
   if (activeBridge) {
@@ -156,29 +215,73 @@ export const initializeSupabaseAuthSessionBridge = async ({
     return activeBridge;
   }
 
+  const initialIsRecovery = hasCurrentSupabaseRecoveryUrlPayload();
+  let activeRecoverySession = false;
+  let currentRecoveryStatus: AuthRecoveryStatus = "recovery_unknown";
+  const publishRecoveryStatus = (
+    nextStatus: AuthRecoveryStatus,
+    message?: string,
+  ): void => {
+    if (currentRecoveryStatus === nextStatus) {
+      return;
+    }
+
+    currentRecoveryStatus = nextStatus;
+    setRecoveryState?.(nextStatus, message);
+  };
+
+  if (initialIsRecovery) {
+    publishRecoveryStatus(
+      "recovery_processing",
+      "Checking password recovery link.",
+    );
+  }
+
   const initialAccessToken = await authClient.auth.getAccessToken();
 
   if (initialAccessToken.ok && initialAccessToken.data) {
-    const shouldCompleteConfirmationBootstrap = hasCurrentSupabaseAuthUrlPayload();
-    const sessionResult = await refreshBackendSession(initialAccessToken.data);
-    if (
-      shouldCompleteConfirmationBootstrap ||
-      shouldRepairWorkspaceAuthority(sessionResult)
-    ) {
-      await runSingleWorkspaceRepair(
-        initialAccessToken.data,
-        bootstrapBackendAccount,
+    if (initialIsRecovery) {
+      activeRecoverySession = true;
+      publishRecoveryStatus(
+        "recovery_ready",
+        "Password recovery is ready. Choose a new password to continue.",
       );
-      await refreshBackendSession(initialAccessToken.data);
+      cleanupSupabaseAuthUrl();
+    } else {
+      const shouldCompleteConfirmationBootstrap = hasCurrentSupabaseAuthUrlPayload();
+      const sessionResult = await refreshBackendSession(initialAccessToken.data);
+      if (
+        shouldCompleteConfirmationBootstrap ||
+        shouldRepairWorkspaceAuthority(sessionResult)
+      ) {
+        await runSingleWorkspaceRepair(
+          initialAccessToken.data,
+          bootstrapBackendAccount,
+        );
+        await refreshBackendSession(initialAccessToken.data);
+      }
+      cleanupSupabaseAuthUrl();
     }
+  } else if (initialIsRecovery) {
+    activeRecoverySession = false;
+    publishRecoveryStatus(
+      "recovery_invalid",
+      "This password recovery link is invalid or expired. Request a fresh reset link.",
+    );
     cleanupSupabaseAuthUrl();
   }
 
   const subscription = authClient.auth.onAuthStateChange(
-    (_event: string, session: SupabaseAuthSessionSnapshot) => {
+    (event: string, session: SupabaseAuthSessionSnapshot) => {
       void refreshFromSessionSnapshot(
         refreshBackendSession,
         bootstrapBackendAccount,
+        publishRecoveryStatus,
+        () => activeRecoverySession,
+        (active) => {
+          activeRecoverySession = active;
+        },
+        event,
         session,
       );
     },
@@ -189,6 +292,7 @@ export const initializeSupabaseAuthSessionBridge = async ({
     unsubscribe: () => {
       subscription.unsubscribe();
       activeBridge = null;
+      activeRecoverySession = false;
     },
   };
 

@@ -68,7 +68,7 @@ test.describe("phase35 auth email onboarding docs and copy", () => {
     expect(loginPage).toContain("void login({ email, password })");
     expect(signupPage).toContain("void submit({ email, password })");
     expect(forgotPasswordPage).toContain("neutralResetCopy");
-    expect(resetPasswordPage).toContain("updatePasswordWithSupabaseRuntime");
+    expect(resetPasswordPage).toContain("updateRecoveryPassword");
   });
 
   test("phase35 docs and source avoid real-looking secrets, token storage, and auth runtime expansion", () => {
