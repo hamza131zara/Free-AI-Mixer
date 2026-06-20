@@ -30,6 +30,9 @@ export function AppNavigation() {
   const identity = useAuthStore((state) => state.identity);
   const pendingAction = useAuthStore((state) => state.pendingAction);
   const logout = useAuthStore((state) => state.logout);
+  const isCheckingSession = authStatus === "unknown";
+  const isAuthUnavailable = authStatus === "unavailable";
+  const isUnauthenticated = authStatus === "unauthenticated";
 
   useEffect(() => {
     setAccountMenuOpen(false);
@@ -143,7 +146,15 @@ export function AppNavigation() {
                   </div>
                 ) : null}
               </div>
-            ) : (
+            ) : isCheckingSession ? (
+              <span className="nav-link" data-testid="nav-auth-checking">
+                Checking session...
+              </span>
+            ) : isAuthUnavailable ? (
+              <span className="nav-link" data-testid="nav-auth-unavailable">
+                Auth unavailable
+              </span>
+            ) : isUnauthenticated ? (
               authNavigationItems.map((route) => (
                 <button
                   key={route.id}
@@ -158,7 +169,7 @@ export function AppNavigation() {
                   {route.label}
                 </button>
               ))
-            )}
+            ) : null}
           </div>
           <div className="mobile-nav-groups" data-testid="mobile-nav-groups">
             <section className="mobile-nav-section">
@@ -212,7 +223,15 @@ export function AppNavigation() {
                       {pendingAction === "logout" ? "Logging out..." : "Log out"}
                     </button>
                   </>
-                ) : (
+                ) : isCheckingSession ? (
+                  <span className="nav-link" data-testid="mobile-nav-auth-checking">
+                    Checking session...
+                  </span>
+                ) : isAuthUnavailable ? (
+                  <span className="nav-link" data-testid="mobile-nav-auth-unavailable">
+                    Auth unavailable
+                  </span>
+                ) : isUnauthenticated ? (
                   authNavigationItems.map((route) => (
                     <button
                       key={`mobile-auth-${route.id}`}
@@ -227,7 +246,7 @@ export function AppNavigation() {
                       {route.label}
                     </button>
                   ))
-                )}
+                ) : null}
               </div>
             </section>
 

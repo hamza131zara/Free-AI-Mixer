@@ -45,8 +45,8 @@ export function ProtectedRouteShell({
     return <>{children}</>;
   }
 
-  let headline = "Protected route";
-  let body = "Checking backend session status.";
+  let headline = "Checking session";
+  let body = "Restoring your secure session before showing protected account data.";
 
   if (authStatus === "unauthenticated") {
     headline = "Sign in required";
@@ -88,7 +88,7 @@ export function ProtectedRouteShell({
           <strong>{headline}</strong>
           <p>{body}</p>
           {authStatus === "unknown" ? (
-            <p>Checking backend session status.</p>
+            <p>Checking session with the backend auth boundary.</p>
           ) : null}
           {authStatus === "unauthenticated" ? (
             <p>Sign in through the configured auth provider before this page can show backend-owned data.</p>

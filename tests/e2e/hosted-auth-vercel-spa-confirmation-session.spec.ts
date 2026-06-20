@@ -197,6 +197,44 @@ test.describe("hosted auth Vercel SPA and Supabase confirmation session", () => 
     });
   });
 
+  test("protected refresh treats unresolved auth as session hydration, not signed out", () => {
+    const navigationSource = readSource("src/components/AppNavigation.tsx");
+    const protectedRouteSource = readSource("src/components/ProtectedRouteShell.tsx");
+    const storeSource = readSource("src/store/authStore.ts");
+
+    expect(storeSource).toContain('status: "unknown"');
+    expect(storeSource).toContain("Checking backend session status.");
+
+    expect(navigationSource).toContain(
+      'const isCheckingSession = authStatus === "unknown";',
+    );
+    expect(navigationSource).toContain('data-testid="nav-auth-checking"');
+    expect(navigationSource).toContain('data-testid="mobile-nav-auth-checking"');
+    expect(navigationSource).toContain("Checking session...");
+    expect(navigationSource).toContain('authStatus === "authenticated"');
+    expect(navigationSource).toContain('authStatus === "unauthenticated"');
+    expect(navigationSource).toContain(
+      'const isAuthUnavailable = authStatus === "unavailable";',
+    );
+
+    const checkingBranchIndex = navigationSource.indexOf(
+      ') : isCheckingSession ? (',
+    );
+    const authLinksIndex = navigationSource.indexOf(
+      "authNavigationItems.map",
+      checkingBranchIndex,
+    );
+    expect(checkingBranchIndex).toBeGreaterThanOrEqual(0);
+    expect(authLinksIndex).toBeGreaterThan(checkingBranchIndex);
+
+    expect(protectedRouteSource).toContain('authStatus === "unknown"');
+    expect(protectedRouteSource).toContain("Restoring your secure session");
+    expect(protectedRouteSource).toContain("Checking session with the backend auth boundary.");
+    expect(protectedRouteSource).toContain('authStatus === "unauthenticated"');
+    expect(protectedRouteSource).toContain("Sign in required");
+    expect(protectedRouteSource).toContain("Go to login");
+  });
+
   test("signup confirmation uses the existing same-origin login route", () => {
     const runtimeSource = readSource("src/services/auth/authRuntimeService.ts");
     const navigationSource = readSource("src/services/navigationService.ts");
