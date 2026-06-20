@@ -81,6 +81,7 @@ const expectSensitiveHeaders = (response: Response): void => {
   );
   expect(response.headers.get("pragma")).toBe("no-cache");
   expect(response.headers.get("expires")).toBe("0");
+  expect(response.headers.get("etag")).toBeNull();
 };
 
 const expectNoSensitiveLeak = (value: unknown): void => {
@@ -195,13 +196,16 @@ const createAuthServer = async (options: {
 
 const createAccountServer = async (options: {
   emailVerified?: boolean;
+  requesterKind?: "authenticated" | "unauthenticated";
   throwUserLookup?: boolean;
-}) => {
+} = {}) => {
   const app = express();
 
   app.use((request, _response, next) => {
     (request as BackendRequesterContextRequest).backendRequesterContext =
-      authenticatedRequester;
+      options.requesterKind === "unauthenticated"
+        ? createUnauthenticatedRequesterContext("missing_credentials")
+        : authenticatedRequester;
     next();
   });
   app.use(
@@ -258,25 +262,52 @@ test.describe("hosted private beta H6-B auth/account hardening", () => {
 
   test("account bootstrap responses use private no-store cache policy and redact repository failures", async () => {
     const successServer = await createAccountServer();
+    const missingCredentialServer = await createAccountServer({
+      requesterKind: "unauthenticated",
+    });
     const knownFailureServer = await createAccountServer({ emailVerified: false });
     const thrownServer = await createAccountServer({ throwUserLookup: true });
 
     try {
-      const successResponse = await fetch(`${successServer.url}/account/bootstrap`, {
-        method: "POST",
-      });
+      const successResponse = await fetch(
+        `${successServer.url}/account/bootstrap`,
+        {
+          method: "POST",
+        },
+      );
+
+      const successDiagnosticBody = await successResponse.clone().text();
+
+      expect(
+        successResponse.status,
+        `Unexpected account bootstrap response: ${successDiagnosticBody}`,
+      ).toBe(200);
+
       expectSensitiveHeaders(successResponse);
+
       await expect(successResponse.json()).resolves.toMatchObject({
         kind: "account_bootstrap_complete",
         status: "authenticated",
+      });
+
+      const missingCredentialResponse = await fetch(
+        `${missingCredentialServer.url}/account/bootstrap`,
+        { method: "POST" },
+      );
+      expect(missingCredentialResponse.status).toBe(401);
+      expectSensitiveHeaders(missingCredentialResponse);
+      await expect(missingCredentialResponse.json()).resolves.toMatchObject({
+        kind: "invalid_credentials",
+        reason: "missing_credentials",
+        status: "unauthenticated",
       });
 
       const knownFailureResponse = await fetch(
         `${knownFailureServer.url}/account/bootstrap`,
         { method: "POST" },
       );
-      expectSensitiveHeaders(knownFailureResponse);
       expect(knownFailureResponse.status).toBe(403);
+      expectSensitiveHeaders(knownFailureResponse);
       await expect(knownFailureResponse.json()).resolves.toMatchObject({
         kind: "email_verification_required",
         status: "verification_required",
@@ -285,8 +316,8 @@ test.describe("hosted private beta H6-B auth/account hardening", () => {
       const thrownResponse = await fetch(`${thrownServer.url}/account/bootstrap`, {
         method: "POST",
       });
-      expectSensitiveHeaders(thrownResponse);
       expect(thrownResponse.status).toBe(503);
+      expectSensitiveHeaders(thrownResponse);
       const thrownPayload = await thrownResponse.json();
       expect(thrownPayload).toEqual({
         kind: "bootstrap_unavailable",
@@ -296,6 +327,7 @@ test.describe("hosted private beta H6-B auth/account hardening", () => {
       expectNoSensitiveLeak(thrownPayload);
     } finally {
       await successServer.close();
+      await missingCredentialServer.close();
       await knownFailureServer.close();
       await thrownServer.close();
     }

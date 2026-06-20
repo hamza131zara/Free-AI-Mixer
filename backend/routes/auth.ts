@@ -165,7 +165,7 @@ export const createAuthRouter = (
 ): Router => {
   const router = Router();
 
-  router.use("/auth", applySensitiveAuthResponseHeaders);
+  router.use(applySensitiveAuthResponseHeaders);
 
   router.get(
     "/auth/session",
@@ -209,7 +209,7 @@ export const createAuthRouter = (
     },
   );
 
-  router.use("/auth", createSensitiveAuthErrorHandler({ kind: "auth" }));
+  router.use(createSensitiveAuthErrorHandler({ kind: "auth" }));
 
   return router;
 };

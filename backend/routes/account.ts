@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { Router } from "express";
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import type {
   BackendAccountBootstrapResponse,
 } from "../contracts/accountHttpTypes";
@@ -256,154 +256,157 @@ export const createAccountRouter = (
 ): Router => {
   const router = Router();
 
-  router.use("/account", applySensitiveAuthResponseHeaders);
+  router.use(applySensitiveAuthResponseHeaders);
 
-  router.post(
-    "/account/bootstrap",
-    (request, response: Response<BackendAccountBootstrapResponse>, next) => {
-      void (async () => {
-        const bearer = await verifyBootstrapBearer(request, options);
+  const handleAccountBootstrap = (
+    request: Request,
+    response: Response<BackendAccountBootstrapResponse>,
+    next: NextFunction,
+  ) => {
+    void (async () => {
+      const bearer = await verifyBootstrapBearer(request, options);
 
-        if (bearer.kind === "unavailable") {
-          toUnavailableResponse(response, bearer.status, bearer.message);
-          return;
-        }
+      if (bearer.kind === "unavailable") {
+        toUnavailableResponse(response, bearer.status, bearer.message);
+        return;
+      }
 
-        if (bearer.kind === "invalid") {
-          response.status(401).json({
-            kind: "invalid_credentials",
-            status: "unauthenticated",
-            reason: bearer.reason,
-            message: bearer.message,
-          });
-          return;
-        }
-
-        if (!options.dependencies) {
-          toUnavailableResponse(
-            response,
-            "bootstrap_unavailable",
-            "Account bootstrap is not available on this backend yet.",
-          );
-          return;
-        }
-
-        const verifiedAuthProfile = await options.dependencies.getVerifiedAuthUserProfile(
-          bearer.subject,
-        );
-
-        if (!verifiedAuthProfile?.emailVerified) {
-          response.status(403).json({
-            kind: "email_verification_required",
-            status: "verification_required",
-            message:
-              "Check your email to verify your account before Free AI Mixer account setup can continue.",
-          });
-          return;
-        }
-
-        const existingAppUser = await options.dependencies.userAccountRepository.getByAuthSubject(
-          "supabase",
-          bearer.subject,
-        );
-        const userAccount = await options.dependencies.userAccountRepository.createOrGetByAuthSubject({
-          userId: bearer.subject,
-          authProvider: "supabase",
-          authSubject: bearer.subject,
-          ...(verifiedAuthProfile.email ? { email: verifiedAuthProfile.email } : {}),
+      if (bearer.kind === "invalid") {
+        response.status(401).json({
+          kind: "invalid_credentials",
+          status: "unauthenticated",
+          reason: bearer.reason,
+          message: bearer.message,
         });
+        return;
+      }
 
-        const workspaceRuntimeGate = readWorkspaceMembershipRuntimeGate(options.env);
-
-        if (!workspaceRuntimeGate.runtimeEnabled) {
-          response.status(503).json({
-            kind: "bootstrap_unavailable",
-            status: "bootstrap_unavailable",
-            message: "Workspace authority is not configured on this backend yet.",
-          });
-          return;
-        }
-
-        const existingMemberships =
-          await options.dependencies.workspaceMembershipRepository.listMembershipsForUser(
-            userAccount.userId,
-          );
-        const activeMemberships = existingMemberships.filter(
-          (membership) => membership.status === "active",
+      if (!options.dependencies) {
+        toUnavailableResponse(
+          response,
+          "bootstrap_unavailable",
+          "Account bootstrap is not available on this backend yet.",
         );
+        return;
+      }
 
-        if (activeMemberships.length > 1) {
-          response.status(409).json({
-            kind: "workspace_bootstrap_blocked",
-            status: "workspace_selection_required",
-            reason: "multiple_active_memberships",
-            message:
-              "Free AI Mixer setup is complete, but workspace selection is required before an active workspace can be chosen safely.",
-            identity: toIdentity({
-              userId: userAccount.userId,
-              workspaceAuthority: "not_available",
-              workspaceAuthorityReason: "multiple_active_workspace_memberships",
-              ...(verifiedAuthProfile.email ? { email: verifiedAuthProfile.email } : {}),
-            }),
-          });
-          return;
-        }
+      const verifiedAuthProfile = await options.dependencies.getVerifiedAuthUserProfile(
+        bearer.subject,
+      );
 
-        const existingWorkspaces = await options.dependencies.workspaceRepository.listForUser(
+      if (!verifiedAuthProfile?.emailVerified) {
+        response.status(403).json({
+          kind: "email_verification_required",
+          status: "verification_required",
+          message:
+            "Check your email to verify your account before Free AI Mixer account setup can continue.",
+        });
+        return;
+      }
+
+      const existingAppUser = await options.dependencies.userAccountRepository.getByAuthSubject(
+        "supabase",
+        bearer.subject,
+      );
+      const userAccount = await options.dependencies.userAccountRepository.createOrGetByAuthSubject({
+        userId: bearer.subject,
+        authProvider: "supabase",
+        authSubject: bearer.subject,
+        ...(verifiedAuthProfile.email ? { email: verifiedAuthProfile.email } : {}),
+      });
+
+      const workspaceRuntimeGate = readWorkspaceMembershipRuntimeGate(options.env);
+
+      if (!workspaceRuntimeGate.runtimeEnabled) {
+        response.status(503).json({
+          kind: "bootstrap_unavailable",
+          status: "bootstrap_unavailable",
+          message: "Workspace authority is not configured on this backend yet.",
+        });
+        return;
+      }
+
+      const existingMemberships =
+        await options.dependencies.workspaceMembershipRepository.listMembershipsForUser(
           userAccount.userId,
         );
-        const workspaceRecord =
-          existingWorkspaces[0] ??
-          (activeMemberships.length === 0
-            ? await options.dependencies.workspaceRepository.createPersonalWorkspace({
-                workspaceId: createPersonalWorkspaceId(userAccount.userId),
-                userId: userAccount.userId,
-                name: personalWorkspaceName,
-              })
-            : undefined);
+      const activeMemberships = existingMemberships.filter(
+        (membership) => membership.status === "active",
+      );
 
-        const workspaceId = activeMemberships[0]?.workspaceId ?? workspaceRecord?.workspaceId;
-
-        if (!workspaceId) {
-          response.status(503).json({
-            kind: "bootstrap_unavailable",
-            status: "bootstrap_unavailable",
-            message: "Account bootstrap could not determine a workspace safely.",
-          });
-          return;
-        }
-
-        const membership = await options.dependencies.workspaceMembershipRepository.createOrGetMembership({
-          workspaceId,
-          userId: userAccount.userId,
-          role: "owner",
-          status: "active",
-        });
-        const workspaceRole = normalizeWorkspaceRole(membership.role);
-
-        response.status(200).json({
-          kind: "account_bootstrap_complete",
-          status: "authenticated",
-          message: "Free AI Mixer account setup is complete.",
+      if (activeMemberships.length > 1) {
+        response.status(409).json({
+          kind: "workspace_bootstrap_blocked",
+          status: "workspace_selection_required",
+          reason: "multiple_active_memberships",
+          message:
+            "Free AI Mixer setup is complete, but workspace selection is required before an active workspace can be chosen safely.",
           identity: toIdentity({
             userId: userAccount.userId,
-            workspaceId,
-            workspaceRole:
-              workspaceRole === "unknown" ? undefined : workspaceRole,
-            workspaceAuthority: "verified",
+            workspaceAuthority: "not_available",
+            workspaceAuthorityReason: "multiple_active_workspace_memberships",
             ...(verifiedAuthProfile.email ? { email: verifiedAuthProfile.email } : {}),
           }),
-          bootstrap: {
-            appUserCreated: !existingAppUser,
-            workspaceCreated: existingWorkspaces.length === 0,
-            membershipCreated: activeMemberships.length === 0,
-          },
         });
-      })().catch(next);
-    },
-  );
+        return;
+      }
 
-  router.use("/account", createSensitiveAuthErrorHandler({ kind: "account" }));
+      const existingWorkspaces = await options.dependencies.workspaceRepository.listForUser(
+        userAccount.userId,
+      );
+      const workspaceRecord =
+        existingWorkspaces[0] ??
+        (activeMemberships.length === 0
+          ? await options.dependencies.workspaceRepository.createPersonalWorkspace({
+              workspaceId: createPersonalWorkspaceId(userAccount.userId),
+              userId: userAccount.userId,
+              name: personalWorkspaceName,
+            })
+          : undefined);
+
+      const workspaceId = activeMemberships[0]?.workspaceId ?? workspaceRecord?.workspaceId;
+
+      if (!workspaceId) {
+        response.status(503).json({
+          kind: "bootstrap_unavailable",
+          status: "bootstrap_unavailable",
+          message: "Account bootstrap could not determine a workspace safely.",
+        });
+        return;
+      }
+
+      const membership = await options.dependencies.workspaceMembershipRepository.createOrGetMembership({
+        workspaceId,
+        userId: userAccount.userId,
+        role: "owner",
+        status: "active",
+      });
+      const workspaceRole = normalizeWorkspaceRole(membership.role);
+
+      response.status(200).json({
+        kind: "account_bootstrap_complete",
+        status: "authenticated",
+        message: "Free AI Mixer account setup is complete.",
+        identity: toIdentity({
+          userId: userAccount.userId,
+          workspaceId,
+          workspaceRole:
+            workspaceRole === "unknown" ? undefined : workspaceRole,
+          workspaceAuthority: "verified",
+          ...(verifiedAuthProfile.email ? { email: verifiedAuthProfile.email } : {}),
+        }),
+        bootstrap: {
+          appUserCreated: !existingAppUser,
+          workspaceCreated: existingWorkspaces.length === 0,
+          membershipCreated: activeMemberships.length === 0,
+        },
+      });
+    })().catch(next);
+  };
+
+  router.post("/account/bootstrap", handleAccountBootstrap);
+
+  router.use(createSensitiveAuthErrorHandler({ kind: "account" }));
 
   return router;
 };

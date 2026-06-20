@@ -9,6 +9,19 @@ export const setSensitiveAuthResponseHeaders = (
   response.setHeader("Cache-Control", sensitiveAuthCacheControlValue);
   response.setHeader("Pragma", "no-cache");
   response.setHeader("Expires", "0");
+  response.removeHeader("ETag");
+};
+
+const preventSensitiveAuthEtag = (response: Response): void => {
+  const setHeader = response.setHeader.bind(response);
+
+  response.setHeader = ((name: string, value: number | string | readonly string[]) => {
+    if (name.toLowerCase() === "etag") {
+      return response;
+    }
+
+    return setHeader(name, value);
+  }) as Response["setHeader"];
 };
 
 export const applySensitiveAuthResponseHeaders: RequestHandler = (
@@ -16,6 +29,7 @@ export const applySensitiveAuthResponseHeaders: RequestHandler = (
   response,
   next,
 ) => {
+  preventSensitiveAuthEtag(response);
   setSensitiveAuthResponseHeaders(response);
   next();
 };
