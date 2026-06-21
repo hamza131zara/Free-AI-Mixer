@@ -6,21 +6,33 @@ const allowedAuthenticatedPaths = new Set([
   "/provider-settings/status",
   "/provider-settings/connections",
   "/generation/jobs",
+  "/generation/history",
   "/credits/status",
 ]);
 
 const isSameOriginRelativePath = (value: string): boolean =>
   value.startsWith("/") && !value.startsWith("//");
 
+const toRelativePathname = (value: string): string => {
+  try {
+    return new URL(value, "https://free-ai-mixer.local").pathname;
+  } catch {
+    return value;
+  }
+};
+
 const providerConnectionMutationPathPattern =
   /^\/provider-settings\/connections\/(openai|runway|luma|google|stability|replicate)(\/test)?$/;
 const projectLibraryProjectRecordPathPattern =
   /^\/project-library\/projects\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const generatedImagePreviewPathPattern =
+  /^\/generation\/jobs\/[A-Za-z0-9_-]{1,120}\/artifacts\/[A-Za-z0-9_-]{1,120}\/preview$/;
 
 const isAllowedAuthenticatedPath = (value: string): boolean =>
   allowedAuthenticatedPaths.has(value) ||
   providerConnectionMutationPathPattern.test(value) ||
-  projectLibraryProjectRecordPathPattern.test(value);
+  projectLibraryProjectRecordPathPattern.test(value) ||
+  generatedImagePreviewPathPattern.test(value);
 
 interface AuthenticatedFetchDependencies {
   fetch: typeof globalThis.fetch;
@@ -42,7 +54,7 @@ export const createAuthenticatedFetch = (
       );
     }
 
-    if (!isAllowedAuthenticatedPath(input)) {
+    if (!isAllowedAuthenticatedPath(toRelativePathname(input))) {
       return dependencies.fetch(input, init);
     }
 

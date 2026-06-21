@@ -20,6 +20,7 @@ export function ProjectsPage() {
     (state) => state.refreshProjectLibrary,
   );
   const navigateTo = useNavigationStore((state) => state.navigateTo);
+  const syncWithLocation = useNavigationStore((state) => state.syncWithLocation);
 
   useEffect(() => {
     void refreshProjectLibrary();
@@ -235,6 +236,22 @@ export function ProjectsPage() {
                       {pendingAction === "rename" ? "Renaming..." : "Rename Project"}
                     </button>
                   </form>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        window.history.pushState(
+                          {},
+                          "",
+                          `/mixer?projectId=${encodeURIComponent(selectedProject.projectId)}`,
+                        );
+                        syncWithLocation("/mixer");
+                      }
+                    }}
+                  >
+                    Use in Mixer
+                  </button>
                 </>
               ) : (
                 <p>Open a project to inspect its persisted metadata.</p>

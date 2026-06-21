@@ -25,6 +25,7 @@ export interface BackendGenerationImageJobRequest {
   generationKind: "image";
   prompt: string;
   providerId: "openai";
+  projectId: string;
   requestId: string;
 }
 
@@ -204,4 +205,39 @@ export type BackendGenerationJobMutationResponse =
       persistence?: BackendGenerationPersistenceStatus;
       runtime: BackendGenerationJobRuntimeSnapshot;
       attemptedProviderIds: BackendGenerationArtifactProviderId[];
+    };
+
+export type BackendGenerationHistoryResponse =
+  | {
+      kind: "generation_history";
+      status: "authenticated";
+      projectId: string;
+      history: Array<{
+        artifactId: string;
+        contentType: "image/png" | "image/jpeg" | "image/webp";
+        createdAt: string;
+        deliveryStatus: "unavailable";
+        generationId: string;
+        previewPath: string;
+        projectId: string;
+        promptSummary?: string;
+        providerId: BackendGenerationArtifactProviderId;
+        requestId: string;
+        sha256: string;
+        sizeBytes: number;
+        status: "metadata_ready";
+      }>;
+      message: string;
+    }
+  | {
+      kind: "generation_history_rejected";
+      status:
+        | "auth_not_configured"
+        | "auth_provider_unavailable"
+        | "unauthenticated"
+        | "invalid_project_id"
+        | "workspace_permission_not_verified"
+        | "workspace_owner_or_admin_required"
+        | "persistence_unavailable";
+      message: string;
     };

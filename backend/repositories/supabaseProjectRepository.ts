@@ -1,4 +1,5 @@
 import type {
+  BackendProjectImageGenerationHistoryRecord,
   BackendProjectRecord,
   BackendProjectRepository,
   BackendProjectStatus,
@@ -13,6 +14,7 @@ export interface ProjectTableQuery<Row> {
   select(columns: string): ProjectTableQuery<Row>;
   eq(column: string, value: string): ProjectTableQuery<Row>;
   is(column: string, value: null): ProjectTableQuery<Row>;
+  limit(count: number): ProjectTableQuery<Row>;
   order(column: string, options?: { ascending?: boolean }): ProjectTableQuery<Row>;
   insert(values: Partial<Row>): ProjectTableQuery<Row>;
   update(values: Partial<Row>): ProjectTableQuery<Row>;
@@ -25,6 +27,7 @@ export interface ProjectTableQuery<Row> {
 
 export interface SupabaseProjectClient {
   from(table: "projects"): ProjectTableQuery<ProjectRow>;
+  from(table: "image_generation_history"): ProjectTableQuery<ImageGenerationHistoryRow>;
 }
 
 export interface ProjectRow {
@@ -38,6 +41,22 @@ export interface ProjectRow {
   deleted_at: string | null;
 }
 
+export interface ImageGenerationHistoryRow {
+  artifact_id: string | null;
+  content_type: "image/png" | "image/jpeg" | "image/webp" | null;
+  created_at: string | null;
+  delivery_status: "unavailable" | "descriptor_only" | "ready_later";
+  generation_job_id: string | null;
+  generation_jobs?: { request_id: string | null } | null;
+  history_id: string;
+  project_id: string | null;
+  prompt_summary: string | null;
+  provider_id: "mock_local" | "openai";
+  sha256: string | null;
+  size_bytes: number | null;
+  status: "metadata_ready" | "failed" | "unavailable";
+}
+
 const projectSelectColumns = [
   "project_id",
   "workspace_id",
@@ -47,6 +66,22 @@ const projectSelectColumns = [
   "created_at",
   "updated_at",
   "deleted_at",
+].join(", ");
+
+const imageGenerationHistorySelectColumns = [
+  "artifact_id",
+  "content_type",
+  "created_at",
+  "delivery_status",
+  "generation_job_id",
+  "generation_jobs(request_id)",
+  "history_id",
+  "project_id",
+  "prompt_summary",
+  "provider_id",
+  "sha256",
+  "size_bytes",
+  "status",
 ].join(", ");
 
 const fromProjectRow = (row: ProjectRow): BackendProjectRecord => ({
@@ -91,6 +126,69 @@ const getManyProjects = async (
   return (Array.isArray(result.data) ? result.data : [result.data]).map(
     fromProjectRow,
   );
+};
+
+const isSupportedImageContentType = (
+  value: string | null,
+): value is "image/png" | "image/jpeg" | "image/webp" =>
+  value === "image/png" || value === "image/jpeg" || value === "image/webp";
+
+const fromImageGenerationHistoryRow = (
+  row: ImageGenerationHistoryRow,
+): BackendProjectImageGenerationHistoryRecord | undefined => {
+  const requestId = row.generation_jobs?.request_id;
+
+  if (
+    !row.artifact_id ||
+    !row.project_id ||
+    !row.sha256 ||
+    typeof row.size_bytes !== "number" ||
+    row.status !== "metadata_ready" ||
+    row.delivery_status !== "unavailable" ||
+    !isSupportedImageContentType(row.content_type) ||
+    !requestId
+  ) {
+    return undefined;
+  }
+
+  return {
+    artifactId: row.artifact_id,
+    contentType: row.content_type,
+    createdAt: row.created_at ?? new Date(0).toISOString(),
+    deliveryStatus: "unavailable",
+    generationId: row.history_id,
+    jobId: requestId,
+    projectId: row.project_id,
+    ...(row.prompt_summary ? { promptSummary: row.prompt_summary } : {}),
+    providerId: row.provider_id,
+    requestId,
+    sha256: row.sha256,
+    sizeBytes: row.size_bytes,
+    status: "metadata_ready",
+  };
+};
+
+const getManyImageGenerationHistoryRecords = async (
+  query: ProjectTableQuery<ImageGenerationHistoryRow>,
+): Promise<BackendProjectImageGenerationHistoryRecord[]> => {
+  const result = (await query) as ProjectTableQueryResult<ImageGenerationHistoryRow>;
+
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+
+  if (!result.data) {
+    return [];
+  }
+
+  return (Array.isArray(result.data) ? result.data : [result.data])
+    .map(fromImageGenerationHistoryRow)
+    .filter(
+      (
+        record,
+      ): record is BackendProjectImageGenerationHistoryRecord =>
+        Boolean(record),
+    );
 };
 
 export class SupabaseProjectRepository implements BackendProjectRepository {
@@ -168,6 +266,23 @@ export class SupabaseProjectRepository implements BackendProjectRepository {
         .eq("status", "active")
         .is("deleted_at", null)
         .select(projectSelectColumns),
+    );
+  }
+
+  async listImageGenerationHistoryForProject(
+    workspaceId: string,
+    projectId: string,
+  ): Promise<BackendProjectImageGenerationHistoryRecord[]> {
+    return getManyImageGenerationHistoryRecords(
+      this.client
+        .from("image_generation_history")
+        .select(imageGenerationHistorySelectColumns)
+        .eq("workspace_id", workspaceId)
+        .eq("project_id", projectId)
+        .eq("status", "metadata_ready")
+        .order("created_at", { ascending: false })
+        .order("history_id", { ascending: false })
+        .limit(50),
     );
   }
 }

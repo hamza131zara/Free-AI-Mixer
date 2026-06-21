@@ -134,6 +134,7 @@ export interface ProductionGenerationJobMetadataInput {
   generationKind: "image" | "video";
   jobId: string;
   ownerId: string;
+  projectId?: string;
   providerId: string;
   requestId: string;
   status: "generated_metadata_ready" | "failed" | "submitted";
@@ -168,6 +169,7 @@ export interface ProductionImageGenerationHistoryInput {
   createdAt: string;
   jobId: string;
   ownerId: string;
+  projectId?: string;
   providerId: string;
   requestId: string;
   sha256: string;

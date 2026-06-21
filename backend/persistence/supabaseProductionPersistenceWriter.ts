@@ -147,6 +147,7 @@ export const createSupabaseProductionPersistenceWriter = (
       lifecycle_state:
         input.status === "generated_metadata_ready" ? "metadata_ready" : "failed",
       owner_id: input.ownerId,
+      ...(input.projectId ? { project_id: input.projectId } : {}),
       provider_id: input.providerId,
       request_id: input.requestId,
       status: input.status,
@@ -164,6 +165,7 @@ export const createSupabaseProductionPersistenceWriter = (
       generation_job_id: toGenerationJobId(input),
       history_id: toHistoryId(input),
       owner_id: input.ownerId,
+      ...(input.projectId ? { project_id: input.projectId } : {}),
       provider_id: input.providerId,
       sha256: input.sha256,
       size_bytes: input.sizeBytes,

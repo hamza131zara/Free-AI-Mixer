@@ -18,7 +18,7 @@ export interface ImageGenerationStoreState {
   error?: PromptImageGenerationError;
   statusMessage?: string;
   updatePrompt: (prompt: string) => void;
-  generateImageMetadata: () => Promise<void>;
+  generateImageMetadata: (projectId?: string) => Promise<void>;
   resetImageGeneration: () => void;
 }
 
@@ -31,8 +31,21 @@ export const useImageGenerationStore = create<ImageGenerationStoreState>(
     lifecycle: "idle",
     prompt: "",
     statusMessage: undefined,
-    generateImageMetadata: async () => {
+    generateImageMetadata: async (projectId) => {
       if (get().lifecycle === "submitting") {
+        return;
+      }
+
+      if (!projectId) {
+        set({
+          artifact: undefined,
+          error: {
+            code: "project_required",
+            message: "Select a verified project before generating image metadata.",
+          },
+          lifecycle: "failed",
+          statusMessage: "Image generation is blocked until a project is selected.",
+        });
         return;
       }
 
@@ -48,6 +61,7 @@ export const useImageGenerationStore = create<ImageGenerationStoreState>(
       try {
         const result = await imageGenerationAgent.generateImageMetadata(
           get().prompt,
+          projectId,
           controller.signal,
         );
 
@@ -56,6 +70,7 @@ export const useImageGenerationStore = create<ImageGenerationStoreState>(
             ...result.response.artifact,
             previewPath: createGeneratedImagePreviewPath({
               artifactId: result.response.artifact.artifactId,
+              projectId: result.request.projectId,
               requestId: result.request.requestId,
             }),
           };
@@ -65,8 +80,13 @@ export const useImageGenerationStore = create<ImageGenerationStoreState>(
             .addSuccessfulGeneration({
               artifact,
               prompt: result.request.prompt,
+              projectId: result.request.projectId,
               requestId: result.request.requestId,
             });
+
+          await useImageGenerationHistoryStore
+            .getState()
+            .loadProjectHistory(result.request.projectId);
 
           set({
             artifact,
@@ -155,9 +175,11 @@ const toImageGenerationError = (error: unknown): PromptImageGenerationError => {
 
 const createGeneratedImagePreviewPath = ({
   artifactId,
+  projectId,
   requestId,
 }: {
   artifactId: string;
+  projectId: string;
   requestId: string;
 }): string =>
-  `/generation/jobs/${encodeURIComponent(requestId)}/artifacts/${encodeURIComponent(artifactId)}/preview`;
+  `/generation/jobs/${encodeURIComponent(requestId)}/artifacts/${encodeURIComponent(artifactId)}/preview?projectId=${encodeURIComponent(projectId)}`;

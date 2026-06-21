@@ -1,9 +1,9 @@
 import {
   imageGenerationService,
   type ImageGenerationService,
+  type ProjectScopedPromptImageGenerationRequest,
 } from "../services/imageGenerationService";
 import type {
-  PromptImageGenerationRequest,
   PromptImageGenerationResponse,
   PromptVideoGenerationRequest,
 } from "../types/imageGeneration";
@@ -21,9 +21,10 @@ export class ImageGenerationAgentError extends Error {
 export interface ImageGenerationAgent {
   generateImageMetadata(
     prompt: string,
+    projectId: string,
     signal?: AbortSignal,
   ): Promise<{
-    request: PromptImageGenerationRequest;
+    request: ProjectScopedPromptImageGenerationRequest;
     response: PromptImageGenerationResponse;
   }>;
   generateVideoMetadata(
@@ -38,8 +39,8 @@ export interface ImageGenerationAgent {
 export const createImageGenerationAgent = (
   service: ImageGenerationService = imageGenerationService,
 ): ImageGenerationAgent => ({
-  async generateImageMetadata(prompt, signal) {
-    const request = createPromptImageRequest(prompt);
+  async generateImageMetadata(prompt, projectId, signal) {
+    const request = createPromptImageRequest(prompt, projectId);
 
     return {
       request,
@@ -58,8 +59,12 @@ export const createImageGenerationAgent = (
 
 export const imageGenerationAgent = createImageGenerationAgent();
 
-const createPromptImageRequest = (prompt: string): PromptImageGenerationRequest => {
+const createPromptImageRequest = (
+  prompt: string,
+  projectId: string,
+): ProjectScopedPromptImageGenerationRequest => {
   const normalizedPrompt = prompt.trim();
+  const normalizedProjectId = projectId.trim();
 
   if (!normalizedPrompt) {
     throw new ImageGenerationAgentError(
@@ -68,9 +73,21 @@ const createPromptImageRequest = (prompt: string): PromptImageGenerationRequest 
     );
   }
 
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      normalizedProjectId,
+    )
+  ) {
+    throw new ImageGenerationAgentError(
+      "Select a verified project before generating image metadata.",
+      "invalid_project_id",
+    );
+  }
+
   return {
     generationKind: "image",
     prompt: normalizedPrompt,
+    projectId: normalizedProjectId,
     providerId: "openai",
     requestId: createSafeRequestId(),
   };

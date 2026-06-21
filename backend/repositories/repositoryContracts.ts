@@ -374,6 +374,22 @@ export interface BackendProjectRecord {
   updatedAt: string;
 }
 
+export interface BackendProjectImageGenerationHistoryRecord {
+  artifactId: string;
+  contentType: "image/png" | "image/jpeg" | "image/webp";
+  createdAt: string;
+  deliveryStatus: "unavailable";
+  generationId: string;
+  jobId: string;
+  projectId: string;
+  promptSummary?: string;
+  providerId: "mock_local" | "openai";
+  requestId: string;
+  sha256: string;
+  sizeBytes: number;
+  status: "metadata_ready";
+}
+
 export type BackendPlatformRoleStatus = "active" | "disabled";
 
 export interface BackendPlatformRoleRecord {
@@ -484,6 +500,10 @@ export interface BackendProjectRepository {
     title: string;
     workspaceId: string;
   }): Promise<BackendProjectRecord | undefined>;
+  listImageGenerationHistoryForProject?(
+    workspaceId: string,
+    projectId: string,
+  ): Promise<BackendProjectImageGenerationHistoryRecord[]>;
 }
 
 export interface BackendPlatformRoleRepository {

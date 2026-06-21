@@ -302,6 +302,7 @@ export const createApp = (): Express => {
       ...(routeAccessResolver ? { routeAccessResolver } : {}),
       ...(repositories
         ? {
+            projectRepository: repositories.projectRepository,
             providerKeyRepository: repositories.providerKeyRepository,
             productionAuthOwnershipPolicyEnabled: true,
             workspaceMembershipRepository:

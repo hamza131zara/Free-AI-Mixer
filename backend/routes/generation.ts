@@ -13,11 +13,15 @@ import type {
   BackendGenerationCatalogResponse,
   BackendGeneratedArtifactAccessResponse,
   BackendGeneratedArtifactAccessUnavailableStatus,
+  BackendGenerationHistoryResponse,
   BackendGenerationJobMutationResponse,
   BackendGenerationRuntimeStatusResponse,
 } from "../contracts/generationRuntimeHttpTypes";
 import type { ProviderSecretVault } from "../providers/providerSecretVault";
-import type { BackendProviderKeyRepository } from "../repositories/repositoryContracts";
+import type {
+  BackendProjectRepository,
+  BackendProviderKeyRepository,
+} from "../repositories/repositoryContracts";
 import { getProviderCatalog } from "../providers/providerCatalog";
 import { getGenerationFailureMapping } from "../generation/generationFailureMapping";
 import type {
@@ -80,6 +84,7 @@ export interface CreateGenerationRouterOptions {
   providerKeyRepository?: BackendProviderKeyRepository;
   providerSecretVault?: ProviderSecretVault;
   workspaceMembershipRepository?: WorkspaceMembershipRepository;
+  projectRepository?: BackendProjectRepository;
   routeAccessResolver?: AsyncBackendRequesterContextResolver;
   generationExecutionControlReadiness?: BackendGenerationExecutionControlReadiness;
   generationProviderAdapter?: Pick<
@@ -490,9 +495,69 @@ const mockLocalPngBytes = Buffer.from(
   "base64",
 );
 const safeGeneratedArtifactSegmentRegex = /^[A-Za-z0-9_-]{1,120}$/;
+const safeProjectIdRegex =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const isSafeGeneratedArtifactSegment = (value: string): boolean =>
   safeGeneratedArtifactSegmentRegex.test(value);
+
+const setPrivateGenerationResponseHeaders = (response: Response): void => {
+  response.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  response.setHeader("Pragma", "no-cache");
+  response.setHeader("Expires", "0");
+  response.removeHeader("ETag");
+};
+
+const preventPrivateGenerationEtag = (response: Response): void => {
+  const setHeader = response.setHeader.bind(response);
+
+  response.setHeader = ((name: string, value: number | string | readonly string[]) => {
+    if (name.toLowerCase() === "etag") {
+      return response;
+    }
+
+    return setHeader(name, value);
+  }) as Response["setHeader"];
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const extractProjectScopedGenerationBody = (
+  body: unknown,
+):
+  | {
+      kind: "valid";
+      body: Record<string, unknown>;
+      projectId: string;
+    }
+  | {
+      kind: "invalid";
+      message: string;
+    } => {
+  if (!isRecord(body) || body.generationKind !== "image") {
+    return {
+      kind: "valid",
+      body: isRecord(body) ? body : {},
+      projectId: "",
+    };
+  }
+
+  if (typeof body.projectId !== "string" || !safeProjectIdRegex.test(body.projectId)) {
+    return {
+      kind: "invalid",
+      message: "A valid project ID is required before image generation can run.",
+    };
+  }
+
+  const { projectId, ...generationBody } = body;
+
+  return {
+    kind: "valid",
+    body: generationBody,
+    projectId,
+  };
+};
 
 const sendGeneratedArtifactAccessUnavailable = (
   response: Response<BackendGeneratedArtifactAccessResponse>,
@@ -504,6 +569,22 @@ const sendGeneratedArtifactAccessUnavailable = (
     kind: "generated_artifact_access_unavailable",
     status,
     deliveryStatus: "unavailable",
+    message,
+  });
+};
+
+const sendGenerationHistoryRejected = (
+  response: Response<BackendGenerationHistoryResponse>,
+  status: Extract<
+    BackendGenerationHistoryResponse,
+    { kind: "generation_history_rejected" }
+  >["status"],
+  message: string,
+  httpStatus: number,
+): void => {
+  response.status(httpStatus).json({
+    kind: "generation_history_rejected",
+    status,
     message,
   });
 };
@@ -585,6 +666,7 @@ const sendMockLocalImageStorageResult = async (
     artifactId: string;
     jobId: string;
     ownerId: string;
+    projectId?: string;
     productionStorage?: GeneratedImageProductionStorage;
     registry?: GeneratedImageArtifactRegistry;
     storage?: GeneratedImageArtifactStorage;
@@ -650,6 +732,7 @@ const sendMockLocalImageStorageResult = async (
           generationKind: "image",
           jobId: input.jobId,
           ownerId: input.ownerId,
+          projectId: input.projectId,
           providerId: mockLocalProviderId,
           requestId: input.jobId,
           status: "generated_metadata_ready",
@@ -785,6 +868,7 @@ const sendMockLocalImageStorageResult = async (
         generationKind: "image",
         jobId: input.jobId,
         ownerId: input.ownerId,
+        projectId: input.projectId,
         providerId: mockLocalProviderId,
         requestId: input.jobId,
         status: "generated_metadata_ready",
@@ -812,6 +896,7 @@ const sendMockLocalImageStorageResult = async (
         createdAt: artifact.createdAt,
         jobId: artifact.jobId,
         ownerId: artifact.ownerId,
+        projectId: input.projectId,
         providerId: artifact.providerId,
         requestId: input.jobId,
         sha256: artifact.sha256,
@@ -868,6 +953,12 @@ export const createGenerationRouter = (
   options: CreateGenerationRouterOptions,
 ): Router => {
   const router = Router();
+
+  router.use("/generation", (_request, response, next) => {
+    preventPrivateGenerationEtag(response);
+    setPrivateGenerationResponseHeaders(response);
+    next();
+  });
 
   router.get(
     "/generation/providers/catalog",
@@ -934,6 +1025,145 @@ export const createGenerationRouter = (
         reason: requesterContext.reason,
         message:
           getGenerationFailureMapping("sign_in_required").message,
+      });
+    },
+  );
+
+  router.get(
+    "/generation/history",
+    async (request, response: Response<BackendGenerationHistoryResponse>) => {
+      const projectId =
+        typeof request.query.projectId === "string"
+          ? request.query.projectId
+          : undefined;
+
+      if (!projectId || !safeProjectIdRegex.test(projectId)) {
+        sendGenerationHistoryRejected(
+          response,
+          "invalid_project_id",
+          "A valid project ID is required to load generated image history.",
+          400,
+        );
+        return;
+      }
+
+      const requesterContext = options.routeAccessResolver
+        ? await options.routeAccessResolver.resolve({ headers: request.headers })
+        : getRequesterContextFromRequest(request);
+
+      if (requesterContext.kind !== "authenticated") {
+        sendGenerationHistoryRejected(
+          response,
+          requesterContext.reason === "auth_not_configured"
+            ? "auth_not_configured"
+            : requesterContext.reason === "auth_provider_unavailable"
+              ? "auth_provider_unavailable"
+              : "unauthenticated",
+          "Authentication is required to load generated image history.",
+          requesterContext.reason === "auth_not_configured" ||
+            requesterContext.reason === "auth_provider_unavailable"
+            ? 503
+            : 401,
+        );
+        return;
+      }
+
+      if (!requesterContext.workspaceId || !options.projectRepository) {
+        sendGenerationHistoryRejected(
+          response,
+          "persistence_unavailable",
+          "Generated image history persistence is not configured.",
+          503,
+        );
+        return;
+      }
+
+      if (options.productionAuthOwnershipPolicyEnabled) {
+        if (!options.workspaceMembershipRepository) {
+          sendGenerationHistoryRejected(
+            response,
+            "workspace_permission_not_verified",
+            "Generated image history workspace permission is unavailable.",
+            503,
+          );
+          return;
+        }
+
+        const membershipResult =
+          await options.workspaceMembershipRepository.getMembership({
+            userId: requesterContext.userId,
+            workspaceId: requesterContext.workspaceId,
+          });
+        const ownershipFailure = getProductionOwnershipFailure(
+          requesterContext,
+          membershipResult,
+          "generated_artifacts",
+        );
+
+        if (ownershipFailure) {
+          sendGenerationHistoryRejected(
+            response,
+            ownershipFailure.reason === "workspace_owner_or_admin_required"
+              ? "workspace_owner_or_admin_required"
+              : "workspace_permission_not_verified",
+            "Generated image history is not authorized for this workspace.",
+            ownershipFailure.statusCode,
+          );
+          return;
+        }
+      }
+
+      const project = await options.projectRepository.getProjectForWorkspace(
+        requesterContext.workspaceId,
+        projectId,
+      );
+
+      if (!project) {
+        sendGenerationHistoryRejected(
+          response,
+          "workspace_permission_not_verified",
+          "Generated image history is not available for this project.",
+          404,
+        );
+        return;
+      }
+
+      if (!options.projectRepository.listImageGenerationHistoryForProject) {
+        sendGenerationHistoryRejected(
+          response,
+          "persistence_unavailable",
+          "Generated image history persistence is not configured.",
+          503,
+        );
+        return;
+      }
+
+      const history =
+        await options.projectRepository.listImageGenerationHistoryForProject(
+          requesterContext.workspaceId,
+          project.projectId,
+        );
+
+      response.status(200).json({
+        kind: "generation_history",
+        status: "authenticated",
+        projectId: project.projectId,
+        message: "Generated image history is loaded for this verified project.",
+        history: history.map((entry) => ({
+          artifactId: entry.artifactId,
+          contentType: entry.contentType,
+          createdAt: entry.createdAt,
+          deliveryStatus: entry.deliveryStatus,
+          generationId: entry.generationId,
+          previewPath: `/generation/jobs/${encodeURIComponent(entry.jobId)}/artifacts/${encodeURIComponent(entry.artifactId)}/preview?projectId=${encodeURIComponent(project.projectId)}`,
+          ...(entry.promptSummary ? { promptSummary: entry.promptSummary } : {}),
+          providerId: entry.providerId,
+          projectId: entry.projectId,
+          requestId: entry.requestId,
+          sha256: entry.sha256,
+          sizeBytes: entry.sizeBytes,
+          status: entry.status,
+        })),
       });
     },
   );
@@ -1128,6 +1358,41 @@ export const createGenerationRouter = (
         options.generatedImageProductionDeliveryEnabled &&
         options.generatedImageProductionStorage
       ) {
+        const previewProjectId =
+          typeof request.query.projectId === "string"
+            ? request.query.projectId
+            : undefined;
+
+        if (
+          previewProjectId &&
+          safeProjectIdRegex.test(previewProjectId) &&
+          options.projectRepository?.listImageGenerationHistoryForProject
+        ) {
+          const project = await options.projectRepository.getProjectForWorkspace(
+            requesterContext.workspaceId,
+            previewProjectId,
+          );
+          const history = project
+            ? await options.projectRepository.listImageGenerationHistoryForProject(
+                requesterContext.workspaceId,
+                project.projectId,
+              )
+            : [];
+          const matchesProjectHistory = history.some(
+            (entry) => entry.jobId === jobId && entry.artifactId === artifactId,
+          );
+
+          if (!project || !matchesProjectHistory) {
+            sendGeneratedArtifactAccessUnavailable(
+              response,
+              "generated_artifact_access_unavailable",
+              "Generated image preview is unavailable.",
+              404,
+            );
+            return;
+          }
+        }
+
         const record = await options.generatedImageProductionStorage.resolveRecord({
           artifactId,
           jobId,
@@ -1316,7 +1581,21 @@ export const createGenerationRouter = (
         return;
       }
 
-      const parsed = parseGenerationJobRequest(request.body);
+      const projectScopedBody = extractProjectScopedGenerationBody(request.body);
+
+      if (projectScopedBody.kind === "invalid") {
+        const failure = getGenerationFailureMapping("unsupported_generation_request");
+        rejectGenerationJob(
+          response,
+          runtimeSummary,
+          "unsupported_generation_request",
+          projectScopedBody.message,
+          failure.httpStatus,
+        );
+        return;
+      }
+
+      const parsed = parseGenerationJobRequest(projectScopedBody.body);
 
       if (parsed.kind === "invalid") {
         const failureCode = mapParseErrorToFailureCode(parsed.code);
@@ -1452,6 +1731,45 @@ export const createGenerationRouter = (
         return;
       }
 
+      let validatedProjectId: string | undefined;
+
+      if (parsed.request.generationKind === "image") {
+        if (!projectScopedBody.projectId || !options.projectRepository) {
+          const failure = getGenerationFailureMapping(
+            "workspace_permission_not_verified",
+          );
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "workspace_permission_not_verified",
+            failure.message,
+            failure.httpStatus,
+          );
+          return;
+        }
+
+        const project = await options.projectRepository.getProjectForWorkspace(
+          authenticatedRequester?.workspaceId ?? "",
+          projectScopedBody.projectId,
+        );
+
+        if (!project || project.status !== "active") {
+          const failure = getGenerationFailureMapping(
+            "workspace_permission_not_verified",
+          );
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "workspace_permission_not_verified",
+            "Generation requires a verified active project in this workspace.",
+            failure.httpStatus,
+          );
+          return;
+        }
+
+        validatedProjectId = project.projectId;
+      }
+
       const generationRuntimeConfig = options.generationRuntimeConfig ?? {
         kind: "generation_runtime_config" as const,
         allowRealProviderCalls: false,
@@ -1531,6 +1849,7 @@ export const createGenerationRouter = (
           artifactId: `${parsed.request.requestId}_mock_image`,
           jobId: parsed.request.requestId,
           ownerId: authenticatedRequester?.userId ?? "",
+          projectId: validatedProjectId,
           productionStorage: options.generatedImageProductionStorage,
           registry: options.generatedImageArtifactRegistry,
           storage: options.generatedImageArtifactStorage,

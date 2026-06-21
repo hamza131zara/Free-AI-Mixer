@@ -1,8 +1,11 @@
 import { Image } from "lucide-react";
+import { useEffect, useState } from "react";
 import { platformGenerationPolicyCopy } from "../services/providerCapabilityPolicyService";
+import { fetchGeneratedImagePreviewBlob } from "../services/imageGenerationService";
 import { useImageGenerationStore } from "../store/imageGenerationStore";
+import type { ProjectSummary } from "../types/projectLibrary";
 
-export function PromptImageGenerator() {
+export function PromptImageGenerator({ project }: { project?: ProjectSummary }) {
   const artifact = useImageGenerationStore((state) => state.artifact);
   const error = useImageGenerationStore((state) => state.error);
   const lifecycle = useImageGenerationStore((state) => state.lifecycle);
@@ -12,9 +15,49 @@ export function PromptImageGenerator() {
     (state) => state.generateImageMetadata,
   );
   const updatePrompt = useImageGenerationStore((state) => state.updatePrompt);
+  const [previewObjectUrl, setPreviewObjectUrl] = useState<string | undefined>();
+  const [previewMessage, setPreviewMessage] = useState(
+    "Preview waits for authenticated backend metadata.",
+  );
 
   const isSubmitting = lifecycle === "submitting";
-  const canSubmit = prompt.trim().length > 0 && !isSubmitting;
+  const canSubmit = Boolean(project) && prompt.trim().length > 0 && !isSubmitting;
+
+  useEffect(() => {
+    let objectUrl: string | undefined;
+    const controller = new AbortController();
+
+    setPreviewObjectUrl(undefined);
+
+    if (!artifact?.previewPath) {
+      setPreviewMessage("Preview waits for authenticated backend metadata.");
+      return () => {
+        controller.abort();
+      };
+    }
+
+    setPreviewMessage("Loading private backend-mediated preview.");
+
+    void fetchGeneratedImagePreviewBlob(artifact.previewPath, controller.signal)
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+        setPreviewObjectUrl(objectUrl);
+        setPreviewMessage("Private backend-mediated preview loaded.");
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setPreviewMessage("Private preview is unavailable.");
+        }
+      });
+
+    return () => {
+      controller.abort();
+
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [artifact?.previewPath]);
 
   return (
     <section className="prompt-image-generator" aria-labelledby="prompt-image-title">
@@ -30,7 +73,7 @@ export function PromptImageGenerator() {
         className="prompt-image-form"
         onSubmit={(event) => {
           event.preventDefault();
-          void generateImageMetadata();
+          void generateImageMetadata(project?.projectId);
         }}
       >
         <label className="field field-wide">
@@ -48,6 +91,11 @@ export function PromptImageGenerator() {
           metadata. When available, preview is served only through the backend
           generation route. Storage details, image bytes, and browser downloads are
           not exposed.
+        </p>
+        <p className="form-helper field-wide" data-testid="prompt-image-project-state">
+          {project
+            ? `Project-scoped generation is enabled for ${project.title}.`
+            : "Select a verified project before generating hosted mock image metadata."}
         </p>
         <p className="form-helper field-wide">
           {platformGenerationPolicyCopy.mockGenerationCopy} Real provider image
@@ -80,12 +128,14 @@ export function PromptImageGenerator() {
                 className="prompt-image-preview"
                 data-testid="prompt-image-preview"
               >
-                <img
-                  alt="Backend-mediated generated image preview"
-                  src={artifact.previewPath}
-                />
+                {previewObjectUrl ? (
+                  <img
+                    alt="Backend-mediated generated image preview"
+                    src={previewObjectUrl}
+                  />
+                ) : null}
                 <figcaption>
-                  Preview is served through the backend generation route only.
+                  {previewMessage}
                 </figcaption>
               </figure>
             ) : null}
