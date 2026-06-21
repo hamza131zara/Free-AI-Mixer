@@ -362,6 +362,18 @@ export interface BackendWorkspaceMembershipRecord {
   updatedAt?: string;
 }
 
+export type BackendProjectStatus = "active" | "archived" | "deleted";
+
+export interface BackendProjectRecord {
+  projectId: string;
+  workspaceId: string;
+  ownerId: string;
+  title: string;
+  status: BackendProjectStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type BackendPlatformRoleStatus = "active" | "disabled";
 
 export interface BackendPlatformRoleRecord {
@@ -453,6 +465,25 @@ export interface BackendWorkspaceMembershipRepository {
     role: BackendWorkspaceMembershipRecord["role"];
     status: BackendWorkspaceMembershipRecord["status"];
   }): Promise<BackendWorkspaceMembershipRecord>;
+}
+
+export interface BackendProjectRepository {
+  createProject(input: {
+    ownerId: string;
+    projectId: string;
+    title: string;
+    workspaceId: string;
+  }): Promise<BackendProjectRecord>;
+  listProjectsForWorkspace(workspaceId: string): Promise<BackendProjectRecord[]>;
+  getProjectForWorkspace(
+    workspaceId: string,
+    projectId: string,
+  ): Promise<BackendProjectRecord | undefined>;
+  updateProjectTitleForWorkspace(input: {
+    projectId: string;
+    title: string;
+    workspaceId: string;
+  }): Promise<BackendProjectRecord | undefined>;
 }
 
 export interface BackendPlatformRoleRepository {

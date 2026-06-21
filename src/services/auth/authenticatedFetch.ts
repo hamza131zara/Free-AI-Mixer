@@ -14,10 +14,13 @@ const isSameOriginRelativePath = (value: string): boolean =>
 
 const providerConnectionMutationPathPattern =
   /^\/provider-settings\/connections\/(openai|runway|luma|google|stability|replicate)(\/test)?$/;
+const projectLibraryProjectRecordPathPattern =
+  /^\/project-library\/projects\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const isAllowedAuthenticatedPath = (value: string): boolean =>
   allowedAuthenticatedPaths.has(value) ||
-  providerConnectionMutationPathPattern.test(value);
+  providerConnectionMutationPathPattern.test(value) ||
+  projectLibraryProjectRecordPathPattern.test(value);
 
 interface AuthenticatedFetchDependencies {
   fetch: typeof globalThis.fetch;

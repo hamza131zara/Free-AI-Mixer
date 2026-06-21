@@ -330,6 +330,11 @@ export const createApp = (): Express => {
   );
   app.use(
     createProjectHistoryRouter({
+      ...(repositories
+        ? {
+            projectRepository: repositories.projectRepository,
+          }
+        : {}),
       runtimeConfig: authRuntimeConfig,
       productionPersistenceWriter: backendDeps.productionPersistenceWriter,
       ...(routeAccessResolver ? { routeAccessResolver } : {}),

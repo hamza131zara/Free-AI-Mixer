@@ -1,10 +1,21 @@
 export interface ProjectSummary {
-  id: string;
-  name: string;
-  timelineCount: number;
-  sceneCount: number;
-  updatedAt?: string;
+  projectId: string;
+  title: string;
+  status: "active" | "archived" | "deleted";
+  createdAt: string;
+  updatedAt: string;
 }
+
+export type ProjectLibraryOperationStatus =
+  | "idle"
+  | "loading"
+  | "creating"
+  | "opening"
+  | "renaming"
+  | "empty"
+  | "not_found"
+  | "validation_error"
+  | "unavailable";
 
 export type ProjectLibraryStatusResult =
   | {
@@ -12,7 +23,7 @@ export type ProjectLibraryStatusResult =
       status: "authenticated";
       message: string;
       activeWorkspaceId?: string;
-      persistence: "not_enabled_yet" | "persistence_unavailable";
+      persistence: "durable" | "not_enabled_yet" | "persistence_unavailable";
       projects: ProjectSummary[];
     }
   | {
@@ -34,6 +45,22 @@ export type ProjectLibraryStatusResult =
         | "auth_not_configured"
         | "auth_provider_unavailable"
         | "workspace_runtime_not_configured"
+        | "persistence_unavailable"
+        | "repository_unavailable"
+        | "invalid_request"
+        | "invalid_project_id"
+        | "invalid_title"
+        | "not_found"
         | "project_library_service_unreachable";
       message: string;
     };
+
+export type ProjectRecordResult =
+  | {
+      kind: "project";
+      status: "created" | "loaded" | "updated";
+      project: ProjectSummary;
+    }
+  | Extract<ProjectLibraryStatusResult, { kind: "unauthenticated" }>
+  | Extract<ProjectLibraryStatusResult, { kind: "forbidden" }>
+  | Extract<ProjectLibraryStatusResult, { kind: "unavailable" }>;

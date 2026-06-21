@@ -1,13 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigationStore } from "../store/navigationStore";
 import { useProjectLibraryStore } from "../store/projectLibraryStore";
 
 export function ProjectsPage() {
+  const [newProjectTitle, setNewProjectTitle] = useState("");
+  const [renameTitle, setRenameTitle] = useState("");
   const accessStatus = useProjectLibraryStore((state) => state.accessStatus);
   const accessMessage = useProjectLibraryStore((state) => state.accessMessage);
   const activeWorkspaceId = useProjectLibraryStore((state) => state.activeWorkspaceId);
   const projects = useProjectLibraryStore((state) => state.projects);
+  const selectedProject = useProjectLibraryStore((state) => state.selectedProject);
+  const operationStatus = useProjectLibraryStore((state) => state.operationStatus);
   const pendingAction = useProjectLibraryStore((state) => state.pendingAction);
+  const createProject = useProjectLibraryStore((state) => state.createProject);
+  const openProject = useProjectLibraryStore((state) => state.openProject);
+  const renameProject = useProjectLibraryStore((state) => state.renameProject);
   const refreshProjectLibrary = useProjectLibraryStore(
     (state) => state.refreshProjectLibrary,
   );
@@ -76,16 +83,126 @@ export function ProjectsPage() {
       <div className="page-section">
         <div className="section-header">
           <p className="eyebrow">Saved projects</p>
-          <h2>Honest empty state only</h2>
+          <h2>Durable project metadata</h2>
         </div>
-        {accessStatus === "authenticated" && projects.length === 0 ? (
-          <article className="info-card" data-testid="projects-empty-state">
-            <h3>Saved projects are not enabled yet</h3>
-            <p>
-              No account-owned project records are available yet. Browser-local
-              timelines in the mixer are not treated as saved cloud projects.
-            </p>
-          </article>
+        {accessStatus === "authenticated" ? (
+          <div className="placeholder-grid">
+            <article className="info-card" data-testid="project-create-panel">
+              <h3>Create project metadata</h3>
+              <p>
+                Private beta projects persist only safe metadata: title, status,
+                and timestamps. Timelines, generated media, uploads, and exports
+                are not persisted from this panel.
+              </p>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void createProject(newProjectTitle).then(() => {
+                    setNewProjectTitle("");
+                  });
+                }}
+              >
+                <label htmlFor="new-project-title">Project title</label>
+                <input
+                  id="new-project-title"
+                  name="projectTitle"
+                  value={newProjectTitle}
+                  onChange={(event) => setNewProjectTitle(event.target.value)}
+                  placeholder="Private beta project"
+                />
+                <button
+                  type="submit"
+                  disabled={pendingAction === "create"}
+                >
+                  {pendingAction === "create" ? "Creating..." : "Create Project"}
+                </button>
+              </form>
+            </article>
+
+            <article className="info-card" data-testid="project-list-panel">
+              <h3>Workspace projects</h3>
+              {projects.length === 0 ? (
+                <p data-testid="projects-empty-state">
+                  No durable project metadata exists for this workspace yet.
+                </p>
+              ) : (
+                <ul className="metadata-list">
+                  {projects.map((project) => (
+                    <li key={project.projectId}>
+                      <strong>{project.title}</strong>
+                      <span>Status: {project.status}</span>
+                      <span>Updated: {project.updatedAt}</span>
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={pendingAction === "open"}
+                        onClick={() => {
+                          void openProject(project.projectId).then(() => {
+                            setRenameTitle(project.title);
+                          });
+                        }}
+                      >
+                        Open
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
+
+            <article className="info-card" data-testid="project-selected-panel">
+              <h3>Selected project</h3>
+              {selectedProject ? (
+                <>
+                  <dl className="metadata-list">
+                    <div>
+                      <dt>Project ID</dt>
+                      <dd>{selectedProject.projectId}</dd>
+                    </div>
+                    <div>
+                      <dt>Title</dt>
+                      <dd>{selectedProject.title}</dd>
+                    </div>
+                    <div>
+                      <dt>Status</dt>
+                      <dd>{selectedProject.status}</dd>
+                    </div>
+                    <div>
+                      <dt>Created</dt>
+                      <dd>{selectedProject.createdAt}</dd>
+                    </div>
+                    <div>
+                      <dt>Updated</dt>
+                      <dd>{selectedProject.updatedAt}</dd>
+                    </div>
+                  </dl>
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void renameProject(selectedProject.projectId, renameTitle);
+                    }}
+                  >
+                    <label htmlFor="rename-project-title">Rename project</label>
+                    <input
+                      id="rename-project-title"
+                      name="renameProjectTitle"
+                      value={renameTitle}
+                      onChange={(event) => setRenameTitle(event.target.value)}
+                      placeholder={selectedProject.title}
+                    />
+                    <button
+                      type="submit"
+                      disabled={pendingAction === "rename"}
+                    >
+                      {pendingAction === "rename" ? "Renaming..." : "Rename Project"}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <p>Open a project to inspect its persisted metadata.</p>
+              )}
+            </article>
+          </div>
         ) : accessStatus === "forbidden" ? (
           <article className="info-card" data-testid="projects-forbidden-state">
             <h3>Workspace access is required</h3>
@@ -103,6 +220,16 @@ export function ProjectsPage() {
             </p>
           </article>
         )}
+        {operationStatus === "validation_error" ? (
+          <p className="status-note" data-testid="project-validation-state">
+            {accessMessage}
+          </p>
+        ) : null}
+        {operationStatus === "not_found" ? (
+          <p className="status-note" data-testid="project-not-found-state">
+            {accessMessage}
+          </p>
+        ) : null}
       </div>
 
       <div className="page-section">

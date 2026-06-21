@@ -173,7 +173,7 @@ test.describe("Launch Block 1 production auth and Supabase persistence", () => {
       kind: "auth_provider_configured" as const,
       provider: "future_jwt_provider" as const,
       issuer: "https://auth.example.test",
-      audience: "free-ai-mixer",
+      audience: "authenticated",
     };
     const accessDecision = await resolveSelectedRouteAccess({
       headers: {
@@ -193,14 +193,46 @@ test.describe("Launch Block 1 production auth and Supabase persistence", () => {
       statusCode: 401,
     });
 
-    const jwtStrategy =
-      createTrustedAuthProviderStrategyFromRuntimeConfig(runtimeConfig);
-    const requesterContext = await jwtStrategy.resolveRequesterContext({
-      headers: {
-        "x-user-id": "attacker-user",
-        "x-workspace-id": "attacker-workspace",
-      },
-    });
+    const previousJwtEnv = {
+      FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS:
+        process.env.FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS,
+      FREE_AI_MIXER_AUTH_AUDIENCE: process.env.FREE_AI_MIXER_AUTH_AUDIENCE,
+      FREE_AI_MIXER_AUTH_ISSUER: process.env.FREE_AI_MIXER_AUTH_ISSUER,
+      FREE_AI_MIXER_AUTH_JWKS_URI: process.env.FREE_AI_MIXER_AUTH_JWKS_URI,
+      FREE_AI_MIXER_AUTH_JWT_KEY_MODE:
+        process.env.FREE_AI_MIXER_AUTH_JWT_KEY_MODE,
+      FREE_AI_MIXER_AUTH_PROVIDER: process.env.FREE_AI_MIXER_AUTH_PROVIDER,
+      FREE_AI_MIXER_AUTH_RUNTIME_ENABLED:
+        process.env.FREE_AI_MIXER_AUTH_RUNTIME_ENABLED,
+    };
+    process.env.FREE_AI_MIXER_AUTH_ALLOWED_ALGORITHMS = "ES256";
+    process.env.FREE_AI_MIXER_AUTH_AUDIENCE = runtimeConfig.audience;
+    process.env.FREE_AI_MIXER_AUTH_ISSUER = runtimeConfig.issuer;
+    process.env.FREE_AI_MIXER_AUTH_JWKS_URI =
+      "https://auth.example.test/.well-known/jwks.json";
+    process.env.FREE_AI_MIXER_AUTH_JWT_KEY_MODE = "remote_jwks";
+    process.env.FREE_AI_MIXER_AUTH_PROVIDER = "jwt";
+    process.env.FREE_AI_MIXER_AUTH_RUNTIME_ENABLED = "1";
+
+    let requesterContext;
+    try {
+      const jwtStrategy =
+        createTrustedAuthProviderStrategyFromRuntimeConfig(runtimeConfig);
+      requesterContext = await jwtStrategy.resolveRequesterContext({
+        headers: {
+          "x-user-id": "attacker-user",
+          "x-workspace-id": "attacker-workspace",
+        },
+      });
+    } finally {
+      for (const [key, value] of Object.entries(previousJwtEnv)) {
+        if (typeof value === "undefined") {
+          delete process.env[key];
+        } else {
+          process.env[key] = value;
+        }
+      }
+    }
 
     expect(requesterContext).toMatchObject({
       kind: "unauthenticated",

@@ -19,8 +19,13 @@ import {
   createSupabaseAccountWorkspaceRepository,
   type SupabaseAccountWorkspaceClient,
 } from "../repositories/supabaseAccountWorkspaceRepository";
+import {
+  createSupabaseProjectRepository,
+  type SupabaseProjectClient,
+} from "../repositories/supabaseProjectRepository";
 import type {
   BackendExportJobsRepository,
+  BackendProjectRepository,
   BackendProviderKeyRepository,
   BackendUserAccountRepository,
   BackendWorkspaceMembershipRepository,
@@ -29,6 +34,7 @@ import type {
 
 export interface BackendDatabaseRepositories {
   exportJobsRepository: BackendExportJobsRepository;
+  projectRepository: BackendProjectRepository;
   providerKeyRepository: BackendProviderKeyRepository;
   userAccountRepository: BackendUserAccountRepository;
   workspaceRepository: BackendWorkspaceRepository;
@@ -82,9 +88,13 @@ const createRepositoriesFromClientFactory = (
   const accountWorkspaceRepository = createSupabaseAccountWorkspaceRepository(
     adminHandle.client as unknown as SupabaseAccountWorkspaceClient,
   );
+  const projectRepository = createSupabaseProjectRepository(
+    adminHandle.client as unknown as SupabaseProjectClient,
+  );
 
   return {
     exportJobsRepository,
+    projectRepository,
     providerKeyRepository,
     userAccountRepository: accountWorkspaceRepository,
     workspaceRepository: accountWorkspaceRepository,
