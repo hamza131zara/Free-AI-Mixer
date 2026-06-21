@@ -5,6 +5,7 @@ import { useProjectLibraryStore } from "../store/projectLibraryStore";
 export function ProjectsPage() {
   const [newProjectTitle, setNewProjectTitle] = useState("");
   const [renameTitle, setRenameTitle] = useState("");
+  const [selectingProjectId, setSelectingProjectId] = useState<string | undefined>();
   const accessStatus = useProjectLibraryStore((state) => state.accessStatus);
   const accessMessage = useProjectLibraryStore((state) => state.accessMessage);
   const activeWorkspaceId = useProjectLibraryStore((state) => state.activeWorkspaceId);
@@ -23,6 +24,12 @@ export function ProjectsPage() {
   useEffect(() => {
     void refreshProjectLibrary();
   }, [refreshProjectLibrary]);
+
+  useEffect(() => {
+    if (selectedProject) {
+      setRenameTitle(selectedProject.title);
+    }
+  }, [selectedProject]);
 
   return (
     <section className="projects-page" data-testid="projects-page">
@@ -74,7 +81,10 @@ export function ProjectsPage() {
           ) : null}
           {accessStatus === "authenticated" ? (
             <p>
-              Verified workspace: <strong>{activeWorkspaceId ?? "No workspace selected yet"}</strong>
+              Verified workspace:{" "}
+              <strong>
+                {activeWorkspaceId ? "Available" : "No workspace selected yet"}
+              </strong>
             </p>
           ) : null}
         </div>
@@ -128,21 +138,41 @@ export function ProjectsPage() {
               ) : (
                 <ul className="metadata-list">
                   {projects.map((project) => (
-                    <li key={project.projectId}>
+                    <li
+                      key={project.projectId}
+                      aria-current={
+                        selectedProject?.projectId === project.projectId
+                          ? "true"
+                          : undefined
+                      }
+                    >
                       <strong>{project.title}</strong>
                       <span>Status: {project.status}</span>
                       <span>Updated: {project.updatedAt}</span>
+                      {selectedProject?.projectId === project.projectId ? (
+                        <span aria-label="Currently selected project">Selected</span>
+                      ) : null}
                       <button
                         type="button"
                         className="secondary"
-                        disabled={pendingAction === "open"}
+                        aria-pressed={selectedProject?.projectId === project.projectId}
+                        disabled={
+                          pendingAction === "open" ||
+                          selectingProjectId === project.projectId
+                        }
                         onClick={() => {
-                          void openProject(project.projectId).then(() => {
-                            setRenameTitle(project.title);
+                          setSelectingProjectId(project.projectId);
+                          void openProject(project.projectId).finally(() => {
+                            setSelectingProjectId(undefined);
                           });
                         }}
                       >
-                        Open
+                        {selectingProjectId === project.projectId &&
+                        pendingAction === "open"
+                          ? "Selecting..."
+                          : selectedProject?.projectId === project.projectId
+                            ? "Selected"
+                            : "Select"}
                       </button>
                     </li>
                   ))}
@@ -154,6 +184,14 @@ export function ProjectsPage() {
               <h3>Selected project</h3>
               {selectedProject ? (
                 <>
+                  <p
+                    className="status-note"
+                    data-testid="project-selection-confirmation"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    Selected project: {selectedProject.title}
+                  </p>
                   <dl className="metadata-list">
                     <div>
                       <dt>Project ID</dt>
