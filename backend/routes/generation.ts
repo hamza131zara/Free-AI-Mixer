@@ -761,6 +761,7 @@ const sendMockLocalImageStorageResult = async (
           createdAt: artifact.createdAt,
           jobId: artifact.jobId,
           ownerId: artifact.ownerId,
+          projectId: input.projectId,
           providerId: artifact.providerId,
           requestId: input.jobId,
           sha256: artifact.sha256,
@@ -1138,11 +1139,23 @@ export const createGenerationRouter = (
         return;
       }
 
-      const history =
-        await options.projectRepository.listImageGenerationHistoryForProject(
-          requesterContext.workspaceId,
-          project.projectId,
+      let history;
+
+      try {
+        history =
+          await options.projectRepository.listImageGenerationHistoryForProject(
+            requesterContext.workspaceId,
+            project.projectId,
+          );
+      } catch {
+        sendGenerationHistoryRejected(
+          response,
+          "persistence_unavailable",
+          "Generated image history is temporarily unavailable.",
+          503,
         );
+        return;
+      }
 
       response.status(200).json({
         kind: "generation_history",
@@ -1368,16 +1381,29 @@ export const createGenerationRouter = (
           safeProjectIdRegex.test(previewProjectId) &&
           options.projectRepository?.listImageGenerationHistoryForProject
         ) {
-          const project = await options.projectRepository.getProjectForWorkspace(
-            requesterContext.workspaceId,
-            previewProjectId,
-          );
-          const history = project
-            ? await options.projectRepository.listImageGenerationHistoryForProject(
-                requesterContext.workspaceId,
-                project.projectId,
-              )
-            : [];
+          let project;
+          let history;
+
+          try {
+            project = await options.projectRepository.getProjectForWorkspace(
+              requesterContext.workspaceId,
+              previewProjectId,
+            );
+            history = project
+              ? await options.projectRepository.listImageGenerationHistoryForProject(
+                  requesterContext.workspaceId,
+                  project.projectId,
+                )
+              : [];
+          } catch {
+            sendGeneratedArtifactAccessUnavailable(
+              response,
+              "generated_artifact_access_unavailable",
+              "Generated artifact preview is temporarily unavailable.",
+              503,
+            );
+            return;
+          }
           const matchesProjectHistory = history.some(
             (entry) => entry.jobId === jobId && entry.artifactId === artifactId,
           );

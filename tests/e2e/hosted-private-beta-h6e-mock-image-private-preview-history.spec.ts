@@ -461,6 +461,7 @@ test.describe("Hosted private beta H6-E mock image private preview history", () 
   });
 
   test("keeps frontend preview/history calls backend-mediated and bearer-capable", () => {
+    const generationRouteSource = readSource("backend/routes/generation.ts");
     const authenticatedFetchSource = readSource(
       "src/services/auth/authenticatedFetch.ts",
     );
@@ -470,6 +471,7 @@ test.describe("Hosted private beta H6-E mock image private preview history", () 
     const mixerSource = readSource("src/pages/MixerPage.tsx");
     const historyStoreSource = readSource("src/store/imageGenerationHistoryStore.ts");
     const combined = [
+      generationRouteSource,
       authenticatedFetchSource,
       imageServiceSource,
       generatorSource,
@@ -477,7 +479,23 @@ test.describe("Hosted private beta H6-E mock image private preview history", () 
       mixerSource,
       historyStoreSource,
     ].join("\n");
+    const historyWriteProjectAssociations =
+      generationRouteSource.match(/persistImageGenerationHistory\(\{[\s\S]*?projectId: input\.projectId/g) ??
+      [];
 
+    expect(historyWriteProjectAssociations).toHaveLength(2);
+    expect(generationRouteSource).toContain(
+      "Generated image history is temporarily unavailable.",
+    );
+    expect(generationRouteSource).toContain(
+      "Generated artifact preview is temporarily unavailable.",
+    );
+    expect(generationRouteSource).toMatch(
+      /catch \{[\s\S]*sendGenerationHistoryRejected\([\s\S]*"persistence_unavailable"[\s\S]*503/,
+    );
+    expect(generationRouteSource).toMatch(
+      /catch \{[\s\S]*sendGeneratedArtifactAccessUnavailable\([\s\S]*"generated_artifact_access_unavailable"[\s\S]*503/,
+    );
     expect(authenticatedFetchSource).toContain('"/generation/history"');
     expect(authenticatedFetchSource).toContain(
       "generatedImagePreviewPathPattern",
