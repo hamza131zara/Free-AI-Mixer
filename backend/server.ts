@@ -3,6 +3,7 @@ import { createApp } from "./app";
 import { createGracefulShutdown, type GracefulShutdownController } from "./lifecycle/gracefulShutdown";
 
 export interface StartServerOptions {
+  host?: string;
   port?: number;
   registerSignals?: boolean;
 }
@@ -18,12 +19,18 @@ export interface StartServerController extends GracefulShutdownController {
 const registeredSignals = new Set<string>();
 
 export const startServer = (options: StartServerOptions = {}): StartServerController => {
-  const { port = Number(process.env.PORT ?? "8787"), registerSignals = true } = options;
+  const {
+    host = "0.0.0.0",
+    port = Number(process.env.PORT ?? "8787"),
+    registerSignals = true,
+  } = options;
 
   const app = createApp();
 
-  const server = app.listen(port, () => {
-    console.log(`Free AI Mixer export backend scaffold listening on :${port}`);
+  const server = app.listen(port, host, () => {
+    console.log(
+      `Free AI Mixer export backend scaffold listening on ${host}:${port}`,
+    );
   });
 
   const gracefulShutdown = createGracefulShutdown({
@@ -75,4 +82,3 @@ const isDirectRun =
 if (isDirectRun) {
   startServer();
 }
-
