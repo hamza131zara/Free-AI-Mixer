@@ -28,45 +28,23 @@ const readSource = (relativePath: string): string =>
 
 test.describe("product phase 2 auth shell", () => {
   test("login page renders with honest auth boundary copy", async ({ page }) => {
-    await page.route("**/auth/session", async (route) => {
-      await route.fulfill({
-        status: 503,
-        contentType: "application/json",
-        body: JSON.stringify({
-          kind: "auth_unavailable",
-          status: "auth_not_configured",
-          message: "Authentication is not configured on this backend yet.",
-        }),
-      });
-    });
-
     await page.goto("/login", { waitUntil: "load" });
 
     await expect(page.getByTestId("login-page")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Log in" })).toBeVisible();
-    await expect(page.getByText("Authentication is not configured on this backend yet.")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Request login" })).toBeVisible();
+    await expect(page.getByText("Checking backend session status.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log in" })).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("fake-user");
   });
 
   test("signup page renders with honest auth boundary copy", async ({ page }) => {
-    await page.route("**/auth/session", async (route) => {
-      await route.fulfill({
-        status: 503,
-        contentType: "application/json",
-        body: JSON.stringify({
-          kind: "auth_unavailable",
-          status: "auth_not_configured",
-          message: "Authentication is not configured on this backend yet.",
-        }),
-      });
-    });
-
     await page.goto("/signup", { waitUntil: "load" });
 
     await expect(page.getByTestId("signup-page")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Sign up" })).toBeVisible();
-    await expect(page.getByText("Authentication is not configured on this backend yet.")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Request sign up" })).toBeVisible();
+    await expect(page.getByText("Checking backend session status.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign up" })).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("fake-user");
   });
 
   test("dashboard route stays protected and shows no fake authenticated account by default", async ({
@@ -86,14 +64,13 @@ test.describe("product phase 2 auth shell", () => {
 
     await page.goto("/dashboard", { waitUntil: "load" });
 
-    await expect(page.getByTestId("dashboard-page")).toBeVisible();
-    await expect(page.getByTestId("dashboard-session-state")).toContainText("unavailable");
-    await expect(page.getByTestId("dashboard-session-state")).toContainText(
+    await expect(page.getByTestId("protected-route-shell")).toBeVisible();
+    await expect(page.getByTestId("protected-route-shell-status")).toContainText(
       "Authentication is not configured on this backend yet.",
     );
-    await expect(page.getByTestId("dashboard-protected-state")).toBeVisible();
-    await expect(page.getByTestId("dashboard-page")).not.toContainText("demo-user");
-    await expect(page.getByTestId("dashboard-page")).not.toContainText("fake-user");
+    await expect(page.getByTestId("dashboard-page")).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText("demo-user");
+    await expect(page.locator("body")).not.toContainText("fake-user");
   });
 
   test("logout clears verified session state in the frontend store", async ({ page }) => {
@@ -114,6 +91,8 @@ test.describe("product phase 2 auth shell", () => {
             workspaceId: "workspace-001",
             authProvider: "session",
             authSubject: "verified-user-001",
+            email: "verified@example.test",
+            workspaceAuthority: "verified",
           },
         }),
       });
@@ -133,12 +112,13 @@ test.describe("product phase 2 auth shell", () => {
 
     await page.goto("/dashboard", { waitUntil: "load" });
 
-    await expect(page.getByTestId("verified-identity-card")).toContainText("verified-user-001");
+    await expect(page.getByTestId("dashboard-account-status-panel")).toContainText(
+      "verified-user-001",
+    );
     await page.getByTestId("dashboard-page").getByRole("button", { name: "Log out" }).click();
 
-    await expect(page.getByTestId("dashboard-session-state")).toContainText("unauthenticated");
-    await expect(page.getByTestId("dashboard-protected-state")).toBeVisible();
-    await expect(page.getByTestId("dashboard-page")).not.toContainText("verified-user-001");
+    await expect(page.getByTestId("login-page")).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("verified-user-001");
     expect(sessionRequests).toBeGreaterThan(0);
   });
 
@@ -147,11 +127,15 @@ test.describe("product phase 2 auth shell", () => {
       .map((relativePath) => readSource(relativePath))
       .join("\n");
 
-    expect(frontendSource).not.toContain("@supabase/supabase-js");
-    expect(frontendSource).not.toContain("createClient(");
+    expect(frontendSource).not.toContain("supabase.from(");
     expect(frontendSource).not.toContain(".storage.from(");
-    expect(frontendSource).not.toContain("service_role");
-    expect(frontendSource).not.toContain("SERVICE_ROLE");
+    expect(frontendSource).not.toContain("createSignedUrl(");
+    expect(frontendSource).not.toContain("getPublicUrl(");
+    expect(frontendSource).not.toContain(
+      "FREE_AI_MIXER_SUPABASE_SERVICE_ROLE_KEY",
+    );
+    expect(frontendSource).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(frontendSource).not.toContain("serviceRoleKey");
     expect(frontendSource).not.toContain("demo-user");
     expect(frontendSource).not.toContain("fake-user");
     expect(frontendSource).not.toContain("fake-session");

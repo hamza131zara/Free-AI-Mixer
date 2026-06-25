@@ -84,7 +84,7 @@ test.describe("merged phase 23C-2 credits status truthfulness", () => {
 
       expect(body.kind).toBe("credits_status");
       expect(body.status).toBe("authenticated");
-      expect(body.wallet.state).toBe("not_enabled_yet");
+      expect(body.wallet.state).toBe("platform_credits_not_configured");
       expect(body.wallet.scope).toBe("workspace");
       expect(body.wallet.liveBalanceAvailable).toBe(false);
       expect(body.wallet.activeWorkspaceId).toBe("workspace-credits-verified");

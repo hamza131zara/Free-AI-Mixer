@@ -23,29 +23,16 @@ test.describe("product phase 4 project library and export history shell", () => 
       });
     });
 
-    await page.route("**/project-library/projects", async (route) => {
-      await route.fulfill({
-        status: 503,
-        contentType: "application/json",
-        body: JSON.stringify({
-          kind: "project_library_unavailable",
-          status: "auth_not_configured",
-          message: "Authentication is not configured on this backend yet.",
-        }),
-      });
-    });
-
     await page.goto("/projects", { waitUntil: "load" });
 
-    await expect(page.getByTestId("projects-page")).toBeVisible();
-    await expect(page.getByTestId("projects-access-state")).toContainText("unavailable");
-    await expect(page.getByTestId("projects-access-state")).toContainText(
+    await expect(page.getByTestId("protected-route-shell")).toBeVisible();
+    await expect(page.getByTestId("protected-route-shell-status")).toContainText(
+      "Authentication unavailable",
+    );
+    await expect(page.getByTestId("protected-route-shell-status")).toContainText(
       "Authentication is not configured on this backend yet.",
     );
-    await expect(page.getByTestId("projects-protected-state")).toBeVisible();
-    await expect(page.getByTestId("projects-page")).toContainText(
-      "Browser-local timelines in the mixer remain editor convenience only",
-    );
+    await expect(page.getByTestId("projects-page")).toHaveCount(0);
   });
 
   test("projects and history pages render authenticated honest empty states with no fake rows", async ({
@@ -77,9 +64,9 @@ test.describe("product phase 4 project library and export history shell", () => 
           kind: "project_library",
           status: "authenticated",
           message:
-            "Project library is available for this verified session, but durable saved projects are not enabled yet.",
+            "Project library is available for this verified session with durable project metadata persistence.",
           activeWorkspaceId: "workspace-phase4",
-          persistence: "not_enabled_yet",
+          persistence: "durable",
           projects: [],
         }),
       });
@@ -104,7 +91,7 @@ test.describe("product phase 4 project library and export history shell", () => 
     await page.goto("/projects", { waitUntil: "load" });
     await expect(page.getByTestId("projects-empty-state")).toBeVisible();
     await expect(page.getByTestId("projects-empty-state")).toContainText(
-      "Saved projects are not enabled yet",
+      "No durable project metadata exists for this workspace yet.",
     );
     await expect(page.getByTestId("projects-page")).not.toContainText("Project 1");
     await expect(page.getByTestId("projects-page")).not.toContainText("Created on");

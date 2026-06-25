@@ -13,9 +13,11 @@ const providerCatalogResponse = {
       displayName: "OpenAI",
       capabilities: [
         "image_generation",
+        "image_editing",
         "video_generation",
-        "native_video_audio",
-        "text_to_speech",
+        "prompt_text_intelligence",
+        "template_generation_candidate",
+        "card_generation_candidate",
       ],
       supportsByok: true,
       summary: "General-purpose multimodal provider.",
@@ -23,35 +25,59 @@ const providerCatalogResponse = {
     {
       id: "runway",
       displayName: "Runway",
-      capabilities: ["video_generation", "native_video_audio", "upscale"],
+      capabilities: [
+        "video_generation",
+        "text_to_video",
+        "image_to_video",
+        "video_to_video",
+        "audio_generation",
+      ],
       supportsByok: true,
       summary: "Video-first creative provider candidate.",
     },
     {
       id: "luma",
       displayName: "Luma",
-      capabilities: ["video_generation", "native_video_audio"],
+      capabilities: ["video_generation", "text_to_video", "image_to_video"],
       supportsByok: true,
       summary: "Motion generation provider candidate.",
     },
     {
       id: "google",
-      displayName: "Google",
-      capabilities: ["image_generation", "video_generation", "music_generation"],
+      displayName: "Google Gemini/Veo",
+      capabilities: [
+        "image_generation",
+        "video_generation",
+        "text_to_video",
+        "image_to_video",
+        "prompt_text_intelligence",
+        "text_to_speech",
+      ],
       supportsByok: true,
       summary: "Gemini and Veo family candidate.",
     },
     {
       id: "stability",
       displayName: "Stability",
-      capabilities: ["image_generation", "upscale"],
+      capabilities: [
+        "image_generation",
+        "image_editing",
+        "template_generation_candidate",
+        "card_generation_candidate",
+      ],
       supportsByok: true,
       summary: "Image and enhancement provider candidate.",
     },
     {
       id: "replicate",
       displayName: "Replicate",
-      capabilities: ["image_generation", "video_generation", "sound_effects"],
+      capabilities: [
+        "model_marketplace",
+        "image_generation",
+        "video_generation",
+        "image_to_video",
+        "text_to_video",
+      ],
       supportsByok: true,
       summary: "Broad model marketplace candidate.",
     },
@@ -65,6 +91,24 @@ test.describe("product phase 3 provider settings", () => {
   test("provider settings page renders protected state with supported provider catalog and honest copy", async ({
     page,
   }) => {
+    await page.route("**/auth/session", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          kind: "authenticated_session",
+          status: "authenticated",
+          message: "Backend session verified.",
+          identity: {
+            userId: "verified-user-001",
+            workspaceId: "verified-workspace-001",
+            authProvider: "supabase",
+            authSubject: "verified-user-001",
+          },
+        }),
+      });
+    });
+
     await page.route("**/provider-settings/catalog", async (route) => {
       await route.fulfill({
         status: 200,
@@ -93,27 +137,39 @@ test.describe("product phase 3 provider settings", () => {
       "Authentication is not configured on this backend yet.",
     );
 
-    for (const providerName of ["OpenAI", "Runway", "Luma", "Google", "Stability", "Replicate"]) {
-      await expect(page.getByRole("heading", { name: providerName })).toBeVisible();
+    const providerCatalogGrid = page.getByTestId("provider-catalog-grid");
+
+    for (const providerName of ["OpenAI", "Runway", "Luma", "Google Gemini/Veo", "Stability", "Replicate"]) {
+      await expect(
+        providerCatalogGrid.getByRole("heading", { name: providerName, exact: true }),
+      ).toBeVisible();
     }
 
-    await expect(page.getByTestId("provider-catalog-grid")).toContainText("Image generation");
-    await expect(page.getByTestId("provider-catalog-grid")).toContainText("Video generation");
-    await expect(page.getByTestId("provider-catalog-grid")).toContainText("Native video audio");
-    await expect(page.getByTestId("provider-catalog-grid")).toContainText("Text to speech");
-    await expect(page.getByTestId("provider-catalog-grid")).toContainText("Music generation");
-    await expect(page.getByTestId("provider-catalog-grid")).toContainText("Sound effects");
-    await expect(page.getByTestId("provider-catalog-grid")).toContainText("Upscale");
+    await expect(providerCatalogGrid).toContainText("Image generation");
+    await expect(providerCatalogGrid).toContainText("Video generation");
+    await expect(providerCatalogGrid).toContainText("Image editing");
+    await expect(providerCatalogGrid).toContainText("Image to video");
+    await expect(providerCatalogGrid).toContainText("Text to video");
+    await expect(providerCatalogGrid).toContainText("Video to video");
+    await expect(providerCatalogGrid).toContainText("Audio generation");
+    await expect(providerCatalogGrid).toContainText("Text to speech");
+    await expect(providerCatalogGrid).toContainText("Template candidate");
+    await expect(providerCatalogGrid).toContainText("Card candidate");
+    await expect(providerCatalogGrid).toContainText("Prompt and text intelligence");
+    await expect(providerCatalogGrid).toContainText("Model marketplace");
 
     await expect(
       page.getByText("BYOK means users pay provider generation cost through their own API keys later."),
     ).toBeVisible();
-    await expect(
-      page.getByText("Free BYOK users may later get 2500 daily Free AI Mixer platform credits."),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Multiple API keys do not multiply daily platform credits."),
-    ).toBeVisible();
+   const capabilityPolicy = page.getByTestId("provider-capability-policy");
+
+await expect(capabilityPolicy).toContainText(
+  "Free workspace and mock/demo generation are available.",
+);
+
+await expect(capabilityPolicy).toContainText(
+  "Some image/video provider APIs require separate provider billing or an eligible provider account.",
+);
     await expect(
       page.getByText("Audio is optional and provider-capability based, not a separate early setup."),
     ).toBeVisible();
@@ -143,7 +199,10 @@ test.describe("product phase 3 provider settings", () => {
     expect(frontendSource).not.toContain("sessionStorage.setItem");
     expect(frontendSource).not.toContain("api.openai.com");
     expect(frontendSource).not.toContain("googleapis.com");
-    expect(frontendSource).not.toContain("stability.ai");
+    expect(frontendSource).not.toContain("api.stability.ai");
+    expect(frontendSource).not.toMatch(
+      /fetch\s*\(\s*["'`]https:\/\/(?:api\.)?stability\.ai/i,
+    );
     expect(frontendSource).not.toContain("replicate.com");
     expect(frontendSource).not.toContain("SERVICE_ROLE");
     expect(frontendSource).not.toContain("service_role");

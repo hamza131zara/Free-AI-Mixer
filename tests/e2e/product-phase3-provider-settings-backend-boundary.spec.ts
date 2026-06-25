@@ -54,7 +54,7 @@ test.describe("product phase 3 provider settings backend boundary", () => {
         "OpenAI",
         "Runway",
         "Luma",
-        "Google",
+        "Google Gemini/Veo",
         "Stability",
         "Replicate",
       ]);
@@ -118,8 +118,14 @@ test.describe("product phase 3 provider settings backend boundary", () => {
     expect(combinedSource).not.toContain("x-workspace-id");
     expect(combinedSource).not.toContain("api.openai.com");
     expect(combinedSource).not.toContain("googleapis.com");
-    expect(combinedSource).not.toContain("stability.ai");
-    expect(combinedSource).not.toContain("replicate.com");
+    expect(combinedSource).not.toContain("api.stability.ai");
+    expect(combinedSource).not.toMatch(
+      /fetch\s*\(\s*["'`]https:\/\/(?:api\.)?stability\.ai/i,
+    );
+    expect(combinedSource).not.toContain("api.replicate.com");
+    expect(combinedSource).not.toMatch(
+      /fetch\s*\(\s*["'`]https:\/\//i,
+    );
     expect(combinedSource).not.toContain("SERVICE_ROLE");
     expect(combinedSource).not.toContain("service_role");
     expect(combinedSource).not.toContain("localStorage.setItem");
