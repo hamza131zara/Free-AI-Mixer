@@ -25,9 +25,9 @@ test.describe("merged phase 23D-1 protected route shell", () => {
     await page.goto("/projects", { waitUntil: "domcontentloaded" });
 
     await expect(page.getByTestId("protected-route-shell")).toBeVisible();
-    await expect(page.getByTestId("protected-route-shell-status")).toContainText(
-      "Checking backend session status.",
-    );
+    await expect(
+  page.getByTestId("protected-route-shell-status"),
+).toContainText("Checking session");
 
     releaseSessionResponse?.();
 

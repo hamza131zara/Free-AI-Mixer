@@ -120,7 +120,7 @@ test.describe("merged phase 23D-1 backend truth preserved", () => {
           message:
             "Credits policy is visible for this verified session, but wallet mutation is not enabled yet.",
           wallet: {
-            state: "not_enabled_yet",
+            state: "platform_credits_not_configured",
             scope: "workspace",
             liveBalanceAvailable: false,
             message: "No live credit balance is available in this product phase.",

@@ -20,6 +20,7 @@ import { createLocalGeneratedImageArtifactStorage } from "../../backend/generati
 import { createRegistryBackedGeneratedImageArtifactAccessResolver } from "../../backend/generation/generatedImageArtifactAccess";
 import { createGenerationRouter } from "../../backend/routes/generation";
 import { createProjectHistoryRouter } from "../../backend/routes/projectHistory";
+import type { BackendProjectRepository } from "../../backend/repositories/repositoryContracts";
 import {
   createNotConfiguredProductionSupabasePersistenceWriter,
   forbiddenProductionPersistencePublicFields,
@@ -78,6 +79,8 @@ const generationControlsReady = {
   singleFlightReady: true,
 };
 
+const projectId = "11111111-1111-4111-8111-111111111111";
+
 const ownerRequesterContext = createAuthenticatedRequesterContext({
   appUserId: "block1-app-user",
   authProvider: "jwt",
@@ -111,6 +114,26 @@ const viewerMembershipRepository: WorkspaceMembershipRepository = {
       workspaceId,
     },
   }),
+};
+
+const ownerProjectRepository: BackendProjectRepository = {
+  createProject: async () => {
+    throw new Error("Project creation is not part of this generation route test.");
+  },
+  getProjectForWorkspace: async (workspaceId, requestedProjectId) =>
+    workspaceId === ownerRequesterContext.workspaceId && requestedProjectId === projectId
+      ? {
+          createdAt: "2026-06-24T00:00:00.000Z",
+          ownerId: ownerRequesterContext.userId,
+          projectId,
+          status: "active",
+          title: "Block 1 Mock Generation Project",
+          updatedAt: "2026-06-24T00:00:00.000Z",
+          workspaceId,
+        }
+      : undefined,
+  listProjectsForWorkspace: async () => [],
+  updateProjectTitleForWorkspace: async () => undefined,
 };
 
 const startExpressServer = async (app: express.Express) => {
@@ -266,6 +289,7 @@ test.describe("Launch Block 1 production auth and Supabase persistence", () => {
         body: JSON.stringify({
           generationKind: "image",
           prompt: "Create a local mock image for Block 1 auth testing.",
+          projectId,
           providerId: "openai",
           requestId: "block1auth001",
         }),
@@ -312,6 +336,7 @@ test.describe("Launch Block 1 production auth and Supabase persistence", () => {
         generationRuntimeConfig,
         productionAuthOwnershipPolicyEnabled: true,
         productionPersistenceWriter: persistenceWriter,
+        projectRepository: ownerProjectRepository,
         routeAccessResolver: {
           resolve: async () => ownerRequesterContext,
         },
@@ -326,6 +351,7 @@ test.describe("Launch Block 1 production auth and Supabase persistence", () => {
         body: JSON.stringify({
           generationKind: "image",
           prompt: "Create a deterministic local mock image for Block 1.",
+          projectId,
           providerId: "openai",
           requestId: "block1mock001",
         }),

@@ -65,13 +65,19 @@ test.describe("product phase 8 ledger and billing boundary", () => {
       await expect(plansResponse.json()).resolves.toMatchObject({
         kind: "billing_plans",
         providerBoundary: {
-          state: "not_enabled_yet",
+          state: "billing_provider_not_configured",
         },
         checkoutBoundary: {
-          state: "not_enabled_yet",
+          state: "checkout_unavailable",
         },
         webhookBoundary: {
           state: "not_live",
+        },
+        subscriptionBoundary: {
+          state: "subscriptions_not_configured",
+        },
+        platformCreditsBoundary: {
+          state: "platform_credits_not_configured",
         },
       });
     } finally {
