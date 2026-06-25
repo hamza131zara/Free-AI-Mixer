@@ -2,10 +2,54 @@ import { useEffect, useState } from "react";
 import { useNavigationStore } from "../store/navigationStore";
 import { useProjectLibraryStore } from "../store/projectLibraryStore";
 
+const safeProjectIdPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const readProjectIdFromUrl = (): { invalid: boolean; projectId?: string } => {
+  if (typeof window === "undefined") {
+    return { invalid: false };
+  }
+
+  const projectId = new URLSearchParams(window.location.search).get("projectId");
+
+  if (!projectId) {
+    return { invalid: false };
+  }
+
+  if (!safeProjectIdPattern.test(projectId)) {
+    return { invalid: true };
+  }
+
+  return { invalid: false, projectId };
+};
+
+const updateProjectsProjectIdUrl = (projectId?: string): void => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+
+  if (projectId) {
+    url.searchParams.set("projectId", projectId);
+  } else {
+    url.searchParams.delete("projectId");
+  }
+
+  const nextPath = `${url.pathname}${url.search}${url.hash}`;
+  window.history.replaceState({}, "", nextPath);
+};
+
 export function ProjectsPage() {
   const [newProjectTitle, setNewProjectTitle] = useState("");
   const [renameTitle, setRenameTitle] = useState("");
   const [selectingProjectId, setSelectingProjectId] = useState<string | undefined>();
+  const [restoreAttemptedProjectId, setRestoreAttemptedProjectId] = useState<
+    string | undefined
+  >();
+  const [urlProjectSelection, setUrlProjectSelection] = useState(
+    readProjectIdFromUrl,
+  );
   const accessStatus = useProjectLibraryStore((state) => state.accessStatus);
   const accessMessage = useProjectLibraryStore((state) => state.accessMessage);
   const activeWorkspaceId = useProjectLibraryStore((state) => state.activeWorkspaceId);
@@ -27,10 +71,97 @@ export function ProjectsPage() {
   }, [refreshProjectLibrary]);
 
   useEffect(() => {
-    if (selectedProject) {
-      setRenameTitle(selectedProject.title);
+    const handleLocationChange = () => {
+      setUrlProjectSelection(readProjectIdFromUrl());
+      setRestoreAttemptedProjectId(undefined);
+    };
+
+    window.addEventListener("popstate", handleLocationChange);
+
+    return () => {
+      window.removeEventListener("popstate", handleLocationChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      urlProjectSelection.invalid &&
+      accessStatus === "authenticated" &&
+      pendingAction !== "refresh" &&
+      operationStatus !== "loading"
+    ) {
+      updateProjectsProjectIdUrl();
+      setUrlProjectSelection({ invalid: false });
+      setRestoreAttemptedProjectId(undefined);
     }
-  }, [selectedProject]);
+  }, [
+    accessStatus,
+    operationStatus,
+    pendingAction,
+    urlProjectSelection.invalid,
+  ]);
+
+  useEffect(() => {
+    const urlProjectId = urlProjectSelection.projectId;
+
+    if (
+      accessStatus !== "authenticated" ||
+      !urlProjectId ||
+      pendingAction === "refresh" ||
+      operationStatus === "loading"
+    ) {
+      return;
+    }
+
+    const projectExists = projects.some(
+      (project) => project.projectId === urlProjectId,
+    );
+
+    if (!projectExists) {
+      updateProjectsProjectIdUrl();
+      setUrlProjectSelection({ invalid: false });
+      setRestoreAttemptedProjectId(undefined);
+      return;
+    }
+
+    if (
+      selectedProject?.projectId === urlProjectId ||
+      restoreAttemptedProjectId === urlProjectId ||
+      pendingAction === "open" ||
+      selectingProjectId !== undefined
+    ) {
+      return;
+    }
+
+    setRestoreAttemptedProjectId(urlProjectId);
+    setSelectingProjectId(urlProjectId);
+    void openProject(urlProjectId).finally(() => {
+      setSelectingProjectId(undefined);
+    });
+  }, [
+    accessStatus,
+    openProject,
+    operationStatus,
+    pendingAction,
+    projects,
+    restoreAttemptedProjectId,
+    selectedProject?.projectId,
+    selectingProjectId,
+    urlProjectSelection.projectId,
+  ]);
+
+  const visibleSelectedProject =
+    selectedProject &&
+    urlProjectSelection.projectId === selectedProject.projectId &&
+    projects.some((project) => project.projectId === selectedProject.projectId)
+      ? selectedProject
+      : undefined;
+
+  useEffect(() => {
+    if (visibleSelectedProject) {
+      setRenameTitle(visibleSelectedProject.title);
+    }
+  }, [visibleSelectedProject]);
 
   return (
     <section className="projects-page" data-testid="projects-page">
@@ -142,7 +273,7 @@ export function ProjectsPage() {
                     <li
                       key={project.projectId}
                       aria-current={
-                        selectedProject?.projectId === project.projectId
+                        visibleSelectedProject?.projectId === project.projectId
                           ? "true"
                           : undefined
                       }
@@ -150,28 +281,52 @@ export function ProjectsPage() {
                       <strong>{project.title}</strong>
                       <span>Status: {project.status}</span>
                       <span>Updated: {project.updatedAt}</span>
-                      {selectedProject?.projectId === project.projectId ? (
+                      {visibleSelectedProject?.projectId === project.projectId ? (
                         <span aria-label="Currently selected project">Selected</span>
                       ) : null}
                       <button
                         type="button"
                         className="secondary"
-                        aria-pressed={selectedProject?.projectId === project.projectId}
+                        aria-pressed={visibleSelectedProject?.projectId === project.projectId}
                         disabled={
                           pendingAction === "open" ||
                           selectingProjectId === project.projectId
                         }
                         onClick={() => {
-                          setSelectingProjectId(project.projectId);
-                          void openProject(project.projectId).finally(() => {
-                            setSelectingProjectId(undefined);
-                          });
+                          const projectId = project.projectId;
+
+                          setRestoreAttemptedProjectId(undefined);
+                          setSelectingProjectId(projectId);
+
+                          void openProject(projectId)
+                            .then(() => {
+                              const verifiedProject =
+                                useProjectLibraryStore.getState().selectedProject;
+
+                              if (verifiedProject?.projectId !== projectId) {
+                                return;
+                              }
+
+                              updateProjectsProjectIdUrl(projectId);
+                              setUrlProjectSelection({
+                                invalid: false,
+                                projectId,
+                              });
+                              setRestoreAttemptedProjectId(projectId);
+                            })
+                            .finally(() => {
+                              setSelectingProjectId((currentProjectId) =>
+                                currentProjectId === projectId
+                                  ? undefined
+                                  : currentProjectId,
+                              );
+                            });
                         }}
                       >
                         {selectingProjectId === project.projectId &&
                         pendingAction === "open"
                           ? "Selecting..."
-                          : selectedProject?.projectId === project.projectId
+                          : visibleSelectedProject?.projectId === project.projectId
                             ? "Selected"
                             : "Select"}
                       </button>
@@ -183,7 +338,7 @@ export function ProjectsPage() {
 
             <article className="info-card" data-testid="project-selected-panel">
               <h3>Selected project</h3>
-              {selectedProject ? (
+              {visibleSelectedProject ? (
                 <>
                   <p
                     className="status-note"
@@ -191,34 +346,34 @@ export function ProjectsPage() {
                     role="status"
                     aria-live="polite"
                   >
-                    Selected project: {selectedProject.title}
+                    Selected project: {visibleSelectedProject.title}
                   </p>
                   <dl className="metadata-list">
                     <div>
                       <dt>Project ID</dt>
-                      <dd>{selectedProject.projectId}</dd>
+                      <dd>{visibleSelectedProject.projectId}</dd>
                     </div>
                     <div>
                       <dt>Title</dt>
-                      <dd>{selectedProject.title}</dd>
+                      <dd>{visibleSelectedProject.title}</dd>
                     </div>
                     <div>
                       <dt>Status</dt>
-                      <dd>{selectedProject.status}</dd>
+                      <dd>{visibleSelectedProject.status}</dd>
                     </div>
                     <div>
                       <dt>Created</dt>
-                      <dd>{selectedProject.createdAt}</dd>
+                      <dd>{visibleSelectedProject.createdAt}</dd>
                     </div>
                     <div>
                       <dt>Updated</dt>
-                      <dd>{selectedProject.updatedAt}</dd>
+                      <dd>{visibleSelectedProject.updatedAt}</dd>
                     </div>
                   </dl>
                   <form
                     onSubmit={(event) => {
                       event.preventDefault();
-                      void renameProject(selectedProject.projectId, renameTitle);
+                      void renameProject(visibleSelectedProject.projectId, renameTitle);
                     }}
                   >
                     <label htmlFor="rename-project-title">Rename project</label>
@@ -227,7 +382,7 @@ export function ProjectsPage() {
                       name="renameProjectTitle"
                       value={renameTitle}
                       onChange={(event) => setRenameTitle(event.target.value)}
-                      placeholder={selectedProject.title}
+                      placeholder={visibleSelectedProject.title}
                     />
                     <button
                       type="submit"
@@ -244,7 +399,7 @@ export function ProjectsPage() {
                         window.history.pushState(
                           {},
                           "",
-                          `/mixer?projectId=${encodeURIComponent(selectedProject.projectId)}`,
+                          `/mixer?projectId=${encodeURIComponent(visibleSelectedProject.projectId)}`,
                         );
                         syncWithLocation("/mixer");
                       }

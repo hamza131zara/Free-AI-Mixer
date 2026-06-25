@@ -203,8 +203,9 @@ test.describe("Hosted private beta H6-D.1 project open action", () => {
     await expect(page.getByTestId("project-selected-panel")).toContainText(
       "North Star Project",
     );
-    await expect(page).toHaveURL(/\/projects$/);
-
+    await expect(page).toHaveURL(
+  /\/projects\?projectId=11111111-1111-4111-8111-111111111111$/,
+);
     await secondProjectRow.getByRole("button", { name: "Select" }).click();
     await expect(
       secondProjectRow.getByRole("button", { name: "Selecting..." }),
@@ -225,7 +226,11 @@ test.describe("Hosted private beta H6-D.1 project open action", () => {
     );
     await expect(unavailableProjectRow.getByRole("button", { name: "Select" })).toBeVisible();
     await expect(unavailableProjectRow).not.toHaveAttribute("aria-current", "true");
-    await expect(page).toHaveURL(/\/projects$/);
+await expect(page).toHaveURL(
+  new RegExp(
+    `/projects\\?projectId=${encodeURIComponent(projects[1].projectId)}$`,
+  ),
+);
 
     expect(loadedProjectIds).toEqual([
       projects[0].projectId,
