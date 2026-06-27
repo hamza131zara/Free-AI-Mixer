@@ -22,6 +22,8 @@ export type ProjectLibraryOperationStatus =
   | "creating"
   | "opening"
   | "renaming"
+  | "deleting"
+  | "deleted"
   | "empty"
   | "not_found"
   | "validation_error"
@@ -34,6 +36,9 @@ export type ProjectLibraryStatusResult =
       message: string;
       activeWorkspaceId?: string;
       persistence: "durable" | "not_enabled_yet" | "persistence_unavailable";
+      capabilities: {
+        canDeleteProjects: boolean;
+      };
       activeProjectPreference: ActiveProjectPreference;
       projects: ProjectSummary[];
     }
@@ -46,7 +51,7 @@ export type ProjectLibraryStatusResult =
   | {
       kind: "forbidden";
       status: "forbidden";
-      code: "workspace_required";
+      code: "workspace_required" | "workspace_owner_or_admin_required";
       message: string;
     }
   | {
@@ -86,6 +91,16 @@ export type ActiveProjectMutationResult =
       kind: "active_project";
       status: "cleared";
       activeProject: null;
+    }
+  | Extract<ProjectLibraryStatusResult, { kind: "unauthenticated" }>
+  | Extract<ProjectLibraryStatusResult, { kind: "forbidden" }>
+  | Extract<ProjectLibraryStatusResult, { kind: "unavailable" }>;
+
+export type ProjectDeletionResult =
+  | {
+      kind: "project_deleted";
+      status: "deleted";
+      projectId: string;
     }
   | Extract<ProjectLibraryStatusResult, { kind: "unauthenticated" }>
   | Extract<ProjectLibraryStatusResult, { kind: "forbidden" }>

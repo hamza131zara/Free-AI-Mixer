@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ProjectSummary } from "../types/projectLibrary";
 import { useNavigationStore } from "../store/navigationStore";
 import { useProjectLibraryStore } from "../store/projectLibraryStore";
 
@@ -38,15 +39,23 @@ const updateProjectsProjectIdUrl = (projectId?: string): void => {
 export function ProjectsPage() {
   const [newProjectTitle, setNewProjectTitle] = useState("");
   const [renameTitle, setRenameTitle] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<ProjectSummary | undefined>();
+  const reconciliationPending = useRef(false);
+  const deleteDialogRef = useRef<HTMLElement>(null);
+  const projectListPanelRef = useRef<HTMLElement>(null);
+  const deleteTriggerRefs = useRef(new Map<string, HTMLButtonElement>());
   const accessStatus = useProjectLibraryStore((state) => state.accessStatus);
   const accessMessage = useProjectLibraryStore((state) => state.accessMessage);
-  const activeWorkspaceId = useProjectLibraryStore((state) => state.activeWorkspaceId);
   const projects = useProjectLibraryStore((state) => state.projects);
+  const canDeleteProjects = useProjectLibraryStore(
+    (state) => state.capabilities.canDeleteProjects,
+  );
   const activeProject = useProjectLibraryStore((state) => state.activeProject);
   const operationStatus = useProjectLibraryStore((state) => state.operationStatus);
   const pendingAction = useProjectLibraryStore((state) => state.pendingAction);
   const pendingProjectId = useProjectLibraryStore((state) => state.pendingProjectId);
   const createProject = useProjectLibraryStore((state) => state.createProject);
+  const deleteProject = useProjectLibraryStore((state) => state.deleteProject);
   const selectActiveProject = useProjectLibraryStore(
     (state) => state.selectActiveProject,
   );
@@ -66,10 +75,63 @@ export function ProjectsPage() {
   }, [refreshProjectLibrary]);
 
   useEffect(() => {
+    const reconcile = () => {
+      if (
+        reconciliationPending.current ||
+        document.visibilityState === "hidden" ||
+        useProjectLibraryStore.getState().pendingAction !== null
+      ) {
+        return;
+      }
+
+      reconciliationPending.current = true;
+      const requested = readProjectIdFromUrl();
+      void refreshProjectLibrary(
+        requested.invalid ? undefined : requested.projectId,
+        requested.invalid,
+      )
+        .then(() => {
+          const state = useProjectLibraryStore.getState();
+          const listResolved =
+            state.accessStatus === "authenticated" &&
+            (state.operationStatus === "idle" || state.operationStatus === "empty");
+
+          if (!listResolved) {
+            return;
+          }
+
+          const currentUrl = readProjectIdFromUrl();
+
+          if (
+            currentUrl.invalid ||
+            (currentUrl.projectId &&
+              !state.projects.some(
+                (project) => project.projectId === currentUrl.projectId,
+              ))
+          ) {
+            updateProjectsProjectIdUrl();
+          }
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          reconciliationPending.current = false;
+        });
+    };
+
+    window.addEventListener("focus", reconcile);
+    document.addEventListener("visibilitychange", reconcile);
+
+    return () => {
+      window.removeEventListener("focus", reconcile);
+      document.removeEventListener("visibilitychange", reconcile);
+    };
+  }, [refreshProjectLibrary]);
+
+  useEffect(() => {
     if (
       accessStatus !== "authenticated" ||
-      pendingAction === "refresh" ||
-      operationStatus === "loading"
+      pendingAction !== null ||
+      (operationStatus !== "idle" && operationStatus !== "empty")
     ) {
       return;
     }
@@ -96,6 +158,62 @@ export function ProjectsPage() {
       setRenameTitle(activeProject.title);
     }
   }, [activeProject]);
+
+  useEffect(() => {
+    if (deleteTarget) {
+      deleteDialogRef.current?.focus();
+    }
+  }, [deleteTarget]);
+
+  const returnFocusAfterDeleteDialog = (projectId: string): void => {
+    window.requestAnimationFrame(() => {
+      const trigger = deleteTriggerRefs.current.get(projectId);
+
+      if (trigger?.isConnected) {
+        trigger.focus();
+        return;
+      }
+
+      for (const candidate of deleteTriggerRefs.current.values()) {
+        if (candidate.isConnected) {
+          candidate.focus();
+          return;
+        }
+      }
+
+      projectListPanelRef.current?.focus();
+    });
+  };
+
+  const closeDeleteDialog = (projectId: string): void => {
+    setDeleteTarget(undefined);
+    returnFocusAfterDeleteDialog(projectId);
+  };
+
+  useEffect(() => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    const targetStillAvailable = projects.some(
+      (project) => project.projectId === deleteTarget.projectId,
+    );
+    const authenticatedDeleteStillAllowed =
+      accessStatus === "authenticated" && canDeleteProjects;
+
+    if (authenticatedDeleteStillAllowed && targetStillAvailable) {
+      return;
+    }
+
+    const projectId = deleteTarget.projectId;
+    setDeleteTarget(undefined);
+
+    if (accessStatus === "authenticated") {
+      returnFocusAfterDeleteDialog(projectId);
+    }
+  }, [accessStatus, canDeleteProjects, deleteTarget, projects]);
+
+  const deleteConfirmationOpen = Boolean(deleteTarget);
 
   return (
     <section className="projects-page" data-testid="projects-page">
@@ -154,6 +272,9 @@ export function ProjectsPage() {
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
+                  if (deleteConfirmationOpen) {
+                    return;
+                  }
                   void createProject(newProjectTitle).then(() => {
                     setNewProjectTitle("");
                     const confirmed = useProjectLibraryStore.getState().activeProject;
@@ -169,16 +290,25 @@ export function ProjectsPage() {
                   id="new-project-title"
                   name="projectTitle"
                   value={newProjectTitle}
+                  disabled={deleteConfirmationOpen}
                   onChange={(event) => setNewProjectTitle(event.target.value)}
                   placeholder="Private beta project"
                 />
-                <button type="submit" disabled={pendingAction === "create"}>
+                <button
+                  type="submit"
+                  disabled={pendingAction === "create" || deleteConfirmationOpen}
+                >
                   {pendingAction === "create" ? "Creating..." : "Create Project"}
                 </button>
               </form>
             </article>
 
-            <article className="info-card" data-testid="project-list-panel">
+            <article
+              className="info-card"
+              data-testid="project-list-panel"
+              ref={projectListPanelRef}
+              tabIndex={-1}
+            >
               <h3>Workspace projects</h3>
               {projects.length === 0 ? (
                 <p data-testid="projects-empty-state">
@@ -206,8 +336,11 @@ export function ProjectsPage() {
                           type="button"
                           className="secondary"
                           aria-pressed={isActive}
-                          disabled={pendingAction === "open"}
+                          disabled={pendingAction === "open" || deleteConfirmationOpen}
                           onClick={() => {
+                            if (deleteConfirmationOpen) {
+                              return;
+                            }
                             void selectActiveProject(project.projectId).then(() => {
                               const confirmed = useProjectLibraryStore.getState().activeProject;
 
@@ -219,12 +352,85 @@ export function ProjectsPage() {
                         >
                           {isSelecting ? "Selecting..." : isActive ? "Selected" : "Select"}
                         </button>
+                        {canDeleteProjects ? (
+                          <button
+                            type="button"
+                            className="secondary"
+                            disabled={
+                              pendingAction === "delete" || deleteConfirmationOpen
+                            }
+                            ref={(node) => {
+                              if (node) {
+                                deleteTriggerRefs.current.set(project.projectId, node);
+                              } else {
+                                deleteTriggerRefs.current.delete(project.projectId);
+                              }
+                            }}
+                            onClick={() => setDeleteTarget(project)}
+                          >
+                            Delete project
+                          </button>
+                        ) : null}
                       </li>
                     );
                   })}
                 </ul>
               )}
             </article>
+
+            {deleteTarget ? (
+              <section
+                className="info-card"
+                role="dialog"
+                ref={deleteDialogRef}
+                tabIndex={-1}
+                aria-labelledby="delete-project-title"
+                aria-describedby="delete-project-warning"
+                data-testid="project-delete-confirmation"
+                onKeyDown={(event) => {
+                  if (event.key === "Escape" && pendingAction !== "delete") {
+                    event.preventDefault();
+                    closeDeleteDialog(deleteTarget.projectId);
+                  }
+                }}
+              >
+                <h3 id="delete-project-title">Delete {deleteTarget.title}?</h3>
+                <p id="delete-project-warning">
+                  This removes the project from active workspace views. Existing
+                  generation, history, and artifact records remain preserved.
+                </p>
+                <div className="hero-actions">
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={pendingAction === "delete"}
+                    onClick={() => closeDeleteDialog(deleteTarget.projectId)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pendingAction === "delete"}
+                    onClick={() => {
+                      const projectId = deleteTarget.projectId;
+                      void deleteProject(projectId).then((deleted) => {
+                        if (!deleted) {
+                          return;
+                        }
+
+                        const requested = readProjectIdFromUrl();
+                        if (requested.projectId === projectId) {
+                          updateProjectsProjectIdUrl();
+                        }
+                        closeDeleteDialog(projectId);
+                      });
+                    }}
+                  >
+                    {pendingAction === "delete" ? "Deleting..." : "Confirm delete project"}
+                  </button>
+                </div>
+              </section>
+            ) : null}
 
             <article className="info-card" data-testid="project-selected-panel">
               <h3>Selected project</h3>
@@ -248,6 +454,9 @@ export function ProjectsPage() {
                   <form
                     onSubmit={(event) => {
                       event.preventDefault();
+                      if (deleteConfirmationOpen) {
+                        return;
+                      }
                       void renameProject(activeProject.projectId, renameTitle);
                     }}
                   >
@@ -256,9 +465,13 @@ export function ProjectsPage() {
                       id="rename-project-title"
                       name="renameProjectTitle"
                       value={renameTitle}
+                      disabled={deleteConfirmationOpen}
                       onChange={(event) => setRenameTitle(event.target.value)}
                     />
-                    <button type="submit" disabled={pendingAction === "rename"}>
+                    <button
+                      type="submit"
+                      disabled={pendingAction === "rename" || deleteConfirmationOpen}
+                    >
                       {pendingAction === "rename" ? "Renaming..." : "Rename Project"}
                     </button>
                   </form>

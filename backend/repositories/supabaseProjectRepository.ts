@@ -1,4 +1,5 @@
 import type {
+  BackendActiveProjectSelectionResult,
   BackendProjectImageGenerationHistoryRecord,
   BackendProjectRecord,
   BackendProjectRepository,
@@ -17,10 +18,6 @@ export interface ProjectTableQuery<Row> {
   limit(count: number): ProjectTableQuery<Row>;
   order(column: string, options?: { ascending?: boolean }): ProjectTableQuery<Row>;
   insert(values: Partial<Row>): ProjectTableQuery<Row>;
-  upsert?(
-    values: Partial<Row>,
-    options?: { onConflict?: string },
-  ): ProjectTableQuery<Row>;
   update(values: Partial<Row>): ProjectTableQuery<Row>;
   maybeSingle(): Promise<ProjectTableQueryResult<Row>>;
   then(
@@ -33,6 +30,21 @@ export interface SupabaseProjectClient {
   from(table: "projects"): ProjectTableQuery<ProjectRow>;
   from(table: "image_generation_history"): ProjectTableQuery<ImageGenerationHistoryRow>;
   from(table: "workspace_user_preferences"): ProjectTableQuery<WorkspaceUserPreferenceRow>;
+  rpc(
+    functionName:
+      | "set_active_project_for_workspace_user"
+      | "soft_delete_project_for_workspace_user",
+    args: {
+      p_workspace_id: string;
+      p_user_id: string;
+      p_project_id: string;
+    },
+  ): Promise<ProjectRpcResult>;
+}
+
+export interface ProjectRpcResult {
+  data: string | null;
+  error: { message: string } | null;
 }
 
 export interface ProjectRow {
@@ -321,36 +333,67 @@ export class SupabaseProjectRepository implements BackendProjectRepository {
     projectId: string;
     userId: string;
     workspaceId: string;
-  }): Promise<BackendProjectRecord | undefined> {
+  }): Promise<BackendActiveProjectSelectionResult> {
+    const result = await this.client.rpc(
+      "set_active_project_for_workspace_user",
+      {
+        p_workspace_id: input.workspaceId,
+        p_user_id: input.userId,
+        p_project_id: input.projectId,
+      },
+    );
+
+    if (result.error) {
+      throw new Error("Active project preference transaction is unavailable.");
+    }
+
+    if (result.data === "forbidden" || result.data === "not_found") {
+      return { status: result.data };
+    }
+
+    if (result.data !== "selected") {
+      throw new Error("Active project preference transaction returned an invalid status.");
+    }
+
     const project = await this.getProjectForWorkspace(
       input.workspaceId,
       input.projectId,
     );
 
     if (!project) {
-      return undefined;
+      throw new Error("Active project preference transaction could not be confirmed.");
     }
 
-    const preferenceQuery = this.client.from("workspace_user_preferences");
+    return { status: "selected", project };
+  }
 
-    if (!preferenceQuery.upsert) {
-      throw new Error("Active project preference persistence is unavailable.");
-    }
-
-    const result = (await preferenceQuery.upsert(
+  async softDeleteProjectForWorkspaceUser(input: {
+    projectId: string;
+    userId: string;
+    workspaceId: string;
+  }): Promise<"deleted" | "forbidden" | "not_found"> {
+    const result = await this.client.rpc(
+      "soft_delete_project_for_workspace_user",
       {
-        active_project_id: input.projectId,
-        user_id: input.userId,
-        workspace_id: input.workspaceId,
+        p_workspace_id: input.workspaceId,
+        p_user_id: input.userId,
+        p_project_id: input.projectId,
       },
-      { onConflict: "workspace_id,user_id" },
-    )) as ProjectTableQueryResult<WorkspaceUserPreferenceRow>;
+    );
 
     if (result.error) {
-      throw new Error(result.error.message);
+      throw new Error("Project soft-delete transaction is unavailable.");
     }
 
-    return project;
+    if (
+      result.data !== "deleted" &&
+      result.data !== "forbidden" &&
+      result.data !== "not_found"
+    ) {
+      throw new Error("Project soft-delete transaction returned an invalid status.");
+    }
+
+    return result.data;
   }
 
   async clearActiveProjectForWorkspaceUser(

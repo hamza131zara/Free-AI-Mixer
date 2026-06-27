@@ -78,11 +78,16 @@ class ActiveProjectRepository implements BackendProjectRepository {
       input.projectId,
     );
 
-    if (project && input.userId === userId) {
-      this.activeProjectId = project.projectId;
+    if (input.userId !== userId) {
+      return { status: "forbidden" as const };
     }
 
-    return project;
+    if (!project) {
+      return { status: "not_found" as const };
+    }
+
+    this.activeProjectId = project.projectId;
+    return { status: "selected" as const, project };
   }
 
   async clearActiveProjectForWorkspaceUser(

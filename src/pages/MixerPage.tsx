@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SceneComposer } from "../components/SceneComposer";
 import { SceneQueue } from "../components/SceneQueue";
 import { SceneStatus } from "../components/SceneStatus";
@@ -12,29 +12,97 @@ import { useProjectLibraryStore } from "../store/projectLibraryStore";
 const safeProjectIdPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const removeMixerProjectIdFromUrl = (): void => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete("projectId");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+};
+
 export function MixerPage() {
+  const reconciliationPending = useRef(false);
   const [projectContextStatus, setProjectContextStatus] = useState<
-    "none" | "invalid" | "loading" | "ready" | "unavailable"
+    "none" | "invalid" | "loading" | "ready" | "unauthenticated" | "unavailable"
   >("none");
   const [projectContextMessage, setProjectContextMessage] = useState(
     "Select a saved project before running hosted mock image generation.",
   );
   const activeProject = useProjectLibraryStore((state) => state.activeProject);
   const operationStatus = useProjectLibraryStore((state) => state.operationStatus);
-  const accessMessage = useProjectLibraryStore((state) => state.accessMessage);
   const refreshProjectLibrary = useProjectLibraryStore(
     (state) => state.refreshProjectLibrary,
   );
   const clearRuntimeProjectContext = useProjectLibraryStore(
     (state) => state.clearRuntimeProjectContext,
   );
-  const projectId = useMemo(() => {
+  const projectId = (() => {
     if (typeof window === "undefined") {
       return undefined;
     }
 
     return new URLSearchParams(window.location.search).get("projectId") ?? undefined;
-  }, []);
+  })();
+
+  const applyVerifiedProjectResolution = useCallback(
+    (requestedProjectId?: string): void => {
+      const state = useProjectLibraryStore.getState();
+      const listResolved =
+        state.accessStatus === "authenticated" &&
+        (state.operationStatus === "idle" || state.operationStatus === "empty");
+
+      if (listResolved) {
+        const loadedProject = state.activeProject;
+
+        if (
+          loadedProject &&
+          (!requestedProjectId || loadedProject.projectId === requestedProjectId)
+        ) {
+          if (!requestedProjectId && typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.set("projectId", loadedProject.projectId);
+            window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+          }
+          setProjectContextStatus("ready");
+          setProjectContextMessage(
+            `Verified project context: ${loadedProject.title}`,
+          );
+          return;
+        }
+
+        if (requestedProjectId) {
+          removeMixerProjectIdFromUrl();
+        }
+        setProjectContextStatus("none");
+        setProjectContextMessage(
+          "Select a saved project before running hosted mock image generation.",
+        );
+        return;
+      }
+
+      if (state.accessStatus === "unauthenticated") {
+        setProjectContextStatus("unauthenticated");
+        setProjectContextMessage(
+          state.accessMessage || "Sign in is required to restore project context.",
+        );
+        return;
+      }
+
+      if (
+        state.accessStatus === "forbidden" ||
+        state.accessStatus === "unavailable" ||
+        state.operationStatus === "unavailable"
+      ) {
+        setProjectContextStatus("unavailable");
+        setProjectContextMessage(
+          state.accessMessage || "Verified project context is temporarily unavailable.",
+        );
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (projectId && !safeProjectIdPattern.test(projectId)) {
@@ -49,35 +117,50 @@ export function MixerPage() {
     setProjectContextStatus("loading");
     setProjectContextMessage("Loading verified project context for Mixer.");
 
-    void refreshProjectLibrary(projectId).then(() => {
-      const loadedProject = useProjectLibraryStore.getState().activeProject;
+    void refreshProjectLibrary(projectId)
+      .then(() => applyVerifiedProjectResolution(projectId))
+      .catch(() => {
+        setProjectContextStatus("unavailable");
+        setProjectContextMessage("Verified project context is temporarily unavailable.");
+      });
+  }, [
+    applyVerifiedProjectResolution,
+    clearRuntimeProjectContext,
+    projectId,
+    refreshProjectLibrary,
+  ]);
 
-      if (loadedProject && (!projectId || loadedProject.projectId === projectId)) {
-        if (!projectId && typeof window !== "undefined") {
-          const url = new URL(window.location.href);
-          url.searchParams.set("projectId", loadedProject.projectId);
-          window.history.replaceState({}, "", `${url.pathname}${url.search}`);
-        }
-        setProjectContextStatus("ready");
-        setProjectContextMessage(`Verified project context: ${loadedProject.title}`);
+  useEffect(() => {
+    const reconcile = () => {
+      if (
+        reconciliationPending.current ||
+        document.visibilityState === "hidden" ||
+        useProjectLibraryStore.getState().pendingAction !== null ||
+        (projectId !== undefined && !safeProjectIdPattern.test(projectId))
+      ) {
         return;
       }
 
-      if (!projectId) {
-        setProjectContextStatus("none");
-        setProjectContextMessage(
-          "Select a saved project before running hosted mock image generation.",
-        );
-        return;
-      }
+      reconciliationPending.current = true;
+      void refreshProjectLibrary(projectId)
+        .then(() => applyVerifiedProjectResolution(projectId))
+        .catch(() => {
+          setProjectContextStatus("unavailable");
+          setProjectContextMessage("Verified project context is temporarily unavailable.");
+        })
+        .finally(() => {
+          reconciliationPending.current = false;
+        });
+    };
 
-      setProjectContextStatus("unavailable");
-      setProjectContextMessage(
-        useProjectLibraryStore.getState().accessMessage ||
-          "The selected project could not be verified for Mixer.",
-      );
-    });
-  }, [clearRuntimeProjectContext, projectId, refreshProjectLibrary]);
+    window.addEventListener("focus", reconcile);
+    document.addEventListener("visibilitychange", reconcile);
+
+    return () => {
+      window.removeEventListener("focus", reconcile);
+      document.removeEventListener("visibilitychange", reconcile);
+    };
+  }, [applyVerifiedProjectResolution, projectId, refreshProjectLibrary]);
 
   const verifiedActiveProject =
     projectContextStatus === "ready" ? activeProject : undefined;
@@ -130,9 +213,6 @@ export function MixerPage() {
                 {projectContextStatus === "loading" ||
                 operationStatus === "opening" ? (
                   <p>Project validation is in progress.</p>
-                ) : null}
-                {projectContextStatus === "unavailable" ? (
-                  <p>{accessMessage}</p>
                 ) : null}
               </div>
               <div className="generation-workbench-grid">
