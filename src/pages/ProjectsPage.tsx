@@ -133,8 +133,11 @@ export function ProjectsPage() {
           <p>{accessMessage}</p>
           {accessStatus === "authenticated" ? (
             <p>
-              Verified workspace: <strong>{activeWorkspaceId ? "Available" : "Unavailable"}</strong>
-            </p>
+  Workspace access:{" "}
+  <strong>
+    {accessStatus === "authenticated" ? "Verified" : "Unavailable"}
+  </strong>
+</p>
           ) : null}
         </div>
       </div>
