@@ -1,5 +1,6 @@
 import type {
   ActiveProjectMutationResult,
+  ProjectDeletionResult,
   ProjectLibraryStatusResult,
   ProjectRecordResult,
   ProjectSummary,
@@ -12,6 +13,9 @@ interface BackendAuthenticatedProjectLibraryResponse {
   message?: string;
   activeWorkspaceId?: string;
   persistence: "durable" | "not_enabled_yet" | "persistence_unavailable";
+  capabilities?: {
+    canDeleteProjects: boolean;
+  };
   activeProjectPreference:
     | { status: "ready"; projectId: string | null }
     | { status: "persistence_unavailable"; projectId: null };
@@ -48,6 +52,12 @@ interface BackendProjectNotFoundResponse {
   message?: string;
 }
 
+interface BackendProjectDeletedResponse {
+  kind: "project_deleted";
+  status: "deleted";
+  projectId: string;
+}
+
 interface BackendUnauthenticatedProjectLibraryResponse {
   kind: "project_library_sign_in_required";
   status: "unauthenticated";
@@ -72,6 +82,12 @@ interface BackendForbiddenProjectLibraryResponse {
   message?: string;
 }
 
+interface BackendProjectDeleteForbiddenResponse {
+  kind: "project_delete_forbidden";
+  status: "workspace_owner_or_admin_required";
+  message?: string;
+}
+
 type BackendProjectLibraryResponse =
   | BackendAuthenticatedProjectLibraryResponse
   | BackendUnauthenticatedProjectLibraryResponse
@@ -83,13 +99,15 @@ type BackendProjectMutationResponse =
   | BackendActiveProjectResponse
   | BackendInvalidProjectRequestResponse
   | BackendProjectNotFoundResponse
+  | BackendProjectDeletedResponse
   | BackendUnauthenticatedProjectLibraryResponse
   | BackendForbiddenProjectLibraryResponse
+  | BackendProjectDeleteForbiddenResponse
   | BackendUnavailableProjectLibraryResponse;
 
 type BackendProjectRecordMutationResponse = Exclude<
   BackendProjectMutationResponse,
-  BackendActiveProjectResponse
+  BackendActiveProjectResponse | BackendProjectDeletedResponse | BackendProjectDeleteForbiddenResponse
 >;
 
 const projectLibraryEndpoint = "/project-library/projects";
@@ -152,6 +170,7 @@ const mapSharedProjectFailureResponse = (
   payload:
     | BackendUnauthenticatedProjectLibraryResponse
     | BackendForbiddenProjectLibraryResponse
+    | BackendProjectDeleteForbiddenResponse
     | BackendUnavailableProjectLibraryResponse,
 ): ProjectFailureResult => {
   if (payload.kind === "project_library_sign_in_required") {
@@ -173,6 +192,17 @@ const mapSharedProjectFailureResponse = (
       message:
         payload.message ??
         "Workspace access is required before account-owned saved projects can appear here.",
+    };
+  }
+
+  if (payload.kind === "project_delete_forbidden") {
+    return {
+      kind: "forbidden",
+      status: "forbidden",
+      code: "workspace_owner_or_admin_required",
+      message:
+        payload.message ??
+        "Workspace owner or admin permission is required to delete a project.",
     };
   }
 
@@ -203,6 +233,7 @@ const mapProjectLibraryResponse = (
         "Project library is available for this verified session, but durable saved projects are not enabled yet.",
       activeWorkspaceId: payload.activeWorkspaceId,
       persistence: payload.persistence,
+      capabilities: payload.capabilities ?? { canDeleteProjects: false },
       activeProjectPreference: payload.activeProjectPreference ?? {
         status: "persistence_unavailable",
         projectId: null,
@@ -375,6 +406,12 @@ const requestActiveProjectMutation = async (
       );
     }
 
+    if (payload.kind === "project_deleted") {
+      return toProjectRecordUnavailable(
+        "Active project response was not recognized.",
+      );
+    }
+
     return mapSharedProjectFailureResponse(payload);
   } catch {
     return toProjectRecordUnavailable(
@@ -394,3 +431,67 @@ export const setActiveProject = async (
 
 export const clearActiveProject = async (): Promise<ActiveProjectMutationResult> =>
   requestActiveProjectMutation({ method: "DELETE" });
+
+export const deleteProject = async (
+  projectId: string,
+): Promise<ProjectDeletionResult> => {
+  try {
+    const response = await fetchWithOptionalAccountBearer(
+      `${projectLibraryEndpoint}/${encodeURIComponent(projectId)}`,
+      {
+        credentials: "same-origin",
+        method: "DELETE",
+      },
+    );
+    const payload = await parseJson<BackendProjectMutationResponse>(response);
+
+    if (!payload) {
+      return toProjectRecordUnavailable(
+        "Project deletion returned an empty response.",
+      );
+    }
+
+    if (
+      payload.kind === "project_deleted" &&
+      payload.projectId === projectId
+    ) {
+      return {
+        kind: "project_deleted",
+        status: "deleted",
+        projectId: payload.projectId,
+      };
+    }
+
+    if (payload.kind === "project_deleted") {
+      return toProjectRecordUnavailable(
+        "Project deletion response could not be verified.",
+      );
+    }
+
+    if (payload.kind === "project_request_invalid") {
+      return toProjectRecordUnavailable(
+        payload.message ?? "Project deletion request is invalid.",
+        payload.status,
+      );
+    }
+
+    if (payload.kind === "project_not_found") {
+      return toProjectRecordUnavailable(
+        payload.message ?? "Project was not found.",
+        "not_found",
+      );
+    }
+
+    if (payload.kind === "project_record" || payload.kind === "active_project") {
+      return toProjectRecordUnavailable(
+        "Project deletion response was not recognized.",
+      );
+    }
+
+    return mapSharedProjectFailureResponse(payload);
+  } catch {
+    return toProjectRecordUnavailable(
+      "Project deletion is temporarily unavailable.",
+    );
+  }
+};

@@ -4,6 +4,7 @@ import type { ErrorRequestHandler, Response } from "express";
 import type { AsyncBackendRequesterContextResolver } from "../auth/requesterContextResolver";
 import { resolveSelectedRouteAccess } from "../auth/protectedRouteGuards";
 import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProviderRuntimeConfig";
+import { isOwnerOrAdminWorkspaceRole } from "../auth/workspaceRoleNormalization";
 import { applySensitiveAuthResponseHeaders } from "./sensitiveAuthResponse";
 import type {
   BackendExportHistoryResponse,
@@ -261,6 +262,11 @@ export const createProjectHistoryRouter = (
             persistence: persistenceUnavailable
               ? "persistence_unavailable"
               : "durable",
+            capabilities: {
+              canDeleteProjects: isOwnerOrAdminWorkspaceRole(
+                requesterContext.workspaceRole,
+              ),
+            },
             activeProjectPreference,
             projects: projects.map(toProjectRecord),
           });
@@ -303,14 +309,23 @@ export const createProjectHistoryRouter = (
           return;
         }
 
-        const project =
+        const selection =
           await options.projectRepository.setActiveProjectForWorkspaceUser({
             projectId: activeProjectRequest.projectId,
             userId: accessDecision.requester.appUserId,
             workspaceId: accessDecision.requester.workspaceId,
           });
 
-        if (!project) {
+        if (selection.status === "forbidden") {
+          response.status(403).json({
+            kind: "project_library_forbidden",
+            status: "workspace_required",
+            message: "Verified workspace access is required to select this project.",
+          });
+          return;
+        }
+
+        if (selection.status === "not_found") {
           response.status(404).json({
             kind: "project_not_found",
             status: "not_found",
@@ -322,7 +337,7 @@ export const createProjectHistoryRouter = (
         response.status(200).json({
           kind: "active_project",
           status: "selected",
-          activeProject: toProjectRecord(project),
+          activeProject: toProjectRecord(selection.project),
         });
       })().catch(next);
     },
@@ -533,6 +548,86 @@ export const createProjectHistoryRouter = (
           kind: "project_record",
           status: "updated",
           project: toProjectRecord(project),
+        });
+      })().catch(next);
+    },
+  );
+
+  router.delete(
+    "/project-library/projects/:projectId",
+    (request, response: Response<BackendProjectMutationResponse>, next) => {
+      void (async () => {
+        const accessDecision = await resolveSelectedRouteAccess({
+          headers: request.headers,
+          runtimeConfig: options.runtimeConfig,
+          requesterResolver: options.routeAccessResolver,
+        });
+
+        if (accessDecision.kind !== "allowed") {
+          sendProjectAccessDenied(response, accessDecision, options.runtimeConfig);
+          return;
+        }
+
+        if (!isValidProjectId(request.params.projectId)) {
+          response.status(400).json({
+            kind: "project_request_invalid",
+            status: "invalid_project_id",
+            message: "Project ID is invalid.",
+          });
+          return;
+        }
+
+        if (!isOwnerOrAdminWorkspaceRole(accessDecision.requester.workspaceRole)) {
+          response.status(403).json({
+            kind: "project_delete_forbidden",
+            status: "workspace_owner_or_admin_required",
+            message:
+              "Workspace owner or admin permission is required to delete a project.",
+          });
+          return;
+        }
+
+        if (!options.projectRepository?.softDeleteProjectForWorkspaceUser) {
+          sendRepositoryUnavailable(response);
+          return;
+        }
+
+        const result =
+          await options.projectRepository.softDeleteProjectForWorkspaceUser({
+            projectId: request.params.projectId,
+            userId: accessDecision.requester.appUserId,
+            workspaceId: accessDecision.requester.workspaceId,
+          });
+
+        if (result === "forbidden") {
+          response.status(403).json({
+            kind: "project_delete_forbidden",
+            status: "workspace_owner_or_admin_required",
+            message:
+              "Workspace owner or admin permission is required to delete a project.",
+          });
+          return;
+        }
+
+        if (result === "not_found") {
+          response.status(404).json({
+            kind: "project_not_found",
+            status: "not_found",
+            message: "Project was not found for this workspace.",
+          });
+          return;
+        }
+
+        if (result !== "deleted") {
+          throw new Error(
+            "Project soft-delete repository returned an invalid status.",
+          );
+        }
+
+        response.status(200).json({
+          kind: "project_deleted",
+          status: "deleted",
+          projectId: request.params.projectId,
         });
       })().catch(next);
     },

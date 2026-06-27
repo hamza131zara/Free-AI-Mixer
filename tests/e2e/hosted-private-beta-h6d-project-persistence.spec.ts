@@ -8,6 +8,7 @@ import {
   createUnauthenticatedRequesterContext,
 } from "../../backend/auth/requesterContext";
 import type {
+  BackendActiveProjectSelectionResult,
   BackendProjectRecord,
   BackendProjectRepository,
 } from "../../backend/repositories/repositoryContracts";
@@ -84,6 +85,12 @@ class InMemoryProjectRepository implements BackendProjectRepository {
   readonly records = new Map<string, BackendProjectRecord>();
   readonly activeProjects = new Map<string, string>();
   shouldThrow = false;
+  selectionOutcome:
+    | "selected"
+    | "forbidden"
+    | "not_found"
+    | "null"
+    | "unknown" = "selected";
   private tick = 0;
 
   async createProject(input: {
@@ -178,21 +185,40 @@ class InMemoryProjectRepository implements BackendProjectRepository {
     projectId: string;
     userId: string;
     workspaceId: string;
-  }): Promise<BackendProjectRecord | undefined> {
+  }): Promise<BackendActiveProjectSelectionResult> {
     this.throwIfRequested();
+
+    if (this.selectionOutcome === "forbidden") {
+      return { status: "forbidden" };
+    }
+
+    if (this.selectionOutcome === "not_found") {
+      return { status: "not_found" };
+    }
+
+    if (this.selectionOutcome === "null") {
+      return null as never;
+    }
+
+    if (this.selectionOutcome === "unknown") {
+      return { status: "unexpected" } as never;
+    }
+
     const project = await this.getProjectForWorkspace(
       input.workspaceId,
       input.projectId,
     );
 
-    if (project) {
-      this.activeProjects.set(
-        `${input.workspaceId}:${input.userId}`,
-        input.projectId,
-      );
+    if (!project) {
+      return { status: "not_found" };
     }
 
-    return project;
+    this.activeProjects.set(
+      `${input.workspaceId}:${input.userId}`,
+      input.projectId,
+    );
+
+    return { status: "selected", project };
   }
 
   async clearActiveProjectForWorkspaceUser(
@@ -414,6 +440,75 @@ test.describe("Hosted private beta H6-D durable project persistence", () => {
     } finally {
       await unauthenticated.close();
       await unverified.close();
+    }
+  });
+
+  test("active-project selection preserves selected, forbidden, not-found, and invalid statuses", async () => {
+    const repository = new InMemoryProjectRepository();
+    const project = await repository.createProject({
+      ownerId: requester.appUserId,
+      projectId: "77777777-7777-4777-8777-777777777777",
+      title: "Selection status project",
+      workspaceId: requester.workspaceId,
+    });
+    const server = await startProjectServer({ repository });
+    const selectProject = () =>
+      fetch(`${server.url}/project-library/active-project`, {
+        body: JSON.stringify({ projectId: project.projectId }),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      });
+
+    try {
+      const selected = await selectProject();
+      expect(selected.status).toBe(200);
+      expect(await selected.json()).toMatchObject({
+        kind: "active_project",
+        status: "selected",
+        activeProject: { projectId: project.projectId },
+      });
+
+      repository.selectionOutcome = "forbidden";
+      const forbidden = await selectProject();
+      expect(forbidden.status).toBe(403);
+      expect(await forbidden.json()).toMatchObject({
+        kind: "project_library_forbidden",
+        status: "workspace_required",
+      });
+
+      repository.selectionOutcome = "not_found";
+      const notFound = await selectProject();
+      expect(notFound.status).toBe(404);
+      expect(await notFound.json()).toMatchObject({
+        kind: "project_not_found",
+        status: "not_found",
+      });
+
+      for (const invalidOutcome of ["null", "unknown"] as const) {
+        repository.selectionOutcome = invalidOutcome;
+        const unavailable = await selectProject();
+        const unavailableBody = await unavailable.json();
+        expect(unavailable.status).toBe(503);
+        expectSensitiveProjectHeaders(unavailable);
+        expect(unavailableBody).toMatchObject({
+          kind: "project_library_unavailable",
+          status: "repository_unavailable",
+        });
+        expectNoUnsafeFields(unavailableBody);
+      }
+
+      repository.selectionOutcome = "selected";
+      repository.shouldThrow = true;
+      const transportFailure = await selectProject();
+      const transportFailureBody = await transportFailure.json();
+      expect(transportFailure.status).toBe(503);
+      expect(transportFailureBody).toMatchObject({
+        kind: "project_library_unavailable",
+        status: "repository_unavailable",
+      });
+      expect(JSON.stringify(transportFailureBody)).not.toContain("raw database");
+    } finally {
+      await server.close();
     }
   });
 

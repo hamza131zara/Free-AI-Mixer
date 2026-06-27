@@ -39,6 +39,9 @@ export type BackendProjectLibraryResponse =
       message: string;
       activeWorkspaceId?: string;
       persistence: "durable" | "not_enabled_yet" | "persistence_unavailable";
+      capabilities: {
+        canDeleteProjects: boolean;
+      };
       activeProjectPreference: BackendActiveProjectPreference;
       projects: BackendProjectRecord[];
     }
@@ -79,6 +82,11 @@ export type BackendProjectMutationResponse =
       activeProject: null;
     }
   | {
+      kind: "project_deleted";
+      status: "deleted";
+      projectId: string;
+    }
+  | {
       kind: "project_request_invalid";
       status: "invalid_request" | "invalid_project_id" | "invalid_title";
       message: string;
@@ -97,6 +105,11 @@ export type BackendProjectMutationResponse =
   | {
       kind: "project_library_forbidden";
       status: "workspace_required";
+      message: string;
+    }
+  | {
+      kind: "project_delete_forbidden";
+      status: "workspace_owner_or_admin_required";
       message: string;
     }
   | {

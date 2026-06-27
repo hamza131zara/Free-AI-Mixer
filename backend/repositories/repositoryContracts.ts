@@ -374,6 +374,14 @@ export interface BackendProjectRecord {
   updatedAt: string;
 }
 
+export type BackendActiveProjectSelectionResult =
+  | {
+      status: "selected";
+      project: BackendProjectRecord;
+    }
+  | { status: "forbidden" }
+  | { status: "not_found" };
+
 export interface BackendProjectImageGenerationHistoryRecord {
   artifactId: string;
   contentType: "image/png" | "image/jpeg" | "image/webp";
@@ -508,11 +516,16 @@ export interface BackendProjectRepository {
     projectId: string;
     userId: string;
     workspaceId: string;
-  }): Promise<BackendProjectRecord | undefined>;
+  }): Promise<BackendActiveProjectSelectionResult>;
   clearActiveProjectForWorkspaceUser?(
     workspaceId: string,
     userId: string,
   ): Promise<void>;
+  softDeleteProjectForWorkspaceUser?(input: {
+    projectId: string;
+    userId: string;
+    workspaceId: string;
+  }): Promise<"deleted" | "forbidden" | "not_found">;
   listImageGenerationHistoryForProject?(
     workspaceId: string,
     projectId: string,

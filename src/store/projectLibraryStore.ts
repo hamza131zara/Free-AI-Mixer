@@ -2,6 +2,7 @@ import { create } from "zustand";
 import {
   clearActiveProject as clearActiveProjectPreference,
   createProject as createProjectRecord,
+  deleteProject as deleteProjectRecord,
   getProjectLibraryStatus,
   setActiveProject as persistActiveProject,
   updateProjectTitle,
@@ -9,6 +10,7 @@ import {
 import type {
   ActiveProjectMutationResult,
   ProjectLibraryOperationStatus,
+  ProjectDeletionResult,
   ProjectRecordResult,
   ProjectSummary,
 } from "../types/projectLibrary";
@@ -25,16 +27,20 @@ export interface ProjectLibraryStoreState {
   activeWorkspaceId?: string;
   persistence: "durable" | "not_enabled_yet" | "persistence_unavailable";
   preferenceStatus: "unknown" | "ready" | "persistence_unavailable";
+  capabilities: {
+    canDeleteProjects: boolean;
+  };
   projects: ProjectSummary[];
   activeProject?: ProjectSummary;
   operationStatus: ProjectLibraryOperationStatus;
-  pendingAction: "refresh" | "create" | "open" | "rename" | "clear" | null;
+  pendingAction: "refresh" | "create" | "open" | "rename" | "delete" | "clear" | null;
   pendingProjectId?: string;
   refreshProjectLibrary: (
     requestedProjectId?: string,
     suppressServerPreference?: boolean,
   ) => Promise<void>;
   createProject: (title: string) => Promise<void>;
+  deleteProject: (projectId: string) => Promise<boolean>;
   selectActiveProject: (projectId: string) => Promise<void>;
   clearActiveProject: () => Promise<void>;
   clearRuntimeProjectContext: () => void;
@@ -58,6 +64,7 @@ const runtimeClearedState = {
   activeWorkspaceId: undefined,
   persistence: "not_enabled_yet" as const,
   preferenceStatus: "unknown" as const,
+  capabilities: { canDeleteProjects: false },
   projects: [],
   activeProject: undefined,
   operationStatus: "idle" as const,
@@ -121,6 +128,7 @@ export const useProjectLibraryStore = create<ProjectLibraryStoreState>((set) => 
             activeWorkspaceId: result.activeWorkspaceId,
             persistence: result.persistence,
             preferenceStatus: result.activeProjectPreference.status,
+            capabilities: result.capabilities,
             projects: result.projects,
             activeProject: undefined,
             operationStatus: "unavailable",
@@ -137,6 +145,7 @@ export const useProjectLibraryStore = create<ProjectLibraryStoreState>((set) => 
           activeWorkspaceId: result.activeWorkspaceId,
           persistence: result.persistence,
           preferenceStatus: "ready",
+          capabilities: result.capabilities,
           projects: result.projects,
           activeProject: preferenceResult.activeProject,
           operationStatus: result.projects.length === 0 ? "empty" : "idle",
@@ -153,6 +162,7 @@ export const useProjectLibraryStore = create<ProjectLibraryStoreState>((set) => 
         activeWorkspaceId: result.activeWorkspaceId,
         persistence: result.persistence,
         preferenceStatus: result.activeProjectPreference.status,
+        capabilities: result.capabilities,
         projects: result.projects,
         activeProject: preferredProject,
         operationStatus: result.projects.length === 0 ? "empty" : "idle",
@@ -218,6 +228,40 @@ export const useProjectLibraryStore = create<ProjectLibraryStoreState>((set) => 
     }
 
     applyProjectFailureResult(result);
+  },
+  deleteProject: async (projectId) => {
+    const epoch = nextRequestEpoch();
+    set({
+      operationStatus: "deleting",
+      pendingAction: "delete",
+      pendingProjectId: projectId,
+    });
+    const result = await deleteProjectRecord(projectId);
+
+    if (!isCurrentRequest(epoch)) {
+      return false;
+    }
+
+    if (result.kind === "project_deleted") {
+      set((state) => ({
+        accessMessage: "Project was deleted. Existing generated records remain preserved.",
+        accessReasonCode: undefined,
+        projects: state.projects.filter(
+          (project) => project.projectId !== projectId,
+        ),
+        activeProject:
+          state.activeProject?.projectId === projectId
+            ? undefined
+            : state.activeProject,
+        operationStatus: "deleted",
+        pendingAction: null,
+        pendingProjectId: undefined,
+      }));
+      return true;
+    }
+
+    applyProjectDeletionFailure(result);
+    return false;
   },
   selectActiveProject: async (projectId) => {
     const epoch = nextRequestEpoch();
@@ -349,9 +393,30 @@ const applyLibraryFailure = (
     activeWorkspaceId: undefined,
     persistence: "not_enabled_yet",
     preferenceStatus: "unknown",
+    capabilities: { canDeleteProjects: false },
     projects: [],
     activeProject: undefined,
     operationStatus: result.kind === "unauthenticated" ? "idle" : "unavailable",
+    pendingAction: null,
+    pendingProjectId: undefined,
+  });
+};
+
+const applyProjectDeletionFailure = (
+  result: Exclude<ProjectDeletionResult, { kind: "project_deleted" }>,
+): void => {
+  if (result.kind === "unauthenticated") {
+    applyLibraryFailure(result);
+    return;
+  }
+
+  useProjectLibraryStore.setState({
+    accessMessage: result.message,
+    accessReasonCode: result.code,
+    operationStatus:
+      result.kind === "unavailable" && result.code === "not_found"
+        ? "not_found"
+        : "unavailable",
     pendingAction: null,
     pendingProjectId: undefined,
   });
