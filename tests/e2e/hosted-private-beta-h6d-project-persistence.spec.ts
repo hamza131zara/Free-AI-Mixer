@@ -82,6 +82,7 @@ const expectNoUnsafeFields = (value: unknown) => {
 
 class InMemoryProjectRepository implements BackendProjectRepository {
   readonly records = new Map<string, BackendProjectRecord>();
+  readonly activeProjects = new Map<string, string>();
   shouldThrow = false;
   private tick = 0;
 
@@ -159,6 +160,47 @@ class InMemoryProjectRepository implements BackendProjectRepository {
     this.records.set(updated.projectId, updated);
 
     return updated;
+  }
+
+  async getActiveProjectForWorkspaceUser(
+    workspaceId: string,
+    userId: string,
+  ): Promise<BackendProjectRecord | undefined> {
+    this.throwIfRequested();
+    const projectId = this.activeProjects.get(`${workspaceId}:${userId}`);
+
+    return projectId
+      ? this.getProjectForWorkspace(workspaceId, projectId)
+      : undefined;
+  }
+
+  async setActiveProjectForWorkspaceUser(input: {
+    projectId: string;
+    userId: string;
+    workspaceId: string;
+  }): Promise<BackendProjectRecord | undefined> {
+    this.throwIfRequested();
+    const project = await this.getProjectForWorkspace(
+      input.workspaceId,
+      input.projectId,
+    );
+
+    if (project) {
+      this.activeProjects.set(
+        `${input.workspaceId}:${input.userId}`,
+        input.projectId,
+      );
+    }
+
+    return project;
+  }
+
+  async clearActiveProjectForWorkspaceUser(
+    workspaceId: string,
+    userId: string,
+  ): Promise<void> {
+    this.throwIfRequested();
+    this.activeProjects.delete(`${workspaceId}:${userId}`);
   }
 
   private nextTimestamp(): string {

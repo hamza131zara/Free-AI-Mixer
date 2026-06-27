@@ -27,9 +27,15 @@ const projectLibraryProjectRecordPathPattern =
   /^\/project-library\/projects\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const generatedImagePreviewPathPattern =
   /^\/generation\/jobs\/[A-Za-z0-9_-]{1,120}\/artifacts\/[A-Za-z0-9_-]{1,120}\/preview$/;
+const activeProjectPreferencePath = "/project-library/active-project";
 
-const isAllowedAuthenticatedPath = (value: string): boolean =>
-  allowedAuthenticatedPaths.has(value) ||
+const isAllowedAuthenticatedRequest = (
+  value: string,
+  method: string | undefined,
+): boolean =>
+  (value === activeProjectPreferencePath
+    ? method === "PUT" || method === "DELETE"
+    : allowedAuthenticatedPaths.has(value)) ||
   providerConnectionMutationPathPattern.test(value) ||
   projectLibraryProjectRecordPathPattern.test(value) ||
   generatedImagePreviewPathPattern.test(value);
@@ -54,7 +60,12 @@ export const createAuthenticatedFetch = (
       );
     }
 
-    if (!isAllowedAuthenticatedPath(toRelativePathname(input))) {
+    if (
+      !isAllowedAuthenticatedRequest(
+        toRelativePathname(input),
+        init?.method?.toUpperCase(),
+      )
+    ) {
       return dependencies.fetch(input, init);
     }
 

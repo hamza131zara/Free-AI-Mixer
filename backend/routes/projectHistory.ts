@@ -7,6 +7,7 @@ import type { TrustedAuthProviderRuntimeConfig } from "../auth/trustedAuthProvid
 import { applySensitiveAuthResponseHeaders } from "./sensitiveAuthResponse";
 import type {
   BackendExportHistoryResponse,
+  BackendActiveProjectPreference,
   BackendProjectMutationResponse,
   BackendProjectLibraryResponse,
   BackendProjectRecord,
@@ -109,6 +110,27 @@ const parseTitleRequest = (
   };
 };
 
+const parseActiveProjectRequest = (
+  value: unknown,
+): { kind: "valid"; projectId: string } | { kind: "invalid" } => {
+  if (!isPlainObject(value)) {
+    return { kind: "invalid" };
+  }
+
+  const keys = Object.keys(value);
+
+  if (
+    keys.length !== 1 ||
+    keys[0] !== "projectId" ||
+    typeof value.projectId !== "string" ||
+    !uuidPattern.test(value.projectId)
+  ) {
+    return { kind: "invalid" };
+  }
+
+  return { kind: "valid", projectId: value.projectId };
+};
+
 const isValidProjectId = (projectId: string | undefined): projectId is string =>
   typeof projectId === "string" && uuidPattern.test(projectId);
 
@@ -204,6 +226,31 @@ export const createProjectHistoryRouter = (
                 requesterContext.workspaceId,
               )
             : [];
+          let activeProjectPreference: BackendActiveProjectPreference = {
+            status: "persistence_unavailable",
+            projectId: null,
+          };
+
+          if (
+            options.projectRepository?.getActiveProjectForWorkspaceUser
+          ) {
+            try {
+              const activeProject =
+                await options.projectRepository.getActiveProjectForWorkspaceUser(
+                  requesterContext.workspaceId,
+                  requesterContext.appUserId,
+                );
+              activeProjectPreference = {
+                status: "ready",
+                projectId: activeProject?.projectId ?? null,
+              };
+            } catch {
+              activeProjectPreference = {
+                status: "persistence_unavailable",
+                projectId: null,
+              };
+            }
+          }
 
           response.status(200).json({
             kind: "project_library",
@@ -211,16 +258,106 @@ export const createProjectHistoryRouter = (
             message: persistenceUnavailable
               ? "Project library is available for this verified session, but durable Supabase persistence is unavailable; browser-local project state remains local/browser-only."
               : "Project library is available for this verified session with durable project metadata persistence.",
-            activeWorkspaceId: requesterContext.workspaceId,
             persistence: persistenceUnavailable
               ? "persistence_unavailable"
               : "durable",
+            activeProjectPreference,
             projects: projects.map(toProjectRecord),
           });
           return;
         }
 
         sendProjectAccessDenied(response, accessDecision, options.runtimeConfig);
+      })().catch(next);
+    },
+  );
+
+  router.put(
+    "/project-library/active-project",
+    (request, response: Response<BackendProjectMutationResponse>, next) => {
+      void (async () => {
+        const accessDecision = await resolveSelectedRouteAccess({
+          headers: request.headers,
+          runtimeConfig: options.runtimeConfig,
+          requesterResolver: options.routeAccessResolver,
+        });
+
+        if (accessDecision.kind !== "allowed") {
+          sendProjectAccessDenied(response, accessDecision, options.runtimeConfig);
+          return;
+        }
+
+        const activeProjectRequest = parseActiveProjectRequest(request.body);
+
+        if (activeProjectRequest.kind === "invalid") {
+          response.status(400).json({
+            kind: "project_request_invalid",
+            status: "invalid_project_id",
+            message: "Active project request requires one valid project ID.",
+          });
+          return;
+        }
+
+        if (!options.projectRepository?.setActiveProjectForWorkspaceUser) {
+          sendRepositoryUnavailable(response);
+          return;
+        }
+
+        const project =
+          await options.projectRepository.setActiveProjectForWorkspaceUser({
+            projectId: activeProjectRequest.projectId,
+            userId: accessDecision.requester.appUserId,
+            workspaceId: accessDecision.requester.workspaceId,
+          });
+
+        if (!project) {
+          response.status(404).json({
+            kind: "project_not_found",
+            status: "not_found",
+            message: "Project was not found for this workspace.",
+          });
+          return;
+        }
+
+        response.status(200).json({
+          kind: "active_project",
+          status: "selected",
+          activeProject: toProjectRecord(project),
+        });
+      })().catch(next);
+    },
+  );
+
+  router.delete(
+    "/project-library/active-project",
+    (request, response: Response<BackendProjectMutationResponse>, next) => {
+      void (async () => {
+        const accessDecision = await resolveSelectedRouteAccess({
+          headers: request.headers,
+          runtimeConfig: options.runtimeConfig,
+          requesterResolver: options.routeAccessResolver,
+        });
+
+        if (accessDecision.kind !== "allowed") {
+          sendProjectAccessDenied(response, accessDecision, options.runtimeConfig);
+          return;
+        }
+
+        if (!options.projectRepository?.clearActiveProjectForWorkspaceUser) {
+          sendRepositoryUnavailable(response);
+          return;
+        }
+
+        await options.projectRepository.clearActiveProjectForWorkspaceUser(
+          accessDecision.requester.workspaceId,
+          accessDecision.requester.appUserId,
+        );
+
+        response.status(200).json({
+          kind: "active_project",
+          status: "cleared",
+          activeProject: null,
+        });
       })().catch(next);
     },
   );

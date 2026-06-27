@@ -6,6 +6,16 @@ export interface ProjectSummary {
   updatedAt: string;
 }
 
+export type ActiveProjectPreference =
+  | {
+      status: "ready";
+      projectId: string | null;
+    }
+  | {
+      status: "persistence_unavailable";
+      projectId: null;
+    };
+
 export type ProjectLibraryOperationStatus =
   | "idle"
   | "loading"
@@ -24,6 +34,7 @@ export type ProjectLibraryStatusResult =
       message: string;
       activeWorkspaceId?: string;
       persistence: "durable" | "not_enabled_yet" | "persistence_unavailable";
+      activeProjectPreference: ActiveProjectPreference;
       projects: ProjectSummary[];
     }
   | {
@@ -60,6 +71,21 @@ export type ProjectRecordResult =
       kind: "project";
       status: "created" | "loaded" | "updated";
       project: ProjectSummary;
+    }
+  | Extract<ProjectLibraryStatusResult, { kind: "unauthenticated" }>
+  | Extract<ProjectLibraryStatusResult, { kind: "forbidden" }>
+  | Extract<ProjectLibraryStatusResult, { kind: "unavailable" }>;
+
+export type ActiveProjectMutationResult =
+  | {
+      kind: "active_project";
+      status: "selected";
+      activeProject: ProjectSummary;
+    }
+  | {
+      kind: "active_project";
+      status: "cleared";
+      activeProject: null;
     }
   | Extract<ProjectLibraryStatusResult, { kind: "unauthenticated" }>
   | Extract<ProjectLibraryStatusResult, { kind: "forbidden" }>

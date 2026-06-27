@@ -38,6 +38,7 @@ const unauthenticatedSession = {
 const installProjectRoutes = async (page: Page) => {
   let authenticated = true;
   let visibleProjects: typeof projects[number][] = [...projects];
+  let activeProjectId: string | null = null;
   const loadedProjectIds: string[] = [];
 
   await page.route("**/auth/session", async (route) => {
@@ -62,6 +63,10 @@ const installProjectRoutes = async (page: Page) => {
           message:
             "Project library is available for this verified session with durable project metadata persistence.",
           persistence: "durable",
+          activeProjectPreference: {
+            status: "ready",
+            projectId: activeProjectId,
+          },
           projects: visibleProjects,
         }),
         contentType: "application/json",
@@ -99,6 +104,59 @@ const installProjectRoutes = async (page: Page) => {
     throw new Error(`Unexpected project request: ${request.method()} ${url.pathname}`);
   });
 
+  await page.route("**/project-library/active-project", async (route) => {
+    const request = route.request();
+
+    if (request.method() === "PUT") {
+      const body = request.postDataJSON() as { projectId?: string };
+      const project = visibleProjects.find(
+        (candidate) => candidate.projectId === body.projectId,
+      );
+
+      if (!project) {
+        await route.fulfill({
+          body: JSON.stringify({
+            kind: "project_not_found",
+            status: "not_found",
+            message: "Project was not found for this workspace.",
+          }),
+          contentType: "application/json",
+          status: 404,
+        });
+        return;
+      }
+
+      activeProjectId = project.projectId;
+      loadedProjectIds.push(project.projectId);
+      await route.fulfill({
+        body: JSON.stringify({
+          kind: "active_project",
+          status: "selected",
+          activeProject: project,
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+      return;
+    }
+
+    if (request.method() === "DELETE") {
+      activeProjectId = null;
+      await route.fulfill({
+        body: JSON.stringify({
+          kind: "active_project",
+          status: "cleared",
+          activeProject: null,
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+      return;
+    }
+
+    throw new Error(`Unexpected active project method: ${request.method()}`);
+  });
+
   return {
     getLoadedProjectIds: () => [...loadedProjectIds],
     setAuthenticated: (nextAuthenticated: boolean) => {
@@ -106,6 +164,12 @@ const installProjectRoutes = async (page: Page) => {
     },
     setVisibleProjects: (nextProjects: typeof projects[number][]) => {
       visibleProjects = nextProjects;
+      if (
+        activeProjectId &&
+        !visibleProjects.some((project) => project.projectId === activeProjectId)
+      ) {
+        activeProjectId = null;
+      }
     },
   };
 };

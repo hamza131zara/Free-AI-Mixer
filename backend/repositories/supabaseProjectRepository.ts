@@ -17,6 +17,10 @@ export interface ProjectTableQuery<Row> {
   limit(count: number): ProjectTableQuery<Row>;
   order(column: string, options?: { ascending?: boolean }): ProjectTableQuery<Row>;
   insert(values: Partial<Row>): ProjectTableQuery<Row>;
+  upsert?(
+    values: Partial<Row>,
+    options?: { onConflict?: string },
+  ): ProjectTableQuery<Row>;
   update(values: Partial<Row>): ProjectTableQuery<Row>;
   maybeSingle(): Promise<ProjectTableQueryResult<Row>>;
   then(
@@ -28,6 +32,7 @@ export interface ProjectTableQuery<Row> {
 export interface SupabaseProjectClient {
   from(table: "projects"): ProjectTableQuery<ProjectRow>;
   from(table: "image_generation_history"): ProjectTableQuery<ImageGenerationHistoryRow>;
+  from(table: "workspace_user_preferences"): ProjectTableQuery<WorkspaceUserPreferenceRow>;
 }
 
 export interface ProjectRow {
@@ -55,6 +60,13 @@ export interface ImageGenerationHistoryRow {
   sha256: string | null;
   size_bytes: number | null;
   status: "metadata_ready" | "failed" | "unavailable";
+}
+
+export interface WorkspaceUserPreferenceRow {
+  workspace_id: string;
+  user_id: string;
+  active_project_id: string | null;
+  updated_at: string | null;
 }
 
 const projectSelectColumns = [
@@ -267,6 +279,93 @@ export class SupabaseProjectRepository implements BackendProjectRepository {
         .is("deleted_at", null)
         .select(projectSelectColumns),
     );
+  }
+
+  async getActiveProjectForWorkspaceUser(
+    workspaceId: string,
+    userId: string,
+  ): Promise<BackendProjectRecord | undefined> {
+    const preferenceResult = await this.client
+      .from("workspace_user_preferences")
+      .select("workspace_id, user_id, active_project_id, updated_at")
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (preferenceResult.error) {
+      throw new Error(preferenceResult.error.message);
+    }
+
+    if (
+      !preferenceResult.data ||
+      Array.isArray(preferenceResult.data) ||
+      !preferenceResult.data.active_project_id
+    ) {
+      return undefined;
+    }
+
+    const project = await this.getProjectForWorkspace(
+      workspaceId,
+      preferenceResult.data.active_project_id,
+    );
+
+    if (!project) {
+      await this.clearActiveProjectForWorkspaceUser(workspaceId, userId);
+      return undefined;
+    }
+
+    return project;
+  }
+
+  async setActiveProjectForWorkspaceUser(input: {
+    projectId: string;
+    userId: string;
+    workspaceId: string;
+  }): Promise<BackendProjectRecord | undefined> {
+    const project = await this.getProjectForWorkspace(
+      input.workspaceId,
+      input.projectId,
+    );
+
+    if (!project) {
+      return undefined;
+    }
+
+    const preferenceQuery = this.client.from("workspace_user_preferences");
+
+    if (!preferenceQuery.upsert) {
+      throw new Error("Active project preference persistence is unavailable.");
+    }
+
+    const result = (await preferenceQuery.upsert(
+      {
+        active_project_id: input.projectId,
+        user_id: input.userId,
+        workspace_id: input.workspaceId,
+      },
+      { onConflict: "workspace_id,user_id" },
+    )) as ProjectTableQueryResult<WorkspaceUserPreferenceRow>;
+
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
+    return project;
+  }
+
+  async clearActiveProjectForWorkspaceUser(
+    workspaceId: string,
+    userId: string,
+  ): Promise<void> {
+    const result = (await this.client
+      .from("workspace_user_preferences")
+      .update({ active_project_id: null })
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", userId)) as ProjectTableQueryResult<WorkspaceUserPreferenceRow>;
+
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
   }
 
   async listImageGenerationHistoryForProject(
