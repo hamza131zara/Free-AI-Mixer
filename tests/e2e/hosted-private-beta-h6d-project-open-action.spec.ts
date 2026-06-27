@@ -43,6 +43,7 @@ const projectLibraryResponse = {
     "Project library is available for this verified session with durable project metadata persistence.",
   activeWorkspaceId: "44444444-4444-4444-8444-444444444444",
   persistence: "durable",
+  activeProjectPreference: { status: "ready", projectId: null },
   projects,
 };
 
@@ -138,6 +139,44 @@ const installProjectRoutes = async (page: Page) => {
     }
 
     throw new Error(`Unexpected project request: ${request.method()} ${url.pathname}`);
+  });
+
+  await page.route("**/project-library/active-project", async (route) => {
+    const request = route.request();
+
+    if (request.method() !== "PUT") {
+      throw new Error(`Unexpected active project method: ${request.method()}`);
+    }
+
+    const body = request.postDataJSON() as { projectId?: string };
+    const project = projects.find(
+      (candidate) => candidate.projectId === body.projectId,
+    );
+    loadedProjectIds.push(body.projectId ?? "");
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    if (!project || project.projectId === projects[2].projectId) {
+      await route.fulfill({
+        body: JSON.stringify({
+          kind: "project_library_unavailable",
+          status: "repository_unavailable",
+          message: "Project persistence is temporarily unavailable.",
+        }),
+        contentType: "application/json",
+        status: 503,
+      });
+      return;
+    }
+
+    await route.fulfill({
+      body: JSON.stringify({
+        kind: "active_project",
+        status: "selected",
+        activeProject: project,
+      }),
+      contentType: "application/json",
+      status: 200,
+    });
   });
 
   return { loadedProjectIds };

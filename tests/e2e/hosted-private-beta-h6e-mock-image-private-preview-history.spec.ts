@@ -36,6 +36,7 @@ const projectLibraryResponse = {
   message: "Project library is available for this verified session.",
   activeWorkspaceId: "44444444-4444-4444-8444-444444444444",
   persistence: "durable",
+  activeProjectPreference: { status: "ready", projectId: null },
   projects: [project, secondProject],
 };
 
@@ -157,6 +158,32 @@ const installProjectGenerationRoutes = async (page: Page) => {
     }
 
     throw new Error(`Unexpected project request: ${request.method()} ${url.pathname}`);
+  });
+
+  await page.route("**/project-library/active-project", async (route) => {
+    const request = route.request();
+    const body = request.postDataJSON() as { projectId?: string };
+    const matchedProject = [project, secondProject].find(
+      (candidate) => candidate.projectId === body.projectId,
+    );
+
+    await route.fulfill({
+      body: JSON.stringify(
+        matchedProject
+          ? {
+              kind: "active_project",
+              status: "selected",
+              activeProject: matchedProject,
+            }
+          : {
+              kind: "project_not_found",
+              status: "not_found",
+              message: "Project was not found for this workspace.",
+            },
+      ),
+      contentType: "application/json",
+      status: matchedProject ? 200 : 404,
+    });
   });
 
   await page.route("**/generation/history**", async (route) => {

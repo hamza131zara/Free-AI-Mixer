@@ -19,10 +19,15 @@ export function MixerPage() {
   const [projectContextMessage, setProjectContextMessage] = useState(
     "Select a saved project before running hosted mock image generation.",
   );
-  const selectedProject = useProjectLibraryStore((state) => state.selectedProject);
+  const activeProject = useProjectLibraryStore((state) => state.activeProject);
   const operationStatus = useProjectLibraryStore((state) => state.operationStatus);
   const accessMessage = useProjectLibraryStore((state) => state.accessMessage);
-  const openProject = useProjectLibraryStore((state) => state.openProject);
+  const refreshProjectLibrary = useProjectLibraryStore(
+    (state) => state.refreshProjectLibrary,
+  );
+  const clearRuntimeProjectContext = useProjectLibraryStore(
+    (state) => state.clearRuntimeProjectContext,
+  );
   const projectId = useMemo(() => {
     if (typeof window === "undefined") {
       return undefined;
@@ -32,15 +37,8 @@ export function MixerPage() {
   }, []);
 
   useEffect(() => {
-    if (!projectId) {
-      setProjectContextStatus("none");
-      setProjectContextMessage(
-        "Select a saved project before running hosted mock image generation.",
-      );
-      return;
-    }
-
-    if (!safeProjectIdPattern.test(projectId)) {
+    if (projectId && !safeProjectIdPattern.test(projectId)) {
+      clearRuntimeProjectContext();
       setProjectContextStatus("invalid");
       setProjectContextMessage(
         "The Mixer project link is invalid. Return to Projects and select a saved project.",
@@ -51,12 +49,25 @@ export function MixerPage() {
     setProjectContextStatus("loading");
     setProjectContextMessage("Loading verified project context for Mixer.");
 
-    void openProject(projectId).then(() => {
-      const loadedProject = useProjectLibraryStore.getState().selectedProject;
+    void refreshProjectLibrary(projectId).then(() => {
+      const loadedProject = useProjectLibraryStore.getState().activeProject;
 
-      if (loadedProject?.projectId === projectId) {
+      if (loadedProject && (!projectId || loadedProject.projectId === projectId)) {
+        if (!projectId && typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          url.searchParams.set("projectId", loadedProject.projectId);
+          window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+        }
         setProjectContextStatus("ready");
         setProjectContextMessage(`Verified project context: ${loadedProject.title}`);
+        return;
+      }
+
+      if (!projectId) {
+        setProjectContextStatus("none");
+        setProjectContextMessage(
+          "Select a saved project before running hosted mock image generation.",
+        );
         return;
       }
 
@@ -66,13 +77,10 @@ export function MixerPage() {
           "The selected project could not be verified for Mixer.",
       );
     });
-  }, [openProject, projectId]);
+  }, [clearRuntimeProjectContext, projectId, refreshProjectLibrary]);
 
-  const activeProject =
-    projectContextStatus === "ready" &&
-    selectedProject?.projectId === projectId
-      ? selectedProject
-      : undefined;
+  const verifiedActiveProject =
+    projectContextStatus === "ready" ? activeProject : undefined;
 
   return (
     <main className="app-shell" data-testid="mixer-page">
@@ -128,10 +136,10 @@ export function MixerPage() {
                 ) : null}
               </div>
               <div className="generation-workbench-grid">
-                <PromptImageGenerator project={activeProject} />
+                <PromptImageGenerator project={verifiedActiveProject} />
                 <PromptVideoGenerator />
               </div>
-              <PromptImageHistory project={activeProject} />
+              <PromptImageHistory project={verifiedActiveProject} />
             </section>
           </div>
           <SceneQueue />

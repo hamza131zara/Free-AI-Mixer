@@ -6,6 +6,16 @@ export interface BackendProjectRecord {
   updatedAt: string;
 }
 
+export type BackendActiveProjectPreference =
+  | {
+      status: "ready";
+      projectId: string | null;
+    }
+  | {
+      status: "persistence_unavailable";
+      projectId: null;
+    };
+
 export type BackendExportHistoryStatus =
   | "submitted"
   | "rendering"
@@ -29,6 +39,7 @@ export type BackendProjectLibraryResponse =
       message: string;
       activeWorkspaceId?: string;
       persistence: "durable" | "not_enabled_yet" | "persistence_unavailable";
+      activeProjectPreference: BackendActiveProjectPreference;
       projects: BackendProjectRecord[];
     }
   | {
@@ -56,6 +67,16 @@ export type BackendProjectMutationResponse =
       kind: "project_record";
       status: "created" | "loaded" | "updated";
       project: BackendProjectRecord;
+    }
+  | {
+      kind: "active_project";
+      status: "selected";
+      activeProject: BackendProjectRecord;
+    }
+  | {
+      kind: "active_project";
+      status: "cleared";
+      activeProject: null;
     }
   | {
       kind: "project_request_invalid";

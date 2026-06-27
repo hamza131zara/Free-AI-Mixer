@@ -500,6 +500,19 @@ export interface BackendProjectRepository {
     title: string;
     workspaceId: string;
   }): Promise<BackendProjectRecord | undefined>;
+  getActiveProjectForWorkspaceUser?(
+    workspaceId: string,
+    userId: string,
+  ): Promise<BackendProjectRecord | undefined>;
+  setActiveProjectForWorkspaceUser?(input: {
+    projectId: string;
+    userId: string;
+    workspaceId: string;
+  }): Promise<BackendProjectRecord | undefined>;
+  clearActiveProjectForWorkspaceUser?(
+    workspaceId: string,
+    userId: string,
+  ): Promise<void>;
   listImageGenerationHistoryForProject?(
     workspaceId: string,
     projectId: string,

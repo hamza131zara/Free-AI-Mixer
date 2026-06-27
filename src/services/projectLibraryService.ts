@@ -1,4 +1,5 @@
 import type {
+  ActiveProjectMutationResult,
   ProjectLibraryStatusResult,
   ProjectRecordResult,
   ProjectSummary,
@@ -11,6 +12,9 @@ interface BackendAuthenticatedProjectLibraryResponse {
   message?: string;
   activeWorkspaceId?: string;
   persistence: "durable" | "not_enabled_yet" | "persistence_unavailable";
+  activeProjectPreference:
+    | { status: "ready"; projectId: string | null }
+    | { status: "persistence_unavailable"; projectId: null };
   projects: ProjectSummary[];
 }
 
@@ -19,6 +23,18 @@ interface BackendProjectRecordResponse {
   status: "created" | "loaded" | "updated";
   project: ProjectSummary;
 }
+
+type BackendActiveProjectResponse =
+  | {
+      kind: "active_project";
+      status: "selected";
+      activeProject: ProjectSummary;
+    }
+  | {
+      kind: "active_project";
+      status: "cleared";
+      activeProject: null;
+    };
 
 interface BackendInvalidProjectRequestResponse {
   kind: "project_request_invalid";
@@ -64,13 +80,20 @@ type BackendProjectLibraryResponse =
 
 type BackendProjectMutationResponse =
   | BackendProjectRecordResponse
+  | BackendActiveProjectResponse
   | BackendInvalidProjectRequestResponse
   | BackendProjectNotFoundResponse
   | BackendUnauthenticatedProjectLibraryResponse
   | BackendForbiddenProjectLibraryResponse
   | BackendUnavailableProjectLibraryResponse;
 
+type BackendProjectRecordMutationResponse = Exclude<
+  BackendProjectMutationResponse,
+  BackendActiveProjectResponse
+>;
+
 const projectLibraryEndpoint = "/project-library/projects";
+const activeProjectEndpoint = "/project-library/active-project";
 
 const parseJson = async <Payload>(response: Response): Promise<Payload | undefined> => {
   const responseText = await response.text();
@@ -180,6 +203,10 @@ const mapProjectLibraryResponse = (
         "Project library is available for this verified session, but durable saved projects are not enabled yet.",
       activeWorkspaceId: payload.activeWorkspaceId,
       persistence: payload.persistence,
+      activeProjectPreference: payload.activeProjectPreference ?? {
+        status: "persistence_unavailable",
+        projectId: null,
+      },
       projects: payload.projects,
     };
   }
@@ -210,7 +237,7 @@ export const getProjectLibraryStatus = async (): Promise<ProjectLibraryStatusRes
 export const listProjects = getProjectLibraryStatus;
 
 const mapProjectMutationResponse = (
-  payload: BackendProjectMutationResponse,
+  payload: BackendProjectRecordMutationResponse,
 ): ProjectRecordResult => {
   if (payload.kind === "project_record") {
     return {
@@ -246,7 +273,7 @@ const requestProjectRecord = async (
       credentials: "same-origin",
       ...init,
     });
-    const payload = await parseJson<BackendProjectMutationResponse>(response);
+    const payload = await parseJson<BackendProjectRecordMutationResponse>(response);
 
     if (!payload) {
       return toProjectRecordUnavailable("Project request returned an empty response.");
@@ -295,3 +322,75 @@ export const updateProjectTitle = async (
       method: "PATCH",
     },
   );
+
+const requestActiveProjectMutation = async (
+  init: RequestInit,
+): Promise<ActiveProjectMutationResult> => {
+  try {
+    const response = await fetchWithOptionalAccountBearer(activeProjectEndpoint, {
+      credentials: "same-origin",
+      ...init,
+    });
+    const payload = await parseJson<BackendProjectMutationResponse>(response);
+
+    if (!payload) {
+      return toProjectRecordUnavailable(
+        "Active project request returned an empty response.",
+      );
+    }
+
+    if (payload.kind === "active_project") {
+      if (payload.status === "selected") {
+        return {
+          kind: "active_project",
+          status: "selected",
+          activeProject: payload.activeProject,
+        };
+      }
+
+      return {
+        kind: "active_project",
+        status: "cleared",
+        activeProject: null,
+      };
+    }
+
+    if (payload.kind === "project_request_invalid") {
+      return toProjectRecordUnavailable(
+        payload.message ?? "Active project request is invalid.",
+        payload.status,
+      );
+    }
+
+    if (payload.kind === "project_not_found") {
+      return toProjectRecordUnavailable(
+        payload.message ?? "Project was not found.",
+        "not_found",
+      );
+    }
+
+    if (payload.kind === "project_record") {
+      return toProjectRecordUnavailable(
+        "Active project response was not recognized.",
+      );
+    }
+
+    return mapSharedProjectFailureResponse(payload);
+  } catch {
+    return toProjectRecordUnavailable(
+      "Active project preference is currently unavailable.",
+    );
+  }
+};
+
+export const setActiveProject = async (
+  projectId: string,
+): Promise<ActiveProjectMutationResult> =>
+  requestActiveProjectMutation({
+    body: JSON.stringify({ projectId }),
+    headers: { "Content-Type": "application/json" },
+    method: "PUT",
+  });
+
+export const clearActiveProject = async (): Promise<ActiveProjectMutationResult> =>
+  requestActiveProjectMutation({ method: "DELETE" });

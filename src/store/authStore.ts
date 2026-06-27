@@ -18,6 +18,7 @@ import type {
   AuthStatus,
   VerifiedAccountIdentity,
 } from "../types/auth";
+import { useProjectLibraryStore } from "./projectLibraryStore";
 
 export interface AuthStoreState {
   status: AuthStatus;
@@ -89,12 +90,16 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
   refreshSession: async (accessToken) => {
     set({ pendingAction: "refresh" });
     const result = await getAuthSession(accessToken);
+    if (result.kind !== "authenticated") {
+      useProjectLibraryStore.getState().clearRuntimeProjectContext();
+    }
     set({
       ...applySessionResult(result),
       pendingAction: null,
     });
   },
   login: async (credentials) => {
+    useProjectLibraryStore.getState().clearRuntimeProjectContext();
     set({ pendingAction: "login" });
     const result = await loginWithSupabaseRuntime(credentials);
     set({
@@ -103,6 +108,7 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
     });
   },
   signup: async (credentials) => {
+    useProjectLibraryStore.getState().clearRuntimeProjectContext();
     set({ pendingAction: "signup" });
     const result = await signUpWithSupabaseRuntime(credentials);
     set({
@@ -162,6 +168,9 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
         pendingAction: null,
       };
     });
+    if (result.kind !== "unavailable") {
+      useProjectLibraryStore.getState().clearRuntimeProjectContext();
+    }
   },
 }));
 
