@@ -1,7 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { ProjectSummary } from "../types/projectLibrary";
 import { useNavigationStore } from "../store/navigationStore";
 import { useProjectLibraryStore } from "../store/projectLibraryStore";
+import { useAuthStore } from "../store/authStore";
+import { BackendRequestAbortedError } from "../services/backendRequestPolicy";
 
 const safeProjectIdPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -41,9 +49,15 @@ export function ProjectsPage() {
   const [renameTitle, setRenameTitle] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<ProjectSummary | undefined>();
   const reconciliationPending = useRef(false);
+  const reconciliationTrailing = useRef(false);
   const deleteDialogRef = useRef<HTMLElement>(null);
   const projectListPanelRef = useRef<HTMLElement>(null);
   const deleteTriggerRefs = useRef(new Map<string, HTMLButtonElement>());
+  const confirmedDeletionFocusRef = useRef<{
+    deletedProjectId: string;
+    targetProjectId?: string;
+  } | null>(null);
+  const confirmedDeletionFocusHandledRef = useRef<string | null>(null);
   const accessStatus = useProjectLibraryStore((state) => state.accessStatus);
   const accessMessage = useProjectLibraryStore((state) => state.accessMessage);
   const projects = useProjectLibraryStore((state) => state.projects);
@@ -65,38 +79,73 @@ export function ProjectsPage() {
   );
   const navigateTo = useNavigationStore((state) => state.navigateTo);
   const syncWithLocation = useNavigationStore((state) => state.syncWithLocation);
+  const beginProjectRestoration = useAuthStore(
+    (state) => state.beginProjectRestoration,
+  );
+  const completeProjectRestoration = useAuthStore(
+    (state) => state.completeProjectRestoration,
+  );
+  const failProjectRestoration = useAuthStore(
+    (state) => state.failProjectRestoration,
+  );
 
-  useEffect(() => {
-    const requested = readProjectIdFromUrl();
-    void refreshProjectLibrary(
-      requested.invalid ? undefined : requested.projectId,
-      requested.invalid,
+  const publishProjectRestorationOutcome = useCallback((): void => {
+    const state = useProjectLibraryStore.getState();
+    if (state.accessStatus === "authenticated") {
+      completeProjectRestoration();
+      return;
+    }
+
+    failProjectRestoration(
+      state.accessStatus === "unauthenticated"
+        ? "sign_in_required"
+        : state.accessStatus === "forbidden"
+          ? "workspace_forbidden"
+          : "temporarily_unavailable",
     );
-  }, [refreshProjectLibrary]);
+  }, [completeProjectRestoration, failProjectRestoration]);
 
   useEffect(() => {
+    let disposed = false;
+
     const reconcile = () => {
-      if (
-        reconciliationPending.current ||
-        document.visibilityState === "hidden" ||
-        useProjectLibraryStore.getState().pendingAction !== null
-      ) {
+      if (disposed) {
+        return;
+      }
+
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+
+      if (reconciliationPending.current) {
+        reconciliationTrailing.current = true;
+        return;
+      }
+
+      const pendingAction = useProjectLibraryStore.getState().pendingAction;
+      if (pendingAction !== null && pendingAction !== "refresh") {
         return;
       }
 
       reconciliationPending.current = true;
+      beginProjectRestoration();
       const requested = readProjectIdFromUrl();
       void refreshProjectLibrary(
         requested.invalid ? undefined : requested.projectId,
         requested.invalid,
       )
         .then(() => {
+          if (disposed) {
+            return;
+          }
+
           const state = useProjectLibraryStore.getState();
           const listResolved =
             state.accessStatus === "authenticated" &&
             (state.operationStatus === "idle" || state.operationStatus === "empty");
 
           if (!listResolved) {
+            publishProjectRestorationOutcome();
             return;
           }
 
@@ -111,21 +160,49 @@ export function ProjectsPage() {
           ) {
             updateProjectsProjectIdUrl();
           }
+          publishProjectRestorationOutcome();
         })
-        .catch(() => undefined)
+        .catch((error: unknown) => {
+          if (disposed || error instanceof BackendRequestAbortedError) {
+            return;
+          }
+
+          failProjectRestoration("temporarily_unavailable");
+        })
         .finally(() => {
+          if (disposed) {
+            return;
+          }
+
           reconciliationPending.current = false;
+          if (reconciliationTrailing.current) {
+            reconciliationTrailing.current = false;
+            queueMicrotask(() => {
+              if (!disposed) {
+                reconcile();
+              }
+            });
+          }
         });
     };
 
+    reconcile();
     window.addEventListener("focus", reconcile);
     document.addEventListener("visibilitychange", reconcile);
 
     return () => {
+      disposed = true;
+      reconciliationPending.current = false;
+      reconciliationTrailing.current = false;
       window.removeEventListener("focus", reconcile);
       document.removeEventListener("visibilitychange", reconcile);
     };
-  }, [refreshProjectLibrary]);
+  }, [
+    beginProjectRestoration,
+    failProjectRestoration,
+    publishProjectRestorationOutcome,
+    refreshProjectLibrary,
+  ]);
 
   useEffect(() => {
     if (
@@ -190,6 +267,32 @@ export function ProjectsPage() {
     returnFocusAfterDeleteDialog(projectId);
   };
 
+  useLayoutEffect(() => {
+    const pendingFocus = confirmedDeletionFocusRef.current;
+
+    if (
+      !pendingFocus ||
+      projects.some(
+        (project) => project.projectId === pendingFocus.deletedProjectId,
+      )
+    ) {
+      return;
+    }
+
+    confirmedDeletionFocusRef.current = null;
+    confirmedDeletionFocusHandledRef.current = pendingFocus.deletedProjectId;
+    const target = pendingFocus.targetProjectId
+      ? deleteTriggerRefs.current.get(pendingFocus.targetProjectId)
+      : undefined;
+
+    if (target?.isConnected) {
+      target.focus();
+      return;
+    }
+
+    projectListPanelRef.current?.focus();
+  }, [projects]);
+
   useEffect(() => {
     if (!deleteTarget) {
       return;
@@ -206,9 +309,15 @@ export function ProjectsPage() {
     }
 
     const projectId = deleteTarget.projectId;
+    const confirmedDeletionPending =
+      confirmedDeletionFocusRef.current?.deletedProjectId === projectId ||
+      confirmedDeletionFocusHandledRef.current === projectId;
+    if (confirmedDeletionFocusHandledRef.current === projectId) {
+      confirmedDeletionFocusHandledRef.current = null;
+    }
     setDeleteTarget(undefined);
 
-    if (accessStatus === "authenticated") {
+    if (accessStatus === "authenticated" && !confirmedDeletionPending) {
       returnFocusAfterDeleteDialog(projectId);
     }
   }, [accessStatus, canDeleteProjects, deleteTarget, projects]);
@@ -413,8 +522,22 @@ export function ProjectsPage() {
                     disabled={pendingAction === "delete"}
                     onClick={() => {
                       const projectId = deleteTarget.projectId;
+                      const deletedIndex = projects.findIndex(
+                        (project) => project.projectId === projectId,
+                      );
+                      const nearestSurvivor =
+                        deletedIndex >= 0
+                          ? projects[deletedIndex + 1] ??
+                            projects[deletedIndex - 1]
+                          : undefined;
+                      confirmedDeletionFocusRef.current = {
+                        deletedProjectId: projectId,
+                        targetProjectId: nearestSurvivor?.projectId,
+                      };
                       void deleteProject(projectId).then((deleted) => {
                         if (!deleted) {
+                          confirmedDeletionFocusRef.current = null;
+                          confirmedDeletionFocusHandledRef.current = null;
                           return;
                         }
 
@@ -422,7 +545,6 @@ export function ProjectsPage() {
                         if (requested.projectId === projectId) {
                           updateProjectsProjectIdUrl();
                         }
-                        closeDeleteDialog(projectId);
                       });
                     }}
                   >

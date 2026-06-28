@@ -16,14 +16,13 @@ export type SupabaseAuthSessionBridgeStatus =
     };
 
 export interface SupabaseAuthSessionBridgeOptions {
-  bootstrapBackendAccount?: (accessToken: string) => Promise<void>;
+  bootstrapBackendAccount?: (accessToken: string) => Promise<boolean>;
   getAuthClient?: typeof getSupabaseAuthClient;
   setRecoveryState?: (status: AuthRecoveryStatus, message?: string) => void;
   refreshBackendSession: (accessToken?: string) => Promise<AuthSessionResult | void>;
 }
 
 let activeBridge: SupabaseAuthSessionBridgeStatus | null = null;
-let activeWorkspaceRepair: Promise<void> | null = null;
 
 const noopUnsubscribe = (): void => {};
 
@@ -36,26 +35,20 @@ const shouldRepairWorkspaceAuthority = (
 const runSingleWorkspaceRepair = async (
   accessToken: string,
   bootstrapBackendAccount:
-    | ((accessToken: string) => Promise<void>)
+    | ((accessToken: string) => Promise<boolean>)
     | undefined,
-): Promise<void> => {
+): Promise<boolean> => {
   if (!bootstrapBackendAccount) {
-    return;
+    return false;
   }
 
-  if (!activeWorkspaceRepair) {
-    activeWorkspaceRepair = bootstrapBackendAccount(accessToken).finally(() => {
-      activeWorkspaceRepair = null;
-    });
-  }
-
-  await activeWorkspaceRepair;
+  return bootstrapBackendAccount(accessToken);
 };
 
 const refreshFromSessionSnapshot = async (
   refreshBackendSession: (accessToken?: string) => Promise<AuthSessionResult | void>,
   bootstrapBackendAccount:
-    | ((accessToken: string) => Promise<void>)
+    | ((accessToken: string) => Promise<boolean>)
     | undefined,
   setRecoveryState:
     | ((status: AuthRecoveryStatus, message?: string) => void)
@@ -100,13 +93,20 @@ const refreshFromSessionSnapshot = async (
       shouldCompleteConfirmationBootstrap ||
       shouldRepairWorkspaceAuthority(sessionResult)
     ) {
-      await runSingleWorkspaceRepair(
+      const repaired = await runSingleWorkspaceRepair(
         sessionSnapshot.accessToken,
         bootstrapBackendAccount,
       );
-      await refreshBackendSession(sessionSnapshot.accessToken);
+      if (repaired) {
+        await refreshBackendSession(sessionSnapshot.accessToken);
+      }
     }
     cleanupSupabaseAuthUrl();
+    return;
+  }
+
+  if (!isRecoverySessionActive()) {
+    await refreshBackendSession();
   }
 };
 
@@ -217,6 +217,7 @@ export const initializeSupabaseAuthSessionBridge = async ({
 
   const initialIsRecovery = hasCurrentSupabaseRecoveryUrlPayload();
   let activeRecoverySession = false;
+  let initialSessionProcessed = false;
   let currentRecoveryStatus: AuthRecoveryStatus = "recovery_unknown";
   const publishRecoveryStatus = (
     nextStatus: AuthRecoveryStatus,
@@ -254,11 +255,13 @@ export const initializeSupabaseAuthSessionBridge = async ({
         shouldCompleteConfirmationBootstrap ||
         shouldRepairWorkspaceAuthority(sessionResult)
       ) {
-        await runSingleWorkspaceRepair(
+        const repaired = await runSingleWorkspaceRepair(
           initialAccessToken.data,
           bootstrapBackendAccount,
         );
-        await refreshBackendSession(initialAccessToken.data);
+        if (repaired) {
+          await refreshBackendSession(initialAccessToken.data);
+        }
       }
       cleanupSupabaseAuthUrl();
     }
@@ -269,10 +272,17 @@ export const initializeSupabaseAuthSessionBridge = async ({
       "This password recovery link is invalid or expired. Request a fresh reset link.",
     );
     cleanupSupabaseAuthUrl();
+  } else {
+    await refreshBackendSession();
   }
+  initialSessionProcessed = true;
 
   const subscription = authClient.auth.onAuthStateChange(
     (event: string, session: SupabaseAuthSessionSnapshot) => {
+      if (event === "INITIAL_SESSION" && initialSessionProcessed) {
+        return;
+      }
+
       void refreshFromSessionSnapshot(
         refreshBackendSession,
         bootstrapBackendAccount,

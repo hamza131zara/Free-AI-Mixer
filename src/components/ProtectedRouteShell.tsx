@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useNavigationStore } from "../store/navigationStore";
 import { useAuthStore } from "../store/authStore";
 
@@ -25,6 +25,12 @@ const resolveUnavailableMessage = (
   return message;
 };
 
+const protectedContentAllowedPhases = new Set([
+  "restoring_project",
+  "ready",
+  "temporarily_unavailable",
+]);
+
 export function ProtectedRouteShell({
   routeLabel,
   children,
@@ -32,30 +38,32 @@ export function ProtectedRouteShell({
   const authStatus = useAuthStore((state) => state.status);
   const authMessage = useAuthStore((state) => state.message);
   const authReasonCode = useAuthStore((state) => state.reasonCode);
-  const refreshSession = useAuthStore((state) => state.refreshSession);
+  const bootstrapPhase = useAuthStore((state) => state.bootstrapPhase);
+  const bootstrapMessage = useAuthStore((state) => state.bootstrapMessage);
   const navigateTo = useNavigationStore((state) => state.navigateTo);
 
-  useEffect(() => {
-    if (authStatus === "unknown") {
-      void refreshSession();
-    }
-  }, [authStatus, refreshSession]);
-
-  if (authStatus === "authenticated") {
+  if (
+    authStatus === "authenticated" &&
+    protectedContentAllowedPhases.has(bootstrapPhase)
+  ) {
     return <>{children}</>;
   }
 
   let headline = "Checking session";
   let body = "Restoring your secure session before showing protected account data.";
 
-  if (authStatus === "unauthenticated") {
+  if (bootstrapPhase === "sign_in_required" || authStatus === "unauthenticated") {
     headline = "Sign in required";
     body = "Sign in is required before this page can show verified account data.";
   }
 
-  if (authStatus === "unavailable") {
+  if (
+    bootstrapPhase === "workspace_forbidden" ||
+    bootstrapPhase === "temporarily_unavailable" ||
+    authStatus === "unavailable"
+  ) {
     headline = "Authentication unavailable";
-    body = resolveUnavailableMessage(authReasonCode, authMessage);
+    body = bootstrapMessage || resolveUnavailableMessage(authReasonCode, authMessage);
   }
 
   return (
@@ -87,7 +95,9 @@ export function ProtectedRouteShell({
           <span className="status-kicker">Shell state</span>
           <strong>{headline}</strong>
           <p>{body}</p>
-          {authStatus === "unknown" ? (
+          {bootstrapPhase === "starting" ||
+          bootstrapPhase === "verifying_session" ||
+          bootstrapPhase === "backend_waking" ? (
             <p>Checking session with the backend auth boundary.</p>
           ) : null}
           {authStatus === "unauthenticated" ? (

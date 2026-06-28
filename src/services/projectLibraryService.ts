@@ -6,6 +6,12 @@ import type {
   ProjectSummary,
 } from "../types/projectLibrary";
 import { fetchWithOptionalAccountBearer } from "./auth/authenticatedFetch";
+import {
+  BackendRequestAbortedError,
+  BackendRequestPolicyError,
+  createBackendRequestPolicy,
+  type BackendRequestRetryReason,
+} from "./backendRequestPolicy";
 
 interface BackendAuthenticatedProjectLibraryResponse {
   kind: "project_library";
@@ -112,6 +118,28 @@ type BackendProjectRecordMutationResponse = Exclude<
 
 const projectLibraryEndpoint = "/project-library/projects";
 const activeProjectEndpoint = "/project-library/active-project";
+const fetchProjectBootstrapRead = createBackendRequestPolicy({
+  fetch: (input, init) =>
+    fetchWithOptionalAccountBearer(String(input), init),
+});
+
+export interface ProjectLibraryRequestOptions {
+  onRetry?: (reason: BackendRequestRetryReason) => void;
+}
+
+interface ProjectLibraryFlight {
+  controller: AbortController;
+  promise: Promise<ProjectLibraryStatusResult>;
+  retryListeners: Set<(reason: BackendRequestRetryReason) => void>;
+  revision: number;
+}
+
+let projectRequestRevision = 0;
+let projectLibraryFlight: ProjectLibraryFlight | undefined;
+const activeProjectFlights = new Map<
+  string,
+  Promise<ActiveProjectMutationResult>
+>();
 
 const parseJson = async <Payload>(response: Response): Promise<Payload | undefined> => {
   const responseText = await response.text();
@@ -245,12 +273,23 @@ const mapProjectLibraryResponse = (
   return mapSharedProjectFailureResponse(payload);
 };
 
-export const getProjectLibraryStatus = async (): Promise<ProjectLibraryStatusResult> => {
+const requestProjectLibraryStatus = async (
+  controller: AbortController,
+  onRetry: (reason: BackendRequestRetryReason) => void,
+): Promise<ProjectLibraryStatusResult> => {
   try {
-    const response = await fetchWithOptionalAccountBearer(projectLibraryEndpoint, {
-      method: "GET",
-      credentials: "same-origin",
-    });
+    const response = await fetchProjectBootstrapRead(
+      projectLibraryEndpoint,
+      {
+        method: "GET",
+        credentials: "same-origin",
+      },
+      {
+        mode: "bootstrap_read_once",
+        onRetry,
+        signal: controller.signal,
+      },
+    );
     const payload = await parseJson<BackendProjectLibraryResponse>(response);
 
     if (!payload) {
@@ -258,11 +297,54 @@ export const getProjectLibraryStatus = async (): Promise<ProjectLibraryStatusRes
     }
 
     return mapProjectLibraryResponse(payload);
-  } catch {
+  } catch (error) {
+    if (error instanceof BackendRequestAbortedError) {
+      throw error;
+    }
+
     return toProjectLibraryUnavailable(
-      "Project library is currently unavailable because the backend boundary could not be reached.",
+      error instanceof BackendRequestPolicyError &&
+        error.code === "backend_wake_timeout"
+        ? "The backend did not become ready in time. Project context was not changed."
+        : "Project restoration is temporarily unavailable. Project context was not changed.",
     );
   }
+};
+
+export const invalidateProjectLibraryRequests = (): void => {
+  projectRequestRevision += 1;
+  projectLibraryFlight?.controller.abort();
+  projectLibraryFlight = undefined;
+  activeProjectFlights.clear();
+};
+
+export const getProjectLibraryStatus = (
+  options: ProjectLibraryRequestOptions = {},
+): Promise<ProjectLibraryStatusResult> => {
+  if (projectLibraryFlight?.revision === projectRequestRevision) {
+    if (options.onRetry) {
+      projectLibraryFlight.retryListeners.add(options.onRetry);
+    }
+    return projectLibraryFlight.promise;
+  }
+
+  const controller = new AbortController();
+  const retryListeners = new Set<(reason: BackendRequestRetryReason) => void>();
+  if (options.onRetry) {
+    retryListeners.add(options.onRetry);
+  }
+  const revision = projectRequestRevision;
+  let flight: ProjectLibraryFlight;
+  const promise = requestProjectLibraryStatus(controller, (reason) => {
+    flight.retryListeners.forEach((listener) => listener(reason));
+  }).finally(() => {
+    if (projectLibraryFlight === flight) {
+      projectLibraryFlight = undefined;
+    }
+  });
+  flight = { controller, promise, retryListeners, revision };
+  projectLibraryFlight = flight;
+  return promise;
 };
 
 export const listProjects = getProjectLibraryStatus;
@@ -422,12 +504,30 @@ const requestActiveProjectMutation = async (
 
 export const setActiveProject = async (
   projectId: string,
-): Promise<ActiveProjectMutationResult> =>
-  requestActiveProjectMutation({
+): Promise<ActiveProjectMutationResult> => {
+  const key = `${projectRequestRevision}:${projectId}`;
+  const existing = activeProjectFlights.get(key);
+  if (existing) {
+    return existing;
+  }
+
+  const revision = projectRequestRevision;
+  let flight: Promise<ActiveProjectMutationResult>;
+  flight = requestActiveProjectMutation({
     body: JSON.stringify({ projectId }),
     headers: { "Content-Type": "application/json" },
     method: "PUT",
+  }).finally(() => {
+    if (
+      revision === projectRequestRevision &&
+      activeProjectFlights.get(key) === flight
+    ) {
+      activeProjectFlights.delete(key);
+    }
   });
+  activeProjectFlights.set(key, flight);
+  return flight;
+};
 
 export const clearActiveProject = async (): Promise<ActiveProjectMutationResult> =>
   requestActiveProjectMutation({ method: "DELETE" });

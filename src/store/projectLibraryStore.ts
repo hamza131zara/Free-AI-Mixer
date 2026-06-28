@@ -7,6 +7,7 @@ import {
   setActiveProject as persistActiveProject,
   updateProjectTitle,
 } from "../services/projectLibraryService";
+import type { ProjectLibraryRequestOptions } from "../services/projectLibraryService";
 import type {
   ActiveProjectMutationResult,
   ProjectLibraryOperationStatus,
@@ -38,6 +39,7 @@ export interface ProjectLibraryStoreState {
   refreshProjectLibrary: (
     requestedProjectId?: string,
     suppressServerPreference?: boolean,
+    options?: ProjectLibraryRequestOptions,
   ) => Promise<void>;
   createProject: (title: string) => Promise<void>;
   deleteProject: (projectId: string) => Promise<boolean>;
@@ -77,6 +79,7 @@ export const useProjectLibraryStore = create<ProjectLibraryStoreState>((set) => 
   refreshProjectLibrary: async (
     requestedProjectId,
     suppressServerPreference = false,
+    options = {},
   ) => {
     const epoch = nextRequestEpoch();
     set({
@@ -84,7 +87,7 @@ export const useProjectLibraryStore = create<ProjectLibraryStoreState>((set) => 
       pendingAction: "refresh",
       pendingProjectId: requestedProjectId,
     });
-    const result = await getProjectLibraryStatus();
+    const result = await getProjectLibraryStatus(options);
 
     if (!isCurrentRequest(epoch)) {
       return;

@@ -8,6 +8,8 @@ import { PromptVideoGenerator } from "../components/PromptVideoGenerator";
 import { TimelinePanel } from "../components/TimelinePanel";
 import { platformGenerationPolicyCopy } from "../services/providerCapabilityPolicyService";
 import { useProjectLibraryStore } from "../store/projectLibraryStore";
+import { useAuthStore } from "../store/authStore";
+import { BackendRequestAbortedError } from "../services/backendRequestPolicy";
 
 const safeProjectIdPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -24,6 +26,7 @@ const removeMixerProjectIdFromUrl = (): void => {
 
 export function MixerPage() {
   const reconciliationPending = useRef(false);
+  const reconciliationTrailing = useRef(false);
   const [projectContextStatus, setProjectContextStatus] = useState<
     "none" | "invalid" | "loading" | "ready" | "unauthenticated" | "unavailable"
   >("none");
@@ -38,6 +41,22 @@ export function MixerPage() {
   const clearRuntimeProjectContext = useProjectLibraryStore(
     (state) => state.clearRuntimeProjectContext,
   );
+  const beginProjectRestoration = useAuthStore(
+    (state) => state.beginProjectRestoration,
+  );
+  const completeProjectRestoration = useAuthStore(
+    (state) => state.completeProjectRestoration,
+  );
+  const failProjectRestoration = useAuthStore(
+    (state) => state.failProjectRestoration,
+  );
+  const authStatus = useAuthStore((state) => state.status);
+  const bootstrapPhase = useAuthStore((state) => state.bootstrapPhase);
+  const projectBootstrapAllowed =
+    authStatus === "authenticated" &&
+    (bootstrapPhase === "restoring_project" ||
+      bootstrapPhase === "ready" ||
+      bootstrapPhase === "temporarily_unavailable");
   const projectId = (() => {
     if (typeof window === "undefined") {
       return undefined;
@@ -69,6 +88,7 @@ export function MixerPage() {
           setProjectContextMessage(
             `Verified project context: ${loadedProject.title}`,
           );
+          completeProjectRestoration();
           return;
         }
 
@@ -79,6 +99,7 @@ export function MixerPage() {
         setProjectContextMessage(
           "Select a saved project before running hosted mock image generation.",
         );
+        completeProjectRestoration();
         return;
       }
 
@@ -87,6 +108,7 @@ export function MixerPage() {
         setProjectContextMessage(
           state.accessMessage || "Sign in is required to restore project context.",
         );
+        failProjectRestoration("sign_in_required");
         return;
       }
 
@@ -99,71 +121,114 @@ export function MixerPage() {
         setProjectContextMessage(
           state.accessMessage || "Verified project context is temporarily unavailable.",
         );
+        failProjectRestoration(
+          state.accessStatus === "forbidden"
+            ? "workspace_forbidden"
+            : "temporarily_unavailable",
+        );
       }
     },
-    [],
+    [completeProjectRestoration, failProjectRestoration],
   );
 
   useEffect(() => {
-    if (projectId && !safeProjectIdPattern.test(projectId)) {
-      clearRuntimeProjectContext();
-      setProjectContextStatus("invalid");
-      setProjectContextMessage(
-        "The Mixer project link is invalid. Return to Projects and select a saved project.",
-      );
-      return;
-    }
+    let disposed = false;
 
-    setProjectContextStatus("loading");
-    setProjectContextMessage("Loading verified project context for Mixer.");
-
-    void refreshProjectLibrary(projectId)
-      .then(() => applyVerifiedProjectResolution(projectId))
-      .catch(() => {
-        setProjectContextStatus("unavailable");
-        setProjectContextMessage("Verified project context is temporarily unavailable.");
-      });
-  }, [
-    applyVerifiedProjectResolution,
-    clearRuntimeProjectContext,
-    projectId,
-    refreshProjectLibrary,
-  ]);
-
-  useEffect(() => {
     const reconcile = () => {
-      if (
-        reconciliationPending.current ||
-        document.visibilityState === "hidden" ||
-        useProjectLibraryStore.getState().pendingAction !== null ||
-        (projectId !== undefined && !safeProjectIdPattern.test(projectId))
-      ) {
+      if (disposed) {
+        return;
+      }
+
+      if (!projectBootstrapAllowed) {
+        return;
+      }
+
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+
+      if (reconciliationPending.current) {
+        reconciliationTrailing.current = true;
+        return;
+      }
+
+      const pendingAction = useProjectLibraryStore.getState().pendingAction;
+      if (pendingAction !== null && pendingAction !== "refresh") {
+        return;
+      }
+
+      if (projectId !== undefined && !safeProjectIdPattern.test(projectId)) {
+        clearRuntimeProjectContext();
+        setProjectContextStatus("invalid");
+        setProjectContextMessage(
+          "The Mixer project link is invalid. Return to Projects and select a saved project.",
+        );
+        completeProjectRestoration();
         return;
       }
 
       reconciliationPending.current = true;
+      beginProjectRestoration();
+      setProjectContextStatus("loading");
+      setProjectContextMessage("Loading verified project context for Mixer.");
       void refreshProjectLibrary(projectId)
-        .then(() => applyVerifiedProjectResolution(projectId))
-        .catch(() => {
+        .then(() => {
+          if (!disposed) {
+            applyVerifiedProjectResolution(projectId);
+          }
+        })
+        .catch((error: unknown) => {
+          if (disposed || error instanceof BackendRequestAbortedError) {
+            return;
+          }
+
           setProjectContextStatus("unavailable");
           setProjectContextMessage("Verified project context is temporarily unavailable.");
+          failProjectRestoration("temporarily_unavailable");
         })
         .finally(() => {
+          if (disposed) {
+            return;
+          }
+
           reconciliationPending.current = false;
+          if (reconciliationTrailing.current) {
+            reconciliationTrailing.current = false;
+            queueMicrotask(() => {
+              if (!disposed) {
+                reconcile();
+              }
+            });
+          }
         });
     };
 
+    reconcile();
     window.addEventListener("focus", reconcile);
     document.addEventListener("visibilitychange", reconcile);
 
     return () => {
+      disposed = true;
+      reconciliationPending.current = false;
+      reconciliationTrailing.current = false;
       window.removeEventListener("focus", reconcile);
       document.removeEventListener("visibilitychange", reconcile);
     };
-  }, [applyVerifiedProjectResolution, projectId, refreshProjectLibrary]);
+  }, [
+    applyVerifiedProjectResolution,
+    beginProjectRestoration,
+    clearRuntimeProjectContext,
+    completeProjectRestoration,
+    failProjectRestoration,
+    projectId,
+    projectBootstrapAllowed,
+    refreshProjectLibrary,
+  ]);
 
   const verifiedActiveProject =
-    projectContextStatus === "ready" ? activeProject : undefined;
+    projectContextStatus === "ready" && bootstrapPhase === "ready"
+      ? activeProject
+      : undefined;
 
   return (
     <main className="app-shell" data-testid="mixer-page">
