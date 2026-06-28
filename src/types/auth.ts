@@ -4,6 +4,24 @@ export type AuthStatus =
   | "authenticated"
   | "unavailable";
 
+export type AuthBootstrapPhase =
+  | "starting"
+  | "verifying_session"
+  | "backend_waking"
+  | "restoring_project"
+  | "ready"
+  | "sign_in_required"
+  | "workspace_forbidden"
+  | "temporarily_unavailable";
+
+export type AuthBootstrapDiagnosticCode =
+  | "backend_waking"
+  | "backend_wake_timeout"
+  | "session_verification_unavailable"
+  | "project_restoration_unavailable"
+  | "workspace_forbidden"
+  | "sign_in_required";
+
 export type AuthRecoveryStatus =
   | "recovery_unknown"
   | "recovery_processing"
@@ -34,7 +52,10 @@ export type AuthUnavailableCode =
   | "supabase_auth_not_configured"
   | "email_verification_required"
   | "workspace_bootstrap_blocked"
-  | "account_bootstrap_unavailable";
+  | "account_bootstrap_unavailable"
+  | "backend_wake_timeout"
+  | "session_verification_unavailable"
+  | "workspace_forbidden";
 
 export type AuthUnauthenticatedReason =
   | "missing_credentials"

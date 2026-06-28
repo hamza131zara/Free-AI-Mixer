@@ -311,7 +311,7 @@ test.describe("H6-D.4 transactional project soft deletion", () => {
     const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
     const migration = read(
       "backend/db/migrations/0008_h6d4_transactional_project_soft_delete.sql",
-    );
+    ).replace(/\r\n/g, "\n");
     const projectRoute = read("backend/routes/projectHistory.ts");
     const repository = read("backend/repositories/supabaseProjectRepository.ts");
     const generation = read("backend/routes/generation.ts");
@@ -625,8 +625,8 @@ test("clears confirmation content immediately when project access becomes unauth
 
   await expect(page.getByTestId("project-delete-confirmation")).toHaveCount(0);
   await expect(page.getByText("Delete Me")).toHaveCount(0);
-  await expect(page.getByTestId("projects-access-state")).toContainText(
-    "unauthenticated",
+  await expect(page.getByTestId("protected-route-shell-status")).toContainText(
+    "Sign in required",
   );
   expect(routes.deleteRequests()).toBe(0);
 });

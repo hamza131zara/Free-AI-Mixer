@@ -4,6 +4,12 @@ import type {
   AuthSessionResult,
   VerifiedAccountIdentity,
 } from "../types/auth";
+import {
+  BackendRequestAbortedError,
+  BackendRequestPolicyError,
+  fetchWithBackendRequestPolicy,
+  type BackendRequestRetryReason,
+} from "./backendRequestPolicy";
 
 interface BackendAccountBootstrapCompleteResponse {
   kind: "account_bootstrap_complete";
@@ -89,6 +95,25 @@ const signupEndpoint = "/auth/signup";
 const logoutEndpoint = "/auth/logout";
 const accountBootstrapEndpoint = "/account/bootstrap";
 
+export interface AuthSessionRequestOptions {
+  onRetry?: (reason: BackendRequestRetryReason) => void;
+}
+
+interface AuthSessionFlight {
+  controller: AbortController;
+  key: string;
+  promise: Promise<AuthSessionResult>;
+  retryListeners: Set<(reason: BackendRequestRetryReason) => void>;
+}
+
+let authSessionFlight: AuthSessionFlight | undefined;
+let accountBootstrapRevision = 0;
+const accountBootstrapFlights = new Map<
+  string,
+  Promise<BackendAccountBootstrapResponse | undefined>
+>();
+const accountBootstrapEligibleTokens = new Set<string>();
+
 const createSessionRequestHeaders = (
   accessToken?: string,
 ): HeadersInit | undefined => {
@@ -114,6 +139,18 @@ const toFallbackUnavailable = (
   status: "unavailable",
   code: "auth_service_unreachable",
   message,
+});
+
+const toSessionVerificationUnavailable = (
+  code: "backend_wake_timeout" | "session_verification_unavailable",
+): AuthSessionResult => ({
+  kind: "unavailable",
+  status: "unavailable",
+  code,
+  message:
+    code === "backend_wake_timeout"
+      ? "The backend did not become ready in time. Your session has not been signed out."
+      : "Session verification is temporarily unavailable. Your session has not been signed out.",
 });
 
 const mapBackendAuthResponseToSessionResult = (
@@ -193,25 +230,124 @@ const postCredentials = async (
   }
 };
 
-export const getAuthSession = async (
+const requestAuthSession = async (
   accessToken?: string,
+  controller?: AbortController,
+  onRetry?: (reason: BackendRequestRetryReason) => void,
 ): Promise<AuthSessionResult> => {
   try {
-    const response = await fetch(sessionEndpoint, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: createSessionRequestHeaders(accessToken),
-    });
+    const response = await fetchWithBackendRequestPolicy(
+      sessionEndpoint,
+      {
+        method: "GET",
+        credentials: "same-origin",
+        headers: createSessionRequestHeaders(accessToken),
+      },
+      {
+        mode: "bootstrap_read_once",
+        onRetry,
+        signal: controller?.signal,
+      },
+    );
+
+    if (response.status === 401) {
+      return {
+        kind: "unauthenticated",
+        status: "unauthenticated",
+        reason: accessToken ? "invalid_credentials" : "missing_credentials",
+        message: "Sign in is required for this route.",
+      };
+    }
+
+    if (response.status === 403) {
+      return {
+        kind: "unavailable",
+        status: "unavailable",
+        code: "workspace_forbidden",
+        message: "This session does not have access to the requested workspace.",
+      };
+    }
+
+    if (response.status === 502 || response.status === 503 || response.status === 504) {
+      return toSessionVerificationUnavailable("session_verification_unavailable");
+    }
+
     const payload = await parseJson<BackendAuthResponse>(response);
 
     if (!payload) {
       return toFallbackUnavailable("Authentication returned an empty response.");
     }
 
-    return mapBackendAuthResponseToSessionResult(payload);
-  } catch {
+    const result = mapBackendAuthResponseToSessionResult(payload);
+    if (accessToken && result.kind === "authenticated") {
+      if (result.identity.workspaceAuthority === "verified") {
+        accountBootstrapEligibleTokens.delete(accessToken);
+      } else {
+        accountBootstrapEligibleTokens.add(accessToken);
+      }
+    } else if (accessToken) {
+      accountBootstrapEligibleTokens.delete(accessToken);
+    }
+
+    return result;
+  } catch (error) {
+    if (error instanceof BackendRequestAbortedError) {
+      throw error;
+    }
+
+    if (error instanceof BackendRequestPolicyError) {
+      return toSessionVerificationUnavailable(
+        error.code === "backend_wake_timeout"
+          ? "backend_wake_timeout"
+          : "session_verification_unavailable",
+      );
+    }
+
     return toFallbackUnavailable();
   }
+};
+
+export const invalidateAuthSessionRequests = (): void => {
+  authSessionFlight?.controller.abort();
+  authSessionFlight = undefined;
+};
+
+export const getAuthSession = (
+  accessToken?: string,
+  options: AuthSessionRequestOptions = {},
+): Promise<AuthSessionResult> => {
+  const key = accessToken?.trim() || "credentialless";
+
+  if (authSessionFlight?.key === key) {
+    if (options.onRetry) {
+      authSessionFlight.retryListeners.add(options.onRetry);
+    }
+    return authSessionFlight.promise;
+  }
+
+  invalidateAuthSessionRequests();
+  const controller = new AbortController();
+  const retryListeners = new Set<(reason: BackendRequestRetryReason) => void>();
+  if (options.onRetry) {
+    retryListeners.add(options.onRetry);
+  }
+
+  let flight: AuthSessionFlight;
+  const promise = requestAuthSession(accessToken, controller, (reason) => {
+    flight.retryListeners.forEach((listener) => listener(reason));
+  }).finally(() => {
+    if (authSessionFlight === flight) {
+      authSessionFlight = undefined;
+    }
+  });
+  flight = {
+    controller,
+    key,
+    retryListeners,
+    promise,
+  };
+  authSessionFlight = flight;
+  return flight.promise;
 };
 
 export const loginWithBackendAuth = async (
@@ -248,7 +384,7 @@ export const logoutFromBackendAuth = async (): Promise<AuthMutationResult> => {
   }
 };
 
-export const bootstrapAccount = async (
+const requestAccountBootstrap = async (
   accessToken: string,
 ): Promise<BackendAccountBootstrapResponse | undefined> => {
   try {
@@ -262,4 +398,49 @@ export const bootstrapAccount = async (
   } catch {
     return undefined;
   }
+};
+
+export const invalidateAccountBootstrapRequests = (): void => {
+  accountBootstrapRevision += 1;
+  accountBootstrapFlights.clear();
+  accountBootstrapEligibleTokens.clear();
+};
+
+export const bootstrapAccount = (
+  accessToken: string,
+): Promise<BackendAccountBootstrapResponse | undefined> => {
+  const existing = accountBootstrapFlights.get(accessToken);
+  if (existing) {
+    return existing;
+  }
+
+  if (!accountBootstrapEligibleTokens.has(accessToken)) {
+    return Promise.resolve({
+      kind: "bootstrap_unavailable",
+      status: "bootstrap_unavailable",
+      message:
+        "Account setup requires an authoritative authenticated session that needs workspace repair.",
+    });
+  }
+
+  accountBootstrapEligibleTokens.delete(accessToken);
+  const revision = accountBootstrapRevision;
+  let flight: Promise<BackendAccountBootstrapResponse | undefined>;
+  flight = requestAccountBootstrap(accessToken)
+    .then((result) => {
+      if (revision !== accountBootstrapRevision) {
+        return undefined;
+      }
+      if (result?.kind === "account_bootstrap_complete") {
+        accountBootstrapEligibleTokens.delete(accessToken);
+      }
+      return result;
+    })
+    .finally(() => {
+      if (accountBootstrapFlights.get(accessToken) === flight) {
+        accountBootstrapFlights.delete(accessToken);
+      }
+    });
+  accountBootstrapFlights.set(accessToken, flight);
+  return flight;
 };
