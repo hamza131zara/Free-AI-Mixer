@@ -353,6 +353,16 @@ export interface BackendWorkspaceRecord extends BackendWorkspace {
   deletedAt?: string;
 }
 
+export interface BackendUserAccountCreationResult {
+  userAccount: BackendUserAccountRecord;
+  created: boolean;
+}
+
+export interface BackendWorkspaceCreationResult {
+  workspace: BackendWorkspaceRecord;
+  created: boolean;
+}
+
 export interface BackendWorkspaceMembershipRecord {
   workspaceId: string;
   userId: string;
@@ -360,6 +370,11 @@ export interface BackendWorkspaceMembershipRecord {
   status: BackendWorkspaceMembership["status"] | "disabled";
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface BackendWorkspaceMembershipCreationResult {
+  membership: BackendWorkspaceMembershipRecord;
+  created: boolean;
 }
 
 export type BackendProjectStatus = "active" | "archived" | "deleted";
@@ -457,7 +472,7 @@ export interface BackendUserAccountRepository {
     authProvider: BackendUserAccountIdentity["authProvider"];
     authSubject: string;
     email?: string;
-  }): Promise<BackendUserAccountRecord>;
+  }): Promise<BackendUserAccountCreationResult>;
 }
 
 export interface BackendWorkspaceRepository {
@@ -469,7 +484,7 @@ export interface BackendWorkspaceRepository {
     workspaceId: string;
     userId: string;
     name: string;
-  }): Promise<BackendWorkspaceRecord>;
+  }): Promise<BackendWorkspaceCreationResult>;
 }
 
 export interface BackendWorkspaceMembershipRepository {
@@ -483,12 +498,13 @@ export interface BackendWorkspaceMembershipRepository {
   listMembershipsForUser(
     userId: string,
   ): Promise<BackendWorkspaceMembershipRecord[]>;
+  /** Insert-only creation; an existing row is accepted only when role and status match exactly. */
   createOrGetMembership(input: {
     workspaceId: string;
     userId: string;
     role: BackendWorkspaceMembershipRecord["role"];
     status: BackendWorkspaceMembershipRecord["status"];
-  }): Promise<BackendWorkspaceMembershipRecord>;
+  }): Promise<BackendWorkspaceMembershipCreationResult>;
 }
 
 export interface BackendProjectRepository {

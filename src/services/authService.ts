@@ -29,13 +29,24 @@ interface BackendEmailVerificationRequiredResponse {
   message?: string;
 }
 
-interface BackendWorkspaceBootstrapBlockedResponse {
+interface BackendMultipleWorkspaceBootstrapBlockedResponse {
   kind: "workspace_bootstrap_blocked";
   status: "workspace_selection_required";
   reason: "multiple_active_memberships" | "workspace_selection_required";
   message?: string;
   identity: VerifiedAccountIdentity;
 }
+
+interface BackendInactiveMembershipBootstrapBlockedResponse {
+  kind: "workspace_bootstrap_blocked";
+  status: "workspace_bootstrap_blocked";
+  reason: "inactive_membership_exists";
+  message?: string;
+}
+
+type BackendWorkspaceBootstrapBlockedResponse =
+  | BackendMultipleWorkspaceBootstrapBlockedResponse
+  | BackendInactiveMembershipBootstrapBlockedResponse;
 
 interface BackendInvalidBootstrapCredentialsResponse {
   kind: "invalid_credentials";
@@ -203,6 +214,220 @@ const parseJson = async <Payload>(response: Response): Promise<Payload | undefin
   }
 
   return JSON.parse(responseText) as Payload;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const hasSafeOptionalMessage = (value: Record<string, unknown>): boolean =>
+  value.message === undefined || typeof value.message === "string";
+
+const getSafeMessage = (value: Record<string, unknown>): string | undefined =>
+  typeof value.message === "string" ? value.message : undefined;
+
+const parseVerifiedAccountIdentity = (
+  value: unknown,
+): VerifiedAccountIdentity | undefined => {
+  if (!isRecord(value) || typeof value.userId !== "string") {
+    return undefined;
+  }
+
+  const stringFields = [
+    "appUserId",
+    "supabaseUserId",
+    "workspaceId",
+    "workspaceRole",
+    "authProvider",
+    "authSubject",
+    "email",
+  ] as const;
+
+  if (
+    stringFields.some(
+      (field) => value[field] !== undefined && typeof value[field] !== "string",
+    )
+  ) {
+    return undefined;
+  }
+
+  if (
+    value.workspaceAuthority !== undefined &&
+    value.workspaceAuthority !== "verified" &&
+    value.workspaceAuthority !== "not_available"
+  ) {
+    return undefined;
+  }
+
+  if (
+    value.workspaceAuthorityReason !== undefined &&
+    value.workspaceAuthorityReason !== "workspace_runtime_not_enabled" &&
+    value.workspaceAuthorityReason !== "no_active_workspace_membership" &&
+    value.workspaceAuthorityReason !== "multiple_active_workspace_memberships"
+  ) {
+    return undefined;
+  }
+
+  return {
+    userId: value.userId,
+    ...(typeof value.appUserId === "string" ? { appUserId: value.appUserId } : {}),
+    ...(typeof value.supabaseUserId === "string"
+      ? { supabaseUserId: value.supabaseUserId }
+      : {}),
+    ...(typeof value.workspaceId === "string"
+      ? { workspaceId: value.workspaceId }
+      : {}),
+    ...(typeof value.workspaceRole === "string"
+      ? { workspaceRole: value.workspaceRole }
+      : {}),
+    ...(value.workspaceAuthority === "verified" ||
+    value.workspaceAuthority === "not_available"
+      ? { workspaceAuthority: value.workspaceAuthority }
+      : {}),
+    ...(value.workspaceAuthorityReason === "workspace_runtime_not_enabled" ||
+    value.workspaceAuthorityReason === "no_active_workspace_membership" ||
+    value.workspaceAuthorityReason === "multiple_active_workspace_memberships"
+      ? { workspaceAuthorityReason: value.workspaceAuthorityReason }
+      : {}),
+    ...(typeof value.authProvider === "string"
+      ? { authProvider: value.authProvider }
+      : {}),
+    ...(typeof value.authSubject === "string"
+      ? { authSubject: value.authSubject }
+      : {}),
+    ...(typeof value.email === "string" ? { email: value.email } : {}),
+  };
+};
+
+const malformedBootstrapResponse = (): BackendBootstrapUnavailableResponse => ({
+  kind: "bootstrap_unavailable",
+  status: "bootstrap_unavailable",
+  message: "Account setup returned an invalid response.",
+});
+
+export const parseBackendAccountBootstrapResponse = (
+  payload: unknown,
+): BackendAccountBootstrapResponse => {
+  if (!isRecord(payload) || !hasSafeOptionalMessage(payload)) {
+    return malformedBootstrapResponse();
+  }
+
+  const message = getSafeMessage(payload);
+
+  if (
+    payload.kind === "account_bootstrap_complete" &&
+    payload.status === "authenticated" &&
+    isRecord(payload.bootstrap) &&
+    typeof payload.bootstrap.appUserCreated === "boolean" &&
+    typeof payload.bootstrap.workspaceCreated === "boolean" &&
+    typeof payload.bootstrap.membershipCreated === "boolean"
+  ) {
+    const identity = parseVerifiedAccountIdentity(payload.identity);
+
+    if (
+      !identity ||
+      typeof identity.workspaceId !== "string" ||
+      identity.workspaceAuthority !== "verified" ||
+      (identity.workspaceRole !== "workspace_owner" &&
+        identity.workspaceRole !== "workspace_admin" &&
+        identity.workspaceRole !== "workspace_member" &&
+        identity.workspaceRole !== "workspace_viewer")
+    ) {
+      return malformedBootstrapResponse();
+    }
+
+    return {
+      kind: "account_bootstrap_complete",
+      status: "authenticated",
+      ...(message ? { message } : {}),
+      identity,
+      bootstrap: {
+        appUserCreated: payload.bootstrap.appUserCreated,
+        workspaceCreated: payload.bootstrap.workspaceCreated,
+        membershipCreated: payload.bootstrap.membershipCreated,
+      },
+    };
+  }
+
+  if (
+    payload.kind === "workspace_bootstrap_blocked" &&
+    payload.status === "workspace_selection_required" &&
+    (payload.reason === "multiple_active_memberships" ||
+      payload.reason === "workspace_selection_required")
+  ) {
+    const identity = parseVerifiedAccountIdentity(payload.identity);
+
+    if (
+      !identity ||
+      identity.workspaceAuthority !== "not_available" ||
+      identity.workspaceAuthorityReason !==
+        "multiple_active_workspace_memberships" ||
+      identity.workspaceId !== undefined ||
+      identity.workspaceRole !== undefined
+    ) {
+      return malformedBootstrapResponse();
+    }
+
+    return {
+      kind: "workspace_bootstrap_blocked",
+      status: "workspace_selection_required",
+      reason: payload.reason,
+      ...(message ? { message } : {}),
+      identity,
+    };
+  }
+
+  if (
+    payload.kind === "workspace_bootstrap_blocked" &&
+    payload.status === "workspace_bootstrap_blocked" &&
+    payload.reason === "inactive_membership_exists"
+  ) {
+    return {
+      kind: "workspace_bootstrap_blocked",
+      status: "workspace_bootstrap_blocked",
+      reason: "inactive_membership_exists",
+      ...(message ? { message } : {}),
+    };
+  }
+
+  if (
+    payload.kind === "email_verification_required" &&
+    payload.status === "verification_required"
+  ) {
+    return {
+      kind: "email_verification_required",
+      status: "verification_required",
+      ...(message ? { message } : {}),
+    };
+  }
+
+  if (
+    payload.kind === "invalid_credentials" &&
+    payload.status === "unauthenticated" &&
+    (payload.reason === "missing_credentials" ||
+      payload.reason === "invalid_credentials")
+  ) {
+    return {
+      kind: "invalid_credentials",
+      status: "unauthenticated",
+      reason: payload.reason,
+      ...(message ? { message } : {}),
+    };
+  }
+
+  if (
+    payload.kind === "bootstrap_unavailable" &&
+    (payload.status === "auth_not_configured" ||
+      payload.status === "auth_provider_unavailable" ||
+      payload.status === "bootstrap_unavailable")
+  ) {
+    return {
+      kind: "bootstrap_unavailable",
+      status: payload.status,
+      ...(message ? { message } : {}),
+    };
+  }
+
+  return malformedBootstrapResponse();
 };
 
 const postCredentials = async (
@@ -394,7 +619,8 @@ const requestAccountBootstrap = async (
       headers: createSessionRequestHeaders(accessToken),
     });
 
-    return await parseJson<BackendAccountBootstrapResponse>(response);
+    const payload = await parseJson<unknown>(response);
+    return parseBackendAccountBootstrapResponse(payload);
   } catch {
     return undefined;
   }
