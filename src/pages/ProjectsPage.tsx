@@ -57,7 +57,7 @@ export function ProjectsPage() {
     deletedProjectId: string;
     targetProjectId?: string;
   } | null>(null);
-  const confirmedDeletionFocusHandledRef = useRef<string | null>(null);
+  const deleteDialogReturnFocusRef = useRef<string | null>(null);
   const accessStatus = useProjectLibraryStore((state) => state.accessStatus);
   const accessMessage = useProjectLibraryStore((state) => state.accessMessage);
   const projects = useProjectLibraryStore((state) => state.projects);
@@ -242,56 +242,67 @@ export function ProjectsPage() {
     }
   }, [deleteTarget]);
 
-  const returnFocusAfterDeleteDialog = (projectId: string): void => {
-    window.requestAnimationFrame(() => {
-      const trigger = deleteTriggerRefs.current.get(projectId);
-
-      if (trigger?.isConnected) {
-        trigger.focus();
-        return;
-      }
-
-      for (const candidate of deleteTriggerRefs.current.values()) {
-        if (candidate.isConnected) {
-          candidate.focus();
-          return;
-        }
-      }
-
-      projectListPanelRef.current?.focus();
-    });
-  };
-
   const closeDeleteDialog = (projectId: string): void => {
+    deleteDialogReturnFocusRef.current = projectId;
     setDeleteTarget(undefined);
-    returnFocusAfterDeleteDialog(projectId);
   };
 
   useLayoutEffect(() => {
-    const pendingFocus = confirmedDeletionFocusRef.current;
+    const projectId = deleteDialogReturnFocusRef.current;
+
+    // Focus only after React has committed the dialog-closed render.
+    if (!projectId || deleteTarget) {
+      return;
+    }
+
+    const requestedTrigger = deleteTriggerRefs.current.get(projectId);
 
     if (
-      !pendingFocus ||
-      projects.some(
-        (project) => project.projectId === pendingFocus.deletedProjectId,
-      )
+      requestedTrigger?.isConnected &&
+      !requestedTrigger.disabled
     ) {
+      requestedTrigger.focus();
+
+      if (document.activeElement === requestedTrigger) {
+        deleteDialogReturnFocusRef.current = null;
+      }
+
       return;
     }
 
-    confirmedDeletionFocusRef.current = null;
-    confirmedDeletionFocusHandledRef.current = pendingFocus.deletedProjectId;
-    const target = pendingFocus.targetProjectId
-      ? deleteTriggerRefs.current.get(pendingFocus.targetProjectId)
-      : undefined;
+    for (const candidate of deleteTriggerRefs.current.values()) {
+      if (candidate.isConnected && !candidate.disabled) {
+        candidate.focus();
 
-    if (target?.isConnected) {
-      target.focus();
+        if (document.activeElement === candidate) {
+          deleteDialogReturnFocusRef.current = null;
+        }
+
+        return;
+      }
+    }
+
+    // A mutation may still be changing which controls are available.
+    // Keep the request pending and retry on the next relevant render.
+    if (pendingAction !== null) {
       return;
     }
 
-    projectListPanelRef.current?.focus();
-  }, [projects]);
+    const panel = projectListPanelRef.current;
+
+    if (panel?.isConnected) {
+      panel.focus();
+
+      if (document.activeElement === panel) {
+        deleteDialogReturnFocusRef.current = null;
+      }
+    }
+  }, [
+    canDeleteProjects,
+    deleteTarget,
+    pendingAction,
+    projects,
+  ]);
 
   useEffect(() => {
     if (!deleteTarget) {
@@ -309,17 +320,21 @@ export function ProjectsPage() {
     }
 
     const projectId = deleteTarget.projectId;
-    const confirmedDeletionPending =
-      confirmedDeletionFocusRef.current?.deletedProjectId === projectId ||
-      confirmedDeletionFocusHandledRef.current === projectId;
-    if (confirmedDeletionFocusHandledRef.current === projectId) {
-      confirmedDeletionFocusHandledRef.current = null;
-    }
-    setDeleteTarget(undefined);
+    const confirmedFocus =
+      confirmedDeletionFocusRef.current?.deletedProjectId === projectId
+        ? confirmedDeletionFocusRef.current
+        : undefined;
 
-    if (accessStatus === "authenticated" && !confirmedDeletionPending) {
-      returnFocusAfterDeleteDialog(projectId);
+    confirmedDeletionFocusRef.current = null;
+
+    if (accessStatus === "authenticated") {
+      deleteDialogReturnFocusRef.current =
+        confirmedFocus?.targetProjectId ?? projectId;
+    } else {
+      deleteDialogReturnFocusRef.current = null;
     }
+
+    setDeleteTarget(undefined);
   }, [accessStatus, canDeleteProjects, deleteTarget, projects]);
 
   const deleteConfirmationOpen = Boolean(deleteTarget);
@@ -536,12 +551,24 @@ export function ProjectsPage() {
                       };
                       void deleteProject(projectId).then((deleted) => {
                         if (!deleted) {
-                          confirmedDeletionFocusRef.current = null;
-                          confirmedDeletionFocusHandledRef.current = null;
+                          const state = useProjectLibraryStore.getState();
+                          const projectStillExists = state.projects.some(
+                            (project) => project.projectId === projectId,
+                          );
+
+                          if (
+                            state.accessStatus !== "authenticated" ||
+                            projectStillExists
+                          ) {
+                            confirmedDeletionFocusRef.current = null;
+                            deleteDialogReturnFocusRef.current = null;
+                          }
+
                           return;
                         }
 
                         const requested = readProjectIdFromUrl();
+
                         if (requested.projectId === projectId) {
                           updateProjectsProjectIdUrl();
                         }

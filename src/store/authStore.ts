@@ -6,6 +6,7 @@ import {
   getAuthSession,
   invalidateAccountBootstrapRequests,
   invalidateAuthSessionRequests,
+  type BackendAccountBootstrapResponse,
 } from "../services/authService";
 import {
   loginWithSupabaseRuntime,
@@ -156,6 +157,88 @@ const toUnavailableBootstrapState = (
       result.code === "backend_wake_timeout"
         ? "backend_wake_timeout"
         : "session_verification_unavailable",
+  };
+};
+
+type BootstrapFailureState = Pick<
+  AuthStoreState,
+  | "status"
+  | "identity"
+  | "message"
+  | "reasonCode"
+  | "bootstrapPhase"
+  | "bootstrapMessage"
+  | "bootstrapDiagnosticCode"
+  | "pendingAction"
+>;
+
+export const mapAccountBootstrapFailureState = (
+  result: BackendAccountBootstrapResponse | undefined,
+  existingIdentity: VerifiedAccountIdentity | undefined,
+): {
+  clearRuntimeProjectAuthority: boolean;
+  state: BootstrapFailureState;
+} => {
+  if (result?.kind === "workspace_bootstrap_blocked") {
+    const message =
+      result.message ??
+      "This session does not have access to an active workspace.";
+
+    return {
+      clearRuntimeProjectAuthority: true,
+      state: {
+        status: "unavailable",
+        identity: undefined,
+        message,
+        reasonCode: "workspace_bootstrap_blocked",
+        bootstrapPhase: "workspace_forbidden",
+        bootstrapMessage: message,
+        bootstrapDiagnosticCode: "workspace_forbidden",
+        pendingAction: null,
+      },
+    };
+  }
+
+  if (
+    result?.kind === "invalid_credentials" ||
+    result?.kind === "email_verification_required"
+  ) {
+    const message =
+      result.message ??
+      "Sign in is required before account setup can continue.";
+
+    return {
+      clearRuntimeProjectAuthority: true,
+      state: {
+        status: "unauthenticated",
+        identity: undefined,
+        message,
+        reasonCode:
+          result.kind === "invalid_credentials"
+            ? result.reason
+            : "email_verification_required",
+        bootstrapPhase: "sign_in_required",
+        bootstrapMessage: message,
+        bootstrapDiagnosticCode: "sign_in_required",
+        pendingAction: null,
+      },
+    };
+  }
+
+  const message = result?.message ?? "Account setup is temporarily unavailable.";
+
+  return {
+    clearRuntimeProjectAuthority: false,
+    state: {
+      status: "unavailable",
+      identity: existingIdentity,
+      message,
+      reasonCode: "account_bootstrap_unavailable",
+      bootstrapPhase: "temporarily_unavailable",
+      bootstrapMessage: message,
+      bootstrapDiagnosticCode: "session_verification_unavailable",
+      pendingAction: null,
+    },
   };
 };
 
@@ -366,17 +449,14 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
       return;
     }
 
-    set((state) => ({
-      status: "unavailable",
-      identity: state.identity,
-      message: bootstrapResult?.message ?? "Account setup is temporarily unavailable.",
-      reasonCode: "account_bootstrap_unavailable",
-      bootstrapPhase: "temporarily_unavailable",
-      bootstrapMessage:
-        bootstrapResult?.message ?? "Account setup is temporarily unavailable.",
-      bootstrapDiagnosticCode: "session_verification_unavailable",
-      pendingAction: null,
-    }));
+    const mapping = mapAccountBootstrapFailureState(
+      bootstrapResult,
+      useAuthStore.getState().identity,
+    );
+    if (mapping.clearRuntimeProjectAuthority) {
+      useProjectLibraryStore.getState().clearRuntimeProjectContext();
+    }
+    set(mapping.state);
   },
   markBackendWaking: () => {
     set((state) =>
@@ -535,51 +615,14 @@ export const initializeAuthStore = (): void => {
         return true;
       }
 
-      if (
-        result?.kind === "invalid_credentials" ||
-        result?.kind === "email_verification_required"
-      ) {
+      const mapping = mapAccountBootstrapFailureState(
+        result,
+        useAuthStore.getState().identity,
+      );
+      if (mapping.clearRuntimeProjectAuthority) {
         useProjectLibraryStore.getState().clearRuntimeProjectContext();
-        useAuthStore.setState({
-          status: "unauthenticated",
-          identity: undefined,
-          message:
-            result.message ??
-            "Sign in is required before account setup can continue.",
-          reasonCode:
-            result.kind === "invalid_credentials"
-              ? result.reason
-              : "email_verification_required",
-          bootstrapPhase: "sign_in_required",
-          bootstrapMessage:
-            result.message ??
-            "Sign in is required before account setup can continue.",
-          bootstrapDiagnosticCode: "sign_in_required",
-          pendingAction: null,
-        });
-        return false;
       }
-
-      useAuthStore.setState((state) => ({
-        status: "unavailable",
-        identity: state.identity,
-        message: result?.message ?? "Account setup is temporarily unavailable.",
-        reasonCode:
-          result?.kind === "workspace_bootstrap_blocked"
-            ? "workspace_bootstrap_blocked"
-            : "account_bootstrap_unavailable",
-        bootstrapPhase:
-          result?.kind === "workspace_bootstrap_blocked"
-            ? "workspace_forbidden"
-            : "temporarily_unavailable",
-        bootstrapMessage:
-          result?.message ?? "Account setup is temporarily unavailable.",
-        bootstrapDiagnosticCode:
-          result?.kind === "workspace_bootstrap_blocked"
-            ? "workspace_forbidden"
-            : "session_verification_unavailable",
-        pendingAction: null,
-      }));
+      useAuthStore.setState(mapping.state);
       return false;
     },
     setRecoveryState: (status, message) => {

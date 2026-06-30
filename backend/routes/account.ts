@@ -304,16 +304,14 @@ export const createAccountRouter = (
         return;
       }
 
-      const existingAppUser = await options.dependencies.userAccountRepository.getByAuthSubject(
-        "supabase",
-        bearer.subject,
-      );
-      const userAccount = await options.dependencies.userAccountRepository.createOrGetByAuthSubject({
-        userId: bearer.subject,
-        authProvider: "supabase",
-        authSubject: bearer.subject,
-        ...(verifiedAuthProfile.email ? { email: verifiedAuthProfile.email } : {}),
-      });
+      const userAccountResult =
+        await options.dependencies.userAccountRepository.createOrGetByAuthSubject({
+          userId: bearer.subject,
+          authProvider: "supabase",
+          authSubject: bearer.subject,
+          ...(verifiedAuthProfile.email ? { email: verifiedAuthProfile.email } : {}),
+        });
+      const userAccount = userAccountResult.userAccount;
 
       const workspaceRuntimeGate = readWorkspaceMembershipRuntimeGate(options.env);
 
@@ -330,8 +328,27 @@ export const createAccountRouter = (
         await options.dependencies.workspaceMembershipRepository.listMembershipsForUser(
           userAccount.userId,
         );
+
+      if (
+        existingMemberships.some(
+          (membership) =>
+            membership.userId !== userAccount.userId ||
+            !isUuidLike(membership.workspaceId),
+        )
+      ) {
+        response.status(503).json({
+          kind: "bootstrap_unavailable",
+          status: "bootstrap_unavailable",
+          message: "Account bootstrap encountered inconsistent workspace authority.",
+        });
+        return;
+      }
+
       const activeMemberships = existingMemberships.filter(
         (membership) => membership.status === "active",
+      );
+      const nonActiveMemberships = existingMemberships.filter(
+        (membership) => membership.status !== "active",
       );
 
       if (activeMemberships.length > 1) {
@@ -351,37 +368,102 @@ export const createAccountRouter = (
         return;
       }
 
-      const existingWorkspaces = await options.dependencies.workspaceRepository.listForUser(
-        userAccount.userId,
-      );
-      const workspaceRecord =
-        existingWorkspaces[0] ??
-        (activeMemberships.length === 0
-          ? await options.dependencies.workspaceRepository.createPersonalWorkspace({
-              workspaceId: createPersonalWorkspaceId(userAccount.userId),
-              userId: userAccount.userId,
-              name: personalWorkspaceName,
-            })
-          : undefined);
-
-      const workspaceId = activeMemberships[0]?.workspaceId ?? workspaceRecord?.workspaceId;
-
-      if (!workspaceId) {
-        response.status(503).json({
-          kind: "bootstrap_unavailable",
-          status: "bootstrap_unavailable",
-          message: "Account bootstrap could not determine a workspace safely.",
+      if (activeMemberships.length === 0 && nonActiveMemberships.length > 0) {
+        response.status(403).json({
+          kind: "workspace_bootstrap_blocked",
+          status: "workspace_bootstrap_blocked",
+          reason: "inactive_membership_exists",
+          message:
+            "Workspace setup cannot continue while an inactive membership record exists.",
         });
         return;
       }
 
-      const membership = await options.dependencies.workspaceMembershipRepository.createOrGetMembership({
-        workspaceId,
-        userId: userAccount.userId,
-        role: "owner",
-        status: "active",
-      });
+      if (activeMemberships.length === 1) {
+        const membership = activeMemberships[0];
+        const workspaceRecord =
+          await options.dependencies.workspaceRepository.getByWorkspaceId(
+            membership.workspaceId,
+          );
+        const workspaceRole = normalizeWorkspaceRole(membership.role);
+
+        if (
+          !workspaceRecord ||
+          workspaceRecord.workspaceId !== membership.workspaceId ||
+          workspaceRecord.deletedAt !== undefined ||
+          workspaceRole === "unknown"
+        ) {
+          response.status(503).json({
+            kind: "bootstrap_unavailable",
+            status: "bootstrap_unavailable",
+            message: "Account bootstrap could not verify workspace authority safely.",
+          });
+          return;
+        }
+
+        response.status(200).json({
+          kind: "account_bootstrap_complete",
+          status: "authenticated",
+          message: "Free AI Mixer account setup is complete.",
+          identity: toIdentity({
+            userId: userAccount.userId,
+            workspaceId: membership.workspaceId,
+            workspaceRole,
+            workspaceAuthority: "verified",
+            ...(verifiedAuthProfile.email ? { email: verifiedAuthProfile.email } : {}),
+          }),
+          bootstrap: {
+            appUserCreated: userAccountResult.created,
+            workspaceCreated: false,
+            membershipCreated: false,
+          },
+        });
+        return;
+      }
+
+      const personalWorkspaceId = createPersonalWorkspaceId(userAccount.userId);
+      const workspaceResult =
+        await options.dependencies.workspaceRepository.createPersonalWorkspace({
+          workspaceId: personalWorkspaceId,
+          userId: userAccount.userId,
+          name: personalWorkspaceName,
+        });
+      const workspaceRecord = workspaceResult.workspace;
+
+      if (
+        workspaceRecord.workspaceId !== personalWorkspaceId ||
+        workspaceRecord.createdByUserId !== userAccount.userId ||
+        workspaceRecord.deletedAt !== undefined
+      ) {
+        response.status(503).json({
+          kind: "bootstrap_unavailable",
+          status: "bootstrap_unavailable",
+          message: "Account bootstrap could not verify a personal workspace safely.",
+        });
+        return;
+      }
+
+      const membershipResult =
+        await options.dependencies.workspaceMembershipRepository.createOrGetMembership({
+          workspaceId: personalWorkspaceId,
+          userId: userAccount.userId,
+          role: "owner",
+          status: "active",
+        });
+      const membership = membershipResult.membership;
       const workspaceRole = normalizeWorkspaceRole(membership.role);
+
+      if (
+        membership.workspaceId !== personalWorkspaceId ||
+        membership.userId !== userAccount.userId ||
+        membership.role !== "owner" ||
+        membership.status !== "active" ||
+        workspaceRole !== "workspace_owner"
+      ) {
+        throw new Error(
+          "Account bootstrap membership creation returned an inconsistent record.",
+        );
+      }
 
       response.status(200).json({
         kind: "account_bootstrap_complete",
@@ -389,16 +471,15 @@ export const createAccountRouter = (
         message: "Free AI Mixer account setup is complete.",
         identity: toIdentity({
           userId: userAccount.userId,
-          workspaceId,
-          workspaceRole:
-            workspaceRole === "unknown" ? undefined : workspaceRole,
+          workspaceId: personalWorkspaceId,
+          workspaceRole,
           workspaceAuthority: "verified",
           ...(verifiedAuthProfile.email ? { email: verifiedAuthProfile.email } : {}),
         }),
         bootstrap: {
-          appUserCreated: !existingAppUser,
-          workspaceCreated: existingWorkspaces.length === 0,
-          membershipCreated: activeMemberships.length === 0,
+          appUserCreated: userAccountResult.created,
+          workspaceCreated: workspaceResult.created,
+          membershipCreated: membershipResult.created,
         },
       });
     })().catch(next);

@@ -1,9 +1,12 @@
 import type { BackendUserAccountIdentity } from "../auth/accountContracts";
 import type {
   BackendUserAccountRecord,
+  BackendUserAccountCreationResult,
   BackendUserAccountRepository,
   BackendWorkspaceMembershipRecord,
+  BackendWorkspaceMembershipCreationResult,
   BackendWorkspaceMembershipRepository,
+  BackendWorkspaceCreationResult,
   BackendWorkspaceRecord,
   BackendWorkspaceRepository,
 } from "./repositoryContracts";
@@ -214,50 +217,61 @@ export class SupabaseAccountWorkspaceRepository
     authProvider: BackendUserAccountIdentity["authProvider"];
     authSubject: string;
     email?: string;
-  }): Promise<BackendUserAccountRecord> {
+  }): Promise<BackendUserAccountCreationResult> {
     const existing = await this.getByAuthSubject(
       input.authProvider,
       input.authSubject,
     );
 
     if (existing) {
-      return existing;
+      if (
+        existing.userId !== input.userId ||
+        existing.authProvider !== input.authProvider ||
+        existing.authSubject !== input.authSubject
+      ) {
+        throw new Error(
+          "App user creation encountered an inconsistent existing record.",
+        );
+      }
+
+      return { userAccount: existing, created: false };
     }
 
     const appUsers = this.client.from("app_users");
 
-    if (!appUsers.upsert) {
-      throw new Error("Injected Supabase-like client must support upsert() for app_users.");
+    if (!appUsers.insert) {
+      throw new Error("Injected Supabase-like client must support insert() for app_users.");
     }
 
     const result = await appUsers
-      .upsert(
-        {
-          id: input.userId,
-          auth_provider: input.authProvider,
-          auth_subject: input.authSubject,
-          email: input.email ?? null,
-        },
-        {
-          onConflict: "auth_provider,auth_subject",
-        },
-      )
+      .insert({
+        id: input.userId,
+        auth_provider: input.authProvider,
+        auth_subject: input.authSubject,
+        email: input.email ?? null,
+      })
       .select(appUserSelectColumns)
       .maybeSingle();
 
     if (result.error && !isDuplicateRowError(result.error)) {
-      throw new Error(result.error.message);
+      throw new Error("App user creation is unavailable.");
     }
 
+    const created = !result.error;
     const record = result.data && !Array.isArray(result.data)
       ? fromAppUserRow(result.data)
       : await this.getByAuthSubject(input.authProvider, input.authSubject);
 
-    if (!record) {
+    if (
+      !record ||
+      record.userId !== input.userId ||
+      record.authProvider !== input.authProvider ||
+      record.authSubject !== input.authSubject
+    ) {
       throw new Error("App user bootstrap could not be completed safely.");
     }
 
-    return record;
+    return { userAccount: record, created };
   }
 
   async getByWorkspaceId(
@@ -302,46 +316,58 @@ export class SupabaseAccountWorkspaceRepository
     workspaceId: string;
     userId: string;
     name: string;
-  }): Promise<BackendWorkspaceRecord> {
+  }): Promise<BackendWorkspaceCreationResult> {
     const existing = await this.getByWorkspaceId(input.workspaceId);
 
     if (existing) {
-      return existing;
+      if (
+        existing.createdByUserId !== input.userId ||
+        existing.name !== input.name ||
+        existing.deletedAt !== undefined
+      ) {
+        throw new Error(
+          "Personal workspace creation encountered an inconsistent existing record.",
+        );
+      }
+
+      return { workspace: existing, created: false };
     }
 
     const workspaces = this.client.from("workspaces");
 
-    if (!workspaces.upsert) {
-      throw new Error("Injected Supabase-like client must support upsert() for workspaces.");
+    if (!workspaces.insert) {
+      throw new Error("Injected Supabase-like client must support insert() for workspaces.");
     }
 
     const result = await workspaces
-      .upsert(
-        {
-          id: input.workspaceId,
-          name: input.name,
-          created_by_user_id: input.userId,
-        },
-        {
-          onConflict: "id",
-        },
-      )
+      .insert({
+        id: input.workspaceId,
+        name: input.name,
+        created_by_user_id: input.userId,
+      })
       .select(workspaceSelectColumns)
       .maybeSingle();
 
     if (result.error && !isDuplicateRowError(result.error)) {
-      throw new Error(result.error.message);
+      throw new Error("Personal workspace creation is unavailable.");
     }
 
+    const created = !result.error;
     const workspace = result.data && !Array.isArray(result.data)
       ? fromWorkspaceRow(result.data)
       : await this.getByWorkspaceId(input.workspaceId);
 
-    if (!workspace) {
+    if (
+      !workspace ||
+      workspace.workspaceId !== input.workspaceId ||
+      workspace.createdByUserId !== input.userId ||
+      workspace.name !== input.name ||
+      workspace.deletedAt !== undefined
+    ) {
       throw new Error("Workspace bootstrap could not be completed safely.");
     }
 
-    return workspace;
+    return { workspace, created };
   }
 
   async getMembership(
@@ -387,53 +413,62 @@ export class SupabaseAccountWorkspaceRepository
     userId: string;
     role: BackendWorkspaceMembershipRecord["role"];
     status: BackendWorkspaceMembershipRecord["status"];
-  }): Promise<BackendWorkspaceMembershipRecord> {
+  }): Promise<BackendWorkspaceMembershipCreationResult> {
     const existing = await this.getMembership(input.workspaceId, input.userId);
 
-    if (
-      existing &&
-      existing.role === input.role &&
-      existing.status === input.status
-    ) {
-      return existing;
+    if (existing) {
+      if (
+        existing.workspaceId !== input.workspaceId ||
+        existing.userId !== input.userId ||
+        existing.role !== input.role ||
+        existing.status !== input.status
+      ) {
+        throw new Error(
+          "Membership creation encountered an inconsistent existing record.",
+        );
+      }
+
+      return { membership: existing, created: false };
     }
 
     const memberships = this.client.from("workspace_memberships");
 
-    if (!memberships.upsert) {
+    if (!memberships.insert) {
       throw new Error(
-        "Injected Supabase-like client must support upsert() for workspace_memberships.",
+        "Injected Supabase-like client must support insert() for workspace_memberships.",
       );
     }
 
     const result = await memberships
-      .upsert(
-        {
-          workspace_id: input.workspaceId,
-          user_id: input.userId,
-          role: input.role,
-          status: input.status,
-        },
-        {
-          onConflict: "workspace_id,user_id",
-        },
-      )
+      .insert({
+        workspace_id: input.workspaceId,
+        user_id: input.userId,
+        role: input.role,
+        status: input.status,
+      })
       .select(workspaceMembershipSelectColumns)
       .maybeSingle();
 
     if (result.error && !isDuplicateRowError(result.error)) {
-      throw new Error(result.error.message);
+      throw new Error("Workspace membership creation is unavailable.");
     }
 
+    const created = !result.error;
     const membership = result.data && !Array.isArray(result.data)
       ? fromWorkspaceMembershipRow(result.data)
       : await this.getMembership(input.workspaceId, input.userId);
 
-    if (!membership) {
+    if (
+      !membership ||
+      membership.workspaceId !== input.workspaceId ||
+      membership.userId !== input.userId ||
+      membership.role !== input.role ||
+      membership.status !== input.status
+    ) {
       throw new Error("Workspace membership bootstrap could not be completed safely.");
     }
 
-    return membership;
+    return { membership, created };
   }
 }
 

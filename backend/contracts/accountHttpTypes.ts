@@ -7,7 +7,8 @@ export type AccountBootstrapUnavailableStatus =
 
 export type AccountBootstrapBlockedReason =
   | "multiple_active_memberships"
-  | "workspace_selection_required";
+  | "workspace_selection_required"
+  | "inactive_membership_exists";
 
 export type BackendAccountBootstrapResponse =
   | {
@@ -29,9 +30,18 @@ export type BackendAccountBootstrapResponse =
   | {
       kind: "workspace_bootstrap_blocked";
       status: "workspace_selection_required";
-      reason: AccountBootstrapBlockedReason;
+      reason: Exclude<
+        AccountBootstrapBlockedReason,
+        "inactive_membership_exists"
+      >;
       message: string;
       identity: BackendVerifiedSessionIdentity;
+    }
+  | {
+      kind: "workspace_bootstrap_blocked";
+      status: "workspace_bootstrap_blocked";
+      reason: "inactive_membership_exists";
+      message: string;
     }
   | {
       kind: "invalid_credentials";
