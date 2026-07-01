@@ -19,6 +19,7 @@ export interface SupabaseAuthSessionBridgeOptions {
   bootstrapBackendAccount?: (accessToken: string) => Promise<boolean>;
   getAuthClient?: typeof getSupabaseAuthClient;
   setRecoveryState?: (status: AuthRecoveryStatus, message?: string) => void;
+  shouldDeferAuthStateEvent?: (event: string) => boolean;
   refreshBackendSession: (accessToken?: string) => Promise<AuthSessionResult | void>;
 }
 
@@ -189,6 +190,7 @@ export const initializeSupabaseAuthSessionBridge = async ({
   bootstrapBackendAccount,
   getAuthClient = getSupabaseAuthClient,
   setRecoveryState,
+  shouldDeferAuthStateEvent,
   refreshBackendSession,
 }: SupabaseAuthSessionBridgeOptions): Promise<SupabaseAuthSessionBridgeStatus> => {
   if (activeBridge) {
@@ -280,6 +282,10 @@ export const initializeSupabaseAuthSessionBridge = async ({
   const subscription = authClient.auth.onAuthStateChange(
     (event: string, session: SupabaseAuthSessionSnapshot) => {
       if (event === "INITIAL_SESSION" && initialSessionProcessed) {
+        return;
+      }
+
+      if (shouldDeferAuthStateEvent?.(event)) {
         return;
       }
 

@@ -142,7 +142,10 @@ const toUnavailableBootstrapState = (
   AuthStoreState,
   "bootstrapPhase" | "bootstrapMessage" | "bootstrapDiagnosticCode"
 > => {
-  if (result.code === "workspace_forbidden") {
+  if (
+    result.code === "workspace_forbidden" ||
+    result.code === "workspace_bootstrap_blocked"
+  ) {
     return {
       bootstrapPhase: "workspace_forbidden",
       bootstrapMessage: result.message,
@@ -353,19 +356,19 @@ export const useAuthStore = create<AuthStoreState>((set) => ({
       }
       set({
         ...applySessionResult(result),
-        bootstrapPhase:
-          result.kind === "authenticated"
-            ? "restoring_project"
-            : result.kind === "unauthenticated"
-              ? "sign_in_required"
-              : "temporarily_unavailable",
-        bootstrapMessage: result.message,
-        bootstrapDiagnosticCode:
-          result.kind === "unauthenticated"
-            ? "sign_in_required"
-            : result.kind === "unavailable"
-              ? "session_verification_unavailable"
-              : undefined,
+        ...(result.kind === "unavailable"
+          ? toUnavailableBootstrapState(result)
+          : {
+              bootstrapPhase:
+                result.kind === "authenticated"
+                  ? ("restoring_project" as const)
+                  : ("sign_in_required" as const),
+              bootstrapMessage: result.message,
+              bootstrapDiagnosticCode:
+                result.kind === "unauthenticated"
+                  ? ("sign_in_required" as const)
+                  : undefined,
+            }),
         pendingAction: null,
       });
     } catch {
@@ -628,6 +631,8 @@ export const initializeAuthStore = (): void => {
     setRecoveryState: (status, message) => {
       useAuthStore.getState().setRecoveryState(status, message);
     },
+    shouldDeferAuthStateEvent: (event) =>
+      event === "SIGNED_IN" && useAuthStore.getState().pendingAction === "login",
     refreshBackendSession: (accessToken?: string) =>
       useAuthStore.getState().refreshSession(accessToken),
   });
