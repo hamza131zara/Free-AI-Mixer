@@ -17,7 +17,7 @@ const supabaseNotConfiguredMessage =
 
 const mapBootstrapResponseToAuthResult = (
   result: BackendAccountBootstrapResponse | undefined,
-): AuthSessionResult | AuthMutationResult => {
+): AuthSessionResult => {
   if (!result) {
     return {
       kind: "unavailable",
@@ -170,11 +170,12 @@ export const createAuthRuntimeService = (
     const bootstrapResult = await dependencies.bootstrapAccount(accessToken);
     const mappedBootstrapResult = mapBootstrapResponseToAuthResult(bootstrapResult);
 
-    if (
-      mappedBootstrapResult.kind === "authenticated" ||
-      bootstrapResult?.kind === "workspace_bootstrap_blocked"
-    ) {
+    if (mappedBootstrapResult.kind === "authenticated") {
       return refreshSessionAfterProviderAuth(accessToken);
+    }
+
+    if (bootstrapResult?.kind === "workspace_bootstrap_blocked") {
+      return mappedBootstrapResult;
     }
 
     return sessionResult;
@@ -211,10 +212,7 @@ export const createAuthRuntimeService = (
       const bootstrapResult = await dependencies.bootstrapAccount(accessToken ?? "");
       const mappedBootstrapResult = mapBootstrapResponseToAuthResult(bootstrapResult);
 
-      if (
-        mappedBootstrapResult.kind === "authenticated" ||
-        bootstrapResult?.kind === "workspace_bootstrap_blocked"
-      ) {
+      if (mappedBootstrapResult.kind === "authenticated") {
         return refreshSessionAfterProviderAuth(accessToken);
       }
 
@@ -352,10 +350,7 @@ export const createAuthRuntimeService = (
       );
       const mappedBootstrapResult = mapBootstrapResponseToAuthResult(bootstrapResult);
 
-      if (
-        mappedBootstrapResult.kind === "authenticated" ||
-        bootstrapResult?.kind === "workspace_bootstrap_blocked"
-      ) {
+      if (mappedBootstrapResult.kind === "authenticated") {
         return refreshSessionAfterProviderAuth(accessTokenResult.data);
       }
 
