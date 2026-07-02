@@ -230,7 +230,18 @@ export const createRepositoryBackedRequesterContextResolver = (
     );
 
     if (!appUser) {
-      return createUnauthenticatedRequesterContext("invalid_credentials");
+      return withWorkspaceAuthority(
+        createAuthenticatedRequesterContext({
+          userId: verifiedAuthSubject.authSubject,
+          supabaseUserId: verifiedAuthSubject.authSubject,
+          authProvider: "supabase",
+          authSubject: verifiedAuthSubject.authSubject,
+        }),
+        {
+          workspaceAuthority: "not_available",
+          workspaceAuthorityReason: "no_active_workspace_membership",
+        },
+      );
     }
 
     const requester = createAuthenticatedRequesterContext({
