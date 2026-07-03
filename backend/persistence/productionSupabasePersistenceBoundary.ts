@@ -5,6 +5,7 @@ export type ProductionPersistenceTable =
   | "projects"
   | "generation_jobs"
   | "generated_artifact_records"
+  | "generated_image_bundle_idempotency"
   | "image_generation_history"
   | "provider_keys"
   | "audit_log"
@@ -60,6 +61,13 @@ export const productionPersistenceBoundaryTables: ProductionPersistenceBoundaryT
     safeMetadataOnly: true,
     migration: "0004_launch_block1_project_generation_persistence_draft.sql",
     notes: "Generated artifact metadata only; no delivery URLs, local filesystem locations, binary payloads, or encoded image payloads.",
+  },
+  {
+    tableName: "generated_image_bundle_idempotency",
+    status: "drafted",
+    safeMetadataOnly: true,
+    migration: "0011_h6j_atomic_generated_image_persistence.sql",
+    notes: "Backend-only exact request identity for atomic replay validation; storage metadata never enters public responses.",
   },
   {
     tableName: "image_generation_history",
@@ -178,6 +186,48 @@ export interface ProductionImageGenerationHistoryInput {
   workspaceId: string;
 }
 
+export interface ProductionGeneratedImageBundleInput {
+  artifactId: string;
+  contentType: "image/png" | "image/jpeg" | "image/webp";
+  createdAt: string;
+  jobId: string;
+  ownerId: string;
+  projectId: string;
+  promptSummary?: string;
+  providerId: string;
+  requestId: string;
+  sha256: string;
+  sizeBytes: number;
+  storageRef: {
+    provider: "supabase_storage";
+    bucket: string;
+    objectKey: string;
+    contentType: "image/png" | "image/jpeg" | "image/webp";
+    sizeBytes: number;
+    sha256: string;
+    createdAt: string;
+  };
+  workspaceId: string;
+}
+
+export type ProductionGeneratedImageBundleWriteResult =
+  | {
+      kind: "persisted";
+      status: "persisted";
+      outcome: "created" | "replayed";
+      generationJobId: string;
+      artifactId: string;
+      historyId: string;
+      generationJobCreated: boolean;
+      artifactCreated: boolean;
+      historyCreated: boolean;
+    }
+  | {
+      kind: "unavailable";
+      status: "persistence_unavailable" | "persistence_write_failed";
+      message: string;
+    };
+
 export interface ProductionProjectMetadataInput {
   ownerId: string;
   projectId: string;
@@ -189,6 +239,9 @@ export interface ProductionProjectMetadataInput {
 
 export interface ProductionSupabasePersistenceWriter {
   getReadiness(): ProductionPersistenceReadiness;
+  persistGeneratedImageBundle(
+    input: ProductionGeneratedImageBundleInput,
+  ): Promise<ProductionGeneratedImageBundleWriteResult>;
   persistGenerationJobMetadata(
     input: ProductionGenerationJobMetadataInput,
   ): Promise<ProductionPersistenceWriteResult>;
@@ -203,7 +256,10 @@ export interface ProductionSupabasePersistenceWriter {
   ): Promise<ProductionPersistenceWriteResult>;
 }
 
-const persistenceUnavailable = (): ProductionPersistenceWriteResult => ({
+const persistenceUnavailable = (): Extract<
+  ProductionPersistenceWriteResult,
+  { kind: "unavailable" }
+> => ({
   kind: "unavailable",
   status: "persistence_unavailable",
   message:
@@ -219,6 +275,7 @@ export const createNotConfiguredProductionSupabasePersistenceWriter =
         "Production Supabase persistence is not configured; no durable rows are written.",
     }),
     persistGeneratedArtifactRecord: async () => persistenceUnavailable(),
+    persistGeneratedImageBundle: async () => persistenceUnavailable(),
     persistGenerationJobMetadata: async () => persistenceUnavailable(),
     persistImageGenerationHistory: async () => persistenceUnavailable(),
     persistProjectMetadata: async () => persistenceUnavailable(),

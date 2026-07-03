@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import type { SupabaseClientFactoryResult } from "../db/supabaseClientFactory";
 import {
   createNotConfiguredProductionSupabasePersistenceWriter,
+  type ProductionGeneratedImageBundleInput,
+  type ProductionGeneratedImageBundleWriteResult,
   type ProductionGeneratedArtifactRecordInput,
   type ProductionGenerationJobMetadataInput,
   type ProductionImageGenerationHistoryInput,
@@ -32,6 +34,25 @@ export interface SupabaseProductionPersistenceClient {
       | "generated_artifact_records"
       | "image_generation_history",
   ): SupabasePersistenceTableQuery;
+  rpc?(
+    functionName: "free_ai_mixer_persist_generated_image_bundle",
+    parameters: Record<string, unknown>,
+  ): PromiseLike<SupabaseGeneratedImageBundleRpcResult>;
+}
+
+export interface SupabaseGeneratedImageBundleRpcRow {
+  outcome: string;
+  generation_job_id: string;
+  artifact_id: string;
+  history_id: string;
+  generation_job_created: boolean;
+  artifact_created: boolean;
+  history_created: boolean;
+}
+
+export interface SupabaseGeneratedImageBundleRpcResult {
+  data: SupabaseGeneratedImageBundleRpcRow[] | SupabaseGeneratedImageBundleRpcRow | null;
+  error: { code?: string | null; message: string } | null;
 }
 
 const toStableUuid = (value: string): string => {
@@ -62,6 +83,18 @@ const toWriteFailed = (): ProductionPersistenceWriteResult => ({
   message:
     "Production Supabase persistence write failed or tables are unavailable; browser-local fallback remains local/browser-only.",
 });
+
+const toBundleWriteFailed = (): ProductionGeneratedImageBundleWriteResult => ({
+  kind: "unavailable",
+  status: "persistence_write_failed",
+  message: "Generated image persistence is temporarily unavailable.",
+});
+
+const isUuidLike = (value: unknown): value is string =>
+  typeof value === "string" &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 
 const insertSafeRow = async (
   client: SupabaseProductionPersistenceClient,
@@ -101,6 +134,86 @@ const toHistoryId = (input: {
     `image_generation_history:${input.workspaceId}:${input.ownerId}:${input.jobId}:${input.artifactId}`,
   );
 
+const persistGeneratedImageBundle = async (
+  client: SupabaseProductionPersistenceClient,
+  input: ProductionGeneratedImageBundleInput,
+): Promise<ProductionGeneratedImageBundleWriteResult> => {
+  if (!client.rpc) {
+    return toBundleWriteFailed();
+  }
+
+  const generationJobId = toGenerationJobId(input);
+  const historyId = toHistoryId(input);
+
+  try {
+    const result = await client.rpc(
+      "free_ai_mixer_persist_generated_image_bundle",
+      {
+        p_artifact_id: input.artifactId,
+        p_content_type: input.contentType,
+        p_created_at: input.createdAt,
+        p_generation_job_id: generationJobId,
+        p_history_id: historyId,
+        p_idempotency_key: input.requestId,
+        p_owner_id: input.ownerId,
+        p_project_id: input.projectId,
+        p_prompt_summary: input.promptSummary ?? null,
+        p_provider_id: input.providerId,
+        p_sha256: input.sha256,
+        p_size_bytes: input.sizeBytes,
+        p_storage_bucket: input.storageRef.bucket,
+        p_storage_content_type: input.storageRef.contentType,
+        p_storage_created_at: input.storageRef.createdAt,
+        p_storage_object_key: input.storageRef.objectKey,
+        p_storage_provider: input.storageRef.provider,
+        p_storage_sha256: input.storageRef.sha256,
+        p_storage_size_bytes: input.storageRef.sizeBytes,
+        p_workspace_id: input.workspaceId,
+      },
+    );
+
+    if (result.error || !Array.isArray(result.data) || result.data.length !== 1) {
+      return toBundleWriteFailed();
+    }
+
+    const row = result.data[0];
+    const expectedCreated = row?.outcome === "created";
+
+    if (
+      !row ||
+      (row.outcome !== "created" && row.outcome !== "replayed") ||
+      !isUuidLike(row.generation_job_id) ||
+      row.generation_job_id !== generationJobId ||
+      typeof row.artifact_id !== "string" ||
+      row.artifact_id !== input.artifactId ||
+      !isUuidLike(row.history_id) ||
+      row.history_id !== historyId ||
+      typeof row.generation_job_created !== "boolean" ||
+      typeof row.artifact_created !== "boolean" ||
+      typeof row.history_created !== "boolean" ||
+      row.generation_job_created !== expectedCreated ||
+      row.artifact_created !== expectedCreated ||
+      row.history_created !== expectedCreated
+    ) {
+      return toBundleWriteFailed();
+    }
+
+    return {
+      kind: "persisted",
+      status: "persisted",
+      outcome: row.outcome,
+      generationJobId: row.generation_job_id,
+      artifactId: row.artifact_id,
+      historyId: row.history_id,
+      generationJobCreated: row.generation_job_created,
+      artifactCreated: row.artifact_created,
+      historyCreated: row.history_created,
+    };
+  } catch {
+    return toBundleWriteFailed();
+  }
+};
+
 export const createSupabaseProductionPersistenceWriter = (
   client: SupabaseProductionPersistenceClient,
 ): ProductionSupabasePersistenceWriter => ({
@@ -108,6 +221,9 @@ export const createSupabaseProductionPersistenceWriter = (
     kind: "ready",
     status: "available",
   }),
+
+  persistGeneratedImageBundle: async (input: ProductionGeneratedImageBundleInput) =>
+    persistGeneratedImageBundle(client, input),
 
   persistGeneratedArtifactRecord: async (
     input: ProductionGeneratedArtifactRecordInput,
