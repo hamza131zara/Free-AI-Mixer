@@ -377,6 +377,29 @@ export interface BackendWorkspaceMembershipCreationResult {
   created: boolean;
 }
 
+export type BackendAccountBootstrapTransactionOutcome =
+  | "created"
+  | "recovered_partial_state"
+  | "existing_active_membership"
+  | "inactive_membership_blocked"
+  | "multiple_active_memberships"
+  | "conflicting_state";
+
+export type BackendAccountBootstrapTransactionResult =
+  | {
+      kind: "resolved";
+      outcome: BackendAccountBootstrapTransactionOutcome;
+      userAccount: BackendUserAccountRecord;
+      workspace?: BackendWorkspaceRecord;
+      membership?: BackendWorkspaceMembershipRecord;
+      appUserCreated: boolean;
+      workspaceCreated: boolean;
+      membershipCreated: boolean;
+    }
+  | {
+      kind: "unavailable";
+    };
+
 export type BackendProjectStatus = "active" | "archived" | "deleted";
 
 export interface BackendProjectRecord {
@@ -473,6 +496,14 @@ export interface BackendUserAccountRepository {
     authSubject: string;
     email?: string;
   }): Promise<BackendUserAccountCreationResult>;
+  bootstrapAccountWorkspaceTransaction?(input: {
+    userId: string;
+    authProvider: BackendUserAccountIdentity["authProvider"];
+    authSubject: string;
+    email?: string;
+    personalWorkspaceId: string;
+    personalWorkspaceName: string;
+  }): Promise<BackendAccountBootstrapTransactionResult>;
 }
 
 export interface BackendWorkspaceRepository {
