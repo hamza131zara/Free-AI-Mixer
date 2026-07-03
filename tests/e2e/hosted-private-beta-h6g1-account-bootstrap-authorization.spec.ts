@@ -171,7 +171,100 @@ const createRepositoryHarness = (
     listMembershipsForWorkspace: async (candidateWorkspaceId) =>
       memberships.filter(
         (membership) => membership.workspaceId === candidateWorkspaceId,
-      ),
+    ),
+  };
+
+  userAccountRepository.bootstrapAccountWorkspaceTransaction = async (input) => {
+    const userAccountResult =
+      await userAccountRepository.createOrGetByAuthSubject(input);
+    const activeMemberships = memberships.filter(
+      (membership) =>
+        membership.userId === input.userId && membership.status === "active",
+    );
+    const nonActiveMemberships = memberships.filter(
+      (membership) =>
+        membership.userId === input.userId && membership.status !== "active",
+    );
+
+    if (activeMemberships.length > 1) {
+      return {
+        kind: "resolved",
+        outcome: "multiple_active_memberships",
+        userAccount: userAccountResult.userAccount,
+        appUserCreated: userAccountResult.created,
+        workspaceCreated: false,
+        membershipCreated: false,
+      };
+    }
+
+    if (activeMemberships.length === 0 && nonActiveMemberships.length > 0) {
+      return {
+        kind: "resolved",
+        outcome: "inactive_membership_blocked",
+        userAccount: userAccountResult.userAccount,
+        appUserCreated: userAccountResult.created,
+        workspaceCreated: false,
+        membershipCreated: false,
+      };
+    }
+
+    if (activeMemberships.length === 1) {
+      const membership = activeMemberships[0];
+      const workspace = options.workspaceLookupError
+        ? await Promise.reject(new Error(options.workspaceLookupError))
+        : workspaces.get(membership.workspaceId);
+
+      if (!workspace) {
+        return {
+          kind: "resolved",
+          outcome: "conflicting_state",
+          userAccount: userAccountResult.userAccount,
+          appUserCreated: userAccountResult.created,
+          workspaceCreated: false,
+          membershipCreated: false,
+        };
+      }
+
+      return {
+        kind: "resolved",
+        outcome: "existing_active_membership",
+        userAccount: userAccountResult.userAccount,
+        workspace,
+        membership,
+        appUserCreated: false,
+        workspaceCreated: false,
+        membershipCreated: false,
+      };
+    }
+
+    const workspaceResult = await workspaceRepository.createPersonalWorkspace({
+      workspaceId: input.personalWorkspaceId,
+      userId: input.userId,
+      name: input.personalWorkspaceName,
+    });
+    const membershipResult =
+      await workspaceMembershipRepository.createOrGetMembership({
+        workspaceId: input.personalWorkspaceId,
+        userId: input.userId,
+        role: "owner",
+        status: "active",
+      });
+
+    return {
+      kind: "resolved",
+      outcome:
+        userAccountResult.created &&
+        workspaceResult.created &&
+        membershipResult.created
+          ? "created"
+          : "recovered_partial_state",
+      userAccount: userAccountResult.userAccount,
+      workspace: workspaceResult.workspace,
+      membership: membershipResult.membership,
+      appUserCreated: userAccountResult.created,
+      workspaceCreated: workspaceResult.created,
+      membershipCreated: membershipResult.created,
+    };
   };
 
   return {
