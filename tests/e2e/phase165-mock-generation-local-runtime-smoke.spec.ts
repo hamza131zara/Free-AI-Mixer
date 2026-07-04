@@ -41,7 +41,44 @@ const tinyPngBytes = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
   "base64",
 );
+const phase165WorkspaceId =
+  "16516516-5165-4165-8165-165165165165";
 
+const phase165Project = {
+  projectId: "26516516-5165-4165-8165-165165165165",
+  title: "Phase 165 Mock Project",
+  status: "active",
+  createdAt: "2026-06-07T00:00:00.000Z",
+  updatedAt: "2026-06-07T00:00:00.000Z",
+} as const;
+
+const authenticatedSessionResponse = {
+  kind: "authenticated_session",
+  status: "authenticated",
+  message: "Backend session verified.",
+  identity: {
+    authProvider: "supabase",
+    authSubject: "phase165-auth-subject",
+    userId: "phase165-user",
+    email: "phase165@example.test",
+    workspaceAuthority: "verified",
+    workspaceId: phase165WorkspaceId,
+    workspaceRole: "workspace_owner",
+  },
+};
+
+const projectLibraryResponse = {
+  kind: "project_library",
+  status: "authenticated",
+  message: "Durable projects loaded.",
+  activeWorkspaceId: phase165WorkspaceId,
+  persistence: "durable",
+  activeProjectPreference: {
+    status: "ready",
+    projectId: phase165Project.projectId,
+  },
+  projects: [phase165Project],
+};
 const forbiddenTokens = [
   "api.openai.com",
   "generativelanguage.googleapis.com",
@@ -113,7 +150,66 @@ test.describe("Phase 165 mock generation local runtime smoke", () => {
     page,
   }) => {
     const generationRequests: unknown[] = [];
+    let previewRequestCount = 0;
+  await page.route("**/auth/session", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(authenticatedSessionResponse),
+      contentType: "application/json",
+      status: 200,
+    });
+  });
 
+  await page.route("**/project-library/projects**", async (route) => {
+    if (route.request().method() !== "GET") {
+      throw new Error(
+        `Unexpected project method: ${route.request().method()}`,
+      );
+    }
+
+    await route.fulfill({
+      body: JSON.stringify(projectLibraryResponse),
+      contentType: "application/json",
+      status: 200,
+    });
+  });
+
+  await page.route(
+    "**/project-library/active-project",
+    async (route) => {
+      const method = route.request().method();
+
+      if (method !== "GET" && method !== "PUT") {
+        throw new Error(
+          `Unexpected active-project method: ${method}`,
+        );
+      }
+
+      await route.fulfill({
+        body: JSON.stringify({
+          kind: "active_project",
+          status: "selected",
+          activeProject: phase165Project,
+        }),
+        contentType: "application/json",
+        status: 200,
+      });
+    },
+  );
+
+  await page.route("**/generation/history**", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        kind: "generation_history",
+        status: "authenticated",
+        projectId: phase165Project.projectId,
+        message:
+          "Generated image history is loaded for this verified project.",
+        history: [],
+      }),
+      contentType: "application/json",
+      status: 200,
+    });
+  });
     await page.route("**/generation/jobs", async (route) => {
       const body = route.request().postDataJSON() as { generationKind?: string };
       generationRequests.push(body);
@@ -128,19 +224,21 @@ test.describe("Phase 165 mock generation local runtime smoke", () => {
         status: body.generationKind === "video" ? 503 : 200,
       });
     });
-    await page.route("**/generation/jobs/*/artifacts/*/preview", async (route) => {
-      await route.fulfill({
-        body: tinyPngBytes,
-        contentType: "image/png",
-        headers: {
-          "cache-control": "no-store",
-          "x-content-type-options": "nosniff",
-        },
-        status: 200,
-      });
-    });
+  await page.route(
+  "**/generation/jobs/*/artifacts/*/preview",
+  async (route) => {
+    previewRequestCount += 1;
+    await route.abort();
+  },
+);
 
-    await page.goto("/mixer");
+   await page.goto(
+  `/mixer?projectId=${phase165Project.projectId}`,
+);
+
+await expect(
+  page.getByTestId("mixer-project-context"),
+).toContainText("Verified project context");
 
     await expect(
       page.getByRole("heading", { name: "Prompt generation workspace" }),
@@ -166,9 +264,21 @@ test.describe("Phase 165 mock generation local runtime smoke", () => {
     await expect(page.getByTestId("prompt-image-metadata")).toContainText(
       "unavailable",
     );
-    await expect(page.getByTestId("prompt-image-history")).toContainText(
-      "Phase 165 safe local mock image smoke.",
-    );
+    const savedImageMetadataRegion = page.getByRole("region", {
+  name: "Saved image metadata",
+});
+
+await expect(savedImageMetadataRegion).toContainText(
+  "Generated image history is loaded for this verified project.",
+);
+
+await expect(savedImageMetadataRegion).toContainText(
+  "No durable image metadata exists for this project yet.",
+);
+
+await expect(savedImageMetadataRegion).not.toContainText(
+  "Phase 165 safe local mock image smoke.",
+);
 
     await page
       .getByLabel("Video prompt")
@@ -205,20 +315,45 @@ test.describe("Phase 165 mock generation local runtime smoke", () => {
 
     await expect(page.locator("video")).toHaveCount(0);
     await expect(
-      page.getByRole("img", {
-        name: "Backend-mediated generated image preview",
-      }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("img", {
-        name: "Backend-mediated generated image preview",
-      }),
-    ).toHaveAttribute(
-      "src",
-      /\/generation\/jobs\/.+\/artifacts\/phase165-image-artifact\/preview/,
-    );
+  page.getByRole("figure", {
+    name: "Private preview is unavailable.",
+  }),
+).toBeVisible();
+
+await expect(
+  page.getByRole("img", {
+    name: "Backend-mediated generated image preview",
+  }),
+
+).toHaveCount(0);
+await expect(page.locator("video")).toHaveCount(0);
+
+await expect(
+  page.getByRole("figure", {
+    name: "Private preview is unavailable.",
+  }),
+).toBeVisible();
+
+await expect(
+  page.getByRole("img", {
+    name: "Backend-mediated generated image preview",
+  }),
+).toHaveCount(0);
+
+expect(previewRequestCount).toBe(0);
+
+await expect(
+  page.getByRole("button", { name: /download/i }),
+).toHaveCount(0);
+
+await expect(
+  page.getByRole("link", { name: /download/i }),
+).toHaveCount(0);
+
+await expectNoForbiddenTokens(page);
     await expect(page.getByRole("button", { name: /download/i })).toHaveCount(0);
     await expect(page.getByRole("link", { name: /download/i })).toHaveCount(0);
+    expect(previewRequestCount).toBe(0);
     await expectNoForbiddenTokens(page);
   });
 });

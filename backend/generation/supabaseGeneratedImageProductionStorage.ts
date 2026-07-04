@@ -1,9 +1,11 @@
 import { createHash } from "node:crypto";
 import type { SupabaseClientFactoryResult } from "../db/supabaseClientFactory";
 import type { GeneratedImageArtifactMetadata } from "./generatedImageArtifactStorage";
-import type { VerifiedGeneratedImageArtifactBytes } from "./generatedImageArtifactVerification";
 import {
-  buildGeneratedImageProductionObjectKey,
+  verifyGeneratedImageArtifactBytes,
+  type VerifiedGeneratedImageArtifactBytes,
+} from "./generatedImageArtifactVerification";
+import {
   isSafeGeneratedImageProductionArtifactSegment,
   isSafeGeneratedImageProductionStorageRef,
   type GeneratedImageProductionArtifactRecord,
@@ -58,12 +60,26 @@ export type GeneratedImageProductionReadResult =
       message: string;
     };
 
+export type GeneratedImageProductionDeleteResult =
+  | { kind: "deleted" }
+  | {
+      kind: "unavailable";
+      code: "storage_not_configured" | "invalid_storage_ref" | "delete_failed";
+      message: string;
+    };
+
+export type GeneratedImageProductionStorageReadiness =
+  | { kind: "ready"; status: "available" }
+  | { kind: "unavailable"; status: "storage_not_configured"; message: string };
+
 export interface GeneratedImageProductionStorage {
+  getReadiness(): GeneratedImageProductionStorageReadiness;
   store(input: {
     artifactId: string;
     createdAt?: string;
     jobId: string;
     ownerId: string;
+    projectId: string;
     providerId: BackendGenerationArtifactProviderId;
     verifiedImage: VerifiedGeneratedImageArtifactBytes;
     workspaceId: string;
@@ -77,6 +93,9 @@ export interface GeneratedImageProductionStorage {
   readObject(
     storageRef: GeneratedImageProductionStorageRef,
   ): Promise<GeneratedImageProductionReadResult>;
+  deleteObject(
+    storageRef: GeneratedImageProductionStorageRef,
+  ): Promise<GeneratedImageProductionDeleteResult>;
 }
 
 export interface SupabaseStorageUploadResult {
@@ -107,6 +126,7 @@ export interface SupabaseGeneratedImageStorageBucketClient {
     path: string,
     options: { limit: number; search: string },
   ): Promise<SupabaseStorageListResult>;
+  remove?(objectKeys: string[]): Promise<SupabaseStorageUploadResult>;
   upload(
     objectKey: string,
     body: Uint8Array,
@@ -183,6 +203,17 @@ const readUnavailable = (
   message,
 });
 
+const deleteUnavailable = (
+  code: Extract<GeneratedImageProductionDeleteResult, { kind: "unavailable" }>[
+    "code"
+  ],
+  message: string,
+): GeneratedImageProductionDeleteResult => ({
+  kind: "unavailable",
+  code,
+  message,
+});
+
 const recordUnavailable = (
   code: Extract<GeneratedImageProductionRecordResult, { kind: "unavailable" }>["code"],
   message: string,
@@ -198,6 +229,23 @@ const isConfigured = (
   bucket: string;
   client: SupabaseGeneratedImageStorageClient;
 } => Boolean(options.bucket?.trim() && options.client);
+
+const isWriteConfigured = (
+  options: SupabaseGeneratedImageProductionStorageOptions,
+): options is SupabaseGeneratedImageProductionStorageOptions & {
+  bucket: string;
+  client: SupabaseGeneratedImageStorageClient;
+} => {
+  if (!isConfigured(options)) {
+    return false;
+  }
+
+  try {
+    return typeof options.client.storage.from(options.bucket).remove === "function";
+  } catch {
+    return false;
+  }
+};
 
 const splitObjectKey = (
   objectKey: string,
@@ -254,8 +302,71 @@ const isGeneratedImageContentType = (
 ): value is "image/png" | "image/jpeg" | "image/webp" =>
   value === "image/png" || value === "image/jpeg" || value === "image/webp";
 
+const removeStoredObject = async (
+  bucketClient: SupabaseGeneratedImageStorageBucketClient,
+  objectKey: string,
+): Promise<boolean> => {
+  if (!bucketClient.remove) {
+    return false;
+  }
+
+  try {
+    const result = await bucketClient.remove([objectKey]);
+    return !result.error;
+  } catch {
+    return false;
+  }
+};
+
+const buildPrivateGeneratedImageObjectKey = (input: {
+  artifactId: string;
+  format: VerifiedGeneratedImageArtifactBytes["format"];
+  jobId: string;
+  ownerId: string;
+  projectId: string;
+  workspaceId: string;
+}): string | undefined => {
+  const segments = [
+    input.workspaceId,
+    input.ownerId,
+    input.projectId,
+    input.jobId,
+    input.artifactId,
+  ];
+
+  if (
+    !segments.every((segment) =>
+      isSafeGeneratedImageProductionArtifactSegment(segment),
+    )
+  ) {
+    return undefined;
+  }
+
+  const extension =
+    input.format === "jpeg" ? "jpg" : input.format === "webp" ? "webp" : "png";
+
+  return [
+    "generated-images",
+    input.workspaceId,
+    input.ownerId,
+    input.projectId,
+    input.jobId,
+    `${input.artifactId}.${extension}`,
+  ].join("/");
+};
+
 export const createNotConfiguredGeneratedImageProductionStorage =
   (): GeneratedImageProductionStorage => ({
+    getReadiness: () => ({
+      kind: "unavailable",
+      status: "storage_not_configured",
+      message: "Production generated image storage is not configured.",
+    }),
+    deleteObject: async () =>
+      deleteUnavailable(
+        "storage_not_configured",
+        "Production generated image storage is not configured.",
+      ),
     readObject: async () =>
       readUnavailable(
         "storage_not_configured",
@@ -276,18 +387,29 @@ export const createNotConfiguredGeneratedImageProductionStorage =
 export const createSupabaseGeneratedImageProductionStorage = (
   options: SupabaseGeneratedImageProductionStorageOptions,
 ): GeneratedImageProductionStorage => ({
+  getReadiness: () =>
+    isWriteConfigured(options)
+      ? { kind: "ready", status: "available" }
+      : {
+          kind: "unavailable",
+          status: "storage_not_configured",
+          message: "Supabase generated image storage is not configured.",
+        },
+
   async store(input) {
-    if (!isConfigured(options)) {
+    if (!isWriteConfigured(options)) {
       return unavailable(
         "storage_not_configured",
         "Supabase generated image storage is not configured.",
       );
     }
 
-    const objectKey = buildGeneratedImageProductionObjectKey({
+    const objectKey = buildPrivateGeneratedImageObjectKey({
       artifactId: input.artifactId,
       format: input.verifiedImage.format,
       jobId: input.jobId,
+      ownerId: input.ownerId,
+      projectId: input.projectId,
       workspaceId: input.workspaceId,
     });
 
@@ -341,10 +463,60 @@ export const createSupabaseGeneratedImageProductionStorage = (
         },
       );
 
+      const listedObject = listed.data?.find((item) => item.name === fileName);
+
       if (
         listed.error ||
-        !listed.data?.some((item) => item.name === fileName)
+        !listedObject ||
+        (typeof listedObject.metadata?.size === "number" &&
+          listedObject.metadata.size !== input.verifiedImage.sizeBytes) ||
+        (typeof listedObject.metadata?.mimetype === "string" &&
+          listedObject.metadata.mimetype !== input.verifiedImage.contentType)
       ) {
+        await removeStoredObject(
+          options.client.storage.from(options.bucket),
+          objectKey,
+        );
+        return unavailable(
+          "object_verification_failed",
+          "Supabase generated image artifact object verification failed.",
+        );
+      }
+
+      const downloaded = await options.client.storage
+        .from(options.bucket)
+        .download(objectKey);
+      const downloadedContentType =
+        typeof Blob !== "undefined" &&
+        downloaded.data instanceof Blob &&
+        downloaded.data.type
+          ? downloaded.data.type
+          : input.verifiedImage.contentType;
+      const downloadedBytes = downloaded.data
+        ? await toBytes(downloaded.data)
+        : undefined;
+      const verifiedStoredObject =
+        downloaded.error ||
+        !downloadedBytes ||
+        downloadedContentType !== input.verifiedImage.contentType
+          ? undefined
+          : verifyGeneratedImageArtifactBytes({
+              bytes: downloadedBytes,
+              contentType: input.verifiedImage.contentType,
+              format: input.verifiedImage.format,
+              maxBytes: input.verifiedImage.sizeBytes,
+            });
+
+      if (
+        !verifiedStoredObject ||
+        verifiedStoredObject.kind !== "verified" ||
+        verifiedStoredObject.image.sizeBytes !== input.verifiedImage.sizeBytes ||
+        verifiedStoredObject.image.sha256 !== input.verifiedImage.sha256
+      ) {
+        await removeStoredObject(
+          options.client.storage.from(options.bucket),
+          objectKey,
+        );
         return unavailable(
           "object_verification_failed",
           "Supabase generated image artifact object verification failed.",
@@ -542,6 +714,44 @@ export const createSupabaseGeneratedImageProductionStorage = (
       return readUnavailable(
         "provider_unavailable",
         "Generated image artifact object read failed.",
+      );
+    }
+  },
+
+  async deleteObject(storageRef) {
+    if (!isConfigured(options)) {
+      return deleteUnavailable(
+        "storage_not_configured",
+        "Production generated image storage is not configured.",
+      );
+    }
+
+    if (
+      storageRef.bucket !== options.bucket ||
+      !isSafeGeneratedImageProductionStorageRef(storageRef)
+    ) {
+      return deleteUnavailable(
+        "invalid_storage_ref",
+        "Generated image artifact storage reference is unavailable.",
+      );
+    }
+
+    try {
+      const removed = await removeStoredObject(
+        options.client.storage.from(storageRef.bucket),
+        storageRef.objectKey,
+      );
+
+      return removed
+        ? { kind: "deleted" }
+        : deleteUnavailable(
+            "delete_failed",
+            "Generated image artifact cleanup failed.",
+          );
+    } catch {
+      return deleteUnavailable(
+        "delete_failed",
+        "Generated image artifact cleanup failed.",
       );
     }
   },

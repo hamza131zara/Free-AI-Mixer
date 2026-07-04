@@ -48,6 +48,7 @@ import {
   parseGenerationOpenAiAdapterFetchMode,
   parseGenerationOpenAiImageModelConfig,
   parseGenerationOpenAiImageRealLocalSmokeEnabled,
+  parseGenerationRouteExecutionMode,
   parseGenerationRuntimeConfig,
   type BackendGenerationGeneratedImageStorageMode,
   type BackendGenerationOpenAiImageModelConfig,
@@ -55,6 +56,7 @@ import {
   type BackendGenerationRuntimeConfig,
   type BackendGenerationMockExecutionAdapterSelection,
   type BackendGenerationOpenAiAdapterFetchMode,
+  type BackendGenerationRouteExecutionMode,
 } from "../generation/generationRuntimeConfig";
 import {
   parseGenerationExecutionControlReadiness,
@@ -104,6 +106,8 @@ export interface BackendDependencies {
   renderInputSnapshotStore: RenderInputSnapshotStore;
   /** Parsed generation runtime gates. Route execution remains disabled. */
   generationRuntimeConfig: BackendGenerationRuntimeConfig;
+  /** Explicit route execution mode; production remains disabled by default. */
+  generationRouteExecutionMode: BackendGenerationRouteExecutionMode;
   /** Fail-closed generation composition readiness metadata only. */
   generationRuntimeReadiness: BackendGenerationRuntimeCompositionReadiness;
   /** Fail-closed generation preflight control readiness. */
@@ -165,6 +169,7 @@ export const createBackendDependencies = (): BackendDependencies => {
   const byokProviderValidationAdapterSelection =
     parseByokProviderValidationAdapterSelection();
   const generationRuntimeConfig = parseGenerationRuntimeConfig();
+  const generationRouteExecutionMode = parseGenerationRouteExecutionMode();
   const generationRuntimeReadiness =
     getGenerationRuntimeCompositionReadiness(generationRuntimeConfig);
   const generationExecutionControlReadiness =
@@ -278,6 +283,7 @@ export const createBackendDependencies = (): BackendDependencies => {
     generationMockExecutionAdapterSelection,
     generationOpenAiAdapterFetchMode,
     generationRuntimeConfig,
+    generationRouteExecutionMode,
     generationRuntimeReadiness,
     productionPersistenceWriter,
     productionArtifactDeliveryMode,

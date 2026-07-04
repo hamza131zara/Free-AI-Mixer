@@ -63,6 +63,7 @@ import type { GeneratedImageProductionStorage } from "../generation/supabaseGene
 import type { GeneratedImageArtifactRegistry } from "../generation/generatedImageArtifactRegistry";
 import { verifyGeneratedImageArtifactBytes } from "../generation/generatedImageArtifactVerification";
 import { createOpenAiImageGenerationAdapter } from "../generation/openAiImageGenerationAdapter";
+import { executeProductionGeneratedImage } from "../generation/productionGeneratedImageExecution";
 import {
   evaluateProviderExecutionPolicy,
   type ProviderExecutionPolicyDecision,
@@ -431,7 +432,20 @@ const sendOpenAiRealLocalProviderResult = (
     });
     return;
   }
+  if (result.kind === "verified_image") {
+    const failure = getGenerationFailureMapping("generation_failed");
 
+    rejectGenerationJobWithVendorState(
+      response,
+      runtimeSummary,
+      "generation_failed",
+      failure.message,
+      failure.httpStatus,
+      true,
+      ["openai"],
+    );
+    return;
+  }
   const responseStatus =
     result.kind === "artifact_storage_unavailable"
       ? "artifact_storage_unavailable"
@@ -711,11 +725,12 @@ const sendMockLocalImageStorageResult = async (
     return;
   }
 
-  const productionStored = input.productionStorage
+  const productionStored = input.productionStorage && input.projectId
     ? await input.productionStorage.store({
         artifactId: input.artifactId,
         jobId: input.jobId,
         ownerId: input.ownerId,
+        projectId: input.projectId,
         providerId: mockLocalProviderId,
         verifiedImage: verified.image,
         workspaceId: input.workspaceId,
@@ -1560,7 +1575,8 @@ export const createGenerationRouter = (
         routeExecutionMode !== "mock_video_local_only" &&
         routeExecutionMode !== "openai_adapter_mock_only" &&
         routeExecutionMode !== "openai_adapter_mock_storage_only" &&
-        routeExecutionMode !== "real_provider_local_only"
+        routeExecutionMode !== "real_provider_local_only" &&
+        routeExecutionMode !== "real_provider_production"
       ) {
         const requesterContext = getRequesterContextFromRequest(request);
 
@@ -2243,6 +2259,239 @@ export const createGenerationRouter = (
         }
 
         sendOpenAiRealLocalProviderResult(response, runtimeSummary, adapterResult);
+        return;
+      }
+
+      if (routeExecutionMode === "real_provider_production") {
+
+        if (
+          !options.openAiRealProviderFetch ||
+          !options.providerKeyRepository ||
+          !options.providerSecretVault ||
+          !options.generatedImageProductionStorage ||
+          !options.productionPersistenceWriter
+        ) {
+          const failure = getGenerationFailureMapping("generation_execution_blocked");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "generation_execution_blocked",
+            failure.message,
+            failure.httpStatus,
+            [],
+            {
+              diagnosticCode: "real_provider_gate_missing",
+              failureCategory: "runtime_gate",
+            },
+          );
+          return;
+        }
+
+        if (
+          options.generationOpenAiImageModelConfig?.kind !==
+          "openai_image_model_configured"
+        ) {
+          const failure = getGenerationFailureMapping("generation_execution_blocked");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "generation_execution_blocked",
+            failure.message,
+            failure.httpStatus,
+            [],
+            {
+              diagnosticCode: "real_provider_gate_missing",
+              failureCategory: "runtime_gate",
+            },
+          );
+          return;
+        }
+
+        const vaultReadiness = (() => {
+          try {
+            return options.providerSecretVault?.getVaultReadiness();
+          } catch {
+            return undefined;
+          }
+        })();
+        const storageReadiness = (() => {
+          try {
+            return options.generatedImageProductionStorage?.getReadiness();
+          } catch {
+            return undefined;
+          }
+        })();
+        const persistenceReadiness = (() => {
+          try {
+            return options.productionPersistenceWriter?.getReadiness();
+          } catch {
+            return undefined;
+          }
+        })();
+
+        if (vaultReadiness?.kind !== "vault_ready") {
+          const failure = getGenerationFailureMapping("vault_decrypt_failed");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "vault_decrypt_failed",
+            failure.message,
+            failure.httpStatus,
+            [],
+            {
+              diagnosticCode: "vault_not_ready",
+              failureCategory: "vault",
+            },
+          );
+          return;
+        }
+
+        if (storageReadiness?.kind !== "ready") {
+          const failure = getGenerationFailureMapping("artifact_storage_unavailable");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "artifact_storage_unavailable",
+            failure.message,
+            failure.httpStatus,
+            ["openai"],
+          );
+          return;
+        }
+
+        if (persistenceReadiness?.kind !== "ready") {
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "persistence_unavailable",
+            "Generated image persistence is temporarily unavailable.",
+            503,
+            ["openai"],
+          );
+          return;
+        }
+
+        const adapter = createOpenAiImageGenerationAdapter({
+          fetchImpl: options.openAiRealProviderFetch,
+          ...(typeof options.openAiAdapterMaxImageBytes === "number"
+            ? { maxImageBytes: options.openAiAdapterMaxImageBytes }
+            : {}),
+          model: options.generationOpenAiImageModelConfig.model,
+          outputMode: "return_verified_bytes",
+          providerImageFetchImpl: options.openAiRealProviderFetch,
+          providerKeyRepository: options.providerKeyRepository,
+          providerSecretVault: options.providerSecretVault,
+          requestShape: "minimal",
+        });
+
+        const adapterReadiness = (() => {
+          try {
+            return adapter.getReadiness?.();
+          } catch {
+            return undefined;
+          }
+        })();
+
+        if (adapterReadiness?.kind !== "generation_ready") {
+          const failure = getGenerationFailureMapping("generation_execution_blocked");
+          rejectGenerationJob(
+            response,
+            runtimeSummary,
+            "generation_execution_blocked",
+            failure.message,
+            failure.httpStatus,
+          );
+          return;
+        }
+
+        const productionResult = await executeProductionGeneratedImage({
+          executeProvider: async () => {
+            const result = await adapter.generateImageFromStoredProviderKey?.({
+              generationKind: "image",
+              jobId: parsed.request.requestId,
+              prompt: parsed.request.prompt,
+             providerId: "openai",
+              providerKeyId: activeKey.providerKeyId,
+              requestId: parsed.request.requestId,
+              workspaceId: authenticatedRequester?.workspaceId ?? "",
+            });
+
+            return result ?? {
+              kind: "generation_unavailable",
+              status: "not_configured",
+              errorCode: "generation_unavailable",
+              message: "OpenAI image generation is unavailable.",
+            };
+          },
+          ownerId: authenticatedRequester?.userId ?? "",
+          persistenceWriter: options.productionPersistenceWriter,
+          projectId: validatedProjectId ?? "",
+          prompt: parsed.request.prompt,
+          providerId: "openai",
+          requestId: parsed.request.requestId,
+          storage: options.generatedImageProductionStorage,
+          workspaceId: authenticatedRequester?.workspaceId ?? "",
+        });
+
+        if (productionResult.kind === "provider_failed") {
+          sendOpenAiRealLocalProviderResult(
+            response,
+            runtimeSummary,
+            productionResult.providerResult,
+          );
+          return;
+        }
+
+        if (productionResult.kind === "storage_unavailable") {
+          rejectGenerationJobWithVendorState(
+            response,
+            runtimeSummary,
+            "artifact_storage_unavailable",
+            productionResult.message,
+            503,
+            true,
+            ["openai"],
+          );
+          return;
+        }
+
+        if (productionResult.kind === "persistence_unavailable") {
+          rejectGenerationJobWithVendorState(
+            response,
+            runtimeSummary,
+            "persistence_unavailable",
+            productionResult.message,
+            503,
+            true,
+            ["openai"],
+          );
+          return;
+        }
+
+        response.status(200).json({
+          kind: "generation_job_metadata_ready",
+          status: "generated_metadata_ready",
+          message:
+            "OpenAI image generation completed with durable private artifact metadata.",
+          artifact: {
+            artifactId: productionResult.artifact.artifactId,
+            providerId: productionResult.artifact.providerId,
+            contentType: productionResult.artifact.contentType,
+            sizeBytes: productionResult.artifact.sizeBytes,
+            sha256: productionResult.artifact.sha256,
+            createdAt: productionResult.artifact.createdAt,
+            deliveryStatus: "unavailable",
+          },
+          persistence: { status: "persisted" },
+          durability: {
+            status: "durable",
+            generationJobId: productionResult.persistence.generationJobId,
+            historyId: productionResult.persistence.historyId,
+            outcome: productionResult.persistence.outcome,
+          },
+          runtime: toRuntimeSnapshot(runtimeSummary, true),
+          attemptedProviderIds: ["openai"],
+        });
         return;
       }
 
