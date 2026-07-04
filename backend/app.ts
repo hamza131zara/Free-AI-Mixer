@@ -256,7 +256,8 @@ export const createApp = (): Express => {
           }
         : {}),
       ...(backendDeps.generationOpenAiAdapterFetchMode === "mock_only" ||
-      backendDeps.generationOpenAiImageRealLocalSmokeEnabled
+      backendDeps.generationOpenAiImageRealLocalSmokeEnabled ||
+      backendDeps.generationRouteExecutionMode === "real_provider_production"
         ? {
             providerSecretVault: backendDeps.providerSecretVault,
           }
@@ -274,19 +275,26 @@ export const createApp = (): Express => {
           }
         : {}),
       ...(backendDeps.productionArtifactDeliveryMode ===
-      "backend_mediated_stream"
+        "backend_mediated_stream" ||
+      backendDeps.generationRouteExecutionMode === "real_provider_production"
         ? {
-            generatedImageArtifactAccessResolver:
-              createProductionGeneratedImageArtifactAccessResolver({
-                productionStorage:
-                  backendDeps.generatedImageProductionStorage,
-              }),
-            generatedImageProductionDeliveryEnabled: true,
             generatedImageProductionStorage:
               backendDeps.generatedImageProductionStorage,
+            ...(backendDeps.productionArtifactDeliveryMode ===
+            "backend_mediated_stream"
+              ? {
+                  generatedImageArtifactAccessResolver:
+                    createProductionGeneratedImageArtifactAccessResolver({
+                      productionStorage:
+                        backendDeps.generatedImageProductionStorage,
+                    }),
+                  generatedImageProductionDeliveryEnabled: true,
+                }
+              : {}),
           }
         : {}),
       ...(backendDeps.generationOpenAiImageRealLocalSmokeEnabled
+        || backendDeps.generationRouteExecutionMode === "real_provider_production"
         ? {
             openAiRealProviderFetch: globalThis.fetch,
           }
@@ -295,6 +303,7 @@ export const createApp = (): Express => {
         backendDeps.generationOpenAiImageRealLocalSmokeEnabled,
       generationOpenAiImageModelConfig:
         backendDeps.generationOpenAiImageModelConfig,
+      generationRouteExecutionMode: backendDeps.generationRouteExecutionMode,
       generationRuntimeConfig: backendDeps.generationRuntimeConfig,
       generationRuntimeReadiness: backendDeps.generationRuntimeReadiness,
       productionPersistenceWriter: backendDeps.productionPersistenceWriter,

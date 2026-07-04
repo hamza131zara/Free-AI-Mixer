@@ -157,6 +157,7 @@ export type BackendGenerationJobMutationResponse =
         | "generation_execution_blocked"
         | "generation_mock_execution_blocked"
         | "artifact_storage_unavailable"
+        | "persistence_unavailable"
         | "video_artifact_storage_unavailable"
         | "vault_decrypt_failed"
         | "generation_failed"
@@ -203,6 +204,12 @@ export type BackendGenerationJobMutationResponse =
       message: string;
       artifact: BackendGenerationMetadataOnlyArtifactResponse;
       persistence?: BackendGenerationPersistenceStatus;
+      durability?: {
+        status: "durable";
+        generationJobId: string;
+        historyId: string;
+        outcome: "created" | "replayed";
+      };
       runtime: BackendGenerationJobRuntimeSnapshot;
       attemptedProviderIds: BackendGenerationArtifactProviderId[];
     };

@@ -34,6 +34,7 @@ export interface OpenAiImageGenerationAdapterOptions {
   requestShape?: OpenAiImageGenerationRequestShape;
   size?: OpenAiImageGenerationSize;
   timeoutMs?: number;
+  outputMode?: "store_artifact" | "return_verified_bytes";
 }
 
 export type OpenAiImageGenerationModel =
@@ -581,6 +582,45 @@ const storeVerifiedImageArtifact = async ({
   };
 };
 
+const completeVerifiedImage = async ({
+  generatedImageArtifactStorage,
+  input,
+  model,
+  outputMode,
+  verification,
+}: {
+  generatedImageArtifactStorage?: GeneratedImageArtifactStorage;
+  input: BackendGenerateImageFromStoredProviderKeyInput;
+  model: OpenAiImageGenerationModel;
+  outputMode: "store_artifact" | "return_verified_bytes";
+  verification: ReturnType<typeof verifyGeneratedImageArtifactBytes> & {
+    kind: "verified";
+  };
+}): Promise<BackendGenerationProviderExecutionResult> => {
+  if (outputMode === "return_verified_bytes") {
+    return {
+      kind: "verified_image",
+      status: "verified_image",
+      verifiedImage: verification.image,
+      providerMetadata: {
+        model,
+        providerId: "openai",
+      },
+      message: "OpenAI image generation returned verified image bytes.",
+    };
+  }
+
+  if (!generatedImageArtifactStorage) {
+    return artifactStorageUnavailableResult();
+  }
+
+  return storeVerifiedImageArtifact({
+    generatedImageArtifactStorage,
+    input,
+    verification,
+  });
+};
+
 export const createOpenAiImageGenerationAdapter = ({
   fetchImpl = globalThis.fetch,
   generatedImageArtifactStorage,
@@ -593,6 +633,7 @@ export const createOpenAiImageGenerationAdapter = ({
   requestShape = "single_image_low",
   size = defaultSize,
   timeoutMs = defaultTimeoutMs,
+  outputMode = "store_artifact",
 }: OpenAiImageGenerationAdapterOptions): BackendGenerationProviderAdapter => ({
   providerId: "openai",
 
@@ -643,6 +684,8 @@ export const createOpenAiImageGenerationAdapter = ({
       record.workspaceId !== input.workspaceId ||
       record.providerName !== "openai" ||
       record.status !== "active" ||
+      record.verificationStatus !== "validated" ||
+      record.needsReverification === true ||
       record.deletedAt
     ) {
       return keyNotFoundResult();
@@ -693,7 +736,10 @@ export const createOpenAiImageGenerationAdapter = ({
       });
 
       if (response.status >= 200 && response.status < 300) {
-        if (!generatedImageArtifactStorage) {
+        if (
+          outputMode === "store_artifact" &&
+          !generatedImageArtifactStorage
+        ) {
           return artifactStorageUnavailableResult();
         }
 
@@ -778,9 +824,11 @@ export const createOpenAiImageGenerationAdapter = ({
             );
           }
 
-          return storeVerifiedImageArtifact({
+          return completeVerifiedImage({
             generatedImageArtifactStorage,
             input,
+            model,
+            outputMode,
             verification,
           });
         }
@@ -807,9 +855,11 @@ export const createOpenAiImageGenerationAdapter = ({
           );
         }
 
-        return storeVerifiedImageArtifact({
+        return completeVerifiedImage({
           generatedImageArtifactStorage,
           input,
+          model,
+          outputMode,
           verification,
         });
       }

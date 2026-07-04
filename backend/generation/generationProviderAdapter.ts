@@ -1,6 +1,7 @@
 import type { BackendGenerationAttemptMetadata } from "./generationAttemptMetadata";
 import type { BackendGenerationFailureCode } from "./generationFailureMapping";
 import type { BackendGenerationProviderId } from "./generationProviderTypes";
+import type { VerifiedGeneratedImageArtifactBytes } from "./generatedImageArtifactVerification";
 
 export type BackendGenerationKind = "image";
 
@@ -135,6 +136,16 @@ export type BackendGenerationProviderExecutionResult =
       message: string;
     } & BackendGenerationSafeDiagnostic
   | {
+      kind: "verified_image";
+      status: "verified_image";
+      verifiedImage: VerifiedGeneratedImageArtifactBytes;
+      providerMetadata: {
+        model: string;
+        providerId: "openai";
+      };
+      message: string;
+    }
+  | {
       kind: "generated";
       status: "generated";
       artifact: BackendGenerationSafeArtifactMetadata;
@@ -203,7 +214,10 @@ export const generationRuntimeEnvNames = {
 } as const;
 
 const generationProviderSafeErrorCodes = new Set<
-  Exclude<BackendGenerationProviderExecutionResult, { kind: "generated" }>["errorCode"]
+  Exclude<
+    BackendGenerationProviderExecutionResult,
+    { kind: "generated" | "verified_image" }
+  >["errorCode"]
 >([
   "artifact_storage_unavailable",
   "generation_failed",
@@ -222,7 +236,7 @@ export const isBackendGenerationSafeErrorCode = (
   value: string,
 ): value is Exclude<
   BackendGenerationProviderExecutionResult,
-  { kind: "generated" }
+  { kind: "generated" | "verified_image" }
 >["errorCode"] => generationProviderSafeErrorCodes.has(value as never);
 
 export type BackendGenerationProviderSubmitResult =

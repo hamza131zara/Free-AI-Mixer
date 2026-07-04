@@ -12,7 +12,8 @@ export type BackendGenerationRouteExecutionMode =
   | "mock_video_local_only"
   | "openai_adapter_mock_only"
   | "openai_adapter_mock_storage_only"
-  | "real_provider_local_only";
+  | "real_provider_local_only"
+  | "real_provider_production";
 
 export type BackendGenerationMockExecutionAdapterSelection =
   | "not_configured"
@@ -163,7 +164,8 @@ export const parseGenerationRouteExecutionMode = (
     value === "mock_video_local_only" ||
     value === "openai_adapter_mock_only" ||
     value === "openai_adapter_mock_storage_only" ||
-    value === "real_provider_local_only"
+    value === "real_provider_local_only" ||
+    value === "real_provider_production"
   ) {
     return value;
   }
